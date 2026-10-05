@@ -1,0 +1,4 @@
+{
+  "ATLAS_ENV": "production",
+  "ATLAS_API_BASE_URL": "https://api.example.com"
+}

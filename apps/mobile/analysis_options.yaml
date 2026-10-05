@@ -1,0 +1,31 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  exclude:
+    - build/**
+    # Generated API client (3.2) is analysed in its own package.
+    - packages/**
+    - android/**
+    - ios/**
+
+linter:
+  rules:
+    avoid_print: true
+    prefer_single_quotes: true
+    prefer_const_constructors: true
+    prefer_final_locals: true
+    always_declare_return_types: true
+    unawaited_futures: true
+    avoid_dynamic_calls: true
+    cancel_subscriptions: true
+    close_sinks: true
+    use_super_parameters: true
+    directives_ordering: true
+    sort_child_properties_last: true
+
+formatter:
+  page_width: 120
