@@ -43,6 +43,10 @@ Future<GoRouter> pumpApp(WidgetTester tester, {FakeDeviceNetwork? network}) asyn
             ])
             ..script(P.conversations, [
               JsonReply(200, {'conversations': <Object>[]}),
+            ])
+            ..script(P.profile, [JsonReply(200, defaultProfileJson())])
+            ..script(P.colorProfile, [
+              JsonReply(200, {'status': 'not_analyzed', 'colorProfile': null, 'message': 'm'}),
             ]),
           session: (dio) => AtlasSessionInterceptor(ref.watch(sessionControllerProvider), dio),
         ),
@@ -88,7 +92,7 @@ void main() {
       'Garderob': (AtlasRoutes.wardrobe, 'Garderob bo‘sh'),
       'Obrazlar': (AtlasRoutes.outfits, 'Saqlangan'),
       'Stilist': (AtlasRoutes.stylist, 'Stilistingiz bilan gaplashing'),
-      'Profil': (AtlasRoutes.profile, 'Profilingiz'),
+      'Profil': (AtlasRoutes.profile, 'Rang profili'),
       'Bosh sahifa': (AtlasRoutes.home, 'Bugun nima kiyaman?'),
     };
     for (final MapEntry(key: tab, value: (route, text)) in expected.entries) {

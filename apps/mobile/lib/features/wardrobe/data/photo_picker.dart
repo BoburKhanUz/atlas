@@ -26,7 +26,10 @@ class PhotoAccessDenied implements Exception {
 abstract interface class PhotoPicker {
   /// Null when the user cancelled. Permission is asked by the system only
   /// now, when the user chose [source].
-  Future<PickedPhoto?> pick(PhotoSource source);
+  ///
+  /// [preferFront]: open the front camera where the device supports it
+  /// (the colour-analysis selfie).
+  Future<PickedPhoto?> pick(PhotoSource source, {bool preferFront = false});
 
   /// Android: a photo taken while the system killed the app (camera
   /// activity) is delivered after the restart. Null when there is none.
@@ -41,11 +44,12 @@ class PlatformPhotoPicker implements PhotoPicker {
   final ImagePicker _picker;
 
   @override
-  Future<PickedPhoto?> pick(PhotoSource source) async {
+  Future<PickedPhoto?> pick(PhotoSource source, {bool preferFront = false}) async {
     final XFile? file;
     try {
       file = await _picker.pickImage(
         source: source == PhotoSource.camera ? ImageSource.camera : ImageSource.gallery,
+        preferredCameraDevice: preferFront ? CameraDevice.front : CameraDevice.rear,
         requestFullMetadata: false,
       );
     } on PlatformException catch (e) {

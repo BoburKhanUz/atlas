@@ -227,7 +227,25 @@ abstract final class P {
   static const generate = '/api/v1/outfits/generate';
   static const chat = '/api/v1/stylist/chat';
   static const conversations = '/api/v1/stylist/conversations';
+  static const profile = '/api/v1/profile';
+  static const colorProfile = '/api/v1/color-profile';
+  static const analyze = '/api/v1/color-profile/analyze';
+  static const account = '/api/v1/account';
 }
+
+/// GET /api/v1/profile of user u1 (no name, no preferences).
+Map<String, Object?> defaultProfileJson() => {
+  'user': {
+    'id': 'u1',
+    'email': 'a@test.local',
+    'name': null,
+    'createdAt': '2026-10-01T00:00:00.000Z',
+    'profile': null,
+    'preferences': null,
+  },
+  'profile': null,
+  'preferences': null,
+};
 
 Map<String, Object?> meJson() => {
   'user': {'id': 'u1', 'email': 'a@test.local', 'name': null, 'createdAt': '2026-10-01T00:00:00.000Z'},
@@ -246,6 +264,11 @@ class SessionHarness {
     // Opening the Stylist tab lists conversations: none by default.
     backend.script(P.conversations, [
       JsonReply(200, {'conversations': <Object>[]}),
+    ]);
+    // Opening the Profile tab reads the profile and the colour profile.
+    backend.script(P.profile, [JsonReply(200, defaultProfileJson())]);
+    backend.script(P.colorProfile, [
+      JsonReply(200, {'status': 'not_analyzed', 'colorProfile': null, 'message': 'Selfie yuklang.'}),
     ]);
     store = TokenStore(kv);
     final config = AtlasEnvironmentConfig.fromValues(environment: 'development', apiBaseUrl: 'http://api.test');

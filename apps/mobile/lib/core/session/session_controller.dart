@@ -294,6 +294,15 @@ class SessionController extends ChangeNotifier implements AccessTokenSource {
     }
   }
 
+  /// After a CONFIRMED account deletion (DELETE /api/v1/account answered
+  /// 200, or 404 = already gone): the server has already deleted every
+  /// session of the account, so /auth/logout is NOT called. Drops the
+  /// tokens from memory and secure storage and signs out with
+  /// [SignedOutReason.accountDeleted]. Only the account-deletion flow calls
+  /// this.
+  Future<void> endAfterAccountDeletion() =>
+      _endLocally(const Unauthenticated(SignedOutReason.accountDeleted), SignedOutReason.accountDeleted);
+
   /// POST /api/v1/auth/logout with `{ refreshToken }` (revokes the whole
   /// session family). One retry on SESSION_BUSY. Never throws.
   Future<void> _serverLogout(String refreshToken) async {

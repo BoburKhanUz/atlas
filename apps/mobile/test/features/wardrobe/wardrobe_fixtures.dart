@@ -104,6 +104,9 @@ class FakePicker implements PhotoPicker {
   /// What `retrieveLostData` would deliver (Android process death).
   PickedPhoto? lost;
   final calls = <PhotoSource>[];
+
+  /// `preferFront` of each call.
+  final front = <bool>[];
   var lostCalls = 0;
 
   @override
@@ -115,8 +118,9 @@ class FakePicker implements PhotoPicker {
   }
 
   @override
-  Future<PickedPhoto?> pick(PhotoSource source) async {
+  Future<PickedPhoto?> pick(PhotoSource source, {bool preferFront = false}) async {
     calls.add(source);
+    front.add(preferFront);
     if (denied) throw PhotoAccessDenied(source);
     return result;
   }

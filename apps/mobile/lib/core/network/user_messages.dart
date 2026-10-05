@@ -26,6 +26,7 @@ abstract final class UserMessages {
     SignedOutReason.raced ||
     SignedOutReason.rejected => 'Sessiya tugadi. Iltimos, qayta kiring.',
     SignedOutReason.storageUnavailable => 'Saqlangan sessiyani o‘qib bo‘lmadi. Iltimos, qayta kiring.',
+    SignedOutReason.accountDeleted => 'Hisobingiz o‘chirildi.',
   };
 
   static String forHttp(ApiHttpFailure f) {

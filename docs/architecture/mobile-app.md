@@ -36,7 +36,7 @@ apps/mobile/
       outfits/       (3.7)     generate, list, detail, save, feedback (implemented)
       weather/       (3.7)     location permission, current weather (implemented)
       stylist/       (3.8)     conversations and chat (implemented)
-      profile/       (3.9)     profile, preferences, colour profile, sessions, account deletion
+      profile/       (3.9)     profile, preferences, colour profile, account deletion (implemented)
       <feature>/data           API calls and mapping for that feature (when it has any)
       <feature>/presentation   screens, widgets, controllers (Riverpod Notifiers)
   packages/atlas_api/          client generated from docs/api/openapi.json (never edited by hand)
@@ -396,6 +396,40 @@ Three distinct situations:
   - A 404 for an unknown or foreign `conversationId` instead of silently starting a new conversation.
   - Delete/rename and pagination for conversations.
   - Streaming.
+
+## Profile, colour profile, settings (3.9, implemented)
+
+- **Profile:**
+  - Shows name and email (read-only), liked and disliked styles and colours, the colour-profile card, log out and delete account.
+  - Editing covers the name (1–60 characters, trimmed; it can't be cleared once set) and the four preference lists (at most 20 each; an item can't be both liked and disliked; an emptied list is sent as `[]`).
+  - Save sends **one** PATCH with only the changed fields (nothing changed → no request), then GETs the profile again, so the screen shows the server's truth.
+  - A failed save keeps the edits for an explicit Retry. Nothing is retried automatically; 401 uses session recovery.
+- **Body fields — BACKEND CHANGE REQUIRED (`ProfileRow`):**
+  - The server stores and returns gender, preferredFit, height, weight, ageRange, bodyShape, clothingSize, skin/hair/eye fields and typicalBudget. The OpenAPI `ProfileRow` is only `{id, userId}`, so the generated client drops them.
+  - The app neither reads them (no raw JSON, no undocumented fields) nor writes them blind. A real-backend test documents the gap.
+  - Follow-up: expand `ProfileRow`, then regenerate the client.
+- **Colour profile:**
+  - `GET /color-profile` has two states (`oneOf`): not analysed (with message), or analysed (season, undertone, contrast, recommended/neutral/caution colours, skin/hair/eye colour, date, disclaimer). Both decode with the generated client.
+- **Selfie analysis:**
+  - A consent screen comes **before** any camera or photo permission prompt. It says the image is processed once and not stored by the server; only derived colours are kept; those can't yet be deleted on their own (account deletion removes them); and the result is an AI suggestion.
+  - Camera (front preferred) or gallery.
+  - The 3.5 `ImagePreparer` with `maxSide: 1024` produces JPEG with EXIF/GPS stripped (fail-closed), within the existing size limits. The wardrobe keeps its default of 4096.
+  - Bytes stay in memory only (the picker's temporary copy is deleted); there are no selfie URLs.
+  - One multipart POST per action, never retried automatically (no Idempotency-Key exists).
+  - Outcomes: 422 → rejected (choose another photo); 4xx → failed (explicit retry); timeout, network or 5xx → **unknown**, then one `GET /color-profile` shows the server's current result **as such** (with its date, never claimed as this attempt). Analysing again is explicit. A confidence below 0.4 shows a warning.
+- **Account deletion:**
+  - Typed confirmation (`O‘CHIRISH`) and an explanation that deletion is immediate, irreversible and ends every session. One `DELETE /account`, never retried automatically.
+  - 200 or 404 means deleted. 404 is authoritative: the user row is gone, while the access token is a stateless JWT.
+  - Timeout, network or 5xx → unknown. "Tekshirish" sends DELETE again explicitly, and 404 confirms.
+  - After confirmation, the app removes this user's per-user keys (onboarding marker, pending upload record, weather city — `LocalUserData`), never another user's. It clears the in-memory image cache, then calls `SessionController.endAfterAccountDeletion()`: tokens are cleared **without** `/auth/logout` (the server already deleted every session), and the sign-out reason `accountDeleted` makes the sign-in screen say "Hisobingiz o‘chirildi.".
+  - If the session can't be renewed during an unconfirmed deletion, nothing is claimed or cleared and the sign-in screen says the account *may* have been deleted.
+- **Contract follow-ups (backend, not done here):**
+  - Expand `ProfileRow` and regenerate the client.
+  - A colour-profile delete endpoint.
+  - An Idempotency-Key on `POST /color-profile/analyze`.
+  - Correct the analyse contract (the backend also accepts HEIC; a wrong type or a file over 8 MB returns 422 `INVALID_IMAGE`, while the contract lists 415/413).
+  - Analysis history if needed.
+- **Mobile follow-up (3.4, not changed here):** onboarding lets the user pick more than 20 favourite or disliked colours (there are 23 options), while the contract allows 20.
 
 ## Offline behaviour
 

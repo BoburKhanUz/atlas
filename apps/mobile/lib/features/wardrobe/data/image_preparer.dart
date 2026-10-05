@@ -88,7 +88,14 @@ class ImagePreparer {
   const ImagePreparer(this._compressor);
   final ImageCompressor _compressor;
 
-  Future<PreparedImage> prepare(Uint8List source, {String? originalName}) async {
+  /// [maxSide] caps the longest side (default: the wardrobe limit, 4096;
+  /// the colour-analysis selfie uses 1024). It can only lower the cap.
+  Future<PreparedImage> prepare(
+    Uint8List source, {
+    String? originalName,
+    int maxSide = UploadLimits.maxLongestSide,
+  }) async {
+    assert(maxSide >= UploadLimits.minShortestSide && maxSide <= UploadLimits.maxLongestSide);
     final probe = ImageProbe.inspect(source);
     if (probe.format == ImageFormat.unknown) throw const ImagePreparationException(PreparationError.unreadable);
     final shortest = probe.shortestSide;
@@ -97,15 +104,15 @@ class ImagePreparer {
     }
 
     for (final quality in UploadLimits.qualities) {
-      var out = await _encode(source, quality, _targetShortest(probe));
+      var out = await _encode(source, quality, _targetShortest(probe, maxSide));
       var info = JpegStructure.parse(out);
-      if (_longest(info) > UploadLimits.maxLongestSide) {
+      if (_longest(info) > maxSide) {
         // The source size was unknown or the encoder rounded up: one more
         // pass on our own (already oriented, metadata-free) output.
         final again = ImageProbe(format: ImageFormat.jpeg, width: info.width, height: info.height);
-        out = await _encode(out, quality, _targetShortest(again));
+        out = await _encode(out, quality, _targetShortest(again, maxSide));
         info = JpegStructure.parse(out);
-        if (_longest(info) > UploadLimits.maxLongestSide) {
+        if (_longest(info) > maxSide) {
           throw const ImagePreparationException(PreparationError.unreadable);
         }
       }
@@ -139,13 +146,13 @@ class ImagePreparer {
     }
   }
 
-  /// Target for the shorter side so that the longer one ends ≤ 4096.
-  static int? _targetShortest(ImageProbe p) {
+  /// Target for the shorter side so that the longer one ends ≤ [maxSide].
+  static int? _targetShortest(ImageProbe p, int maxSide) {
     final longest = p.longestSide;
     final shortest = p.shortestSide;
-    if (longest == null || shortest == null) return UploadLimits.maxLongestSide;
-    if (longest <= UploadLimits.maxLongestSide) return null;
-    return (shortest * UploadLimits.maxLongestSide / longest).floor();
+    if (longest == null || shortest == null) return maxSide;
+    if (longest <= maxSide) return null;
+    return (shortest * maxSide / longest).floor();
   }
 
   static int _longest(JpegStructure s) => s.width > s.height ? s.width : s.height;

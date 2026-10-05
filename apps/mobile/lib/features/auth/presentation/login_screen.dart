@@ -10,6 +10,7 @@ import '../../../core/network/user_messages.dart';
 import '../../../core/session/auth_state.dart';
 import '../../../core/session/providers.dart';
 import '../../../core/widgets/atlas_button.dart';
+import '../../profile/providers.dart' show accountMaybeDeletedProvider;
 import 'auth_form_scaffold.dart';
 import 'auth_messages.dart';
 
@@ -55,7 +56,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       SessionExpired(:final reason) || Unauthenticated(:final reason) => reason,
       _ => SignedOutReason.none,
     };
-    final notice = UserMessages.forSignedOut(reason);
+    // After an account deletion that could not be confirmed, the session
+    // ended: say honestly that the account may be gone.
+    final notice = ref.watch(accountMaybeDeletedProvider)
+        ? 'Hisobingiz o‘chirilgan bo‘lishi mumkin. Kira olmasangiz, u o‘chirilgan.'
+        : UserMessages.forSignedOut(reason);
     return AuthFormScaffold(
       title: 'Xush kelibsiz',
       subtitle: 'Garderobingiz va uslubingiz bilan davom eting.',

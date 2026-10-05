@@ -148,6 +148,12 @@ void main() {
       router.go(AtlasRoutes.profile);
       await tester.pumpAndSettle();
       expect(find.text('a@test.local'), findsOneWidget);
+      // The account section sits below the profile and colour cards.
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('profile.logout')),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.runAsync(() async {
         await tester.tap(find.byKey(const Key('profile.logout')));
         await waitFor(() => h.session.state is Unauthenticated);

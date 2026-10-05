@@ -28,4 +28,7 @@ enum SignedOutReason {
 
   /// The stored session could not be read from secure storage.
   storageUnavailable,
+
+  /// The user deleted their account (DELETE /api/v1/account confirmed).
+  accountDeleted,
 }

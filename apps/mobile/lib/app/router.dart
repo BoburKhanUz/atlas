@@ -14,7 +14,11 @@ import '../features/onboarding/presentation/onboarding_screen.dart';
 import '../features/onboarding/providers.dart';
 import '../features/outfits/presentation/outfit_detail_screen.dart';
 import '../features/outfits/presentation/outfits_screen.dart';
+import '../features/profile/presentation/color_profile_screen.dart';
+import '../features/profile/presentation/delete_account_screen.dart';
+import '../features/profile/presentation/profile_edit_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
+import '../features/profile/presentation/selfie_analysis_screen.dart';
 import '../features/stylist/presentation/chat_screen.dart';
 import '../features/stylist/presentation/stylist_screen.dart';
 import '../features/stylist/providers.dart' show newChatKey;
@@ -44,6 +48,10 @@ abstract final class AtlasRoutes {
   static String wardrobeItemEdit(String id) => '/wardrobe/item/$id/edit';
   static String outfitDetail(String id) => '/outfits/item/$id';
   static const stylistNew = '/stylist/new';
+  static const profileEdit = '/profile/edit';
+  static const profileColor = '/profile/color';
+  static const profileColorAnalyze = '/profile/color/analyze';
+  static const profileDelete = '/profile/delete';
   static String stylistChat(String id) => '/stylist/chat/$id';
 }
 
@@ -98,6 +106,10 @@ GoRouter buildRouter({
     GoRoute(path: AtlasRoutes.register, builder: (_, _) => const RegisterScreen()),
     GoRoute(path: AtlasRoutes.onboarding, builder: (_, _) => const OnboardingScreen()),
     atlasFullScreenRoute(path: AtlasRoutes.wardrobeAdd, builder: (_, _) => const AddItemScreen()),
+    atlasFullScreenRoute(path: AtlasRoutes.profileEdit, builder: (_, _) => const ProfileEditScreen()),
+    atlasFullScreenRoute(path: AtlasRoutes.profileColor, builder: (_, _) => const ColorProfileScreen()),
+    atlasFullScreenRoute(path: AtlasRoutes.profileColorAnalyze, builder: (_, _) => const SelfieAnalysisScreen()),
+    atlasFullScreenRoute(path: AtlasRoutes.profileDelete, builder: (_, _) => const DeleteAccountScreen()),
     atlasFullScreenRoute(
       path: '/wardrobe/item/:id',
       builder: (_, state) => ItemDetailScreen(id: state.pathParameters['id']!),
