@@ -7,6 +7,7 @@ import '../../../core/design/tokens.dart';
 import '../../../core/widgets/atlas_button.dart';
 import '../../../core/widgets/atlas_page.dart';
 import '../../outfits/providers.dart';
+import '../../stylist/presentation/stylist_screen.dart' show AskStylistButton;
 import '../../weather/presentation/weather_card.dart';
 import '../../weather/providers.dart';
 
@@ -67,6 +68,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   context.go(AtlasRoutes.outfits);
                 },
               ),
+              const SizedBox(height: AtlasSpacing.sm),
+              const AskStylistButton(),
             ],
           ),
         ),

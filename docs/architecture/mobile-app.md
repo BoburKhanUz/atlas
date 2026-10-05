@@ -35,7 +35,7 @@ apps/mobile/
       wardrobe/      (3.5–3.6) list, add (camera/gallery/upload), item detail and edit
       outfits/       (3.7)     generate, list, detail, save, feedback (implemented)
       weather/       (3.7)     location permission, current weather (implemented)
-      stylist/       (3.8)     conversations and chat
+      stylist/       (3.8)     conversations and chat (implemented)
       profile/       (3.9)     profile, preferences, colour profile, sessions, account deletion
       <feature>/data           API calls and mapping for that feature (when it has any)
       <feature>/presentation   screens, widgets, controllers (Riverpod Notifiers)
@@ -361,6 +361,41 @@ Three distinct situations:
   - Give generated items an `ImageObject` (id and expiry) instead of a bare `imageUrl`.
   - `GET /api/v1/weather/current` answers 500 when the provider fails instead of degrading.
   - `GET /api/v1/outfits` has no pagination.
+
+## AI stylist (3.8, implemented)
+
+- **Screens:**
+  - The Stylist tab lists the 50 most recent conversations (title, last message, relative time) and has "Yangi suhbat" (new chat). It has loading, empty, error and offline states.
+  - The chat (`/stylist/chat/:id`, `/stylist/new`) shows:
+    - the history from the server;
+    - plain, selectable text and a typing indicator;
+    - a reversed list, so new messages come into view on their own;
+    - a keyboard-safe composer with a 1–2000 character counter (trimmed, counted like the server);
+    - optional occasion chips, sent as `event`;
+    - the context line from `contextSummary`;
+    - a one-line notice that the stylist may remember preferences mentioned in the chat (the backend extracts "memories").
+  - Home has a "Stilistdan so‘rash" entry point.
+- **Context:** weather is attached only when the 3.7 weather is **fresh**; stale weather is never sent. Wardrobe and profile context are added by the server.
+- **Sending (`ChatController`):**
+  - One `POST /stylist/chat` per explicit send, never retried automatically (the endpoint has no Idempotency-Key). A double tap sends one request.
+  - The draft stays in the composer until the server confirms. 401 uses the session layer.
+  - A 4xx means nothing was stored: the draft stays and sending again is safe.
+  - **Lost answer** (timeout, connection, 5xx): the outcome is *unknown*.
+    - Nothing is re-sent and nothing is matched.
+    - "Suhbatni yangilash" (refresh) replaces the local transcript with the server's, exactly. A new chat with no id yet offers the conversation list instead.
+    - Sending again needs explicit confirmation, and the dialog warns it may duplicate.
+  - If the server answers with a different conversation id (an unknown or foreign id makes it start a new conversation), the app switches to that id and says so.
+- **AI receive timeout:** `POST /stylist/chat` and `POST /outfits/generate` wait up to 70 s (`NetworkTimeouts.ai`; the server's `maxDuration` is 60 s). `AtlasAiTimeoutInterceptor` matches method and exact path; every other request keeps 20 s, and retry rules are unchanged (neither POST is retried automatically).
+- **Privacy:**
+  - Message text, answers, weather values and tokens are never logged.
+  - Conversation ids are redacted in logged paths (`/stylist/conversations/[id]`).
+  - Messages live in memory only, per screen, never on the device. There is no analytics.
+- **Contract follow-ups (backend, not done here):**
+  - An Idempotency-Key on `POST /stylist/chat`.
+  - A flag on the stored AI fallback answer.
+  - A 404 for an unknown or foreign `conversationId` instead of silently starting a new conversation.
+  - Delete/rename and pagination for conversations.
+  - Streaming.
 
 ## Offline behaviour
 

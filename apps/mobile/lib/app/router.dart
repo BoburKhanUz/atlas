@@ -15,7 +15,9 @@ import '../features/onboarding/providers.dart';
 import '../features/outfits/presentation/outfit_detail_screen.dart';
 import '../features/outfits/presentation/outfits_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
+import '../features/stylist/presentation/chat_screen.dart';
 import '../features/stylist/presentation/stylist_screen.dart';
+import '../features/stylist/providers.dart' show newChatKey;
 import '../features/wardrobe/presentation/add_item_screen.dart';
 import '../features/wardrobe/presentation/edit_item_screen.dart';
 import '../features/wardrobe/presentation/item_detail_screen.dart';
@@ -41,6 +43,8 @@ abstract final class AtlasRoutes {
   static String wardrobeItem(String id) => '/wardrobe/item/$id';
   static String wardrobeItemEdit(String id) => '/wardrobe/item/$id/edit';
   static String outfitDetail(String id) => '/outfits/item/$id';
+  static const stylistNew = '/stylist/new';
+  static String stylistChat(String id) => '/stylist/chat/$id';
 }
 
 /// The only place that decides where the user may be, from the auth state
@@ -101,6 +105,14 @@ GoRouter buildRouter({
     atlasFullScreenRoute(
       path: '/wardrobe/item/:id/edit',
       builder: (_, state) => EditItemScreen(id: state.pathParameters['id']!),
+    ),
+    atlasFullScreenRoute(
+      path: AtlasRoutes.stylistNew,
+      builder: (_, _) => const ChatScreen(chatKey: newChatKey),
+    ),
+    atlasFullScreenRoute(
+      path: '/stylist/chat/:id',
+      builder: (_, state) => ChatScreen(chatKey: state.pathParameters['id']!),
     ),
     atlasFullScreenRoute(
       path: '/outfits/item/:id',

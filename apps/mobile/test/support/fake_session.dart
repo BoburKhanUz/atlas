@@ -225,6 +225,8 @@ abstract final class P {
   static const weather = '/api/v1/weather/current';
   static const outfits = '/api/v1/outfits';
   static const generate = '/api/v1/outfits/generate';
+  static const chat = '/api/v1/stylist/chat';
+  static const conversations = '/api/v1/stylist/conversations';
 }
 
 Map<String, Object?> meJson() => {
@@ -240,6 +242,10 @@ class SessionHarness {
     // Opening the Wardrobe tab lists items: an empty wardrobe by default.
     backend.script(P.wardrobe, [
       JsonReply(200, {'items': <Object>[], 'nextCursor': null}),
+    ]);
+    // Opening the Stylist tab lists conversations: none by default.
+    backend.script(P.conversations, [
+      JsonReply(200, {'conversations': <Object>[]}),
     ]);
     store = TokenStore(kv);
     final config = AtlasEnvironmentConfig.fromValues(environment: 'development', apiBaseUrl: 'http://api.test');

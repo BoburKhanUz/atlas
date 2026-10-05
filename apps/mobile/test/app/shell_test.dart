@@ -40,6 +40,9 @@ Future<GoRouter> pumpApp(WidgetTester tester, {FakeDeviceNetwork? network}) asyn
           adapter: FakeBackend()
             ..script(P.wardrobe, [
               JsonReply(200, {'items': <Object>[], 'nextCursor': null}),
+            ])
+            ..script(P.conversations, [
+              JsonReply(200, {'conversations': <Object>[]}),
             ]),
           session: (dio) => AtlasSessionInterceptor(ref.watch(sessionControllerProvider), dio),
         ),
@@ -84,7 +87,7 @@ void main() {
     const expected = {
       'Garderob': (AtlasRoutes.wardrobe, 'Garderob bo‘sh'),
       'Obrazlar': (AtlasRoutes.outfits, 'Saqlangan'),
-      'Stilist': (AtlasRoutes.stylist, 'AI stilist'),
+      'Stilist': (AtlasRoutes.stylist, 'Stilistingiz bilan gaplashing'),
       'Profil': (AtlasRoutes.profile, 'Profilingiz'),
       'Bosh sahifa': (AtlasRoutes.home, 'Bugun nima kiyaman?'),
     };

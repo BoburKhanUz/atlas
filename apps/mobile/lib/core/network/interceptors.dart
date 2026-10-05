@@ -33,6 +33,24 @@ void _removeHeaders(Map<String, dynamic> headers, Set<String> lowerCaseNames) {
   doomed.forEach(headers.remove);
 }
 
+/// The operations that wait for the AI model: they get the longer
+/// [NetworkTimeouts.ai] receive timeout. Matched by method + exact path; the
+/// retry policy is not touched (these POSTs are never retried automatically).
+class AtlasAiTimeoutInterceptor extends Interceptor {
+  AtlasAiTimeoutInterceptor(this.timeout);
+  final Duration timeout;
+
+  static const aiOperations = {'/api/v1/stylist/chat', '/api/v1/outfits/generate'};
+
+  static bool isAiOperation(RequestOptions o) => o.method.toUpperCase() == 'POST' && aiOperations.contains(o.uri.path);
+
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    if (isAiOperation(options)) options.receiveTimeout = timeout;
+    handler.next(options);
+  }
+}
+
 /// Contract headers on every request: `X-Atlas-Client: mobile` (always),
 /// JSON accept, and never a Cookie (mobile authenticates with Bearer only).
 /// Rejects credentials in query parameters — a programming error.

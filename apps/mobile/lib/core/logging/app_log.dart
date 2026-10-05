@@ -48,6 +48,8 @@ abstract final class AppLog {
     (RegExp(r'(atlas_(?:at|rt)=)[^;\s]+'), r'$1[REDACTED]'),
     // Signed media URLs: …?exp=…&sig=…
     (RegExp(r'([?&]sig=)[^&\s"]+'), r'$1[REDACTED]'),
+    // Stylist conversation ids in request paths
+    (RegExp(r'(/stylist/conversations/)[^/?\s]+'), r'$1[id]'),
     // Bare JWTs
     (RegExp(r'eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}'), '[REDACTED_JWT]'),
   ];

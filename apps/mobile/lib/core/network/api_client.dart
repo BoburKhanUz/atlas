@@ -14,7 +14,7 @@ import 'error_mapper.dart';
 import 'interceptors.dart';
 
 /// Builds the one shared Dio instance for the ATLAS API. The order of the
-/// interceptors matters: contract headers → session (refresh before / after
+/// interceptors matters: contract headers → AI receive timeout → session (refresh before / after
 /// a 401) → bearer → logging → reachability → retry.
 Dio buildAtlasDio({
   required AtlasEnvironmentConfig config,
@@ -43,6 +43,7 @@ Dio buildAtlasDio({
   if (adapter != null) dio.httpClientAdapter = adapter;
   dio.interceptors.addAll([
     AtlasClientHeadersInterceptor(),
+    AtlasAiTimeoutInterceptor(config.timeouts.ai),
     ?session?.call(dio),
     AtlasBearerInterceptor(tokens),
     AtlasLoggingInterceptor(),

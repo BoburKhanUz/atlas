@@ -44,6 +44,7 @@ class NetworkTimeouts {
     this.receive = const Duration(seconds: 20),
     this.send = const Duration(seconds: 60),
     this.refresh = const Duration(seconds: 12),
+    this.ai = const Duration(seconds: 70),
   });
 
   final Duration connect;
@@ -54,6 +55,11 @@ class NetworkTimeouts {
 
   /// Per POST /auth/refresh call (client-recovery-vectors: 12 s).
   final Duration refresh;
+
+  /// Receive timeout of the two AI operations only (POST /stylist/chat and
+  /// POST /outfits/generate): the server may take up to its 60 s
+  /// `maxDuration`. Every other request keeps [receive].
+  final Duration ai;
 }
 
 /// Bounded automatic retries (docs/architecture/mobile-app.md, "Retry").
