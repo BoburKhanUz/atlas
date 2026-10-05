@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server'
-import { z } from 'zod'
 import { db } from '@/lib/db'
 import { requireAuth, unauthorized } from '@/lib/api-helpers'
 import { withApi, parseJson } from '@/server/http'
 import { log } from '@/server/log'
 import { occasionFromEvent } from '@/server/schemas/catalog'
-import { idSchema, partialWeatherSchema } from '@/server/schemas/common'
+import { StylistChatRequest } from '@/server/schemas/requests'
 import { runStylistTurn, type StylistContext } from '@/lib/ai/stylist'
 import type { LLMMessage } from '@/lib/ai/llm-provider'
 import { generateOutfits, buildExplanationContext, isCompleteWeather } from '@/lib/ai/recommendation'
@@ -35,22 +34,11 @@ const OUTFIT_REQUEST_PATTERNS = [
   /tadbir.*kiy/i,
 ]
 
-const ChatSchema = z.object({
-  message: z.string().min(1).max(2000),
-  conversationId: idSchema.nullable().optional(),
-  /** Optional weather + event context passed from the frontend. */
-  weather: partialWeatherSchema.nullable().optional(),
-  /** Occasion id/label or free text ("to'y"). */
-  event: z.string().trim().max(60).nullable().optional(),
-})
-
-// POST /api/v1/stylist/chat
-// Returns: { conversationId, assistantMessage, contextSummary }
 export const POST = withApi(async (req) => {
   const authUser = await requireAuth(req)
   if (!authUser) return unauthorized()
 
-  const { message, conversationId, weather, event } = await parseJson(req, ChatSchema)
+  const { message, conversationId, weather, event } = await parseJson(req, StylistChatRequest)
   // The engine only understands occasion ids; free-text events stay in the
   // LLM context but must not reach the scorer.
   const occasion = occasionFromEvent(event)

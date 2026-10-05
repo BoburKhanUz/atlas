@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import {
   ArrowLeft,
   Camera,
@@ -17,6 +17,8 @@ import { api, ApiError } from '@/lib/api-client'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+
+const UPLOAD_ACCEPT = 'image/jpeg,image/png,image/webp'
 
 type Phase = 'capture' | 'analyzing' | 'review'
 
@@ -147,7 +149,10 @@ export function WardrobeAddFlow() {
       </div>
 
       <div className="flex-1 px-5 pb-6">
-        <AnimatePresence mode="wait">
+        {/* One phase at a time, each fading in on mount. No exit animations:
+            with AnimatePresence mode="wait" a quick upload (phase changes
+            while the previous exit is still running) could leave the
+            "analyzing" panel on screen and never show the result. */}
           {phase === 'capture' && (
             <CapturePhase
               key="capture"
@@ -173,21 +178,21 @@ export function WardrobeAddFlow() {
               onDone={done}
             />
           )}
-        </AnimatePresence>
       </div>
 
-      {/* Hidden file inputs — both regular picker + camera capture */}
+      {/* Hidden file inputs — both regular picker + camera capture. Only the
+          formats the server accepts: iOS then converts HEIC photos to JPEG. */}
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept={UPLOAD_ACCEPT}
         className="hidden"
         onChange={handleFileInput}
       />
       <input
         ref={cameraInputRef}
         type="file"
-        accept="image/*"
+        accept={UPLOAD_ACCEPT}
         capture="environment"
         className="hidden"
         onChange={handleFileInput}
@@ -211,7 +216,6 @@ function CapturePhase({
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -4 }}
       transition={{ duration: 0.3 }}
     >
       <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
@@ -285,7 +289,6 @@ function AnalyzingPhase({
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -4 }}
       transition={{ duration: 0.3 }}
     >
       {/* Preview */}

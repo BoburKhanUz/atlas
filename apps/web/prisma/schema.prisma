@@ -31,24 +31,56 @@ model User {
   memories     AiMemory[]
   colorProfiles ColorProfile[]
   sessions     Session[]
+  sessionFamilies SessionFamily[]
+  idempotencyKeys IdempotencyKey[]
 }
 
 // Refresh-token sessions. Only the SHA-256 hash of the opaque refresh token is
 // stored. Rotation marks the old row revoked and points it at its successor;
-// presenting a rotated token again (after a short grace) revokes every session.
-model Session {
-  id           String    @id @default(cuid())
-  userId       String
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash    String    @unique // sha256 hex of the refresh token
-  expiresAt    DateTime
-  createdAt    DateTime  @default(now())
-  lastUsedAt   DateTime?
-  revokedAt    DateTime?
-  replacedById String?
-  userAgent    String?   // truncated to 200 chars
+// presenting a rotated token again after the 60 s grace revokes only its
+// family (docs/architecture/sessions.md).
+// One login = one family. Revocation, the absolute (90-day) lifetime and the
+// client type live here; every refresh is decided under this row's lock.
+model SessionFamily {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clientType        String    @default("web") // web | mobile
+  createdAt         DateTime  @default(now())
+  absoluteExpiresAt DateTime
+  revokedAt         DateTime?
+  revokeReason      String?   // logout | reuse | expired | migrated | anomaly
+  sessions          Session[]
 
   @@index([userId])
+}
+
+model Session {
+  id                String        @id @default(cuid())
+  userId            String
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  familyId          String
+  family            SessionFamily @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  tokenHash         String        @unique // sha256 hex of the refresh token
+  expiresAt         DateTime
+  createdAt         DateTime      @default(now())
+  lastUsedAt        DateTime?
+  revokedAt         DateTime?
+  replacedById      String?       @unique
+  rotatedAt         DateTime?
+  rotatedAtSource   String?       // db | legacy
+  successorTokenEnc String?       // v1.<kid>.<nonce>.<ct+tag>, grace window only
+  deviceName        String?
+  userAgent         String?       // truncated to 200 chars
+
+  @@index([userId])
+  @@index([familyId])
+}
+
+// Cutover markers written by migration 20261006000300_session_families.
+model SystemMarker {
+  key   String   @id
+  value DateTime
 }
 
 // ─── User Profile (spec section 9) ───────────────────────────────────────────
@@ -147,6 +179,10 @@ model WardrobeImage {
   isPrimary    Boolean  @default(false)
   width        Int?
   height       Int?
+  displayKey   String?  // 1600px WebP variant; NULL for pre-variant uploads (API falls back to master)
+  mimeType     String?
+  bytes        Int?
+  sha256       String?
 
   createdAt    DateTime @default(now())
 }
@@ -266,4 +302,22 @@ model ColorProfile {
   updatedAt     DateTime @updatedAt
 
   @@index([userId])
+}
+
+// ─── Idempotency keys for retried uploads (24 h) ─────────────────────────────
+model IdempotencyKey {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  route          String
+  key            String
+  requestHash    String
+  status         String   // in_progress | completed
+  resourceId     String?
+  responseStatus Int?
+  createdAt      DateTime @default(now())
+  expiresAt      DateTime
+
+  @@unique([userId, route, key])
+  @@index([expiresAt])
 }

@@ -49,7 +49,7 @@ afterAll(async () => {
 beforeEach(() => vi.clearAllMocks())
 
 const pngBytes = () =>
-  sharp({ create: { width: 64, height: 48, channels: 3, background: '#0F766E' } }).png().toBuffer()
+  sharp({ create: { width: 320, height: 256, channels: 3, background: '#0F766E' } }).png().toBuffer()
 
 function fetchMedia(signedUrl: string) {
   const url = new URL(`http://localhost${signedUrl}`)
@@ -102,6 +102,7 @@ describe('signed media URLs', () => {
         id: 'img1', wardrobeItemId: 'i1', storageKey: 'users/u/00000000-0000-0000-0000-000000000000.jpg',
         thumbnailKey: 'users/u/00000000-0000-0000-0000-000000000000_thumb.jpg',
         isPrimary: true, width: 1, height: 1, createdAt: new Date(),
+        displayKey: null, mimeType: null, bytes: null, sha256: null,
       }],
     })
     expect(item.primaryImage?.url).toMatch(/^\/api\/v1\/media\/users\/u\/.+\?exp=\d+&sig=/)
@@ -126,7 +127,7 @@ describe('deleting a wardrobe item', () => {
     const stored = await getStorageProvider().saveImage(await pngBytes(), TEST_USER.sub)
     db.wardrobeItem.findFirst.mockResolvedValue({
       id: 'i1',
-      images: [{ storageKey: stored.key, thumbnailKey: stored.thumbnailKey }],
+      images: [{ storageKey: stored.key, displayKey: stored.displayKey, thumbnailKey: stored.thumbnailKey }],
     })
     const req = new NextRequest('http://localhost/api/v1/wardrobe/items/i1', {
       method: 'DELETE',
@@ -135,6 +136,7 @@ describe('deleting a wardrobe item', () => {
     const res = await deleteItem(req, { params: Promise.resolve({ id: 'i1' }) })
     expect(res.status).toBe(200)
     await expect(getStorageProvider().readObject(stored.key)).resolves.toBeNull()
+    await expect(getStorageProvider().readObject(stored.displayKey)).resolves.toBeNull()
     await expect(getStorageProvider().readObject(stored.thumbnailKey)).resolves.toBeNull()
   })
 })

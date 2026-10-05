@@ -1,26 +1,20 @@
 import { NextResponse } from 'next/server'
-import { z } from 'zod'
 import { db } from '@/lib/db'
 import { presentPrimaryImage } from '@/lib/storage/media'
 import { requireAuth, unauthorized } from '@/lib/api-helpers'
 import { ApiError, withApi, parseJson, validate } from '@/server/http'
-import { occasionSchema } from '@/server/schemas/catalog'
-import { idSchema, weatherSnapshotSchema } from '@/server/schemas/common'
+import { OutfitListQuery, OutfitSaveRequest } from '@/server/schemas/requests'
 
 export const runtime = 'nodejs'
 
 // GET /api/v1/outfits — list user's saved/generated outfits.
 // Spec section 23.
-const ListQuerySchema = z.object({
-  saved: z.enum(['0', '1', 'true', 'false']).optional(),
-})
-
 export const GET = withApi(async (req) => {
   const authUser = await requireAuth(req)
   if (!authUser) return unauthorized()
 
   const savedParam = new URL(req.url).searchParams.get('saved')
-  const query = validate(savedParam ? { saved: savedParam } : {}, ListQuerySchema)
+  const query = validate(savedParam ? { saved: savedParam } : {}, OutfitListQuery)
   const savedOnly = query.saved === '1' || query.saved === 'true'
 
   const outfits = await db.outfit.findMany({
@@ -43,7 +37,7 @@ export const GET = withApi(async (req) => {
               material: true,
               season: true,
               images: {
-                select: { id: true, storageKey: true, thumbnailKey: true, isPrimary: true },
+                select: { id: true, storageKey: true, displayKey: true, thumbnailKey: true, isPrimary: true },
               },
             },
           },
@@ -80,33 +74,13 @@ export const GET = withApi(async (req) => {
 
 // POST /api/v1/outfits — persist a generated outfit (after user clicked Save
 // or after generation). Spec section 12, 17.
-const SaveSchema = z.object({
-  occasion: occasionSchema.optional().nullable(),
-  weather: weatherSnapshotSchema.optional().nullable(),
-  name: z.string().trim().max(80).optional().nullable(),
-  score: z.number().min(0).max(100).optional().nullable(),
-  reasons: z.array(z.string().max(120)).max(20).optional(),
-  explanation: z.string().max(2000).optional().nullable(),
-  isSaved: z.boolean().optional(),
-  /** Pairs of {itemId, role}. */
-  items: z
-    .array(
-      z.object({
-        itemId: idSchema,
-        role: z.string().trim().min(1).max(30),
-      }),
-    )
-    .min(1)
-    .max(12),
-})
-
 export const POST = withApi(async (req) => {
   const authUser = await requireAuth(req)
   if (!authUser) return unauthorized()
 
   const { items, occasion, weather, name, score, reasons, explanation, isSaved } = await parseJson(
     req,
-    SaveSchema,
+    OutfitSaveRequest,
   )
 
   // Authorisation: ensure all item ids belong to this user before linking

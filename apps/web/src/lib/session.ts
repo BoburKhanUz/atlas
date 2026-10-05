@@ -1,62 +1,51 @@
 /**
- * Session lifecycle (server only, Node.js runtime).
+ * Session glue for routes and the page proxy (server only, Node.js runtime).
+ * The protocol itself — families, rotation, grace replay, reuse detection,
+ * revocation — lives in src/server/session/protocol.ts.
  *
- * Cookies:
- *   ACCESS_COOKIE  — short-lived access JWT (15 min, claim `sid`), HttpOnly,
- *                    SameSite=Lax, Path=/
- *   REFRESH_COOKIE — opaque refresh token (32 random bytes, stored only as a
- *                    SHA-256 hash in Session), HttpOnly, SameSite=Lax, Path=/.
- *                    It must be sent on page requests so src/proxy.ts can
- *                    rotate it on a reload/navigation after the access token
- *                    expired (a narrower Path=/api/v1/auth was never sent on
- *                    page loads — found by the Playwright session suite).
- *   Both are `Secure` in production unless COOKIE_SECURE=0 (see config.ts).
+ * Client modes (`X-Atlas-Client` selects the response format only; the
+ * security rules come from the stored family's clientType):
+ *   web (default, any other value) — tokens only in HttpOnly cookies:
+ *     ACCESS_COOKIE  access JWT, HttpOnly, SameSite=Lax, Path=/
+ *     REFRESH_COOKIE opaque refresh token (stored hashed), HttpOnly,
+ *                    SameSite=Lax, Path=/ (sent on page loads so the proxy can
+ *                    renew a session)
+ *   mobile (`X-Atlas-Client: mobile`) — tokens in JSON bodies, never cookies;
+ *     refresh and logout take `{ refreshToken }` in the body; API calls use
+ *     `Authorization: Bearer <accessToken>`.
+ * Cookies are `Secure` in production unless COOKIE_SECURE=0 (see config.ts).
  *
- * Refresh rotation: every refresh revokes the presented session and issues a
- * new one (old.replacedById = new.id). Presenting an already-rotated token is
- * treated as theft and revokes all of the user's sessions — except within a
- * short grace window, which covers two tabs refreshing at the same moment.
- *
- * Access tokens are NOT checked against the Session table on every request:
- * revocation (logout, reuse detection) takes effect for API calls when the
- * access token expires (≤ 15 min). Logout also clears the cookie immediately.
+ * Access tokens are NOT checked against the database per request: a revoked
+ * family keeps API access until its access token expires (≤ 15 min).
  */
 
 import { cookies } from 'next/headers'
 import type { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { getUserFromAuthHeader, verifyAccessTokenOrNull, type JwtPayload } from '@/lib/auth'
+import { secureCookiesEnabled } from '@/lib/config'
 import {
-  generateRefreshToken,
-  getUserFromAuthHeader,
-  hashToken,
-  signAccessToken,
-  verifyAccessTokenOrNull,
-  type JwtPayload,
-} from '@/lib/auth'
-import { getAccessTokenTtlSeconds, getRefreshTokenTtlSeconds, secureCookiesEnabled } from '@/lib/config'
-import { log } from '@/server/log'
+  TERMINAL_SESSION_CODES,
+  endSession,
+  refreshSession,
+  startSession,
+  type ClientType,
+  type IssuedSession,
+  type RefreshResult,
+  type SessionErrorCode,
+  type SessionUser,
+} from '@/server/session/protocol'
+
+export type { ClientType, IssuedSession, SessionErrorCode, SessionUser } from '@/server/session/protocol'
 
 export const ACCESS_COOKIE = 'atlas_at'
 export const REFRESH_COOKIE = 'atlas_rt'
 export const REFRESH_COOKIE_PATH = '/'
+export const CLIENT_HEADER = 'x-atlas-client'
 
-/** A rotated token presented again within this window is a concurrent-tab race, not theft. */
-export const REUSE_GRACE_MS = 30_000
-
-const USER_AGENT_MAX = 200
-const REFRESH_TOKEN_MAX_LENGTH = 128
-
-export interface SessionUser {
-  id: string
-  email: string
-  name: string | null
-}
-
-export interface IssuedSession {
-  sessionId: string
-  accessToken: string
-  /** null for a grace-period access grant: the refresh cookie is left as-is. */
-  refreshToken: string | null
+/** `X-Atlas-Client: mobile` selects mobile (body-token) mode; anything else is web. */
+export function clientTypeOf(req: Request): ClientType {
+  return req.headers.get(CLIENT_HEADER)?.trim().toLowerCase() === 'mobile' ? 'mobile' : 'web'
 }
 
 // ─── Cookies ────────────────────────────────────────────────────────────────
@@ -67,17 +56,20 @@ function baseCookie() {
   return { httpOnly: true, sameSite: 'lax' as const, secure: secureCookiesEnabled() }
 }
 
-export function setSessionCookies(res: { cookies: CookieJar }, issued: Pick<IssuedSession, 'accessToken' | 'refreshToken'>) {
+// Rounded up: JWT expiries are whole seconds while issuedAt has milliseconds,
+// so a cookie may outlive its token by < 1 s (the server rejects it then).
+const secondsBetween = (from: Date, to: Date) => Math.max(0, Math.ceil((to.getTime() - from.getTime()) / 1000))
+
+export function setSessionCookies(res: { cookies: CookieJar }, issued: IssuedSession) {
   res.cookies.set(ACCESS_COOKIE, issued.accessToken, {
     ...baseCookie(),
     path: '/',
-    maxAge: getAccessTokenTtlSeconds(),
+    maxAge: secondsBetween(issued.issuedAt, issued.accessTokenExpiresAt),
   })
-  if (issued.refreshToken === null) return
   res.cookies.set(REFRESH_COOKIE, issued.refreshToken, {
     ...baseCookie(),
     path: REFRESH_COOKIE_PATH,
-    maxAge: getRefreshTokenTtlSeconds(),
+    maxAge: secondsBetween(issued.issuedAt, issued.refreshTokenExpiresAt),
   })
 }
 
@@ -86,169 +78,46 @@ export function clearSessionCookies(res: { cookies: CookieJar }) {
   res.cookies.set(REFRESH_COOKIE, '', { ...baseCookie(), path: REFRESH_COOKIE_PATH, maxAge: 0 })
 }
 
-// ─── Session rows ───────────────────────────────────────────────────────────
-
-function truncateUserAgent(ua: string | null | undefined): string | null {
-  return ua ? ua.slice(0, USER_AGENT_MAX) : null
+/** JSON body of a mobile-mode login / register / refresh. */
+export function mobileTokenBody(user: SessionUser, issued: IssuedSession) {
+  return {
+    user,
+    accessToken: issued.accessToken,
+    accessTokenExpiresAt: issued.accessTokenExpiresAt.toISOString(),
+    refreshToken: issued.refreshToken,
+    refreshTokenExpiresAt: issued.refreshTokenExpiresAt.toISOString(),
+    sessionExpiresAt: issued.sessionExpiresAt.toISOString(),
+  }
 }
 
-/** Create a session row for a freshly authenticated user and mint both tokens. */
-export async function createSession(
-  user: { id: string; email: string },
-  userAgent?: string | null,
-  now: Date = new Date(),
+// ─── Sessions (bound to the app database) ───────────────────────────────────
+
+/** Start a new session family for a freshly authenticated user. */
+export function createSession(
+  user: SessionUser,
+  opts: { clientType: ClientType; userAgent?: string | null; deviceName?: string | null },
 ): Promise<IssuedSession> {
-  const refreshToken = generateRefreshToken()
-  const session = await db.session.create({
-    data: {
-      userId: user.id,
-      tokenHash: hashToken(refreshToken),
-      expiresAt: new Date(now.getTime() + getRefreshTokenTtlSeconds() * 1000),
-      userAgent: truncateUserAgent(userAgent),
-    },
-    select: { id: true },
-  })
-  const accessToken = await signAccessToken({ sub: user.id, email: user.email, sid: session.id })
-  return { sessionId: session.id, accessToken, refreshToken }
+  return startSession(db, user, opts)
 }
-
-export type RotateFailure = 'missing' | 'invalid' | 'expired' | 'revoked' | 'race' | 'reuse'
 
 export type RotateResult =
-  /** graced: a concurrent request already rotated this token; only an access token was issued. */
-  | { ok: true; user: SessionUser; issued: IssuedSession; graced?: boolean }
-  /** clearCookies=false for `race`: the winning response already set fresh cookies. */
-  | { ok: false; reason: RotateFailure; clearCookies: boolean }
+  | Extract<RefreshResult, { ok: true }>
+  /** clearCookies: web clients drop their cookies only on terminal codes (never on SESSION_RACE / SESSION_BUSY). */
+  | { ok: false; code: SessionErrorCode; clearCookies: boolean }
 
-class LostRotationRace extends Error {}
-
-/**
- * Concurrent-request race: the presented token was rotated moments ago by a
- * parallel request (another tab, a page load + an API call). Instead of
- * failing — which bounced the losing page load to /login — grant a short-lived
- * access token for the REPLACEMENT session, provided it is still live. The
- * refresh cookie is not touched: the winning response sets the new one.
- */
-async function graceAccess(
-  replacementId: string,
-  user: SessionUser,
-  now: Date,
-): Promise<RotateResult> {
-  const replacement = await db.session.findUnique({
-    where: { id: replacementId },
-    select: { id: true, revokedAt: true, expiresAt: true },
-  })
-  if (!replacement || replacement.revokedAt || replacement.expiresAt.getTime() <= now.getTime()) {
-    return { ok: false, reason: 'race', clearCookies: false }
-  }
-  const accessToken = await signAccessToken({ sub: user.id, email: user.email, sid: replacement.id })
-  return {
-    ok: true,
-    graced: true,
-    user: { id: user.id, email: user.email, name: user.name },
-    issued: { sessionId: replacement.id, accessToken, refreshToken: null },
-  }
-}
-
-/**
- * Exchange a refresh token for a new session (refresh-token rotation).
- * Shared by POST /api/v1/auth/refresh and the page proxy.
- */
+/** Refresh (rotate or grace-replay). Shared by POST /api/v1/auth/refresh and the page proxy. */
 export async function rotateSession(
   refreshToken: string | null | undefined,
-  userAgent?: string | null,
-  now: Date = new Date(),
+  opts: { clientType: ClientType; userAgent?: string | null },
 ): Promise<RotateResult> {
-  if (!refreshToken) return { ok: false, reason: 'missing', clearCookies: true }
-  if (refreshToken.length > REFRESH_TOKEN_MAX_LENGTH) return { ok: false, reason: 'invalid', clearCookies: true }
-
-  const current = await db.session.findUnique({
-    where: { tokenHash: hashToken(refreshToken) },
-    include: { user: { select: { id: true, email: true, name: true } } },
-  })
-  if (!current) return { ok: false, reason: 'invalid', clearCookies: true }
-
-  if (current.revokedAt) {
-    if (current.replacedById && now.getTime() - current.revokedAt.getTime() <= REUSE_GRACE_MS) {
-      // Another request rotated this token moments ago; its response carries
-      // the new refresh cookie. Do not punish the user.
-      return graceAccess(current.replacedById, current.user, now)
-    }
-    if (current.replacedById) {
-      // A rotated token came back: someone else holds a copy. Kill every session.
-      await db.session.updateMany({
-        where: { userId: current.userId, revokedAt: null },
-        data: { revokedAt: now },
-      })
-      log.warn('refresh token reuse detected; all sessions revoked', { userId: current.userId })
-      return { ok: false, reason: 'reuse', clearCookies: true }
-    }
-    // Revoked by logout / mass revocation — not a rotation, nothing more to do.
-    return { ok: false, reason: 'revoked', clearCookies: true }
-  }
-
-  if (current.expiresAt.getTime() <= now.getTime()) {
-    return { ok: false, reason: 'expired', clearCookies: true }
-  }
-
-  const nextToken = generateRefreshToken()
-  let nextId: string
-  try {
-    nextId = await db.$transaction(async (tx) => {
-      const next = await tx.session.create({
-        data: {
-          userId: current.userId,
-          tokenHash: hashToken(nextToken),
-          expiresAt: new Date(now.getTime() + getRefreshTokenTtlSeconds() * 1000),
-          userAgent: truncateUserAgent(userAgent) ?? current.userAgent,
-          lastUsedAt: now,
-        },
-        select: { id: true },
-      })
-      // Conditional update: if a concurrent request already rotated this row,
-      // count is 0 and the whole transaction (incl. the new row) rolls back.
-      const { count } = await tx.session.updateMany({
-        where: { id: current.id, revokedAt: null },
-        data: { revokedAt: now, replacedById: next.id, lastUsedAt: now },
-      })
-      if (count !== 1) throw new LostRotationRace()
-      return next.id
-    })
-  } catch (err) {
-    if (err instanceof LostRotationRace) {
-      const winner = await db.session.findUnique({ where: { id: current.id }, select: { replacedById: true } })
-      if (winner?.replacedById) return graceAccess(winner.replacedById, current.user, now)
-      return { ok: false, reason: 'race', clearCookies: false }
-    }
-    throw err
-  }
-
-  const user = current.user
-  const accessToken = await signAccessToken({ sub: user.id, email: user.email, sid: nextId })
-  return {
-    ok: true,
-    user: { id: user.id, email: user.email, name: user.name },
-    issued: { sessionId: nextId, accessToken, refreshToken: nextToken },
-  }
+  const result = await refreshSession(db, refreshToken, opts)
+  if (result.ok) return result
+  return { ok: false, code: result.code, clearCookies: TERMINAL_SESSION_CODES.has(result.code) }
 }
 
-/** Revoke the session identified by a refresh token and/or an access-token sid. Idempotent. */
-export async function revokeSession(
-  opts: { refreshToken?: string | null; sid?: string | null; userId?: string | null },
-  now: Date = new Date(),
-): Promise<void> {
-  if (opts.refreshToken && opts.refreshToken.length <= REFRESH_TOKEN_MAX_LENGTH) {
-    await db.session.updateMany({
-      where: { tokenHash: hashToken(opts.refreshToken), revokedAt: null },
-      data: { revokedAt: now },
-    })
-  }
-  if (opts.sid && opts.userId) {
-    await db.session.updateMany({
-      where: { id: opts.sid, userId: opts.userId, revokedAt: null },
-      data: { revokedAt: now },
-    })
-  }
+/** Logout: revoke the family of the session named by a refresh token or an access-token sid. */
+export function revokeSession(opts: { refreshToken?: string | null; sid?: string | null; userId?: string | null }) {
+  return endSession(db, opts)
 }
 
 // ─── Request authentication ─────────────────────────────────────────────────

@@ -23,6 +23,8 @@ cp .env.example .env
 # Generate two different secrets (>= 32 chars) and put them in .env as
 # JWT_SECRET and MEDIA_SIGNING_SECRET:
 openssl rand -base64 48
+# ...and the session encryption key (exactly 32 bytes) as SESSION_ENC_KEY:
+openssl rand -base64 32
 # Also set POSTGRES_PASSWORD.
 docker compose up --build
 ```
@@ -73,13 +75,16 @@ See `.env.example`. The server exits at startup if the required secrets are miss
 | `DATABASE_URL` | Postgres connection string for running outside Docker |
 | `JWT_SECRET` | Required. Access-token signing secret, >= 32 chars |
 | `ACCESS_TOKEN_TTL_SECONDS` | Access cookie/JWT lifetime (default 900, min 10) |
-| `REFRESH_TOKEN_TTL_DAYS` | Refresh session lifetime (default 30) |
+| `REFRESH_TOKEN_TTL_DAYS` | Refresh token lifetime without use (default 30); every login is capped at 90 days |
+| `SESSION_ENC_KEY` | Required. 32 random bytes, base64 (`openssl rand -base64 32`), independent of other secrets. Encrypts the successor refresh token kept for 60 s after a rotation |
+| `SESSION_ENC_DECRYPT_KEYS` | Optional, ≤ 2 comma-separated decrypt-only keys for staged rotation of `SESSION_ENC_KEY` |
 | `COOKIE_SECURE` | Cookies are `Secure` in production; `0` disables (plain-http testing on a non-localhost host only) |
 | `LOG_LEVEL` | `debug` / `info` (default) / `warn` / `error` — JSON logs, sensitive data redacted |
 | `MEDIA_SIGNING_SECRET` | Required. HMAC key for signed media URLs, >= 32 chars, distinct |
 | `STORAGE_DRIVER` | Only `local` is implemented |
 | `STORAGE_LOCAL_DIR` | Upload directory (default `./storage/uploads`) |
 | `MEDIA_URL_TTL_SECONDS` | Signed media URL lifetime (default 3600) |
+| `PUBLIC_BASE_URL` | Optional. Origin for absolute image URLs (mobile), e.g. `https://api.atlas.example`; https in production; never derived from the Host header |
 | `WEATHER_PROVIDER` | `open-meteo` (default) or `mock`. Verify Open-Meteo's terms before commercial launch |
 | `LLM_PROVIDER` | Only the Z.ai SDK provider exists; no provider is selected yet (see `docs/ai/provider-evaluation.md`) |
 | `TRUST_PROXY` | `1` only behind a proxy that overwrites `X-Forwarded-For`; enables per-IP rate limits |
@@ -88,8 +93,8 @@ See `.env.example`. The server exits at startup if the required secrets are miss
 ## Security notes
 
 - Never commit `.env`, databases or user photos. Secrets must be distinct, >= 32 chars; old default secrets are rejected. JWTs are verified as HS256 only.
-- Uploads are private (not under `public/`) and served through HMAC-signed, expiring URLs. These are bearer URLs until they expire.
-- Sessions use HttpOnly, SameSite=Lax cookies: a 15-minute access JWT and an opaque refresh token stored only as a SHA-256 hash, rotated on every refresh; reuse of a rotated token revokes all of the user's sessions. Cross-origin state-changing requests with session cookies are rejected (403). Bearer tokens remain accepted for future API clients.
+- Uploads are private (not under `public/`) and served through HMAC-signed, expiring URLs. These are bearer URLs until they expire. Each upload is stored as a metadata-free master (never served), a 1600 px display WebP (`url`) and a 400 px thumbnail WebP; HEIC must be converted by the client (415). `Idempotency-Key` makes upload retries safe. See `docs/architecture/media.md`.
+- Sessions: a 15-minute access JWT and an opaque refresh token stored only as a SHA-256 hash, rotated on every refresh, grouped per login into a session family with a 90-day absolute limit. A rotated token presented again within 60 s gets the same new token (concurrent or retried requests); later, it revokes that family. The web app keeps both tokens in HttpOnly, SameSite=Lax cookies; the mobile app (`X-Atlas-Client: mobile`) receives them in JSON and uses `Authorization: Bearer`. Cross-origin state-changing requests with session cookies are rejected (403). See `docs/architecture/sessions.md`.
 - Auth endpoints are rate limited in memory, per process.
 - Deleting an item removes its files; deleting an account removes all its data and its storage directory.
 - This repo is private during development. See the known risks in `docs/architecture/phase-1-changes.md`.

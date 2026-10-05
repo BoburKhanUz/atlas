@@ -27,6 +27,8 @@ if (!DATABASE_URL) {
 
 const JWT_SECRET = secret('JWT_SECRET')
 const MEDIA_SIGNING_SECRET = secret('MEDIA_SIGNING_SECRET')
+// exactly 32 random bytes, base64
+const SESSION_ENC_KEY = process.env.SESSION_ENC_KEY || randomBytes(32).toString('base64')
 const STORAGE_LOCAL_DIR = process.env.STORAGE_LOCAL_DIR || mkdtempSync(path.join(tmpdir(), 'atlas-e2e-storage-'))
 
 const baseEnv = {
@@ -34,6 +36,7 @@ const baseEnv = {
   DATABASE_URL,
   JWT_SECRET,
   MEDIA_SIGNING_SECRET,
+  SESSION_ENC_KEY,
   STORAGE_LOCAL_DIR,
   WEATHER_PROVIDER: 'mock',
   NODE_ENV: 'production',
@@ -69,12 +72,12 @@ export default defineConfig({
   projects: [
     {
       name: 'main',
-      testIgnore: /session\.spec\.ts/,
+      testIgnore: /session(-[\w-]+)?\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], baseURL: `http://127.0.0.1:${PORT}` },
     },
     {
       name: 'session',
-      testMatch: /session\.spec\.ts/,
+      testMatch: /session(-[\w-]+)?\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], baseURL: `http://127.0.0.1:${SESSION_PORT}` },
     },
   ],

@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "description": "Session recovery contract for ATLAS clients (web and the future Flutter app). Each vector is the sequence of POST /api/v1/auth/refresh responses a client sees after a request returned 401, and what the client must do. Web reference implementation: apps/web/src/lib/session-recovery.ts. Checked by apps/web/tests/unit/recovery-vectors.test.ts against the OpenAPI document and the web implementation.",
+  "rules": {
+    "maxRefreshAttemptsPerEpisode": 3,
+    "coolDownAfterFailedEpisodeMs": 30000,
+    "networkRetryWindowMs": 45000,
+    "networkRetryDelaysMs": [1000, 2000],
+    "raceRetryDelayMs": { "min": 300, "max": 800 },
+    "neverCallLogoutOnFailure": true,
+    "terminalCodes": ["INVALID_TOKEN", "SESSION_EXPIRED", "SESSION_REVOKED", "REFRESH_REUSED", "CLIENT_MISMATCH"]
+  },
+  "vectors": [
+    {
+      "id": "V01-refreshed",
+      "refreshResponses": [{ "status": 200 }],
+      "expected": { "episode": "recovered", "refreshCalls": 1, "originalRetries": 1 },
+      "web": "Cookies were updated by the server; retry the original request once.",
+      "mobile": "Save the new token pair to secure storage first, then drop the old pair from memory; retry the original request once."
+    },
+    {
+      "id": "V02-race-then-ok",
+      "refreshResponses": [{ "status": 401, "code": "SESSION_RACE" }],
+      "originalRetryStatuses": [200],
+      "expected": { "episode": "recovered", "refreshCalls": 1, "originalRetries": 1 },
+      "web": "Another tab rotated the shared cookies: wait 300–800 ms, retry the original request once without refreshing.",
+      "mobile": "Re-read secure storage: if it holds a newer token (another isolate saved it), retry the refresh with it; if it is the same token, wait 1 s and retry the refresh once (a grace replay may succeed)."
+    },
+    {
+      "id": "V03-race-retry-401-then-refreshed",
+      "refreshResponses": [{ "status": 401, "code": "SESSION_RACE" }, { "status": 200 }],
+      "originalRetryStatuses": [401],
+      "expected": { "episode": "recovered", "refreshCalls": 2, "originalRetries": 2 },
+      "web": "The retried request still got 401: make one more refresh; on success retry the request once more.",
+      "mobile": "Same as V02; the second refresh attempt counts toward the limit of 3."
+    },
+    {
+      "id": "V04-race-twice",
+      "refreshResponses": [{ "status": 401, "code": "SESSION_RACE" }, { "status": 401, "code": "SESSION_RACE" }],
+      "originalRetryStatuses": [401],
+      "expected": { "episode": "login", "refreshCalls": 2, "originalRetries": 1 },
+      "web": "Go to /login?next=…&expired=1. Do not call logout.",
+      "mobile": "Delete the local tokens without any server call and show login. Never present that token again (after 60 s it would count as reuse)."
+    },
+    {
+      "id": "V05-terminal",
+      "refreshResponsesEachOf": ["INVALID_TOKEN", "SESSION_EXPIRED", "SESSION_REVOKED", "REFRESH_REUSED", "CLIENT_MISMATCH"],
+      "refreshResponses": [{ "status": 401, "code": "<each terminal code>" }],
+      "expected": { "episode": "login", "refreshCalls": 1, "originalRetries": 0 },
+      "web": "Go to /login?next=…&expired=1; no retries.",
+      "mobile": "Delete the local tokens and show login; no retries."
+    },
+    {
+      "id": "V06-busy-then-ok",
+      "refreshResponses": [{ "status": 503, "code": "SESSION_BUSY", "retryAfterSeconds": 1 }, { "status": 200 }],
+      "expected": { "episode": "recovered", "refreshCalls": 2, "originalRetries": 1 },
+      "web": "Wait Retry-After plus a random 0–500 ms, then refresh again.",
+      "mobile": "Same; the session and tokens are kept."
+    },
+    {
+      "id": "V07-busy-three-times",
+      "refreshResponses": [
+        { "status": 503, "code": "SESSION_BUSY", "retryAfterSeconds": 1 },
+        { "status": 503, "code": "SESSION_BUSY", "retryAfterSeconds": 1 },
+        { "status": 503, "code": "SESSION_BUSY", "retryAfterSeconds": 1 }
+      ],
+      "expected": { "episode": "busy", "refreshCalls": 3, "originalRetries": 0 },
+      "web": "Show an inline 'server busy, retry' message; keep the session; no automatic refresh for 30 s.",
+      "mobile": "Show an error banner; keep the tokens; no automatic refresh for 30 s."
+    },
+    {
+      "id": "V08-network-then-ok",
+      "refreshResponses": [{ "network": "timeout" }, { "status": 200 }],
+      "expected": { "episode": "recovered", "refreshCalls": 2, "originalRetries": 1 },
+      "web": "Retry the same refresh after 1 s (the server replays a rotation for 60 s, so this is safe).",
+      "mobile": "Same, using the monotonic clock."
+    },
+    {
+      "id": "V09-network-three-times",
+      "refreshResponses": [{ "network": "timeout" }, { "network": "timeout" }, { "network": "timeout" }],
+      "expected": { "episode": "offline", "refreshCalls": 3, "originalRetries": 0 },
+      "web": "Retries after 1 s and 2 s, only within 45 s of the first attempt; then an offline message; keep the cookies; 30 s cool-down.",
+      "mobile": "Show offline mode and keep the token. The next episode presents it once: if the lost request never reached the server it succeeds, otherwise REFRESH_REUSED and the user signs in again (accepted trade-off)."
+    }
+  ]
+}

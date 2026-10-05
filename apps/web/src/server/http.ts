@@ -16,23 +16,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z, type ZodType } from 'zod'
 import crypto from 'crypto'
 import { log } from '@/server/log'
+import { SessionBusyError } from '@/server/session/protocol'
+import type { ERROR_CODES } from '@/server/schemas/responses'
 
 // Built-in validation messages in Uzbek (Zod ships uz/ru/en locales; switch
 // per request when ru/en are added). Explicit schema messages still win.
 z.config(z.locales.uz())
 
-export type ErrorCode =
-  | 'BAD_REQUEST'
-  | 'VALIDATION_ERROR'
-  | 'UNAUTHORIZED'
-  | 'FORBIDDEN'
-  | 'NOT_FOUND'
-  | 'CONFLICT'
-  | 'PAYLOAD_TOO_LARGE'
-  | 'UNSUPPORTED_MEDIA_TYPE'
-  | 'INVALID_IMAGE'
-  | 'RATE_LIMITED'
-  | 'INTERNAL'
+// The list itself lives with the documented response schemas, so the OpenAPI
+// document can never miss a code (src/server/schemas/responses.ts).
+// Session protocol codes: SESSION_RACE / SESSION_BUSY are retryable, the other
+// session 401s are terminal.
+export type ErrorCode = (typeof ERROR_CODES)[number]
 
 const DEFAULT_MESSAGES: Record<ErrorCode, string> = {
   BAD_REQUEST: 'Yaroqsiz so‘rov',
@@ -44,8 +39,19 @@ const DEFAULT_MESSAGES: Record<ErrorCode, string> = {
   PAYLOAD_TOO_LARGE: 'So‘rov hajmi juda katta',
   UNSUPPORTED_MEDIA_TYPE: 'Qo‘llab-quvvatlanmaydigan format',
   INVALID_IMAGE: 'Rasm faylini o‘qib bo‘lmadi',
+  UNSUPPORTED_IMAGE_FORMAT: 'Faqat JPG, PNG yoki WEBP rasmlar qabul qilinadi (HEIC emas)',
+  IMAGE_DIMENSIONS: 'Rasm o‘lchami: eng kichik tomoni kamida 256 px, eng katta tomoni ko‘pi bilan 8000 px bo‘lishi kerak',
+  IDEMPOTENCY_KEY_MISMATCH: 'Bu Idempotency-Key boshqa so‘rov uchun ishlatilgan',
+  IDEMPOTENCY_IN_PROGRESS: 'Xuddi shu so‘rov hali bajarilmoqda. Birozdan so‘ng qayta urinib ko‘ring.',
   RATE_LIMITED: 'Juda ko‘p urinish. Birozdan so‘ng qayta urinib ko‘ring.',
   INTERNAL: 'Serverda xatolik yuz berdi. Keyinroq qayta urinib ko‘ring.',
+  INVALID_TOKEN: 'Sessiya topilmadi. Qayta kiring.',
+  SESSION_EXPIRED: 'Sessiya muddati tugadi. Qayta kiring.',
+  SESSION_REVOKED: 'Sessiya yakunlangan. Qayta kiring.',
+  REFRESH_REUSED: 'Xavfsizlik uchun sessiya yakunlandi. Qayta kiring.',
+  SESSION_RACE: 'Sessiya boshqa so‘rov tomonidan yangilandi. Qayta urinib ko‘ring.',
+  CLIENT_MISMATCH: 'Bu sessiya boshqa ilova turi uchun. Qayta kiring.',
+  SESSION_BUSY: 'Server band. Birozdan so‘ng qayta urinib ko‘ring.',
 }
 
 const STATUS: Record<ErrorCode, number> = {
@@ -58,8 +64,24 @@ const STATUS: Record<ErrorCode, number> = {
   PAYLOAD_TOO_LARGE: 413,
   UNSUPPORTED_MEDIA_TYPE: 415,
   INVALID_IMAGE: 422,
+  UNSUPPORTED_IMAGE_FORMAT: 415,
+  IMAGE_DIMENSIONS: 422,
+  IDEMPOTENCY_KEY_MISMATCH: 409,
+  IDEMPOTENCY_IN_PROGRESS: 409,
   RATE_LIMITED: 429,
   INTERNAL: 500,
+  INVALID_TOKEN: 401,
+  SESSION_EXPIRED: 401,
+  SESSION_REVOKED: 401,
+  REFRESH_REUSED: 401,
+  SESSION_RACE: 401,
+  CLIENT_MISMATCH: 401,
+  SESSION_BUSY: 503,
+}
+
+/** HTTP status for an error code (used by the OpenAPI document). */
+export function errorStatus(code: ErrorCode): number {
+  return STATUS[code]
 }
 
 export interface ErrorDetail {
@@ -100,6 +122,11 @@ export function errorResponse(err: ApiError, requestId?: string): NextResponse {
   )
 }
 
+/** 503 SESSION_BUSY: retry after a second (lock contention on one session family). */
+export function sessionBusy(): ApiError {
+  return new ApiError('SESSION_BUSY', undefined, undefined, { 'Retry-After': '1' })
+}
+
 /** Convenience for handlers that return instead of throw. */
 export function apiError(code: ErrorCode, message?: string, details?: ErrorDetail[]) {
   return errorResponse(new ApiError(code, message, details))
@@ -116,11 +143,18 @@ export function withApi<C = unknown>(handler: Handler<C>): Handler<C> {
     try {
       const res = await handler(req, ctx)
       res.headers.set('x-request-id', requestId)
-      if (res.status >= 500) log.error('request failed', { requestId, method: req.method, path, status: res.status })
+      // 503 + Retry-After (SESSION_BUSY) is expected contention, not a failure
+      if (res.status === 503 && res.headers.has('retry-after')) log.warn('request deferred', { requestId, method: req.method, path, status: res.status })
+      else if (res.status >= 500) log.error('request failed', { requestId, method: req.method, path, status: res.status })
       return res
     } catch (err) {
+      if (err instanceof SessionBusyError) {
+        log.warn('session store busy', { requestId, method: req.method, path })
+        return errorResponse(sessionBusy(), requestId)
+      }
       if (err instanceof ApiError) {
-        if (err.status >= 500) log.error('request failed', { requestId, method: req.method, path, err })
+        if (err.code === 'SESSION_BUSY') log.warn('request deferred', { requestId, method: req.method, path, code: err.code })
+        else if (err.status >= 500) log.error('request failed', { requestId, method: req.method, path, err })
         return errorResponse(err, requestId)
       }
       log.error('unhandled error', { requestId, method: req.method, path, ms: Date.now() - started, err })

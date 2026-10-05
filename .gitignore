@@ -23,3 +23,6 @@ apps/web/public/uploads/
 # Logs & OS noise
 *.log
 .DS_Store
+
+# generated Dart client (CI / local check only)
+/.dart-client/

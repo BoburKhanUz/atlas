@@ -24,6 +24,7 @@ fi
 # Random per-run secrets (never printed).
 export JWT_SECRET="${JWT_SECRET:-$(openssl rand -hex 32)}"
 export MEDIA_SIGNING_SECRET="${MEDIA_SIGNING_SECRET:-$(openssl rand -hex 32)}"
+export SESSION_ENC_KEY="${SESSION_ENC_KEY:-$(openssl rand -base64 32)}"
 export STORAGE_LOCAL_DIR="${STORAGE_LOCAL_DIR:-$(mktemp -d -t atlas-e2e-storage.XXXXXX)}"
 
 exec npx playwright test "$@"

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures'
 import { cookieByName, registerViaApi, registerViaUi, uniqueUser } from './helpers'
 
 /**
@@ -145,14 +145,20 @@ test.describe('session lifecycle', () => {
   })
 
   test('refresh rotation: replaying the pre-rotation token (after grace) is rejected, session revoked', async ({ page, playwright, baseURL }) => {
-    test.setTimeout(60_000)
+    test.setTimeout(120_000)
     const user = uniqueUser('rot')
     await registerViaApi(page.request, user)
     const rt1 = cookieByName(await page.context().cookies(), 'atlas_rt')!.value
     expect((await page.request.post('/api/v1/auth/refresh')).status()).toBe(200)
     const rt2 = cookieByName(await page.context().cookies(), 'atlas_rt')!.value
     expect(rt2).not.toBe(rt1)
-    await page.waitForTimeout(31_000) // REUSE_GRACE_MS = 30s
+    // within 60 s the old token would get the same new token back (grace replay)
+    const replay = await playwright.request.newContext({ baseURL, extraHTTPHeaders: { Cookie: `atlas_rt=${rt1}` } })
+    const replayed = await replay.post('/api/v1/auth/refresh')
+    expect(replayed.status()).toBe(200)
+    expect(replayed.headers()['set-cookie']).toContain(`atlas_rt=${rt2}`)
+    await replay.dispose()
+    await page.waitForTimeout(61_000) // grace window: 60 s
 
     const attacker = await playwright.request.newContext({ baseURL, extraHTTPHeaders: { Cookie: `atlas_rt=${rt1}` } })
     expect((await attacker.post('/api/v1/auth/refresh')).status()).toBe(401)

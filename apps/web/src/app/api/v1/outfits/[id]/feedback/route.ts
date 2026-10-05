@@ -1,26 +1,21 @@
 import { NextResponse } from 'next/server'
-import { z } from 'zod'
 import { db } from '@/lib/db'
 import { requireAuth, unauthorized } from '@/lib/api-helpers'
 import { ApiError, withApi, parseJson, validate } from '@/server/http'
 import { idParamsSchema } from '@/server/schemas/common'
+import { OutfitFeedbackRequest } from '@/server/schemas/requests'
 
 export const runtime = 'nodejs'
 
 // POST /api/v1/outfits/[id]/feedback — record user feedback (liked/disliked/
 // saved/rejected). Spec section 12 ("previously rejected combinations") +
 // section 17 ("👍 Yoqdi / 👎 Yoqmadi / ❤️ Saqlash / 🔄 Boshqa variant").
-const FeedbackSchema = z.object({
-  feedback: z.enum(['liked', 'disliked', 'saved', 'rejected']),
-  note: z.string().trim().max(500).optional(),
-})
-
 export const POST = withApi<{ params: Promise<{ id: string }> }>(async (req, ctx) => {
   const authUser = await requireAuth(req)
   if (!authUser) return unauthorized()
 
   const { id } = validate(await ctx.params, idParamsSchema)
-  const data = await parseJson(req, FeedbackSchema)
+  const data = await parseJson(req, OutfitFeedbackRequest)
 
   // Verify ownership of the outfit
   const outfit = await db.outfit.findFirst({

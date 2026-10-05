@@ -75,7 +75,11 @@ export function getMediaSigningSecret(): string {
 
 /** Absolute directory for the local storage driver. Outside `public/` by default. */
 export function getLocalStorageDir(): string {
-  return path.resolve(process.env.STORAGE_LOCAL_DIR || './storage/uploads')
+  // Runtime data, never a build input: without the hint Turbopack (Next 16.3)
+  // cannot resolve this dynamic path at build time and traces the whole
+  // project (sources, tests, and any local storage/ or .env files) into
+  // .next/standalone. Same marker Next.js uses for its own runtime directories.
+  return path.resolve(/* turbopackIgnore: true */ process.env.STORAGE_LOCAL_DIR || './storage/uploads')
 }
 
 /** Lifetime of signed media URLs, in seconds (default 1 hour). */
@@ -84,9 +88,91 @@ export function getMediaUrlTtlSeconds(): number {
   return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 3600
 }
 
+const SESSION_ENC_KEY_BYTES = 32
+const MAX_DECRYPT_ONLY_KEYS = 2
+
+function decodeSessionKey(name: string, raw: string): Buffer {
+  const value = raw.trim()
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(value)) {
+    throw new ConfigError(`${name} must be base64. Generate one with: openssl rand -base64 32`)
+  }
+  const key = Buffer.from(value, 'base64')
+  if (key.length !== SESSION_ENC_KEY_BYTES) {
+    throw new ConfigError(`${name} must decode to exactly ${SESSION_ENC_KEY_BYTES} bytes (openssl rand -base64 32)`)
+  }
+  for (const other of ['JWT_SECRET', 'MEDIA_SIGNING_SECRET']) {
+    const o = process.env[other]
+    if (o && (o.trim() === value || Buffer.from(o, 'utf8').equals(key))) {
+      throw new ConfigError(`${name} must be independent of ${other}`)
+    }
+  }
+  return key
+}
+
+export interface SessionEncKeys {
+  /** Encrypts new successor tokens (and decrypts). */
+  active: Buffer
+  /** Decrypt-only keys for staged rotation (SESSION_ENC_DECRYPT_KEYS, comma-separated, ≤ 2). */
+  decryptOnly: Buffer[]
+}
+
+/**
+ * Keys for the encrypted successor refresh token kept on a rotated session
+ * (grace replay). SESSION_ENC_KEY is independent of every other secret.
+ * Rotation: stage the new key in SESSION_ENC_DECRYPT_KEYS on every instance,
+ * then make it SESSION_ENC_KEY (old key moves to the decrypt list), then drop
+ * the old key after the grace window (60 s) has passed.
+ */
+export function getSessionEncKeys(): SessionEncKeys {
+  const raw = process.env.SESSION_ENC_KEY
+  if (!raw) throw new ConfigError('SESSION_ENC_KEY is not set. Generate one with: openssl rand -base64 32')
+  const active = decodeSessionKey('SESSION_ENC_KEY', raw)
+  const list = (process.env.SESSION_ENC_DECRYPT_KEYS ?? '')
+    .split(',')
+    .map((k) => k.trim())
+    .filter(Boolean)
+  if (list.length > MAX_DECRYPT_ONLY_KEYS) {
+    throw new ConfigError(`SESSION_ENC_DECRYPT_KEYS accepts at most ${MAX_DECRYPT_ONLY_KEYS} keys`)
+  }
+  const decryptOnly = list.map((k) => decodeSessionKey('SESSION_ENC_DECRYPT_KEYS', k)).filter((k) => !k.equals(active))
+  return { active, decryptOnly }
+}
+
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]'])
+
+/**
+ * Public origin used to build ABSOLUTE media URLs (mobile clients need them).
+ * Never derived from the request's Host header. Unset → relative URLs.
+ * Must be an origin only (no path, query, fragment or credentials); https in
+ * production except for localhost.
+ */
+export function getPublicBaseUrl(): string | null {
+  const raw = process.env.PUBLIC_BASE_URL?.trim()
+  if (!raw) return null
+  let url: URL
+  try {
+    url = new URL(raw)
+  } catch {
+    throw new ConfigError('PUBLIC_BASE_URL must be an absolute URL such as https://atlas.example')
+  }
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') throw new ConfigError('PUBLIC_BASE_URL must use http(s)')
+  if (url.username || url.password || url.search || url.hash || (url.pathname !== '/' && url.pathname !== '')) {
+    throw new ConfigError('PUBLIC_BASE_URL must be an origin only (no path, query, fragment or credentials)')
+  }
+  if (raw.replace(/\/$/, '').toLowerCase() !== url.origin) {
+    throw new ConfigError('PUBLIC_BASE_URL must be an origin only (no path, query, fragment or credentials)')
+  }
+  if (process.env.NODE_ENV === 'production' && url.protocol !== 'https:' && !LOCAL_HOSTS.has(url.hostname)) {
+    throw new ConfigError('PUBLIC_BASE_URL must use https in production')
+  }
+  return url.origin
+}
+
 /** Throws if any required secret is missing or insecure. */
 export function assertServerConfig(): void {
   if (!process.env.DATABASE_URL) throw new ConfigError('DATABASE_URL is not set')
   getJwtSecret()
   getMediaSigningSecret()
+  getSessionEncKeys()
+  getPublicBaseUrl()
 }

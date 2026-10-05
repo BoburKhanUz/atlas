@@ -1,0 +1,6339 @@
+{
+  "components": {
+    "schemas": {
+      "AuthResponse": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/MobileAuthResponse"
+          },
+          {
+            "$ref": "#/components/schemas/WebAuthResponse"
+          }
+        ]
+      },
+      "ColorAnalysisResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "colorProfile": {
+            "additionalProperties": false,
+            "properties": {
+              "analyzedAt": {
+                "description": "ISO 8601, UTC",
+                "format": "date-time",
+                "type": "string"
+              },
+              "cautionColors": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "confidence": {
+                "type": "number"
+              },
+              "contrastLevel": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "eyeColor": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "hairColor": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "id": {
+                "type": "string"
+              },
+              "neutralColors": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "recommendedColors": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "season": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "skinTone": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "undertone": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "undertone",
+              "season",
+              "contrastLevel",
+              "recommendedColors",
+              "neutralColors",
+              "cautionColors",
+              "skinTone",
+              "hairColor",
+              "eyeColor",
+              "analyzedAt",
+              "confidence"
+            ],
+            "type": "object"
+          },
+          "disclaimer": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "colorProfile",
+          "disclaimer"
+        ],
+        "type": "object"
+      },
+      "ColorProfileResponse": {
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "colorProfile": {
+                "type": "null"
+              },
+              "message": {
+                "type": "string"
+              },
+              "status": {
+                "const": "not_analyzed",
+                "type": "string"
+              }
+            },
+            "required": [
+              "status",
+              "colorProfile",
+              "message"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "colorProfile": {
+                "additionalProperties": false,
+                "properties": {
+                  "analyzedAt": {
+                    "description": "ISO 8601, UTC",
+                    "format": "date-time",
+                    "type": "string"
+                  },
+                  "cautionColors": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "contrastLevel": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "eyeColor": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "hairColor": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "neutralColors": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "recommendedColors": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "season": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "skinTone": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "undertone": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "undertone",
+                  "season",
+                  "contrastLevel",
+                  "recommendedColors",
+                  "neutralColors",
+                  "cautionColors",
+                  "skinTone",
+                  "hairColor",
+                  "eyeColor",
+                  "analyzedAt"
+                ],
+                "type": "object"
+              },
+              "disclaimer": {
+                "type": "string"
+              },
+              "status": {
+                "const": "analyzed",
+                "type": "string"
+              }
+            },
+            "required": [
+              "status",
+              "colorProfile",
+              "disclaimer"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "ConversationListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "conversations": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "lastMessage": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "lastRole": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "title": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "updatedAt": {
+                  "description": "ISO 8601, UTC",
+                  "format": "date-time",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "updatedAt",
+                "lastMessage",
+                "lastRole"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "conversations"
+        ],
+        "type": "object"
+      },
+      "ConversationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "conversation": {
+            "properties": {
+              "createdAt": {
+                "description": "ISO 8601, UTC",
+                "format": "date-time",
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "messages": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "content": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "description": "ISO 8601, UTC",
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "role",
+                    "content",
+                    "createdAt"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "title": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "updatedAt": {
+                "description": "ISO 8601, UTC",
+                "format": "date-time",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "createdAt",
+              "updatedAt",
+              "messages"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "conversation"
+        ],
+        "type": "object"
+      },
+      "CorrectionLogEntry": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "description": "ISO 8601, UTC",
+            "format": "date-time",
+            "type": "string"
+          },
+          "field": {
+            "type": "string"
+          },
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "from",
+          "to",
+          "at"
+        ],
+        "type": "object"
+      },
+      "Detection": {
+        "additionalProperties": false,
+        "description": "Attributes detected from the photo (mock vision for now)",
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "colors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "confidence": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "propertyNames": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "fit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "formality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "material": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mock": {
+            "const": true,
+            "type": "boolean"
+          },
+          "pattern": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "season": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "sleeveLength": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "style": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "subcategory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "category",
+          "subcategory",
+          "colors",
+          "pattern",
+          "material",
+          "sleeveLength",
+          "fit",
+          "style",
+          "season",
+          "gender",
+          "formality",
+          "confidence",
+          "mock"
+        ],
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "additionalProperties": false,
+        "description": "Every error response. Clients branch on `code`, never on `error`.",
+        "properties": {
+          "code": {
+            "enum": [
+              "BAD_REQUEST",
+              "VALIDATION_ERROR",
+              "UNAUTHORIZED",
+              "FORBIDDEN",
+              "NOT_FOUND",
+              "CONFLICT",
+              "PAYLOAD_TOO_LARGE",
+              "UNSUPPORTED_MEDIA_TYPE",
+              "INVALID_IMAGE",
+              "UNSUPPORTED_IMAGE_FORMAT",
+              "IMAGE_DIMENSIONS",
+              "IDEMPOTENCY_KEY_MISMATCH",
+              "IDEMPOTENCY_IN_PROGRESS",
+              "RATE_LIMITED",
+              "INTERNAL",
+              "INVALID_TOKEN",
+              "SESSION_EXPIRED",
+              "SESSION_REVOKED",
+              "REFRESH_REUSED",
+              "SESSION_RACE",
+              "CLIENT_MISMATCH",
+              "SESSION_BUSY"
+            ],
+            "type": "string"
+          },
+          "details": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "message": {
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path",
+                "message"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "error": {
+            "description": "User-facing message (Uzbek)",
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error",
+          "code"
+        ],
+        "type": "object"
+      },
+      "HealthResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "database": {
+            "enum": [
+              "ok",
+              "unreachable"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "degraded"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "database",
+          "version"
+        ],
+        "type": "object"
+      },
+      "ImageObject": {
+        "additionalProperties": false,
+        "description": "A stored garment image. The full-resolution master is never exposed.",
+        "properties": {
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "isPrimary": {
+            "type": "boolean"
+          },
+          "thumbnailUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Signed URL of the 400 px thumbnail"
+          },
+          "url": {
+            "description": "Signed URL of the 1600 px display image (absolute when PUBLIC_BASE_URL is set)",
+            "type": "string"
+          },
+          "urlExpiresAt": {
+            "description": "When url and thumbnailUrl stop working; cache images by id + variant",
+            "format": "date-time",
+            "type": "string"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "thumbnailUrl",
+          "urlExpiresAt",
+          "isPrimary",
+          "width",
+          "height"
+        ],
+        "type": "object"
+      },
+      "LoginRequest": {
+        "properties": {
+          "deviceName": {
+            "description": "Mobile only: a label for the device in the session list (ignored for web).",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "email": {
+            "format": "email",
+            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object"
+      },
+      "MeResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "user": {
+            "additionalProperties": false,
+            "properties": {
+              "createdAt": {
+                "description": "ISO 8601, UTC",
+                "format": "date-time",
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "email",
+              "name",
+              "createdAt"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "user"
+        ],
+        "type": "object"
+      },
+      "MediaQuery": {
+        "properties": {
+          "exp": {
+            "description": "Expiry (unix seconds), part of the signed URL",
+            "pattern": "^\\d{1,12}$",
+            "type": "string"
+          },
+          "sig": {
+            "description": "HMAC signature, part of the signed URL",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "exp",
+          "sig"
+        ],
+        "type": "object"
+      },
+      "MobileAuthResponse": {
+        "additionalProperties": false,
+        "description": "Mobile mode (X-Atlas-Client: mobile): tokens in the body, no cookies",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "accessTokenExpiresAt": {
+            "description": "ISO 8601, UTC",
+            "format": "date-time",
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          },
+          "refreshTokenExpiresAt": {
+            "description": "ISO 8601, UTC",
+            "format": "date-time",
+            "type": "string"
+          },
+          "sessionExpiresAt": {
+            "description": "Absolute limit of this login (90 days); refresh is impossible afterwards",
+            "format": "date-time",
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/SessionUser"
+          }
+        },
+        "required": [
+          "user",
+          "accessToken",
+          "accessTokenExpiresAt",
+          "refreshToken",
+          "refreshTokenExpiresAt",
+          "sessionExpiresAt"
+        ],
+        "type": "object"
+      },
+      "MobileLogoutRequest": {
+        "properties": {
+          "refreshToken": {
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "MobileRefreshRequest": {
+        "properties": {
+          "refreshToken": {
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "refreshToken"
+        ],
+        "type": "object"
+      },
+      "OkResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "ok": {
+            "const": true,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok"
+        ],
+        "type": "object"
+      },
+      "OutfitDetail": {
+        "properties": {
+          "createdAt": {
+            "description": "ISO 8601, UTC",
+            "format": "date-time",
+            "type": "string"
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "isSaved": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OutfitDetailItem"
+            },
+            "type": "array"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "occasion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedAt": {
+            "description": "ISO 8601, UTC",
+            "format": "date-time",
+            "type": "string"
+          },
+          "weatherSnapshot": {
+            "propertyNames": {
+              "type": "string"
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "occasion",
+          "score",
+          "explanation",
+          "isSaved",
+          "createdAt",
+          "updatedAt",
+          "reasons",
+          "weatherSnapshot",
+          "items"
+        ],
+        "type": "object"
+      },
+      "OutfitDetailItem": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "item": {
+            "additionalProperties": false,
+            "properties": {
+              "category": {
+                "type": "string"
+              },
+              "colors": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "id": {
+                "type": "string"
+              },
+              "images": {
+                "items": {
+                  "$ref": "#/components/schemas/ImageObject"
+                },
+                "type": "array"
+              },
+              "material": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "season": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "style": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "subcategory": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "category",
+              "subcategory",
+              "colors",
+              "style",
+              "material",
+              "season",
+              "images"
+            ],
+            "type": "object"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "wardrobeItemId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "wardrobeItemId",
+          "item"
+        ],
+        "type": "object"
+      },
+      "OutfitDetailResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "outfit": {
+            "$ref": "#/components/schemas/OutfitDetail"
+          }
+        },
+        "required": [
+          "outfit"
+        ],
+        "type": "object"
+      },
+      "OutfitFeedbackRequest": {
+        "properties": {
+          "feedback": {
+            "enum": [
+              "liked",
+              "disliked",
+              "saved",
+              "rejected"
+            ],
+            "type": "string"
+          },
+          "note": {
+            "maxLength": 500,
+            "type": "string"
+          }
+        },
+        "required": [
+          "feedback"
+        ],
+        "type": "object"
+      },
+      "OutfitFeedbackResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "feedback": {
+            "properties": {
+              "createdAt": {
+                "description": "ISO 8601, UTC",
+                "format": "date-time",
+                "type": "string"
+              },
+              "feedback": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "note": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "outfitId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "outfitId",
+              "feedback",
+              "note",
+              "createdAt"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "feedback"
+        ],
+        "type": "object"
+      },
+      "OutfitGenerateRequest": {
+        "properties": {
+          "lat": {
+            "anyOf": [
+              {
+                "maximum": 90,
+                "minimum": -90,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lon": {
+            "anyOf": [
+              {
+                "maximum": 180,
+                "minimum": -180,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "occasion": {
+            "anyOf": [
+              {
+                "enum": [
+                  "work",
+                  "wedding",
+                  "date",
+                  "travel",
+                  "casual",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "seed": {
+            "type": "number"
+          },
+          "topN": {
+            "maximum": 5,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "weather": {
+            "anyOf": [
+              {
+                "properties": {
+                  "condition": {
+                    "maxLength": 40,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "feelsLike": {
+                    "maximum": 80,
+                    "minimum": -100,
+                    "type": "number"
+                  },
+                  "humidity": {
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "precipitationProbability": {
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "temperature": {
+                    "maximum": 70,
+                    "minimum": -90,
+                    "type": "number"
+                  },
+                  "uvIndex": {
+                    "maximum": 30,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "windSpeed": {
+                    "maximum": 500,
+                    "minimum": 0,
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "temperature",
+                  "feelsLike",
+                  "condition",
+                  "precipitationProbability",
+                  "humidity",
+                  "windSpeed",
+                  "uvIndex"
+                ],
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "OutfitGenerateResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "description": "Why no outfits were generated",
+            "type": "string"
+          },
+          "occasion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "outfits": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "contrastLevel": {
+                  "enum": [
+                    "low",
+                    "medium",
+                    "high"
+                  ],
+                  "type": "string"
+                },
+                "explanation": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "factors": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "balance": {
+                      "type": "number"
+                    },
+                    "color": {
+                      "type": "number"
+                    },
+                    "feedback": {
+                      "type": "number"
+                    },
+                    "occasion": {
+                      "type": "number"
+                    },
+                    "preference": {
+                      "type": "number"
+                    },
+                    "season": {
+                      "type": "number"
+                    },
+                    "style": {
+                      "type": "number"
+                    },
+                    "weather": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "weather",
+                    "color",
+                    "occasion",
+                    "style",
+                    "season",
+                    "balance",
+                    "preference",
+                    "feedback"
+                  ],
+                  "type": "object"
+                },
+                "items": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "category": {
+                        "type": "string"
+                      },
+                      "colors": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "id": {
+                        "type": "string"
+                      },
+                      "imageUrl": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "material": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "role": {
+                        "type": "string"
+                      },
+                      "season": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "style": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "subcategory": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "role",
+                      "category",
+                      "subcategory",
+                      "colors",
+                      "style",
+                      "material",
+                      "season",
+                      "imageUrl"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "reasons": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "score": {
+                  "type": "number"
+                },
+                "tempId": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "tempId",
+                "score",
+                "factors",
+                "reasons",
+                "contrastLevel",
+                "items",
+                "explanation"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "wardrobeItemCount": {
+            "type": "integer"
+          },
+          "weatherUsed": {
+            "anyOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "condition": {
+                    "type": "string"
+                  },
+                  "feelsLike": {
+                    "type": "number"
+                  },
+                  "humidity": {
+                    "type": "number"
+                  },
+                  "precipitationProbability": {
+                    "type": "number"
+                  },
+                  "temperature": {
+                    "type": "number"
+                  },
+                  "uvIndex": {
+                    "type": "number"
+                  },
+                  "windSpeed": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "temperature",
+                  "feelsLike",
+                  "condition",
+                  "precipitationProbability",
+                  "humidity",
+                  "windSpeed",
+                  "uvIndex"
+                ],
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "outfits",
+          "weatherUsed",
+          "occasion",
+          "wardrobeItemCount"
+        ],
+        "type": "object"
+      },
+      "OutfitListQuery": {
+        "properties": {
+          "saved": {
+            "enum": [
+              "0",
+              "1",
+              "true",
+              "false"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "OutfitListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "outfits": {
+            "items": {
+              "$ref": "#/components/schemas/OutfitSummary"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "outfits"
+        ],
+        "type": "object"
+      },
+      "OutfitPatchRequest": {
+        "properties": {
+          "isSaved": {
+            "type": "boolean"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "OutfitPatchResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "outfit": {
+            "$ref": "#/components/schemas/OutfitRow"
+          }
+        },
+        "required": [
+          "outfit"
+        ],
+        "type": "object"
+      },
+      "OutfitRow": {
+        "properties": {
+          "createdAt": {
+            "description": "ISO 8601, UTC",
+            "format": "date-time",
+            "type": "string"
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "isSaved": {
+            "type": "boolean"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "occasion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedAt": {
+            "description": "ISO 8601, UTC",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "occasion",
+          "score",
+          "explanation",
+          "isSaved",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "OutfitSaveRequest": {
+        "properties": {
+          "explanation": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "isSaved": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "properties": {
+                "itemId": {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "role": {
+                  "maxLength": 30,
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "itemId",
+                "role"
+              ],
+              "type": "object"
+            },
+            "maxItems": 12,
+            "minItems": 1,
+            "type": "array"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "occasion": {
+            "anyOf": [
+              {
+                "enum": [
+                  "work",
+                  "wedding",
+                  "date",
+                  "travel",
+                  "casual",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reasons": {
+            "items": {
+              "maxLength": 120,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "type": "array"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "maximum": 100,
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "weather": {
+            "anyOf": [
+              {
+                "properties": {
+                  "condition": {
+                    "maxLength": 40,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "feelsLike": {
+                    "maximum": 80,
+                    "minimum": -100,
+                    "type": "number"
+                  },
+                  "humidity": {
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "precipitationProbability": {
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "temperature": {
+                    "maximum": 70,
+                    "minimum": -90,
+                    "type": "number"
+                  },
+                  "uvIndex": {
+                    "maximum": 30,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "windSpeed": {
+                    "maximum": 500,
+                    "minimum": 0,
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "temperature",
+                  "feelsLike",
+                  "condition",
+                  "precipitationProbability",
+                  "humidity",
+                  "windSpeed",
+                  "uvIndex"
+                ],
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "type": "object"
+      },
+      "OutfitSaveResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "outfit": {
+            "properties": {
+              "createdAt": {
+                "description": "ISO 8601, UTC",
+                "format": "date-time",
+                "type": "string"
+              },
+              "explanation": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "id": {
+                "type": "string"
+              },
+              "isSaved": {
+                "type": "boolean"
+              },
+              "items": {
+                "items": {
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "wardrobeItemId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "wardrobeItemId",
+                    "role"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "occasion": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "score": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "updatedAt": {
+                "description": "ISO 8601, UTC",
+                "format": "date-time",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "occasion",
+              "score",
+              "explanation",
+              "isSaved",
+              "createdAt",
+              "updatedAt",
+              "items"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "outfit"
+        ],
+        "type": "object"
+      },
+      "OutfitSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": {
+            "description": "ISO 8601, UTC",
+            "format": "date-time",
+            "type": "string"
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "isSaved": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OutfitSummaryItem"
+            },
+            "type": "array"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "occasion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "weatherSnapshot": {
+            "description": "Weather the outfit was generated for ({} when unknown)",
+            "propertyNames": {
+              "type": "string"
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "occasion",
+          "score",
+          "reasons",
+          "explanation",
+          "isSaved",
+          "weatherSnapshot",
+          "createdAt",
+          "items"
+        ],
+        "type": "object"
+      },
+      "OutfitSummaryItem": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "colors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "type": "string"
+          },
+          "image": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImageObject"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "material": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "season": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "style": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "subcategory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "category",
+          "subcategory",
+          "colors",
+          "style",
+          "material",
+          "season",
+          "image"
+        ],
+        "type": "object"
+      },
+      "PreferencesRow": {
+        "description": "UserPreferences row (list fields as JSON strings)",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "language"
+        ],
+        "type": "object"
+      },
+      "ProfilePatchRequest": {
+        "properties": {
+          "name": {
+            "maxLength": 60,
+            "minLength": 1,
+            "type": "string"
+          },
+          "preferences": {
+            "properties": {
+              "dislikedColors": {
+                "items": {
+                  "enum": [
+                    "white",
+                    "black",
+                    "beige",
+                    "gray",
+                    "navy",
+                    "blue",
+                    "light_blue",
+                    "green",
+                    "olive",
+                    "khaki",
+                    "brown",
+                    "tan",
+                    "red",
+                    "burgundy",
+                    "pink",
+                    "orange",
+                    "yellow",
+                    "purple",
+                    "teal",
+                    "cream",
+                    "ivory",
+                    "rust",
+                    "mustard"
+                  ],
+                  "type": "string"
+                },
+                "maxItems": 20,
+                "type": "array"
+              },
+              "dislikedStyles": {
+                "items": {
+                  "enum": [
+                    "casual",
+                    "smart_casual",
+                    "formal",
+                    "sporty",
+                    "bohemian",
+                    "minimal",
+                    "streetwear",
+                    "classic",
+                    "preppy"
+                  ],
+                  "type": "string"
+                },
+                "maxItems": 20,
+                "type": "array"
+              },
+              "favoriteColors": {
+                "items": {
+                  "enum": [
+                    "white",
+                    "black",
+                    "beige",
+                    "gray",
+                    "navy",
+                    "blue",
+                    "light_blue",
+                    "green",
+                    "olive",
+                    "khaki",
+                    "brown",
+                    "tan",
+                    "red",
+                    "burgundy",
+                    "pink",
+                    "orange",
+                    "yellow",
+                    "purple",
+                    "teal",
+                    "cream",
+                    "ivory",
+                    "rust",
+                    "mustard"
+                  ],
+                  "type": "string"
+                },
+                "maxItems": 20,
+                "type": "array"
+              },
+              "language": {
+                "enum": [
+                  "uz",
+                  "ru",
+                  "en"
+                ],
+                "type": "string"
+              },
+              "preferredStyles": {
+                "items": {
+                  "enum": [
+                    "casual",
+                    "smart_casual",
+                    "formal",
+                    "sporty",
+                    "bohemian",
+                    "minimal",
+                    "streetwear",
+                    "classic",
+                    "preppy"
+                  ],
+                  "type": "string"
+                },
+                "maxItems": 20,
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "profile": {
+            "properties": {
+              "ageRange": {
+                "anyOf": [
+                  {
+                    "maxLength": 60,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "bodyShape": {
+                "anyOf": [
+                  {
+                    "maxLength": 60,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "clothingSize": {
+                "anyOf": [
+                  {
+                    "maxLength": 60,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "eyeColor": {
+                "anyOf": [
+                  {
+                    "maxLength": 60,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "gender": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "male",
+                      "female",
+                      "other",
+                      "unisex"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "hairColor": {
+                "anyOf": [
+                  {
+                    "maxLength": 60,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "height": {
+                "anyOf": [
+                  {
+                    "maximum": 250,
+                    "minimum": 50,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "preferredFit": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "slim",
+                      "regular",
+                      "relaxed",
+                      "oversized"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "skinTone": {
+                "anyOf": [
+                  {
+                    "maxLength": 60,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "skinUndertone": {
+                "anyOf": [
+                  {
+                    "maxLength": 60,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "typicalBudget": {
+                "anyOf": [
+                  {
+                    "maximum": 1000000000,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "weight": {
+                "anyOf": [
+                  {
+                    "maximum": 300,
+                    "minimum": 20,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "ProfilePatchResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "user": {
+            "properties": {
+              "email": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "preferences": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/PreferencesRow"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "profile": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ProfileRow"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "email",
+              "name",
+              "profile",
+              "preferences"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "user"
+        ],
+        "type": "object"
+      },
+      "ProfilePreferences": {
+        "properties": {
+          "dislikedColors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "dislikedStyles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "favoriteColors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "language": {
+            "type": "string"
+          },
+          "preferredStyles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "language",
+          "preferredStyles",
+          "dislikedStyles",
+          "favoriteColors",
+          "dislikedColors"
+        ],
+        "type": "object"
+      },
+      "ProfileResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "preferences": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProfilePreferences"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProfileRow"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "user": {
+            "$ref": "#/components/schemas/ProfileUser"
+          }
+        },
+        "required": [
+          "user",
+          "profile",
+          "preferences"
+        ],
+        "type": "object"
+      },
+      "ProfileRow": {
+        "description": "UserProfile row",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "userId"
+        ],
+        "type": "object"
+      },
+      "ProfileUser": {
+        "properties": {
+          "createdAt": {
+            "description": "ISO 8601, UTC",
+            "format": "date-time",
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "preferences": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PreferencesRow"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProfileRow"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "name",
+          "createdAt",
+          "profile",
+          "preferences"
+        ],
+        "type": "object"
+      },
+      "RegisterRequest": {
+        "properties": {
+          "deviceName": {
+            "description": "Mobile only: a label for the device in the session list (ignored for web).",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "email": {
+            "format": "email",
+            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 60,
+            "minLength": 1,
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 200,
+            "minLength": 8,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object"
+      },
+      "SessionUser": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "name"
+        ],
+        "type": "object"
+      },
+      "StylistChatRequest": {
+        "properties": {
+          "conversationId": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "event": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "weather": {
+            "anyOf": [
+              {
+                "properties": {
+                  "condition": {
+                    "maxLength": 40,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "feelsLike": {
+                    "maximum": 80,
+                    "minimum": -100,
+                    "type": "number"
+                  },
+                  "humidity": {
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "precipitationProbability": {
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "temperature": {
+                    "maximum": 70,
+                    "minimum": -90,
+                    "type": "number"
+                  },
+                  "uvIndex": {
+                    "maximum": 30,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "windSpeed": {
+                    "maximum": 500,
+                    "minimum": 0,
+                    "type": "number"
+                  }
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "type": "object"
+      },
+      "StylistChatResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "assistantMessage": {
+            "type": "string"
+          },
+          "contextSummary": {
+            "additionalProperties": false,
+            "properties": {
+              "eventProvided": {
+                "type": "boolean"
+              },
+              "wardrobeItemCount": {
+                "type": "integer"
+              },
+              "weatherProvided": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "wardrobeItemCount",
+              "weatherProvided",
+              "eventProvided"
+            ],
+            "type": "object"
+          },
+          "conversationId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "conversationId",
+          "assistantMessage",
+          "contextSummary"
+        ],
+        "type": "object"
+      },
+      "WardrobeItem": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "colors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "confidences": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "propertyNames": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "correctionLog": {
+            "items": {
+              "$ref": "#/components/schemas/CorrectionLogEntry"
+            },
+            "type": "array"
+          },
+          "createdAt": {
+            "description": "ISO 8601, UTC",
+            "format": "date-time",
+            "type": "string"
+          },
+          "fit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "formality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "images": {
+            "items": {
+              "$ref": "#/components/schemas/ImageObject"
+            },
+            "type": "array"
+          },
+          "material": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pattern": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "primaryImage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImageObject"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "season": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "sleeveLength": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "style": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "subcategory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedAt": {
+            "description": "ISO 8601, UTC",
+            "format": "date-time",
+            "type": "string"
+          },
+          "wasCorrected": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "category",
+          "subcategory",
+          "colors",
+          "pattern",
+          "material",
+          "sleeveLength",
+          "fit",
+          "style",
+          "season",
+          "gender",
+          "formality",
+          "confidences",
+          "wasCorrected",
+          "correctionLog",
+          "images",
+          "primaryImage",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "WardrobeItemPatchRequest": {
+        "properties": {
+          "category": {
+            "enum": [
+              "outerwear",
+              "shirt",
+              "pants",
+              "dress",
+              "shoes",
+              "bag",
+              "accessory"
+            ],
+            "type": "string"
+          },
+          "colors": {
+            "items": {
+              "enum": [
+                "white",
+                "black",
+                "beige",
+                "gray",
+                "navy",
+                "blue",
+                "light_blue",
+                "green",
+                "olive",
+                "khaki",
+                "brown",
+                "tan",
+                "red",
+                "burgundy",
+                "pink",
+                "orange",
+                "yellow",
+                "purple",
+                "teal",
+                "cream",
+                "ivory",
+                "rust",
+                "mustard"
+              ],
+              "type": "string"
+            },
+            "maxItems": 5,
+            "type": "array"
+          },
+          "fit": {
+            "anyOf": [
+              {
+                "enum": [
+                  "slim",
+                  "regular",
+                  "relaxed",
+                  "oversized"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "formality": {
+            "anyOf": [
+              {
+                "enum": [
+                  "casual",
+                  "smart_casual",
+                  "formal",
+                  "black_tie"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "enum": [
+                  "male",
+                  "female",
+                  "unisex"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "material": {
+            "anyOf": [
+              {
+                "enum": [
+                  "cotton",
+                  "linen",
+                  "denim",
+                  "wool",
+                  "cashmere",
+                  "silk",
+                  "polyester",
+                  "nylon",
+                  "leather",
+                  "suede",
+                  "knit",
+                  "blend"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pattern": {
+            "anyOf": [
+              {
+                "enum": [
+                  "solid",
+                  "striped",
+                  "checked",
+                  "plaid",
+                  "floral",
+                  "graphic",
+                  "color_block",
+                  "denim"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "season": {
+            "items": {
+              "enum": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+              ],
+              "type": "string"
+            },
+            "maxItems": 4,
+            "type": "array"
+          },
+          "sleeveLength": {
+            "anyOf": [
+              {
+                "enum": [
+                  "short",
+                  "long",
+                  "sleeveless",
+                  "three_quarter"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "style": {
+            "anyOf": [
+              {
+                "enum": [
+                  "casual",
+                  "smart_casual",
+                  "formal",
+                  "sporty",
+                  "bohemian",
+                  "minimal",
+                  "streetwear",
+                  "classic",
+                  "preppy"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "subcategory": {
+            "anyOf": [
+              {
+                "enum": [
+                  "jacket",
+                  "blazer",
+                  "coat",
+                  "windbreaker",
+                  "tshirt",
+                  "oxford_shirt",
+                  "polo",
+                  "blouse",
+                  "knit",
+                  "jeans",
+                  "chinos",
+                  "trousers",
+                  "shorts",
+                  "casual_dress",
+                  "evening_dress",
+                  "midi_dress",
+                  "sneakers",
+                  "loafers",
+                  "oxford_shoes",
+                  "boots",
+                  "sandals",
+                  "tote",
+                  "backpack",
+                  "crossbody",
+                  "clutch",
+                  "belt",
+                  "scarf",
+                  "hat",
+                  "watch",
+                  "sunglasses"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "WardrobeItemResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/WardrobeItem"
+          }
+        },
+        "required": [
+          "item"
+        ],
+        "type": "object"
+      },
+      "WardrobeListQuery": {
+        "properties": {
+          "category": {
+            "enum": [
+              "all",
+              "outerwear",
+              "shirt",
+              "pants",
+              "dress",
+              "shoes",
+              "bag",
+              "accessory"
+            ],
+            "type": "string"
+          },
+          "cursor": {
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "limit": {
+            "default": 100,
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "WardrobeListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WardrobeItem"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "type": "object"
+      },
+      "WardrobePatchResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "corrections": {
+            "items": {
+              "$ref": "#/components/schemas/CorrectionLogEntry"
+            },
+            "type": "array"
+          },
+          "item": {
+            "$ref": "#/components/schemas/WardrobeItem"
+          }
+        },
+        "required": [
+          "item",
+          "corrections"
+        ],
+        "type": "object"
+      },
+      "WardrobeUploadResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "detection": {
+            "$ref": "#/components/schemas/Detection"
+          },
+          "item": {
+            "$ref": "#/components/schemas/WardrobeItem"
+          }
+        },
+        "required": [
+          "item",
+          "detection"
+        ],
+        "type": "object"
+      },
+      "WeatherQuery": {
+        "properties": {
+          "lat": {
+            "maximum": 90,
+            "minimum": -90,
+            "type": "number"
+          },
+          "lon": {
+            "maximum": 180,
+            "minimum": -180,
+            "type": "number"
+          }
+        },
+        "required": [
+          "lat",
+          "lon"
+        ],
+        "type": "object"
+      },
+      "WeatherResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "weather": {
+            "additionalProperties": false,
+            "properties": {
+              "cached": {
+                "type": "boolean"
+              },
+              "condition": {
+                "type": "string"
+              },
+              "conditionLabel": {
+                "type": "string"
+              },
+              "feelsLike": {
+                "type": "number"
+              },
+              "fetchedAt": {
+                "description": "ISO 8601, UTC",
+                "format": "date-time",
+                "type": "string"
+              },
+              "humidity": {
+                "type": "number"
+              },
+              "precipitationAmount": {
+                "type": "number"
+              },
+              "precipitationProbability": {
+                "type": "number"
+              },
+              "source": {
+                "type": "string"
+              },
+              "temperature": {
+                "type": "number"
+              },
+              "uvIndex": {
+                "type": "number"
+              },
+              "windSpeed": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "temperature",
+              "feelsLike",
+              "condition",
+              "conditionLabel",
+              "precipitationProbability",
+              "precipitationAmount",
+              "humidity",
+              "windSpeed",
+              "uvIndex",
+              "source",
+              "fetchedAt",
+              "cached"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "weather"
+        ],
+        "type": "object"
+      },
+      "WebAuthResponse": {
+        "additionalProperties": false,
+        "description": "Web mode: tokens are only in HttpOnly cookies",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/SessionUser"
+          }
+        },
+        "required": [
+          "user"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "bearerFormat": "JWT",
+        "description": "Mobile: the accessToken from login/register/refresh (15 min)",
+        "scheme": "bearer",
+        "type": "http"
+      },
+      "cookieAuth": {
+        "description": "Web: HttpOnly access cookie set by login/register/refresh",
+        "in": "cookie",
+        "name": "atlas_at",
+        "type": "apiKey"
+      }
+    }
+  },
+  "info": {
+    "description": "ATLAS personal stylist API (web and mobile). Errors always use ErrorResponse; branch on `code`. Web clients authenticate with HttpOnly cookies, mobile clients send `X-Atlas-Client: mobile` to the auth routes and `Authorization: Bearer <accessToken>` everywhere else. See docs/architecture/sessions.md and media.md.",
+    "title": "ATLAS API",
+    "version": "0.2.1"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/health": {
+      "get": {
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "Healthy"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "Database unreachable"
+          }
+        },
+        "security": [],
+        "summary": "Liveness and database check",
+        "tags": [
+          "service"
+        ]
+      }
+    },
+    "/api/v1/account": {
+      "delete": {
+        "operationId": "deleteAccount",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Deleted"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: FORBIDDEN",
+            "x-error-codes": [
+              "FORBIDDEN"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: NOT_FOUND",
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Delete the account and all its data and images",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "login",
+        "parameters": [
+          {
+            "description": "`mobile` selects mobile mode: tokens in JSON bodies, no cookies. Any other value or none: web mode. Not a security boundary — each login is bound to its mode (401 CLIENT_MISMATCH otherwise).",
+            "in": "header",
+            "name": "X-Atlas-Client",
+            "required": false,
+            "schema": {
+              "enum": [
+                "mobile"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            },
+            "description": "Signed in",
+            "headers": {
+              "Set-Cookie": {
+                "description": "Web mode only: atlas_at and atlas_rt (HttpOnly)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: BAD_REQUEST | VALIDATION_ERROR",
+            "x-error-codes": [
+              "BAD_REQUEST",
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: PAYLOAD_TOO_LARGE",
+            "x-error-codes": [
+              "PAYLOAD_TOO_LARGE"
+            ]
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: RATE_LIMITED",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying (retryable codes)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "x-error-codes": [
+              "RATE_LIMITED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [],
+        "summary": "Sign in (web: cookies; mobile: tokens in the body)",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "parameters": [
+          {
+            "description": "`mobile` selects mobile mode: tokens in JSON bodies, no cookies. Any other value or none: web mode. Not a security boundary — each login is bound to its mode (401 CLIENT_MISMATCH otherwise).",
+            "in": "header",
+            "name": "X-Atlas-Client",
+            "required": false,
+            "schema": {
+              "enum": [
+                "mobile"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MobileLogoutRequest"
+              }
+            }
+          },
+          "description": "Mobile mode only (web mode uses the cookies)",
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Logged out"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: BAD_REQUEST | VALIDATION_ERROR",
+            "x-error-codes": [
+              "BAD_REQUEST",
+              "VALIDATION_ERROR"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: FORBIDDEN",
+            "x-error-codes": [
+              "FORBIDDEN"
+            ]
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: PAYLOAD_TOO_LARGE",
+            "x-error-codes": [
+              "PAYLOAD_TOO_LARGE"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: SESSION_BUSY",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying (retryable codes)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "x-error-codes": [
+              "SESSION_BUSY"
+            ]
+          }
+        },
+        "security": [
+          {},
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "End this login (session family). Idempotent.",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "operationId": "getMe",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            },
+            "description": "Current user"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: NOT_FOUND",
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "The signed-in user",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "operationId": "refreshSession",
+        "parameters": [
+          {
+            "description": "`mobile` selects mobile mode: tokens in JSON bodies, no cookies. Any other value or none: web mode. Not a security boundary — each login is bound to its mode (401 CLIENT_MISMATCH otherwise).",
+            "in": "header",
+            "name": "X-Atlas-Client",
+            "required": false,
+            "schema": {
+              "enum": [
+                "mobile"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MobileRefreshRequest"
+              }
+            }
+          },
+          "description": "Mobile mode only (web mode uses the cookies)",
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            },
+            "description": "New tokens",
+            "headers": {
+              "Set-Cookie": {
+                "description": "Web mode only: atlas_at and atlas_rt (HttpOnly)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: BAD_REQUEST | VALIDATION_ERROR",
+            "x-error-codes": [
+              "BAD_REQUEST",
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: CLIENT_MISMATCH | INVALID_TOKEN | REFRESH_REUSED | SESSION_EXPIRED | SESSION_RACE | SESSION_REVOKED",
+            "x-error-codes": [
+              "CLIENT_MISMATCH",
+              "INVALID_TOKEN",
+              "REFRESH_REUSED",
+              "SESSION_EXPIRED",
+              "SESSION_RACE",
+              "SESSION_REVOKED"
+            ]
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: PAYLOAD_TOO_LARGE",
+            "x-error-codes": [
+              "PAYLOAD_TOO_LARGE"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: SESSION_BUSY",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying (retryable codes)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "x-error-codes": [
+              "SESSION_BUSY"
+            ]
+          }
+        },
+        "security": [],
+        "summary": "Rotate the refresh token (web: atlas_rt cookie; mobile: body). A token rotated ≤ 60 s ago returns the same new token.",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "operationId": "register",
+        "parameters": [
+          {
+            "description": "`mobile` selects mobile mode: tokens in JSON bodies, no cookies. Any other value or none: web mode. Not a security boundary — each login is bound to its mode (401 CLIENT_MISMATCH otherwise).",
+            "in": "header",
+            "name": "X-Atlas-Client",
+            "required": false,
+            "schema": {
+              "enum": [
+                "mobile"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            },
+            "description": "Signed in",
+            "headers": {
+              "Set-Cookie": {
+                "description": "Web mode only: atlas_at and atlas_rt (HttpOnly)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: BAD_REQUEST | VALIDATION_ERROR",
+            "x-error-codes": [
+              "BAD_REQUEST",
+              "VALIDATION_ERROR"
+            ]
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: CONFLICT",
+            "x-error-codes": [
+              "CONFLICT"
+            ]
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: PAYLOAD_TOO_LARGE",
+            "x-error-codes": [
+              "PAYLOAD_TOO_LARGE"
+            ]
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: RATE_LIMITED",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying (retryable codes)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "x-error-codes": [
+              "RATE_LIMITED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [],
+        "summary": "Create an account and sign in (web: cookies; mobile: tokens in the body)",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/color-profile": {
+      "get": {
+        "operationId": "getColorProfile",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ColorProfileResponse"
+                }
+              }
+            },
+            "description": "Colour profile, or status not_analyzed"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Latest colour analysis",
+        "tags": [
+          "profile"
+        ]
+      }
+    },
+    "/api/v1/color-profile/analyze": {
+      "post": {
+        "operationId": "analyzeColorProfile",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "contentMediaType": "application/octet-stream",
+                    "description": "Selfie (JPEG, PNG, WebP), ≤ 8 MB",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "description": "multipart/form-data; Content-Length required; at most 10 MB",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ColorAnalysisResponse"
+                }
+              }
+            },
+            "description": "Colour profile"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: BAD_REQUEST",
+            "x-error-codes": [
+              "BAD_REQUEST"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: FORBIDDEN",
+            "x-error-codes": [
+              "FORBIDDEN"
+            ]
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: PAYLOAD_TOO_LARGE",
+            "x-error-codes": [
+              "PAYLOAD_TOO_LARGE"
+            ]
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNSUPPORTED_MEDIA_TYPE",
+            "x-error-codes": [
+              "UNSUPPORTED_MEDIA_TYPE"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INVALID_IMAGE",
+            "x-error-codes": [
+              "INVALID_IMAGE"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Analyse a selfie (not stored) into a colour profile",
+        "tags": [
+          "profile"
+        ]
+      }
+    },
+    "/api/v1/media/{key}": {
+      "get": {
+        "operationId": "getMedia",
+        "parameters": [
+          {
+            "description": "Storage key (contains \"/\"; part of the signed URL)",
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Expiry (unix seconds), part of the signed URL",
+            "in": "query",
+            "name": "exp",
+            "required": true,
+            "schema": {
+              "pattern": "^\\d{1,12}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "HMAC signature, part of the signed URL",
+            "in": "query",
+            "name": "sig",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "contentMediaType": "image/jpeg",
+                  "type": "string"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "contentMediaType": "image/png",
+                  "type": "string"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "contentMediaType": "image/webp",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Image bytes"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: VALIDATION_ERROR",
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: NOT_FOUND",
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [],
+        "summary": "A private image through its signed URL (use the URLs from API responses as-is)",
+        "tags": [
+          "media"
+        ]
+      }
+    },
+    "/api/v1/openapi.json": {
+      "get": {
+        "operationId": "getOpenApiDocument",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OpenAPI 3.1 document"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [],
+        "summary": "This OpenAPI document",
+        "tags": [
+          "service"
+        ]
+      }
+    },
+    "/api/v1/outfits": {
+      "get": {
+        "operationId": "listOutfits",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "saved",
+            "required": false,
+            "schema": {
+              "enum": [
+                "0",
+                "1",
+                "true",
+                "false"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutfitListResponse"
+                }
+              }
+            },
+            "description": "Outfits"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: VALIDATION_ERROR",
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Recent outfits (50), optionally saved only",
+        "tags": [
+          "outfits"
+        ]
+      },
+      "post": {
+        "operationId": "saveOutfit",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutfitSaveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutfitSaveResponse"
+                }
+              }
+            },
+            "description": "Saved outfit"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: BAD_REQUEST | VALIDATION_ERROR",
+            "x-error-codes": [
+              "BAD_REQUEST",
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: FORBIDDEN",
+            "x-error-codes": [
+              "FORBIDDEN"
+            ]
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: PAYLOAD_TOO_LARGE",
+            "x-error-codes": [
+              "PAYLOAD_TOO_LARGE"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Save an outfit made of own wardrobe items",
+        "tags": [
+          "outfits"
+        ]
+      }
+    },
+    "/api/v1/outfits/generate": {
+      "post": {
+        "operationId": "generateOutfits",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutfitGenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutfitGenerateResponse"
+                }
+              }
+            },
+            "description": "Suggestions (empty with a message when the wardrobe is not enough)"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: BAD_REQUEST | VALIDATION_ERROR",
+            "x-error-codes": [
+              "BAD_REQUEST",
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: FORBIDDEN",
+            "x-error-codes": [
+              "FORBIDDEN"
+            ]
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: PAYLOAD_TOO_LARGE",
+            "x-error-codes": [
+              "PAYLOAD_TOO_LARGE"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Generate outfit suggestions from the wardrobe",
+        "tags": [
+          "outfits"
+        ]
+      }
+    },
+    "/api/v1/outfits/{id}": {
+      "delete": {
+        "operationId": "deleteOutfit",
+        "parameters": [
+          {
+            "description": "Resource id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Deleted"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: VALIDATION_ERROR",
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: FORBIDDEN",
+            "x-error-codes": [
+              "FORBIDDEN"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: NOT_FOUND",
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Delete an outfit",
+        "tags": [
+          "outfits"
+        ]
+      },
+      "get": {
+        "operationId": "getOutfit",
+        "parameters": [
+          {
+            "description": "Resource id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutfitDetailResponse"
+                }
+              }
+            },
+            "description": "The outfit"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: VALIDATION_ERROR",
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: NOT_FOUND",
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "One outfit with its items",
+        "tags": [
+          "outfits"
+        ]
+      },
+      "patch": {
+        "operationId": "updateOutfit",
+        "parameters": [
+          {
+            "description": "Resource id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutfitPatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutfitPatchResponse"
+                }
+              }
+            },
+            "description": "Updated"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: BAD_REQUEST | VALIDATION_ERROR",
+            "x-error-codes": [
+              "BAD_REQUEST",
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: FORBIDDEN",
+            "x-error-codes": [
+              "FORBIDDEN"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: NOT_FOUND",
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: PAYLOAD_TOO_LARGE",
+            "x-error-codes": [
+              "PAYLOAD_TOO_LARGE"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Rename or (un)save an outfit",
+        "tags": [
+          "outfits"
+        ]
+      }
+    },
+    "/api/v1/outfits/{id}/feedback": {
+      "post": {
+        "operationId": "sendOutfitFeedback",
+        "parameters": [
+          {
+            "description": "Resource id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutfitFeedbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutfitFeedbackResponse"
+                }
+              }
+            },
+            "description": "Recorded"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: BAD_REQUEST | VALIDATION_ERROR",
+            "x-error-codes": [
+              "BAD_REQUEST",
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: FORBIDDEN",
+            "x-error-codes": [
+              "FORBIDDEN"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: NOT_FOUND",
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: PAYLOAD_TOO_LARGE",
+            "x-error-codes": [
+              "PAYLOAD_TOO_LARGE"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Like, dislike, save or reject an outfit",
+        "tags": [
+          "outfits"
+        ]
+      }
+    },
+    "/api/v1/profile": {
+      "get": {
+        "operationId": "getProfile",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            },
+            "description": "Profile"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: NOT_FOUND",
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Profile and style preferences",
+        "tags": [
+          "profile"
+        ]
+      },
+      "patch": {
+        "operationId": "updateProfile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfilePatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfilePatchResponse"
+                }
+              }
+            },
+            "description": "Updated"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: BAD_REQUEST | VALIDATION_ERROR",
+            "x-error-codes": [
+              "BAD_REQUEST",
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: FORBIDDEN",
+            "x-error-codes": [
+              "FORBIDDEN"
+            ]
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: PAYLOAD_TOO_LARGE",
+            "x-error-codes": [
+              "PAYLOAD_TOO_LARGE"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Update name, profile fields or preferences",
+        "tags": [
+          "profile"
+        ]
+      }
+    },
+    "/api/v1/stylist/chat": {
+      "post": {
+        "operationId": "stylistChat",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StylistChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StylistChatResponse"
+                }
+              }
+            },
+            "description": "Assistant reply"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: BAD_REQUEST | VALIDATION_ERROR",
+            "x-error-codes": [
+              "BAD_REQUEST",
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: FORBIDDEN",
+            "x-error-codes": [
+              "FORBIDDEN"
+            ]
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: PAYLOAD_TOO_LARGE",
+            "x-error-codes": [
+              "PAYLOAD_TOO_LARGE"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Send a message to the AI stylist",
+        "tags": [
+          "stylist"
+        ]
+      }
+    },
+    "/api/v1/stylist/conversations": {
+      "get": {
+        "operationId": "listConversations",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationListResponse"
+                }
+              }
+            },
+            "description": "Conversations"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Recent stylist conversations (50)",
+        "tags": [
+          "stylist"
+        ]
+      }
+    },
+    "/api/v1/stylist/conversations/{id}": {
+      "get": {
+        "operationId": "getConversation",
+        "parameters": [
+          {
+            "description": "Resource id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationResponse"
+                }
+              }
+            },
+            "description": "The conversation"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: VALIDATION_ERROR",
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: NOT_FOUND",
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "A conversation with its messages",
+        "tags": [
+          "stylist"
+        ]
+      }
+    },
+    "/api/v1/wardrobe/items": {
+      "get": {
+        "operationId": "listWardrobeItems",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "enum": [
+                "all",
+                "outerwear",
+                "shirt",
+                "pants",
+                "dress",
+                "shoes",
+                "bag",
+                "accessory"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WardrobeListResponse"
+                }
+              }
+            },
+            "description": "A page of items"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: VALIDATION_ERROR",
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Wardrobe items, newest first (cursor pagination)",
+        "tags": [
+          "wardrobe"
+        ]
+      },
+      "post": {
+        "operationId": "createWardrobeItem",
+        "parameters": [
+          {
+            "description": "Makes retries safe for 24 h: the same key and payload returns the original result (Idempotent-Replayed: true); a different payload → 409 IDEMPOTENCY_KEY_MISMATCH; still processing → 409 IDEMPOTENCY_IN_PROGRESS with Retry-After.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{8,128}$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "contentMediaType": "application/octet-stream",
+                    "description": "JPEG, PNG or WebP, ≤ 8 MB; shortest side ≥ 256 px, sides ≤ 8000 px. HEIC must be converted by the client.",
+                    "type": "string"
+                  },
+                  "filename": {
+                    "description": "Optional name used as a detection hint (defaults to the file name)",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "description": "multipart/form-data; Content-Length required; at most 10 MB",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WardrobeUploadResponse"
+                }
+              }
+            },
+            "description": "Created (or replayed for a repeated Idempotency-Key)",
+            "headers": {
+              "Idempotent-Replayed": {
+                "description": "\"true\" when this is the original response of an earlier request with the same Idempotency-Key",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: BAD_REQUEST | VALIDATION_ERROR",
+            "x-error-codes": [
+              "BAD_REQUEST",
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: FORBIDDEN",
+            "x-error-codes": [
+              "FORBIDDEN"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: NOT_FOUND",
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: IDEMPOTENCY_IN_PROGRESS | IDEMPOTENCY_KEY_MISMATCH",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying (retryable codes)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "x-error-codes": [
+              "IDEMPOTENCY_IN_PROGRESS",
+              "IDEMPOTENCY_KEY_MISMATCH"
+            ]
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: PAYLOAD_TOO_LARGE",
+            "x-error-codes": [
+              "PAYLOAD_TOO_LARGE"
+            ]
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNSUPPORTED_IMAGE_FORMAT | UNSUPPORTED_MEDIA_TYPE",
+            "x-error-codes": [
+              "UNSUPPORTED_IMAGE_FORMAT",
+              "UNSUPPORTED_MEDIA_TYPE"
+            ]
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: IMAGE_DIMENSIONS | INVALID_IMAGE",
+            "x-error-codes": [
+              "IMAGE_DIMENSIONS",
+              "INVALID_IMAGE"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Upload a garment photo; returns the item with detected attributes",
+        "tags": [
+          "wardrobe"
+        ]
+      }
+    },
+    "/api/v1/wardrobe/items/{id}": {
+      "delete": {
+        "operationId": "deleteWardrobeItem",
+        "parameters": [
+          {
+            "description": "Resource id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Deleted"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: VALIDATION_ERROR",
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: FORBIDDEN",
+            "x-error-codes": [
+              "FORBIDDEN"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: NOT_FOUND",
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Delete an item and its images",
+        "tags": [
+          "wardrobe"
+        ]
+      },
+      "get": {
+        "operationId": "getWardrobeItem",
+        "parameters": [
+          {
+            "description": "Resource id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WardrobeItemResponse"
+                }
+              }
+            },
+            "description": "The item"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: VALIDATION_ERROR",
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: NOT_FOUND",
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "One wardrobe item",
+        "tags": [
+          "wardrobe"
+        ]
+      },
+      "patch": {
+        "operationId": "updateWardrobeItem",
+        "parameters": [
+          {
+            "description": "Resource id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WardrobeItemPatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WardrobePatchResponse"
+                }
+              }
+            },
+            "description": "Updated item and the recorded corrections"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: BAD_REQUEST | VALIDATION_ERROR",
+            "x-error-codes": [
+              "BAD_REQUEST",
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: FORBIDDEN",
+            "x-error-codes": [
+              "FORBIDDEN"
+            ]
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: NOT_FOUND",
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: PAYLOAD_TOO_LARGE",
+            "x-error-codes": [
+              "PAYLOAD_TOO_LARGE"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Correct detected attributes (recorded in correctionLog)",
+        "tags": [
+          "wardrobe"
+        ]
+      }
+    },
+    "/api/v1/weather/current": {
+      "get": {
+        "operationId": "getCurrentWeather",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "lat",
+            "required": true,
+            "schema": {
+              "maximum": 90,
+              "minimum": -90,
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "lon",
+            "required": true,
+            "schema": {
+              "maximum": 180,
+              "minimum": -180,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeatherResponse"
+                }
+              }
+            },
+            "description": "Weather"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: VALIDATION_ERROR",
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Current weather (cached 30 min per ~1 km cell)",
+        "tags": [
+          "weather"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "account"
+    },
+    {
+      "name": "auth"
+    },
+    {
+      "name": "media"
+    },
+    {
+      "name": "outfits"
+    },
+    {
+      "name": "profile"
+    },
+    {
+      "name": "service"
+    },
+    {
+      "name": "stylist"
+    },
+    {
+      "name": "wardrobe"
+    },
+    {
+      "name": "weather"
+    }
+  ]
+}

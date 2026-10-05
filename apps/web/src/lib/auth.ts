@@ -27,15 +27,19 @@ export async function verifyPassword(plain: string, hash: string): Promise<boole
   return bcrypt.compare(plain, hash)
 }
 
-/** Sign a short-lived access token (15 min by default, ACCESS_TOKEN_TTL_SECONDS). */
-export async function signAccessToken(payload: JwtPayload): Promise<string> {
+/**
+ * Sign a short-lived access token (15 min by default, ACCESS_TOKEN_TTL_SECONDS).
+ * `expiresAt` sets the expiry explicitly (the session protocol caps it at the
+ * session family's absolute limit, computed from the database clock).
+ */
+export async function signAccessToken(payload: JwtPayload, opts: { expiresAt?: Date } = {}): Promise<string> {
   const claims: Record<string, string> = { sub: payload.sub, email: payload.email }
   if (payload.sid) claims.sid = payload.sid
   return new SignJWT(claims)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setIssuer(ISSUER)
-    .setExpirationTime(`${getAccessTokenTtlSeconds()}s`)
+    .setExpirationTime(opts.expiresAt ? Math.floor(opts.expiresAt.getTime() / 1000) : `${getAccessTokenTtlSeconds()}s`)
     .sign(enc(getJwtSecret()))
 }
 

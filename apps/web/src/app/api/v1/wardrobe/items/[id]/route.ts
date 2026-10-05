@@ -1,21 +1,8 @@
 import { NextResponse } from 'next/server'
-import { z } from 'zod'
 import { db } from '@/lib/db'
 import { requireAuth, unauthorized } from '@/lib/api-helpers'
 import { ApiError, withApi, parseJson, validate } from '@/server/http'
-import {
-  categorySchema,
-  subcategorySchema,
-  colorsSchema,
-  patternSchema,
-  materialSchema,
-  sleeveLengthSchema,
-  fitSchema,
-  styleSchema,
-  seasonsSchema,
-  genderSchema,
-  formalitySchema,
-} from '@/server/schemas/catalog'
+import { WardrobeItemPatchRequest } from '@/server/schemas/requests'
 import { idParamsSchema } from '@/server/schemas/common'
 import { getStorageProvider } from '@/lib/storage/provider'
 import { serializeWardrobeItem } from '@/lib/wardrobe/serialize'
@@ -26,20 +13,6 @@ export const runtime = 'nodejs'
 // Apply user corrections to AI-detected attributes. Records the correction
 // in `correctionLog` and sets `wasCorrected: true` so future inferences for
 // this user can take the correction into account (spec section 6).
-const PatchSchema = z.object({
-  category: categorySchema.optional(),
-  subcategory: subcategorySchema.nullable().optional(),
-  colors: colorsSchema.optional(),
-  pattern: patternSchema.nullable().optional(),
-  material: materialSchema.nullable().optional(),
-  sleeveLength: sleeveLengthSchema.nullable().optional(),
-  fit: fitSchema.nullable().optional(),
-  style: styleSchema.nullable().optional(),
-  season: seasonsSchema.optional(),
-  gender: genderSchema.nullable().optional(),
-  formality: formalitySchema.nullable().optional(),
-})
-
 type Ctx = { params: Promise<{ id: string }> }
 
 async function itemId(ctx: Ctx): Promise<string> {
@@ -51,7 +24,7 @@ export const PATCH = withApi<Ctx>(async (req, ctx) => {
   if (!authUser) return unauthorized()
 
   const id = await itemId(ctx)
-  const data = await parseJson(req, PatchSchema)
+  const data = await parseJson(req, WardrobeItemPatchRequest)
 
   // Load current values — we need them to record a diff in correctionLog
   const current = await db.wardrobeItem.findFirst({
@@ -129,7 +102,7 @@ export const DELETE = withApi<Ctx>(async (req, ctx) => {
   await db.wardrobeItem.delete({ where: { id } })
   // Remove the image files too — the DB rows are gone via cascade.
   await getStorageProvider().deleteObjects(
-    existing.images.flatMap((img) => [img.storageKey, img.thumbnailKey ?? '']).filter(Boolean),
+    existing.images.flatMap((img) => [img.storageKey, img.displayKey, img.thumbnailKey]),
   )
   return NextResponse.json({ ok: true })
 })

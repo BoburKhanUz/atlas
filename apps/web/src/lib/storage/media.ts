@@ -11,7 +11,7 @@
  */
 
 import crypto from 'crypto'
-import { getMediaSigningSecret, getMediaUrlTtlSeconds } from '@/lib/config'
+import { getMediaSigningSecret, getMediaUrlTtlSeconds, getPublicBaseUrl } from '@/lib/config'
 import { isValidStorageKey } from '@/lib/storage/provider'
 
 const MEDIA_PATH_PREFIX = '/api/v1/media/'
@@ -23,10 +23,18 @@ function hmac(key: string, exp: number): string {
     .digest('base64url')
 }
 
-/** Build a signed URL for a storage key. `now` is injectable for tests. */
-export function signMediaUrl(key: string, now: number = Date.now()): string {
+/**
+ * Build a signed URL for a storage key. Absolute (PUBLIC_BASE_URL + path)
+ * when PUBLIC_BASE_URL is set, otherwise relative. `now` is injectable for tests.
+ */
+export function signMedia(key: string, now: number = Date.now()): { url: string; expiresAt: Date } {
   const exp = Math.floor(now / 1000) + getMediaUrlTtlSeconds()
-  return `${MEDIA_PATH_PREFIX}${key}?exp=${exp}&sig=${hmac(key, exp)}`
+  const path = `${MEDIA_PATH_PREFIX}${key}?exp=${exp}&sig=${hmac(key, exp)}`
+  return { url: `${getPublicBaseUrl() ?? ''}${path}`, expiresAt: new Date(exp * 1000) }
+}
+
+export function signMediaUrl(key: string, now: number = Date.now()): string {
+  return signMedia(key, now).url
 }
 
 /** Constant-time signature + expiry check. */
@@ -45,28 +53,41 @@ export function verifyMediaSignature(
   return expected.length === given.length && crypto.timingSafeEqual(expected, given)
 }
 
-/** Shape the frontend expects for an image (field names unchanged from the MVP). */
+/**
+ * Shape the clients get for an image (MVP field names kept). `url` is the
+ * 1600 px display variant — the master is never handed out, except for
+ * images uploaded before display variants existed (until the backfill ran).
+ * Clients cache by `id` + variant; URLs change on every response.
+ */
 export interface PresentedImage {
   id: string
   url: string
   thumbnailUrl: string | null
+  /** When `url` and `thumbnailUrl` stop working (ISO 8601). */
+  urlExpiresAt: string
   isPrimary: boolean
+  /** Dimensions of the original image. */
   width: number | null
   height: number | null
 }
 
-export function presentImage(img: {
+export interface ImageRecord {
   id: string
   storageKey: string
+  displayKey?: string | null
   thumbnailKey: string | null
   isPrimary: boolean
   width?: number | null
   height?: number | null
-}): PresentedImage {
+}
+
+export function presentImage(img: ImageRecord): PresentedImage {
+  const main = signMedia(img.displayKey ?? img.storageKey)
   return {
     id: img.id,
-    url: signMediaUrl(img.storageKey),
-    thumbnailUrl: img.thumbnailKey ? signMediaUrl(img.thumbnailKey) : null,
+    url: main.url,
+    thumbnailUrl: img.thumbnailKey ? signMedia(img.thumbnailKey).url : null,
+    urlExpiresAt: main.expiresAt.toISOString(),
     isPrimary: img.isPrimary,
     width: img.width ?? null,
     height: img.height ?? null,
@@ -74,9 +95,7 @@ export function presentImage(img: {
 }
 
 /** Primary image (or first) of an item, presented. */
-export function presentPrimaryImage(
-  images: Parameters<typeof presentImage>[0][],
-): PresentedImage | null {
+export function presentPrimaryImage(images: ImageRecord[]): PresentedImage | null {
   const primary = images.find((i) => i.isPrimary) ?? images[0]
   return primary ? presentImage(primary) : null
 }

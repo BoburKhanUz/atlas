@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
 import { db } from '@/lib/db'
 import { hashPassword } from '@/lib/auth'
 import { checkRateLimit, clientIp } from '@/lib/rate-limit'
-import { createSession, setSessionCookies } from '@/lib/session'
+import { RegisterRequest } from '@/server/schemas/requests'
+import { clientTypeOf, createSession, mobileTokenBody, setSessionCookies } from '@/lib/session'
 import { ApiError, parseJson, withApi } from '@/server/http'
 
 export const runtime = 'nodejs'
@@ -13,13 +13,9 @@ const MAX_PER_IP = 10
 // Always applied — the only guard when the client IP is unknown/untrusted.
 const MAX_GLOBAL = 100
 
-const RegisterSchema = z.object({
-  email: z.string().email('Email noto‘g‘ri'),
-  password: z.string().min(8, 'Parol kamida 8 belgi bo‘lishi kerak').max(200),
-  name: z.string().min(1).max(60).optional(),
-})
-
-// POST /api/v1/auth/register — sets atlas_at + atlas_rt cookies; body is { user } only.
+// POST /api/v1/auth/register — 201
+//   web:    sets atlas_at + atlas_rt cookies; body is { user } only.
+//   mobile (X-Atlas-Client: mobile): no cookies; body carries the tokens.
 const handler = withApi(async (req: NextRequest) => {
   const ip = clientIp(req)
   const checks = [checkRateLimit('register:global', MAX_GLOBAL, WINDOW_MS)]
@@ -29,7 +25,7 @@ const handler = withApi(async (req: NextRequest) => {
     throw new ApiError('RATE_LIMITED', undefined, undefined, { 'Retry-After': String(blocked.retryAfterSeconds) })
   }
 
-  const { email, password, name } = await parseJson(req, RegisterSchema)
+  const { email, password, name, deviceName } = await parseJson(req, RegisterRequest)
   const normalizedEmail = email.toLowerCase().trim()
 
   const existing = await db.user.findUnique({ where: { email: normalizedEmail } })
@@ -57,8 +53,11 @@ const handler = withApi(async (req: NextRequest) => {
     return u
   })
 
-  const issued = await createSession(user, req.headers.get('user-agent'))
-  const res = NextResponse.json({ user: { id: user.id, email: user.email, name: user.name } }, { status: 201 })
+  const clientType = clientTypeOf(req)
+  const sessionUser = { id: user.id, email: user.email, name: user.name }
+  const issued = await createSession(sessionUser, { clientType, userAgent: req.headers.get('user-agent'), deviceName })
+  if (clientType === 'mobile') return NextResponse.json(mobileTokenBody(sessionUser, issued), { status: 201 })
+  const res = NextResponse.json({ user: sessionUser }, { status: 201 })
   setSessionCookies(res, issued)
   return res
 })

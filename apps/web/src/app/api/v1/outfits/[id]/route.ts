@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
-import { z } from 'zod'
 import { db } from '@/lib/db'
 import { presentImage } from '@/lib/storage/media'
 import { requireAuth, unauthorized } from '@/lib/api-helpers'
 import { ApiError, withApi, parseJson, validate } from '@/server/http'
 import { idParamsSchema } from '@/server/schemas/common'
+import { OutfitPatchRequest } from '@/server/schemas/requests'
 
 type Ctx = { params: Promise<{ id: string }> }
 
@@ -64,17 +64,12 @@ export const GET = withApi<Ctx>(async (req, ctx) => {
 })
 
 // PATCH /api/v1/outfits/[id] — toggle isSaved, update name/explanation
-const PatchSchema = z.object({
-  isSaved: z.boolean().optional(),
-  name: z.string().trim().max(80).nullable().optional(),
-})
-
 export const PATCH = withApi<Ctx>(async (req, ctx) => {
   const authUser = await requireAuth(req)
   if (!authUser) return unauthorized()
 
   const id = await outfitId(ctx)
-  const data = await parseJson(req, PatchSchema)
+  const data = await parseJson(req, OutfitPatchRequest)
 
   // Verify ownership
   const existing = await db.outfit.findFirst({

@@ -10,6 +10,10 @@
  * - Pages: valid access cookie → continue. Otherwise, with a refresh cookie,
  *   rotate server-side and continue with fresh cookies. Otherwise redirect to
  *   /login?next=<path>. /login and /register redirect a signed-in user to `/`.
+ *   SESSION_RACE / SESSION_BUSY on a page load (a parallel request rotated the
+ *   token, or the store is busy): one automatic retry of the same URL, guarded
+ *   by a 5 s `atlas_retry` cookie; a second race goes to /login (session
+ *   cookies kept — the login page renews or signs in again). No loops.
  */
 
 import { NextResponse, type NextRequest } from 'next/server'
@@ -27,6 +31,8 @@ import { ApiError, errorResponse, requestIdOf } from '@/server/http'
 import { log } from '@/server/log'
 
 const GUEST_ONLY_PATHS = new Set(['/login', '/register'])
+export const RETRY_COOKIE = 'atlas_retry'
+const RETRY_COOKIE_SECONDS = 5
 
 function forwardHeaders(request: NextRequest, requestId: string): Headers {
   const headers = new Headers(request.headers)
@@ -83,10 +89,13 @@ export async function proxy(request: NextRequest) {
         headers: { 'Cache-Control': 'no-store', 'x-request-id': requestId },
       })
     }
-    rotated = await rotateSession(request.cookies.get(REFRESH_COOKIE)?.value, request.headers.get('user-agent'))
+    rotated = await rotateSession(request.cookies.get(REFRESH_COOKIE)?.value, {
+      clientType: 'web',
+      userAgent: request.headers.get('user-agent'),
+    })
     if (rotated.ok) state = 'rotated'
-    else if (rotated.reason === 'race') state = 'race'
-    else clearCookies = rotated.clearCookies
+    else if (!rotated.clearCookies) state = 'race' // SESSION_RACE / SESSION_BUSY: keep the cookies
+    else clearCookies = true
   } else if (request.cookies.has(ACCESS_COOKIE)) {
     clearCookies = true // stale access cookie, nothing to refresh with
   }
@@ -102,22 +111,31 @@ export async function proxy(request: NextRequest) {
       if (rotated?.ok) {
         // Let this render (getCurrentUser) see the new access token too.
         request.cookies.set(ACCESS_COOKIE, rotated.issued.accessToken)
-        if (rotated.issued.refreshToken) request.cookies.set(REFRESH_COOKIE, rotated.issued.refreshToken)
+        request.cookies.set(REFRESH_COOKIE, rotated.issued.refreshToken)
         headers.set('cookie', request.cookies.toString())
       }
       res = next(request, requestId, headers)
     }
     if (rotated?.ok) setSessionCookies(res, rotated.issued)
+    if (request.cookies.has(RETRY_COOKIE)) res.cookies.set(RETRY_COOKIE, '', { path: '/', maxAge: 0 })
     return res
   }
 
-  if (isGuestPage || state === 'race') {
-    // race: a parallel request just rotated the token and its response sets
-    // fresh cookies; render without touching cookies rather than looping.
+  const loginUrl = `/login?next=${encodeURIComponent(safeNextPath(pathname + search))}`
+  if (isGuestPage) {
     res = next(request, requestId)
+  } else if (state === 'race' && !request.cookies.has(RETRY_COOKIE)) {
+    // A parallel request just rotated the token (its response carries the new
+    // cookies) or the store is busy: retry this URL once, shortly.
+    res = redirect(request, pathname + search)
+    res.cookies.set(RETRY_COOKIE, '1', { httpOnly: true, sameSite: 'lax', path: '/', maxAge: RETRY_COOKIE_SECONDS })
+    res.headers.set('Cache-Control', 'no-store')
+    return res
   } else {
-    res = redirect(request, `/login?next=${encodeURIComponent(safeNextPath(pathname + search))}`)
+    // no session, or a second race within the retry window: sign in again
+    res = redirect(request, loginUrl)
   }
+  if (request.cookies.has(RETRY_COOKIE)) res.cookies.set(RETRY_COOKIE, '', { path: '/', maxAge: 0 })
   if (clearCookies) clearSessionCookies(res)
   return res
 }

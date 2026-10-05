@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
-import { z } from 'zod'
 import { db } from '@/lib/db'
 import { requireAuth, unauthorized } from '@/lib/api-helpers'
 import { ApiError, withApi, parseJson } from '@/server/http'
-import { styleSchema, colorSchema, fitSchema } from '@/server/schemas/catalog'
+import { ProfilePatchRequest } from '@/server/schemas/requests'
 
 export const runtime = 'nodejs'
 
@@ -40,43 +39,11 @@ export const GET = withApi(async (req) => {
   })
 })
 
-const freeText = z.string().trim().max(60).nullable().optional()
-
-const PatchProfileSchema = z.object({
-  name: z.string().trim().min(1).max(60).optional(),
-  profile: z
-    .object({
-      gender: z.enum(['male', 'female', 'other', 'unisex']).nullable().optional(),
-      ageRange: freeText,
-      height: z.number().min(50).max(250).nullable().optional(),
-      weight: z.number().min(20).max(300).nullable().optional(),
-      bodyShape: freeText,
-      skinTone: freeText,
-      skinUndertone: freeText,
-      hairColor: freeText,
-      eyeColor: freeText,
-      clothingSize: freeText,
-      preferredFit: fitSchema.nullable().optional(),
-      typicalBudget: z.number().int().min(0).max(1_000_000_000).nullable().optional(),
-    })
-    .optional(),
-  preferences: z
-    .object({
-      preferredStyles: z.array(styleSchema).max(20).optional(),
-      dislikedStyles: z.array(styleSchema).max(20).optional(),
-      favoriteColors: z.array(colorSchema).max(20).optional(),
-      dislikedColors: z.array(colorSchema).max(20).optional(),
-      language: z.enum(['uz', 'ru', 'en']).optional(),
-    })
-    .optional(),
-})
-
-// PATCH /api/v1/profile — upsert profile + preferences for the current user
 export const PATCH = withApi(async (req) => {
   const authUser = await requireAuth(req)
   if (!authUser) return unauthorized()
 
-  const { name, profile, preferences } = await parseJson(req, PatchProfileSchema)
+  const { name, profile, preferences } = await parseJson(req, ProfilePatchRequest)
 
   // User.name update (separate table)
   if (name !== undefined) {

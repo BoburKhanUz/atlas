@@ -37,6 +37,8 @@ jobs:
         run: bun run typecheck
       - name: Test
         run: bun run test
+      - name: OpenAPI document is current and valid
+        run: bun run openapi:check && bun run openapi:validate
       - name: Build
         run: bun run build
 
@@ -83,9 +85,11 @@ jobs:
           # Random throwaway secrets, generated per run; masked in logs.
           JWT_SECRET="$(openssl rand -hex 32)"
           MEDIA_SIGNING_SECRET="$(openssl rand -hex 32)"
+          SESSION_ENC_KEY="$(openssl rand -base64 32)"
           echo "::add-mask::$JWT_SECRET"
           echo "::add-mask::$MEDIA_SIGNING_SECRET"
-          export JWT_SECRET MEDIA_SIGNING_SECRET
+          echo "::add-mask::$SESSION_ENC_KEY"
+          export JWT_SECRET MEDIA_SIGNING_SECRET SESSION_ENC_KEY
           export STORAGE_LOCAL_DIR="$RUNNER_TEMP/atlas-e2e-storage"
           mkdir -p "$STORAGE_LOCAL_DIR"
           bun run test:e2e
@@ -143,6 +147,71 @@ jobs:
           --shadow-database-url "$SHADOW_URL"
           --exit-code
 
+  integration:
+    name: integration (real PostgreSQL)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: apps/web
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      ATLAS_ITEST_PGHOST: localhost
+      ATLAS_ITEST_PGPORT: "5432"
+      ATLAS_ITEST_PGUSER: ci
+      ATLAS_ITEST_PGPASSWORD: ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.x
+      - run: bun install --frozen-lockfile
+      - name: PostgreSQL 16 client tools
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client-16
+      - name: Server settings the tests rely on (commit timestamps, non-UTC zone)
+        env:
+          PGPASSWORD: ci
+        run: |
+          psql -h localhost -U ci -d ci -c "ALTER SYSTEM SET track_commit_timestamp = on" -c "ALTER SYSTEM SET timezone = 'Asia/Tashkent'"
+          docker restart ${{ job.services.postgres.id }}
+          until pg_isready -h localhost -U ci -d ci; do sleep 1; done
+          psql -h localhost -U ci -d ci -Atc "SHOW track_commit_timestamp"
+      - name: Integration tests (migrations, cutover, session protocol)
+        run: PATH="/usr/lib/postgresql/16/bin:$PATH" bun run test:integration
+
+  dart-client:
+    # Non-blocking: proves the OpenAPI document generates a compilable Dart
+    # client for the mobile app. Pinned images; nothing generated is committed.
+    name: dart client from OpenAPI (non-blocking)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate dart-dio client
+        run: >-
+          docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work"
+          openapitools/openapi-generator-cli:v7.10.0 generate
+          -i /work/docs/api/openapi.json -g dart-dio -o /work/.dart-client
+          --additional-properties=pubName=atlas_api
+      - name: Build and analyze (errors fail, generator lint warnings do not)
+        run: >-
+          docker run --rm -v "$PWD/.dart-client:/client" -w /client dart:3.5.4
+          sh -c "dart pub get && dart run build_runner build --delete-conflicting-outputs && dart analyze --no-fatal-warnings"
+
   docker:
     name: docker (build + compose config)
     runs-on: ubuntu-latest
@@ -161,6 +230,7 @@ jobs:
             echo "JWT_SECRET=$(openssl rand -hex 32)"
             echo "JWT_REFRESH_SECRET=$(openssl rand -hex 32)"
             echo "MEDIA_SIGNING_SECRET=$(openssl rand -hex 32)"
+            echo "SESSION_ENC_KEY=$(openssl rand -base64 32)"
           } > "$RUNNER_TEMP/ci.env"
           docker compose --env-file "$RUNNER_TEMP/ci.env" config --quiet
 

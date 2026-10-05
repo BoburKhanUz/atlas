@@ -3,9 +3,12 @@
  *
  * Auth is cookie-based (HttpOnly access + refresh cookies set by the server),
  * so nothing auth-related is stored in JS. Every request is sent with
- * `credentials: 'same-origin'`. When a non-auth endpoint answers 401 we do a
- * single-flight POST /api/v1/auth/refresh and retry the original request
- * once; if the refresh fails the user is sent to /login?next=…&expired=1.
+ * `credentials: 'same-origin'`. When a non-auth endpoint answers 401, one
+ * recovery episode per tab refreshes the session (src/lib/session-recovery.ts:
+ * race / busy / network handling, at most 3 refresh calls) and the request is
+ * retried once. A session that cannot be recovered sends the user to
+ * /login?next=…&expired=1; a busy server or a lost connection surfaces as an
+ * ApiError (SESSION_BUSY / NETWORK_ERROR) and keeps the session.
  *
  * Errors are thrown as ApiError with the server's Uzbek `error` message and
  * machine-readable `code` ({ error, code, details?, requestId? }).
@@ -13,6 +16,7 @@
 
 import { createTranslator } from 'next-intl'
 import uzMessages from '../../messages/uz.json'
+import { classifyRefreshResponse, createRecovery } from '@/lib/session-recovery'
 
 // Fallback strings come from the message catalogue (errors namespace). The
 // client runs outside React here, so we build a translator directly.
@@ -59,23 +63,28 @@ interface FetchOpts {
 const AUTH_PREFIX = '/api/v1/auth/'
 const REFRESH_PATH = '/api/v1/auth/refresh'
 
-// ─── Single-flight refresh ──────────────────────────────────────────────────
-let refreshInFlight: Promise<boolean> | null = null
+// ─── Session recovery (one episode per tab) ─────────────────────────────────
+const REFRESH_TIMEOUT_MS = 12_000
 
-function refreshSession(): Promise<boolean> {
-  if (!refreshInFlight) {
-    refreshInFlight = fetch(REFRESH_PATH, {
-      method: 'POST',
-      credentials: 'same-origin',
-    })
-      .then((res) => res.ok)
-      .catch(() => false)
-      .finally(() => {
-        refreshInFlight = null
-      })
+async function postRefresh(): Promise<Response | null> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), REFRESH_TIMEOUT_MS)
+  try {
+    return await fetch(REFRESH_PATH, { method: 'POST', credentials: 'same-origin', signal: controller.signal })
+  } catch {
+    return null // network error or timeout
+  } finally {
+    clearTimeout(timer)
   }
-  return refreshInFlight
 }
+
+export const sessionRecovery = createRecovery((retryOriginal) => ({
+  refresh: async () => classifyRefreshResponse(await postRefresh()),
+  retryOriginal,
+  sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  now: () => (typeof performance !== 'undefined' ? performance.now() : Date.now()),
+  random: Math.random,
+}))
 
 let redirectingToLogin = false
 
@@ -83,6 +92,11 @@ function redirectToLogin(): Promise<never> {
   if (typeof window !== 'undefined' && !redirectingToLogin) {
     redirectingToLogin = true
     const here = window.location.pathname + window.location.search
+    // Deliberate full document navigation (not router.push): this module has no
+    // router, and after a terminal session error every in-memory store/cache of
+    // the signed-out user must be discarded and the proxy must see the cleared
+    // cookies. A client-side transition would keep that state alive.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- intentional hard navigation, see above
     window.location.assign(`/login?next=${encodeURIComponent(here)}&expired=1`)
   }
   // Never settles: the page is navigating away, so callers shouldn't flash
@@ -147,9 +161,11 @@ export async function api<T = unknown>(path: string, opts: FetchOpts = {}): Prom
 
   const isAuthEndpoint = path.startsWith(AUTH_PREFIX)
   if (res.status === 401 && !isAuthEndpoint) {
-    const refreshed = await refreshSession()
-    if (!refreshed) return redirectToLogin()
-    res = await send(path, opts)
+    const outcome = await sessionRecovery.recover(() => send(path, opts))
+    if (outcome.kind === 'login') return redirectToLogin()
+    if (outcome.kind === 'busy') throw new ApiError(tErrors('sessionBusy'), 503, 'SESSION_BUSY')
+    if (outcome.kind === 'offline') throw new ApiError(tErrors('network'), 0, 'NETWORK_ERROR')
+    res = outcome.response ?? (await send(path, opts))
     if (res.status === 401) return redirectToLogin()
   }
 

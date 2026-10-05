@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures'
 import { loginViaUi, registerViaUi, uniqueUser } from './helpers'
 
 async function logoutViaUi(page: import('@playwright/test').Page) {

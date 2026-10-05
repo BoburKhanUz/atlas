@@ -122,7 +122,7 @@ describe('upload storage hardening', () => {
   })
 
   const jpegWithExif = () =>
-    sharp({ create: { width: 64, height: 48, channels: 3, background: '#0F766E' } })
+    sharp({ create: { width: 320, height: 256, channels: 3, background: '#0F766E' } })
       .withMetadata({ exif: { IFD0: { Copyright: 'x', Artist: 'gps-leak' } } })
       .jpeg()
       .toBuffer()
@@ -139,7 +139,7 @@ describe('upload storage hardening', () => {
     const meta = await sharp(stored!).metadata()
     expect(meta.format).toBe('jpeg')
     expect(meta.exif).toBeUndefined()
-    expect(meta.width).toBe(64)
+    expect(meta.width).toBe(320)
   })
 
   it('deletes stored files when the DB transaction fails after saveImage', async () => {

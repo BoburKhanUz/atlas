@@ -3,6 +3,10 @@
 
 # ── deps + build ─────────────────────────────────────────────────────────────
 FROM oven/bun:1.3-debian AS builder
+# Real Node.js for `next build` (same image as the runtime stage). Without it
+# the bun image's fallback `node` runs Next.js on the Bun runtime, which crashes
+# (SIGILL) with Next 16.3 on Bun 1.3.14. Local and CI builds already use Node.
+COPY --from=node:22-bookworm-slim /usr/local/bin/node /usr/local/bin/node
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends openssl \
     && rm -rf /var/lib/apt/lists/*

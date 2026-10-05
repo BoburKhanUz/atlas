@@ -1,20 +1,12 @@
 import { NextResponse } from 'next/server'
-import { z } from 'zod'
 import { db } from '@/lib/db'
 import { requireAuth, unauthorized } from '@/lib/api-helpers'
 import { withApi, validate } from '@/server/http'
 import { getWeatherProvider } from '@/lib/weather/provider'
+import { WeatherQuery } from '@/server/schemas/requests'
 
 export const runtime = 'nodejs'
 
-const QuerySchema = z.object({
-  lat: z.coerce.number({ error: 'lat va lon parametrlari noto‘g‘ri' }).min(-90).max(90),
-  lon: z.coerce.number({ error: 'lat va lon parametrlari noto‘g‘ri' }).min(-180).max(180),
-})
-
-// GET /api/v1/weather/current?lat=41.31&lon=69.24
-// Returns cached weather if fresh (<30 min), otherwise fetches from the
-// provider and persists to weather_cache (spec section 11, 25).
 export const GET = withApi(async (req) => {
   const authUser = await requireAuth(req)
   if (!authUser) return unauthorized()
@@ -22,7 +14,7 @@ export const GET = withApi(async (req) => {
   const url = new URL(req.url)
   const { lat, lon } = validate(
     { lat: url.searchParams.get('lat') || undefined, lon: url.searchParams.get('lon') || undefined },
-    QuerySchema,
+    WeatherQuery,
   )
 
   // Round to 2 decimal places (~1km resolution) for the cache key. Spec:

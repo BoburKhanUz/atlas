@@ -7,41 +7,70 @@
  * The database stores storage *keys*, never public URLs, so a future
  * S3/R2 driver only needs to implement `StorageProvider`.
  *
- * We always generate a thumbnail (max 400×400, JPEG q=80) alongside the
- * original. Spec rule: "Never store large images directly in PostgreSQL."
+ * Every upload is stored as three variants under `users/<owner>/<uuid>`:
+ *   master   `<uuid>.<jpg|png|webp>` full resolution, orientation applied,
+ *            metadata (EXIF/GPS/XMP) stripped by re-encoding: JPEG q92, PNG
+ *            and WebP lossless. Never served to clients — source for AI
+ *            processing and future re-derivation.
+ *   display  `<uuid>_display.webp`, longest side ≤ 1600 px, WebP q82 (API `url`)
+ *   thumb    `<uuid>_thumb.webp`, longest side ≤ 400 px, WebP q75 (API `thumbnailUrl`)
+ * Phase 2 thumbnails (`_thumb.jpg`) remain readable.
+ * Spec rule: "Never store large images directly in PostgreSQL."
  */
 
-import sharp from 'sharp'
+import sharp, { type Metadata } from 'sharp'
 import { promises as fs } from 'fs'
 import path from 'path'
 import crypto from 'crypto'
 import { getLocalStorageDir } from '@/lib/config'
 
 export interface StoredImage {
-  /** Storage key of the original, e.g. `users/<userId>/<uuid>.jpg`. */
+  /** Master key, e.g. `users/<userId>/<uuid>.jpg` (never served). */
   key: string
-  /** Storage key of the 400×400 JPEG thumbnail. */
+  /** 1600 px WebP display variant. */
+  displayKey: string
+  /** 400 px WebP thumbnail. */
   thumbnailKey: string
+  /** Dimensions of the master after orientation. */
   width: number
   height: number
+  /** Detected MIME type of the upload (= master format). */
+  mimeType: string
+  /** Size and SHA-256 (hex) of the uploaded bytes. */
+  bytes: number
+  sha256: string
 }
 
 export interface StorageProvider {
-  /** Validate, normalise and store an image under `users/<ownerId>/`. */
+  /** Validate, normalise and store an image (all variants) under `users/<ownerId>/`. */
   saveImage(buffer: Buffer, ownerId: string): Promise<StoredImage>
   /** Read an object by key. Returns null when it does not exist. */
   readObject(key: string): Promise<Buffer | null>
-  /** Delete objects by key. Missing objects are ignored. */
-  deleteObjects(keys: string[]): Promise<void>
+  /** Write a derived variant for an existing master (display backfill). */
+  writeObject(key: string, data: Buffer): Promise<void>
+  /** Delete objects by key. Missing, empty and invalid keys are ignored. */
+  deleteObjects(keys: (string | null | undefined)[]): Promise<void>
   /** Delete every object stored for an owner (account deletion). */
   deleteOwner(ownerId: string): Promise<void>
+  /** Every stored key with its modification time (storage sweep). */
+  listObjects(): Promise<{ key: string; modifiedAt: Date }[]>
 }
 
-/** Thrown when the uploaded bytes are not a supported, decodable image. */
+/** Corrupt or undecodable bytes in an accepted format → 422 INVALID_IMAGE. */
 export class InvalidImageError extends Error {}
+/** HEIC/HEIF/AVIF and any other format we do not accept → 415 UNSUPPORTED_IMAGE_FORMAT. */
+export class UnsupportedImageFormatError extends Error {}
+/** Shortest side < 256 px or a side > 8000 px → 422 IMAGE_DIMENSIONS. */
+export class ImageDimensionsError extends Error {}
 
-/** Keys we generate: users/<id>/<uuid>[_thumb].<ext>. Anything else is rejected. */
-const KEY_PATTERN = /^users\/[A-Za-z0-9_-]{1,64}\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(_thumb)?\.(jpg|png|webp)$/
+export const IMAGE_MIN_SIDE = 256
+export const IMAGE_MAX_SIDE = 8000
+export const DISPLAY_MAX_SIDE = 1600
+export const THUMB_MAX_SIDE = 400
+
+/** Keys we generate: users/<id>/<uuid>[_thumb|_display].<ext>. Anything else is rejected. */
+const KEY_PATTERN =
+  /^users\/[A-Za-z0-9_-]{1,64}\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(_thumb|_display)?\.(jpg|png|webp)$/
 const OWNER_PATTERN = /^[A-Za-z0-9_-]{1,64}$/
 
 export function isValidStorageKey(key: string): boolean {
@@ -54,14 +83,24 @@ export function contentTypeForKey(key: string): string {
   return 'image/jpeg'
 }
 
-/** Formats kept in their own format (by detected content, not by filename); re-encoded to strip metadata. */
-const PASSTHROUGH_FORMATS: Record<string, 'jpg' | 'png' | 'webp'> = {
-  jpeg: 'jpg',
-  png: 'png',
-  webp: 'webp',
+/** The display key for a master key (same uuid). */
+export function displayKeyFor(masterKey: string): string {
+  return masterKey.replace(/\.(jpg|png|webp)$/, '_display.webp')
 }
-/** Formats we accept but convert to JPEG for browser compatibility. */
-const CONVERTED_FORMATS = new Set(['heif'])
+
+/** Accepted upload formats (by decoded content, never by filename) → master extension. */
+const ACCEPTED_FORMATS: Record<string, { ext: 'jpg' | 'png' | 'webp'; mime: string }> = {
+  jpeg: { ext: 'jpg', mime: 'image/jpeg' },
+  png: { ext: 'png', mime: 'image/png' },
+  webp: { ext: 'webp', mime: 'image/webp' },
+}
+
+/** ISO-BMFF brands of HEIC/HEIF/AVIF files (iPhone photos): rejected with 415, even if undecodable. */
+const HEIF_BRANDS = new Set(['heic', 'heix', 'hevc', 'hevx', 'heim', 'heis', 'mif1', 'msf1', 'avif', 'avis'])
+
+export function isHeifContainer(buffer: Buffer): boolean {
+  return buffer.length >= 12 && buffer.toString('latin1', 4, 8) === 'ftyp' && HEIF_BRANDS.has(buffer.toString('latin1', 8, 12))
+}
 
 const MAX_INPUT_PIXELS = 40_000_000 // ~40 MP — guards against decompression bombs
 
@@ -77,52 +116,86 @@ class LocalStorageProvider implements StorageProvider {
 
   async saveImage(buffer: Buffer, ownerId: string): Promise<StoredImage> {
     if (!OWNER_PATTERN.test(ownerId)) throw new Error('Invalid owner id')
+    if (isHeifContainer(buffer)) throw new UnsupportedImageFormatError('HEIC/HEIF/AVIF is not accepted; convert to JPEG')
 
     // Decode the actual bytes — never trust the filename or client MIME type.
-    let metadata: sharp.Metadata
+    let metadata: Metadata
     try {
       metadata = await sharp(buffer, { limitInputPixels: MAX_INPUT_PIXELS }).metadata()
     } catch {
       throw new InvalidImageError('Not a decodable image')
     }
-    const format = metadata.format ?? ''
-    const passthroughExt = PASSTHROUGH_FORMATS[format]
-    if (!passthroughExt && !CONVERTED_FORMATS.has(format)) {
-      throw new InvalidImageError(`Unsupported image format: ${format || 'unknown'}`)
+    const accepted = ACCEPTED_FORMATS[metadata.format ?? '']
+    if (!accepted) throw new UnsupportedImageFormatError(`Unsupported image format: ${metadata.format || 'unknown'}`)
+
+    // EXIF orientations 5–8 swap width and height.
+    const swap = (metadata.orientation ?? 1) >= 5
+    const width = (swap ? metadata.height : metadata.width) ?? 0
+    const height = (swap ? metadata.width : metadata.height) ?? 0
+    if (Math.min(width, height) < IMAGE_MIN_SIDE || Math.max(width, height) > IMAGE_MAX_SIDE) {
+      throw new ImageDimensionsError(`Image is ${width}×${height}`)
     }
 
     const id = crypto.randomUUID()
-    const ext = passthroughExt ?? 'jpg'
-    const key = `users/${ownerId}/${id}.${ext}`
-    const thumbnailKey = `users/${ownerId}/${id}_thumb.jpg`
+    const base = `users/${ownerId}/${id}`
+    const key = `${base}.${accepted.ext}`
+    const displayKey = `${base}_display.webp`
+    const thumbnailKey = `${base}_thumb.webp`
 
     await fs.mkdir(path.join(this.root, 'users', ownerId), { recursive: true })
 
+    // .rotate() applies EXIF orientation; sharp drops metadata (EXIF/GPS, XMP,
+    // ICC) by default — never call withMetadata().
+    const source = () => sharp(buffer, { limitInputPixels: MAX_INPUT_PIXELS }).rotate()
     try {
-      await sharp(buffer, { limitInputPixels: MAX_INPUT_PIXELS })
-        .rotate() // respect EXIF orientation
-        .resize(400, 400, { fit: 'inside', withoutEnlargement: true })
-        .jpeg({ quality: 80 })
+      const master = source()
+      if (accepted.ext === 'png') await master.png().toFile(this.resolve(key))
+      else if (accepted.ext === 'webp') await master.webp({ lossless: true }).toFile(this.resolve(key))
+      else await master.jpeg({ quality: 92 }).toFile(this.resolve(key))
+      await source()
+        .resize(DISPLAY_MAX_SIDE, DISPLAY_MAX_SIDE, { fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 82 })
+        .toFile(this.resolve(displayKey))
+      await source()
+        .resize(THUMB_MAX_SIDE, THUMB_MAX_SIDE, { fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 75 })
         .toFile(this.resolve(thumbnailKey))
-
-      // Re-encode every original: .rotate() applies EXIF orientation and
-      // sharp drops metadata (EXIF/GPS, XMP) by default — never withMetadata().
-      const original = sharp(buffer, { limitInputPixels: MAX_INPUT_PIXELS }).rotate()
-      if (ext === 'png') await original.png().toFile(this.resolve(key))
-      else if (ext === 'webp') await original.webp({ quality: 88 }).toFile(this.resolve(key))
-      else await original.jpeg({ quality: 88 }).toFile(this.resolve(key))
-    } catch (err) {
-      await this.deleteObjects([key, thumbnailKey])
-      if (err instanceof InvalidImageError) throw err
+    } catch {
+      await this.deleteObjects([key, displayKey, thumbnailKey])
       throw new InvalidImageError('Image could not be processed')
     }
 
     return {
       key,
+      displayKey,
       thumbnailKey,
-      width: metadata.width ?? 0,
-      height: metadata.height ?? 0,
+      width,
+      height,
+      mimeType: accepted.mime,
+      bytes: buffer.length,
+      sha256: crypto.createHash('sha256').update(buffer).digest('hex'),
     }
+  }
+
+  async writeObject(key: string, data: Buffer): Promise<void> {
+    const full = this.resolve(key)
+    await fs.mkdir(path.dirname(full), { recursive: true })
+    await fs.writeFile(full, data)
+  }
+
+  async listObjects(): Promise<{ key: string; modifiedAt: Date }[]> {
+    const out: { key: string; modifiedAt: Date }[] = []
+    const usersDir = path.join(this.root, 'users')
+    const owners = await fs.readdir(usersDir).catch(() => [] as string[])
+    for (const owner of owners) {
+      const files = await fs.readdir(path.join(usersDir, owner)).catch(() => [] as string[])
+      for (const file of files) {
+        const key = `users/${owner}/${file}`
+        const stat = await fs.stat(path.join(usersDir, owner, file)).catch(() => null)
+        if (stat?.isFile()) out.push({ key, modifiedAt: stat.mtime })
+      }
+    }
+    return out
   }
 
   async readObject(key: string): Promise<Buffer | null> {
@@ -133,9 +206,11 @@ class LocalStorageProvider implements StorageProvider {
     }
   }
 
-  async deleteObjects(keys: string[]): Promise<void> {
+  async deleteObjects(keys: (string | null | undefined)[]): Promise<void> {
     await Promise.all(
-      keys.filter(isValidStorageKey).map((k) => fs.unlink(this.resolve(k)).catch(() => {})),
+      keys
+        .filter((k): k is string => !!k && isValidStorageKey(k))
+        .map((k) => fs.unlink(this.resolve(k)).catch(() => {})),
     )
   }
 
@@ -163,19 +238,17 @@ export function setStorageProviderForTesting(p: StorageProvider | null) {
   _provider = p
 }
 
+/** Declared types we accept. HEIC/HEIF/AVIF must be converted by the client (mobile: JPEG ~2048 px, q≈85). */
+const DECLARED_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp'])
+export const MAX_IMAGE_BYTES = 8 * 1024 * 1024
+
 /**
- * Cheap pre-check on the upload envelope (size + declared type). The real
+ * Cheap pre-check on the upload envelope (declared type + size). The real
  * content check is the decode in `saveImage`.
  * Spec section 28: "image upload validation / maximum image size / MIME type"
  */
-export function validateImageFile(file: { name: string; type: string; size: number }): string | null {
-  const MAX_SIZE = 8 * 1024 * 1024
-  const ALLOWED = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
-  if (!ALLOWED.includes(file.type.toLowerCase())) {
-    return 'Faqat JPG, PNG, WEBP yoki HEIC formatlari qo\'llab-quvvatlanadi'
-  }
-  if (file.size > MAX_SIZE) {
-    return 'Rasm hajmi 8 MB dan oshmasligi kerak'
-  }
+export function checkImageEnvelope(file: { type: string; size: number }): 'unsupported_type' | 'too_large' | null {
+  if (!DECLARED_TYPES.has(file.type.toLowerCase())) return 'unsupported_type'
+  if (file.size > MAX_IMAGE_BYTES) return 'too_large'
   return null
 }

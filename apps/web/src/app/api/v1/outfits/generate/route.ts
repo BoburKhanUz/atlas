@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server'
-import { z } from 'zod'
 import { db } from '@/lib/db'
 import { requireAuth, unauthorized } from '@/lib/api-helpers'
 import { withApi, parseJson } from '@/server/http'
 import { log } from '@/server/log'
-import { occasionSchema } from '@/server/schemas/catalog'
-import { weatherSnapshotSchema } from '@/server/schemas/common'
+import { OutfitGenerateRequest } from '@/server/schemas/requests'
 import { getWeatherProvider } from '@/lib/weather/provider'
 import {
   generateOutfits,
@@ -19,18 +17,6 @@ import { getLLMProvider, type LLMMessage } from '@/lib/ai/llm-provider'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
-
-const GenerateSchema = z.object({
-  occasion: occasionSchema.optional().nullable(),
-  weather: weatherSnapshotSchema.optional().nullable(),
-  /** Optional geolocation — if provided, server fetches fresh weather. */
-  lat: z.number().min(-90).max(90).optional().nullable(),
-  lon: z.number().min(-180).max(180).optional().nullable(),
-  /** Optional re-roll seed for refresh button. */
-  seed: z.number().finite().optional(),
-  /** Number of candidates to return (default 3, max 5). */
-  topN: z.number().int().min(1).max(5).optional(),
-})
 
 interface GenerateResponse {
   outfits: Array<{
@@ -64,7 +50,7 @@ export const POST = withApi(async (req) => {
   const authUser = await requireAuth(req)
   if (!authUser) return unauthorized()
 
-  const { occasion, weather: clientWeather, lat, lon, seed, topN } = await parseJson(req, GenerateSchema)
+  const { occasion, weather: clientWeather, lat, lon, seed, topN } = await parseJson(req, OutfitGenerateRequest)
 
   // ── 1. Load user's wardrobe ───────────────────────────────────────────────
   const items = await db.wardrobeItem.findMany({

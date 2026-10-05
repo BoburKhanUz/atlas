@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test'
-import { registerViaApi, uploadAll } from './helpers'
+import { expect, test } from './fixtures'
+import { GARMENTS, makeImage, registerViaApi, uploadAll } from './helpers'
 
 test.describe('wardrobe', () => {
   test('upload 3, detail/back/forward/reload, edit persists with corrected badge, delete', async ({ page }) => {
@@ -75,5 +75,27 @@ test.describe('wardrobe', () => {
     const res = await other.get(`/api/v1/wardrobe/items/${id}`)
     expect(res.status()).toBe(404)
     await other.dispose()
+  })
+  // Regression: with AnimatePresence mode="wait", an upload finishing while the
+  // previous panel was still animating out left "Tahlil qilinmoqda…" on screen
+  // forever (the item was saved). Sweep the response time across that window.
+  test('the analysis result is shown whatever the upload response time', async ({ page }) => {
+    // E2E_UPLOAD_SWEEP_STEP=3 for a fine sweep when investigating
+    const step = Number(process.env.E2E_UPLOAD_SWEEP_STEP ?? 15)
+    test.setTimeout(240_000)
+    await registerViaApi(page.request)
+    const file = await makeImage(GARMENTS.shirt.name, GARMENTS.shirt.color)
+    for (let delay = 0; delay <= 360; delay += step) {
+      await page.unroute('**/api/v1/wardrobe/items')
+      // delay the request (route.continue keeps the binary body intact; route.fetch would re-encode it)
+      await page.route('**/api/v1/wardrobe/items', async (route) => {
+        await new Promise((r) => setTimeout(r, delay))
+        await route.continue()
+      })
+      await page.goto('/wardrobe/new')
+      await page.waitForLoadState('networkidle')
+      await page.locator('input[type=file]:not([capture])').setInputFiles(file)
+      await expect(page.getByText('Tahlil tayyor'), `response delayed ${delay} ms`).toBeVisible({ timeout: 5_000 })
+    }
   })
 })
