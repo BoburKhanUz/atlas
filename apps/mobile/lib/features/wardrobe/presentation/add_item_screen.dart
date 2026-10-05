@@ -8,7 +8,7 @@ import '../../../core/widgets/atlas_button.dart';
 import '../data/photo_picker.dart';
 import '../providers.dart';
 import 'add_item_controller.dart';
-import 'wardrobe_labels.dart';
+import 'review_panel.dart';
 import 'wardrobe_messages.dart';
 
 /// Add a garment: camera or gallery → prepared on the device → preview →
@@ -32,7 +32,7 @@ class AddItemScreen extends ConsumerWidget {
               AddPhase.choose => _Choose(onPick: c.pick),
               AddPhase.preparing => const _Progress(key: Key('add.preparing'), label: 'Rasm tayyorlanmoqda…'),
               AddPhase.preview || AddPhase.uploading || AddPhase.analysing || AddPhase.failed => _Upload(state: s),
-              AddPhase.success => _Success(state: s),
+              AddPhase.completed || AddPhase.needsCorrection => _Success(state: s),
               AddPhase.rejected => _Rejected(state: s, onAgain: c.reset),
             },
           ),
@@ -156,6 +156,15 @@ class _Upload extends ConsumerWidget {
           _ => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (state.recovered)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AtlasSpacing.xs),
+                  child: Text(
+                    'Bu rasm avval yuklanayotgan edi — takror qo‘shilmasligi ta’minlanadi.',
+                    key: const Key('add.recoveredNote'),
+                    style: text.bodySmall,
+                  ),
+                ),
               AtlasButton(key: const Key('add.upload'), label: 'Yuklash', onPressed: c.upload),
               TextButton(key: const Key('add.another'), onPressed: c.reset, child: const Text('Boshqa rasm tanlash')),
             ],
@@ -172,36 +181,47 @@ class _Success extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final item = state.result!.item;
+    final item = state.item!;
+    final c = ref.read(addItemControllerProvider.notifier);
     final text = Theme.of(context).textTheme;
-    final name = item.subcategory != null
-        ? WardrobeLabels.subcategory(item.subcategory!)
-        : WardrobeLabels.category(item.category);
+    final review = state.phase == AddPhase.needsCorrection;
+    void edit() => context.push(AtlasRoutes.wardrobeItemEdit(item.id));
     return SingleChildScrollView(
-      key: const Key('add.success'),
+      key: Key(review ? 'add.needsCorrection' : 'add.completed'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Icon(Icons.check_circle_outline_rounded, size: 48, color: AtlasColors.success),
+          Icon(
+            review ? Icons.rule_rounded : Icons.check_circle_outline_rounded,
+            size: 48,
+            color: review ? AtlasColors.warning : AtlasColors.success,
+          ),
           const SizedBox(height: AtlasSpacing.sm),
-          Text('Garderobga qo‘shildi', style: text.headlineSmall, textAlign: TextAlign.center),
-          const SizedBox(height: AtlasSpacing.xs),
           Text(
-            [name, if (item.colors.isNotEmpty) item.colors.map(WardrobeLabels.color).join(', ')].join(' · '),
-            style: text.bodyLarge,
+            review ? 'Qo‘shildi — tekshirib chiqing' : 'Garderobga qo‘shildi',
+            style: text.headlineSmall,
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: AtlasSpacing.xl),
+          if (state.result!.replayed)
+            Padding(
+              padding: const EdgeInsets.only(top: AtlasSpacing.xs),
+              child: Text(
+                'Bu rasm avvalroq yuklangan ekan — takror qo‘shilmadi.',
+                key: const Key('add.replayed'),
+                style: text.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          const SizedBox(height: AtlasSpacing.lg),
+          AttributeReviewList(item: item, acknowledged: state.acknowledged, onAcknowledge: c.acknowledge, onEdit: edit),
+          const SizedBox(height: AtlasSpacing.md),
           AtlasButton(
             key: const Key('add.open'),
             label: 'Kiyimni ko‘rish',
             onPressed: () => context.pushReplacement(AtlasRoutes.wardrobeItem(item.id)),
           ),
-          TextButton(
-            key: const Key('add.more'),
-            onPressed: ref.read(addItemControllerProvider.notifier).reset,
-            child: const Text('Yana qo‘shish'),
-          ),
+          TextButton(key: const Key('add.edit'), onPressed: edit, child: const Text('Xususiyatlarni tuzatish')),
+          TextButton(key: const Key('add.more'), onPressed: c.reset, child: const Text('Yana qo‘shish')),
         ],
       ),
     );

@@ -35,7 +35,7 @@ flutter test
 flutter build apk --debug --dart-define-from-file=config/development.json
 ```
 
-Session integration tests against a **local, disposable** backend (skipped otherwise; see the header of `test/integration/backend_session_test.dart`; they cover sessions and onboarding):
+Session integration tests against a **local, disposable** backend (skipped otherwise; see the header of `test/integration/backend_session_test.dart`; they cover sessions, onboarding, the wardrobe, attribute corrections and interrupted-upload recovery):
 
 ```bash
 ATLAS_IT_BASE_URL=http://127.0.0.1:3100 flutter test test/integration/
@@ -53,7 +53,7 @@ ATLAS_IT_BASE_URL=http://127.0.0.1:3100 flutter test test/integration/
 | `lib/core/session/` | Secure token storage, auth state, login/register/logout, refresh and recovery (client-recovery-vectors.json) |
 | `lib/features/auth/` | Splash, sign-in and registration screens |
 | `lib/features/onboarding/` | Onboarding gate, steps and the single profile save |
-| `lib/features/wardrobe/` | Wardrobe list, item detail, add flow, image preparation (JPEG, EXIF/GPS removal), idempotent upload |
+| `lib/features/wardrobe/` | Wardrobe list, item detail, add flow, image preparation (JPEG, EXIF/GPS removal), idempotent upload, analysis review (confidence levels), attribute editor (PATCH), interrupted-upload recovery |
 | `test/fixtures/images/` | Image fixtures for the preparation tests (see its README) |
 | `packages/atlas_api/` | Generated API client. **Never edit**; regenerate with `tool/openapi/generate_api.sh` |
 | `lib/core/logging/` | Redacting logger, silent in release builds |

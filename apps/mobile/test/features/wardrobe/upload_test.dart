@@ -132,7 +132,7 @@ void main() {
       expect(containsBytes(r.body, ascii.encode('Exif')), isFalse);
       expect(containsBytes(r.body, ascii.encode('GPS')), isFalse);
       expect(containsBytes(r.body, ascii.encode('Tashkent')), isFalse);
-      expect(s.state.phase, AddPhase.success);
+      expect(s.state.phase, AddPhase.completed);
     });
 
     test('phases: preparing → preview → uploading → analysing → success; the item joins the list', () async {
@@ -145,7 +145,7 @@ void main() {
         AddPhase.preview,
         AddPhase.uploading,
         AddPhase.analysing,
-        AddPhase.success,
+        AddPhase.completed,
       ]);
       expect(s.container.read(wardrobeListProvider).items.map((i) => i.id), contains('new-1'));
     });
@@ -159,7 +159,7 @@ void main() {
       expect(s.uploads, hasLength(1), reason: 'uploads are never retried automatically');
       expect(s.state.job, isNotNull, reason: 'the job is kept for Retry');
       await s.c.upload(); // Retry
-      expect(s.state.phase, AddPhase.success);
+      expect(s.state.phase, AddPhase.completed);
       final [a, b] = s.uploads;
       expect(b.header('Idempotency-Key'), a.header('Idempotency-Key'));
       final ja = s.state.job!.image.bytes;
@@ -190,7 +190,7 @@ void main() {
         JsonReply(201, uploadJson('new-1')),
       ]);
       await s.c.upload();
-      expect(s.state.phase, AddPhase.success);
+      expect(s.state.phase, AddPhase.completed);
       expect(s.sleeps, [const Duration(seconds: 3), const Duration(seconds: 30)]);
       expect(s.uploads.map((r) => r.header('Idempotency-Key')).toSet(), hasLength(1));
     });
@@ -258,7 +258,7 @@ void main() {
       s.replies([JsonReply(401, errorBody('UNAUTHORIZED')), JsonReply(201, uploadJson('new-1'))]);
       final job = s.state.job!;
       await s.c.upload();
-      expect(s.state.phase, AddPhase.success);
+      expect(s.state.phase, AddPhase.completed);
       final [a, b] = s.uploads;
       expect(a.header('Authorization'), 'Bearer ${access(1)}');
       expect(b.header('Authorization'), 'Bearer ${access(2)}');

@@ -46,8 +46,16 @@ class CountingAdapter implements HttpClientAdapter {
     counts[o.uri.path] = (counts[o.uri.path] ?? 0) + 1;
     final auth = o.headers.entries.where((e) => e.key.toLowerCase() == 'authorization').map((e) => e.value).firstOrNull;
     (authorization[o.uri.path] ??= []).add(auth);
-    return _inner.fetch(o, body, cancel);
+    final lose = loseResponse?.call(o) ?? false;
+    if (!lose) return _inner.fetch(o, body, cancel);
+    // The server processes the request; its answer never reaches the app.
+    return _inner
+        .fetch(o, body, cancel)
+        .then<ResponseBody>((_) => throw DioException(requestOptions: o, type: DioExceptionType.connectionError));
   }
+
+  /// Requests whose answer is dropped after the server handled them.
+  bool Function(RequestOptions request)? loseResponse;
 
   @override
   void close({bool force = false}) => _inner.close(force: force);

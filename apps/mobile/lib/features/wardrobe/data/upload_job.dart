@@ -14,6 +14,10 @@ class UploadJob {
 
   factory UploadJob.create(PreparedImage image, {Random? random}) => UploadJob._(newIdempotencyKey(random), image);
 
+  /// Recovery after an interrupted upload: the SAME prepared payload (hash
+  /// and file name verified by the caller) under its earlier key.
+  factory UploadJob.recovered(PreparedImage image, String idempotencyKey) => UploadJob._(idempotencyKey, image);
+
   final String idempotencyKey;
   final PreparedImage image;
 

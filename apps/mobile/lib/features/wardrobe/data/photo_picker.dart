@@ -27,6 +27,10 @@ abstract interface class PhotoPicker {
   /// Null when the user cancelled. Permission is asked by the system only
   /// now, when the user chose [source].
   Future<PickedPhoto?> pick(PhotoSource source);
+
+  /// Android: a photo taken while the system killed the app (camera
+  /// activity) is delivered after the restart. Null when there is none.
+  Future<PickedPhoto?> recoverLost();
 }
 
 /// The system camera / photo picker (image_picker). No size or quality
@@ -49,6 +53,24 @@ class PlatformPhotoPicker implements PhotoPicker {
       rethrow;
     }
     if (file == null) return null;
+    return _read(file);
+  }
+
+  @override
+  Future<PickedPhoto?> recoverLost() async {
+    if (!Platform.isAndroid) return null;
+    try {
+      final lost = await _picker.retrieveLostData();
+      if (lost.isEmpty) return null;
+      final file = lost.file;
+      return file == null ? null : await _read(file);
+    } on Object catch (e) {
+      AppLog.info('no lost photo recovered (${e.runtimeType})');
+      return null;
+    }
+  }
+
+  Future<PickedPhoto> _read(XFile file) async {
     final bytes = await file.readAsBytes();
     // The picker's temporary copy is not kept: the photo lives in memory
     // only until it is uploaded or discarded.

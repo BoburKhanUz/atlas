@@ -1,68 +1,13 @@
-import 'dart:async';
-
-import 'package:atlas_mobile/app/app.dart';
-import 'package:atlas_mobile/app/router.dart';
-import 'package:atlas_mobile/features/wardrobe/data/image_preparer.dart';
 import 'package:atlas_mobile/features/wardrobe/presentation/add_item_screen.dart';
 import 'package:atlas_mobile/features/wardrobe/presentation/item_detail_screen.dart';
-import 'package:atlas_mobile/features/wardrobe/providers.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../support/fake_http.dart';
 import '../../support/fake_session.dart';
-import '../../support/jpeg_fixtures.dart';
+import 'app_harness.dart';
 import 'wardrobe_fixtures.dart';
-
-class App {
-  App(this.tester, {FakePicker? picker}) : picker = picker ?? FakePicker(result: photo());
-  final WidgetTester tester;
-  final FakePicker picker;
-  final h = SessionHarness(stored: pair(1));
-  late final ProviderContainer container;
-  GoRouter get router => container.read(routerProvider);
-  String get location => router.routerDelegate.currentConfiguration.uri.toString();
-
-  Future<void> start({FakeReply Function(SentRequest)? wardrobe}) async {
-    h.backend.handlers[P.wardrobe] = wardrobe ?? (r) => JsonReply(200, pageJson(['a', 'b']));
-    for (final id in ['a', 'b', 'new-1']) {
-      h.backend.handlers['${P.wardrobe}/$id'] = (r) => r.method == 'DELETE'
-          ? JsonReply(200, {'ok': true})
-          : JsonReply(200, {'item': itemJson(id, corrected: id == 'a')});
-    }
-    h.backend.handlers['/api/v1/media/users/u1/a_thumb.webp'] = (r) =>
-        BytesReply(200, fixtureBytes('plain_landscape.jpg'));
-    container = ProviderContainer(
-      overrides: [
-        ...appOverrides(h),
-        photoPickerProvider.overrideWithValue(picker),
-        imagePreparerProvider.overrideWithValue(ImagePreparer(StubCompressor())),
-      ],
-    );
-    addTearDown(container.dispose);
-    unawaited(h.session.restore());
-    await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const AtlasApp()));
-    await settle();
-    router.go(AtlasRoutes.wardrobe);
-    await settle();
-  }
-
-  Future<void> settle() async {
-    for (var i = 0; i < 20; i++) {
-      await tester.pump(const Duration(milliseconds: 20));
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 2)));
-    }
-  }
-
-  Future<void> tap(Finder f) async {
-    await tester.ensureVisible(f);
-    await tester.tap(f);
-    await settle();
-  }
-}
 
 void main() {
   testWidgets('list: items in a grid, category chips; a chip filters through the contract parameter', (tester) async {
@@ -120,7 +65,7 @@ void main() {
     await app.tap(find.byKey(const Key('add.gallery')));
     expect(find.byKey(const Key('add.preview')), findsOneWidget);
     await app.tap(find.byKey(const Key('add.upload')));
-    expect(find.byKey(const Key('add.success')), findsOneWidget);
+    expect(find.byKey(const Key('add.completed')), findsOneWidget);
     await app.tap(find.byKey(const Key('add.open')));
     expect(find.byWidgetPredicate((w) => w is ItemDetailScreen && w.id == 'new-1'), findsOneWidget);
   });
@@ -140,7 +85,7 @@ void main() {
     await app.tap(find.byKey(const Key('add.upload')));
     expect(find.byKey(const Key('add.failure')), findsOneWidget);
     await app.tap(find.byKey(const Key('add.retry')));
-    expect(find.byKey(const Key('add.success')), findsOneWidget);
+    expect(find.byKey(const Key('add.completed')), findsOneWidget);
     final keys = app.h.backend.to(P.wardrobe).where((r) => r.method == 'POST').map((r) => r.header('Idempotency-Key'));
     expect(keys.toSet(), hasLength(1));
   });
@@ -183,7 +128,7 @@ void main() {
       await app.tap(find.byKey(const Key('add.gallery')));
       await app.tap(find.byKey(const Key('add.upload')));
       expect(tester.takeException(), isNull);
-      expect(find.byKey(const Key('add.success')), findsOneWidget);
+      expect(find.byKey(const Key('add.completed')), findsOneWidget);
     });
   }
 }

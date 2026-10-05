@@ -2,6 +2,7 @@ import 'package:atlas_api/atlas_api.dart' show Detection, WardrobeItem;
 import 'package:dio/dio.dart';
 
 import '../../../core/network/api_client.dart';
+import 'item_edit.dart';
 import 'upload_job.dart';
 
 /// Wardrobe categories of the list filter (contract enum, `all` = no filter).
@@ -43,6 +44,17 @@ class WardrobeRepository {
 
   Future<WardrobeItem> get(String id) async =>
       (await _client.call((api) => api.getWardrobeApi().getWardrobeItem(id: id))).item;
+
+  /// PATCH /api/v1/wardrobe/items/{id} with exactly [changes] (contract
+  /// JSON, validated through the generated types). One request, never
+  /// retried automatically. Returns the updated item.
+  Future<WardrobeItem> update(String id, Map<String, Object?> changes) async {
+    final request = ItemDraft.toRequest(changes);
+    final r = await _client.call(
+      (api) => api.getWardrobeApi().updateWardrobeItem(id: id, wardrobeItemPatchRequest: request),
+    );
+    return r.item;
+  }
 
   Future<void> delete(String id) => _client.call((api) => api.getWardrobeApi().deleteWardrobeItem(id: id));
 

@@ -282,7 +282,38 @@ Three distinct situations:
   - Android: none added. image_picker's camera intent and picker need no `CAMERA` or storage permission; this is checked in the merged release manifest.
   - iOS: `NSCameraUsageDescription` and `NSPhotoLibraryUsageDescription` in Uzbek. `requestFullMetadata: false`.
   - Permission is asked only when the user taps Camera or Gallery.
-- **Phase 3.6:** analysis-state UX beyond the upload response, low-confidence/needs-correction UX, attribute editing (`PATCH`), and resuming a pending upload after an app restart.
+- **Phase 3.6 (implemented, see below):** analysis-state UX beyond the upload response, low-confidence/needs-correction UX, attribute editing (`PATCH`), and resuming a pending upload after an app restart.
+
+## Analysis lifecycle and corrections (3.6, implemented)
+
+- **State machine (`AddItemController`, `AddPhase`):**
+  - choose → preparing → preview → uploading → analysing → completed | needsCorrection | failed | rejected.
+  - Analysis is synchronous within the upload, so "analysing" ends with the server's answer, the request timeout (→ failed with Retry), the end of the session (→ reset; sign-in follows) or a restart (→ recovery below).
+  - There is no polling.
+- **Confidence (`ConfidenceRules`, `analysis_review.dart`) — the only place the thresholds live:**
+  - ≥ 0.70 is High, ≥ 0.40 is Medium, < 0.40 is Low. These are the same values as the web client.
+  - Keys map to attributes; the backend's `color` key maps to `colors`. Unknown keys are ignored.
+  - An attribute needs review when it is Low, not in `correctionLog`, and not acknowledged in this session.
+  - The result is *completed* when nothing needs review, *needsCorrection* otherwise.
+- **"This is correct":** client-session only, kept in screen or controller state. It sends no request, makes no `correctionLog` entry and leaves `wasCorrected` unchanged; the item asks again on the next visit.
+- **Editor (`EditItemController`, `ItemDraft`):**
+  - Only contract values can be chosen. Subcategories are grouped by category exactly as the backend's `SUBCATEGORIES` (`apps/web/src/lib/ai/catalog.ts`), which a test parses and compares.
+  - There is no "clear" option (explicit null is out of scope).
+  - Limits: 1–5 colours and 1–4 seasons; a category change drops a subcategory that doesn't belong to it.
+  - Save sends exactly one PATCH with only the genuinely changed fields. Lists compare order-insensitively (same elements, same length), so reordering is no change. When nothing changed, no request is sent.
+  - The body is validated through the generated `WardrobeItemPatchRequest` (deserialise and re-serialise must round-trip); a value outside the contract is never sent.
+  - There is no automatic retry. A network or 5xx failure keeps the edits and offers Retry, which sends the same body.
+  - A double tap sends one request. 400 field errors are shown on the attribute.
+  - 401 goes through the session layer (refresh, re-send). A terminal session error discards the edits.
+  - 404 closes the editor, removes the item and refreshes the list.
+  - On success, the list, the detail and the add-flow review are updated from the server's answer.
+- **Interrupted-upload recovery (`PendingUploadStore`):** duplicate-safe, *not* a background resume.
+  - Before the first send, a per-user record goes to secure storage under `atlas.upload.pending.v1.<userId>`. It holds `userId`, the `Idempotency-Key`, the SHA-256 of the prepared bytes, the file name and the creation time. It never holds image bytes.
+  - The record is deleted on success, on rejection and after 24 h. A failure keeps it.
+  - After a restart (a record older than this process), the wardrobe shows a notice. If the user prepares the same photo again (same hash **and** file name), the stored key is reused and the server replays, so there is no duplicate item. Anything else gets a new key; a different payload is never sent with an existing key.
+  - `retrieveLostData()` (Android) restores a camera photo lost to process death.
+  - SHA-256 is pure Dart (`sha256.dart`), with no new dependency.
+- **Logging:** confidence values, attribute values, the key, the hash, signed URLs and image bytes are never logged (tested).
 
 ## Offline behaviour
 

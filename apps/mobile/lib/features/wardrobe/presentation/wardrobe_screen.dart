@@ -10,6 +10,7 @@ import '../../../core/widgets/atlas_page.dart';
 import '../../../core/widgets/signed_image.dart';
 import '../../../core/widgets/skeleton.dart';
 import '../../../core/widgets/state_views.dart';
+import '../data/analysis_review.dart';
 import '../data/wardrobe_repository.dart';
 import '../providers.dart';
 import 'wardrobe_labels.dart';
@@ -35,6 +36,13 @@ class WardrobeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(wardrobeListProvider);
     final list = ref.read(wardrobeListProvider.notifier);
+    final interrupted = ref.watch(interruptedUploadProvider).value;
+    final dismissed = ref.watch(interruptedNoticeDismissedProvider);
+    // An upload of an earlier run may have reached the server: show the
+    // server's list (the source of truth) when the notice appears.
+    ref.listen(interruptedUploadProvider, (previous, next) {
+      if (previous?.value == null && next.value != null) list.refresh();
+    });
     void add() => context.push(AtlasRoutes.wardrobeAdd);
 
     final Widget? body = switch (s) {
@@ -61,6 +69,13 @@ class WardrobeScreen extends ConsumerWidget {
         label: const Text('Qo‘shish'),
       ),
       slivers: [
+        if (interrupted != null && !dismissed)
+          SliverToBoxAdapter(
+            child: _InterruptedNotice(
+              onAddAgain: add,
+              onDismiss: ref.read(interruptedNoticeDismissedProvider.notifier).dismiss,
+            ),
+          ),
         SliverToBoxAdapter(
           child: _CategoryChips(selected: s.category, onSelected: list.setCategory),
         ),
@@ -152,7 +167,31 @@ class _ItemTile extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AtlasSpacing.xxs),
-            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.labelLarge),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                ),
+                if (needsReview(item))
+                  Container(
+                    key: Key('wardrobe.review.${item.id}'),
+                    padding: const EdgeInsets.symmetric(horizontal: AtlasSpacing.xs, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: AtlasColors.warningSoft,
+                      borderRadius: BorderRadius.circular(AtlasRadii.pill),
+                    ),
+                    child: Text(
+                      'Tekshiring',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AtlasColors.warning),
+                    ),
+                  ),
+              ],
+            ),
           ],
         ),
       ),
@@ -184,6 +223,49 @@ class _Footer extends StatelessWidget {
         WardrobeListState(status: ListStatus.loadingMore || ListStatus.refreshing) => const Skeleton(height: 120),
         _ => const SizedBox.shrink(),
       },
+    );
+  }
+}
+
+/// After a restart: an upload of an earlier run did not finish. Its bytes
+/// are gone (never stored), so it cannot continue by itself.
+class _InterruptedNotice extends StatelessWidget {
+  const _InterruptedNotice({required this.onAddAgain, required this.onDismiss});
+  final VoidCallback onAddAgain;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const Key('wardrobe.interrupted'),
+      margin: const EdgeInsets.fromLTRB(AtlasSpacing.screen, 0, AtlasSpacing.screen, AtlasSpacing.xs),
+      padding: const EdgeInsets.all(AtlasSpacing.sm),
+      decoration: const BoxDecoration(color: AtlasColors.warningSoft, borderRadius: AtlasRadii.field),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Oldingi yuklash yakunlanmay qoldi. Garderob yangilandi: kiyim ro‘yxatda bo‘lmasa, '
+            'o‘sha rasmni qayta qo‘shing — takror qo‘shilmaydi.',
+            style: TextStyle(color: AtlasColors.warning),
+          ),
+          Wrap(
+            alignment: WrapAlignment.end,
+            children: [
+              TextButton(
+                key: const Key('wardrobe.interrupted.dismiss'),
+                onPressed: onDismiss,
+                child: const Text('Yopish'),
+              ),
+              TextButton(
+                key: const Key('wardrobe.interrupted.add'),
+                onPressed: onAddAgain,
+                child: const Text('Rasmni qayta qo‘shish'),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

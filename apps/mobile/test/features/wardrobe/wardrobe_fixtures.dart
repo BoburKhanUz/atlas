@@ -21,7 +21,29 @@ Map<String, Object?> imageJsonFor(String id, {DateTime? expiresAt, bool relative
   };
 }
 
-Map<String, Object?> itemJson(String id, {String category = 'shirt', DateTime? expiresAt, bool corrected = false}) => {
+/// Confidences as the mock vision returns them: most attributes low.
+const lowConfidences = <String, Object?>{
+  'category': 0.31,
+  'subcategory': 0.2,
+  'color': 0.86,
+  'pattern': 0.78,
+  'material': 0.35,
+  'style': 0.3,
+  'season': 0.45,
+  'sleeveLength': 0.15,
+  'fit': 0.15,
+  'formality': 0.3,
+  'gender': 0.3,
+};
+
+Map<String, Object?> itemJson(
+  String id, {
+  String category = 'shirt',
+  DateTime? expiresAt,
+  bool corrected = false,
+  Map<String, Object?>? confidences,
+  List<Map<String, Object?>>? correctionLog,
+}) => {
   'id': id,
   'category': category,
   'subcategory': category == 'shirt' ? 'tshirt' : null,
@@ -34,13 +56,15 @@ Map<String, Object?> itemJson(String id, {String category = 'shirt', DateTime? e
   'season': ['summer'],
   'gender': 'unisex',
   'formality': 'casual',
-  'confidences': {'category': 0.92},
-  'wasCorrected': corrected,
-  'correctionLog': corrected
-      ? [
-          {'field': 'colors', 'from': '["white"]', 'to': '["white","navy"]', 'at': '2026-10-05T10:00:00.000Z'},
-        ]
-      : <Object>[],
+  'confidences': confidences ?? {'category': 0.92},
+  'wasCorrected': corrected || (correctionLog?.isNotEmpty ?? false),
+  'correctionLog':
+      correctionLog ??
+      (corrected
+          ? [
+              {'field': 'colors', 'from': '["white"]', 'to': '["white","navy"]', 'at': '2026-10-05T10:00:00.000Z'},
+            ]
+          : <Object>[]),
   'images': [imageJsonFor(id, expiresAt: expiresAt)],
   'primaryImage': imageJsonFor(id, expiresAt: expiresAt),
   'createdAt': '2026-10-05T10:00:00.000Z',
@@ -52,8 +76,8 @@ Map<String, Object?> pageJson(List<String> ids, {String? next, String category =
   'nextCursor': next,
 };
 
-Map<String, Object?> uploadJson(String id) => {
-  'item': itemJson(id),
+Map<String, Object?> uploadJson(String id, {Map<String, Object?>? confidences}) => {
+  'item': itemJson(id, confidences: confidences),
   'detection': {
     'category': 'shirt',
     'subcategory': 'tshirt',
@@ -73,10 +97,22 @@ Map<String, Object?> uploadJson(String id) => {
 
 /// The system picker stand-in.
 class FakePicker implements PhotoPicker {
-  FakePicker({this.result, this.denied = false});
+  FakePicker({this.result, this.denied = false, this.lost});
   PickedPhoto? result;
   bool denied;
+
+  /// What `retrieveLostData` would deliver (Android process death).
+  PickedPhoto? lost;
   final calls = <PhotoSource>[];
+  var lostCalls = 0;
+
+  @override
+  Future<PickedPhoto?> recoverLost() async {
+    lostCalls++;
+    final l = lost;
+    lost = null;
+    return l;
+  }
 
   @override
   Future<PickedPhoto?> pick(PhotoSource source) async {

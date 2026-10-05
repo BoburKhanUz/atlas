@@ -3,19 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../app/router.dart';
 import '../../../core/design/tokens.dart';
 import '../../../core/network/api_error_code.dart';
 import '../../../core/network/api_failure.dart';
 import '../../../core/widgets/signed_image.dart';
 import '../../../core/widgets/skeleton.dart' show LoadingView;
 import '../../../core/widgets/state_views.dart';
+import '../data/analysis_review.dart';
 import '../providers.dart';
+import 'review_panel.dart';
 import 'wardrobe_labels.dart';
-
-/// One item, always read from the server (fresh signed URLs).
-final wardrobeItemProvider = FutureProvider.autoDispose.family<WardrobeItem, String>(
-  (ref, id) => ref.watch(wardrobeRepositoryProvider).get(id),
-);
 
 /// Read-only item detail (editing detected attributes is Phase 3.6).
 class ItemDetailScreen extends ConsumerStatefulWidget {
@@ -28,6 +26,9 @@ class ItemDetailScreen extends ConsumerStatefulWidget {
 
 class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   bool _deleting = false;
+
+  /// "This is correct" for this screen visit only (never sent).
+  final _acknowledged = <ItemAttribute>{};
 
   Future<void> _delete() async {
     final confirmed = await showDialog<bool>(
@@ -73,6 +74,13 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         actions: [
           if (item.hasValue)
             IconButton(
+              key: const Key('item.edit'),
+              tooltip: 'Tuzatish',
+              onPressed: _deleting ? null : () => context.push(AtlasRoutes.wardrobeItemEdit(widget.id)),
+              icon: const Icon(Icons.edit_outlined),
+            ),
+          if (item.hasValue)
+            IconButton(
               key: const Key('item.delete'),
               tooltip: 'O‘chirish',
               onPressed: _deleting ? null : _delete,
@@ -85,6 +93,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
       body: switch (item) {
         AsyncData(:final value) => _Details(
           item: value,
+          acknowledged: _acknowledged,
+          onAcknowledge: (a) => setState(() => _acknowledged.add(a)),
+          onEdit: () => context.push(AtlasRoutes.wardrobeItemEdit(widget.id)),
           onExpired: () => ref.invalidate(wardrobeItemProvider(widget.id)),
         ),
         AsyncError(error: NoNetworkFailure()) => OfflineStateView(
@@ -106,27 +117,23 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
 }
 
 class _Details extends StatelessWidget {
-  const _Details({required this.item, required this.onExpired});
+  const _Details({
+    required this.item,
+    required this.acknowledged,
+    required this.onAcknowledge,
+    required this.onEdit,
+    required this.onExpired,
+  });
   final WardrobeItem item;
+  final Set<ItemAttribute> acknowledged;
+  final void Function(ItemAttribute) onAcknowledge;
+  final VoidCallback onEdit;
   final VoidCallback onExpired;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final image = item.primaryImage ?? item.images.firstOrNull;
-    final rows = <(String, String)>[
-      ('Toifa', WardrobeLabels.category(item.category)),
-      if (item.subcategory != null) ('Tur', WardrobeLabels.subcategory(item.subcategory!)),
-      if (item.colors.isNotEmpty) ('Ranglar', item.colors.map(WardrobeLabels.color).join(', ')),
-      if (item.pattern != null) ('Naqsh', WardrobeLabels.pattern(item.pattern!)),
-      if (item.material != null) ('Material', WardrobeLabels.material(item.material!)),
-      if (item.sleeveLength != null) ('Yeng', WardrobeLabels.sleeve(item.sleeveLength!)),
-      if (item.fit != null) ('Bichim', WardrobeLabels.fit(item.fit!)),
-      if (item.style != null) ('Uslub', WardrobeLabels.style(item.style!)),
-      if (item.formality != null) ('Rasmiylik', WardrobeLabels.formality(item.formality!)),
-      if (item.season.isNotEmpty) ('Mavsum', item.season.map(WardrobeLabels.season).join(', ')),
-      if (item.gender != null) ('Kim uchun', WardrobeLabels.gender(item.gender!)),
-    ];
     return ListView(
       padding: const EdgeInsets.all(AtlasSpacing.screen),
       children: [
@@ -144,17 +151,7 @@ class _Details extends StatelessWidget {
             ),
           ),
         const SizedBox(height: AtlasSpacing.lg),
-        for (final (label, value) in rows)
-          Padding(
-            padding: const EdgeInsets.only(bottom: AtlasSpacing.sm),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(width: 110, child: Text(label, style: text.bodyMedium)),
-                Expanded(child: Text(value, style: text.bodyLarge)),
-              ],
-            ),
-          ),
+        AttributeReviewList(item: item, acknowledged: acknowledged, onAcknowledge: onAcknowledge, onEdit: onEdit),
         if (item.wasCorrected) ...[
           const SizedBox(height: AtlasSpacing.md),
           Text('Siz tuzatgan maydonlar', style: text.titleSmall),

@@ -125,5 +125,9 @@ class WardrobeListController extends Notifier<WardrobeListState> {
     state = state.copyWith(items: [item, ...state.items.where((i) => i.id != item.id)], failure: () => null);
   }
 
+  /// An item changed on the server (e.g. corrected attributes).
+  void replace(WardrobeItem item) =>
+      state = state.copyWith(items: [for (final i in state.items) i.id == item.id ? item : i]);
+
   void remove(String id) => state = state.copyWith(items: state.items.where((i) => i.id != id).toList());
 }
