@@ -35,6 +35,12 @@ flutter test
 flutter build apk --debug --dart-define-from-file=config/development.json
 ```
 
+Session integration tests against a **local, disposable** backend (skipped otherwise; see the header of `test/integration/backend_session_test.dart`):
+
+```bash
+ATLAS_IT_BASE_URL=http://127.0.0.1:3100 flutter test test/integration/backend_session_test.dart
+```
+
 ## Layout
 
 | Path | Contents |
@@ -44,6 +50,8 @@ flutter build apk --debug --dart-define-from-file=config/development.json
 | `lib/core/widgets/` | Shared UI: buttons, cards, skeletons, empty, error and offline states |
 | `lib/core/config/` | `AtlasEnvironmentConfig` (environment, URL, logging, timeouts, retry) |
 | `lib/core/network/` | HTTP layer around the generated client: headers, Bearer, retry, errors, connectivity |
+| `lib/core/session/` | Secure token storage, auth state, login/register/logout, refresh and recovery (client-recovery-vectors.json) |
+| `lib/features/auth/` | Splash, sign-in and registration screens |
 | `packages/atlas_api/` | Generated API client. **Never edit**; regenerate with `tool/openapi/generate_api.sh` |
 | `lib/core/logging/` | Redacting logger, silent in release builds |
 | `lib/features/<feature>/` | One folder per product area |

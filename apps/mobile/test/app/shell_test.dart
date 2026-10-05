@@ -6,10 +6,13 @@ import 'package:atlas_mobile/app/shell.dart';
 import 'package:atlas_mobile/core/config/environment_config.dart';
 import 'package:atlas_mobile/core/network/connectivity.dart';
 import 'package:atlas_mobile/core/network/providers.dart';
+import 'package:atlas_mobile/core/session/providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
+
+import '../support/fake_session.dart';
 
 Future<GoRouter> pumpApp(WidgetTester tester, {FakeDeviceNetwork? network}) async {
   final container = ProviderContainer(
@@ -18,6 +21,8 @@ Future<GoRouter> pumpApp(WidgetTester tester, {FakeDeviceNetwork? network}) asyn
         AtlasEnvironmentConfig.fromValues(environment: 'development', apiBaseUrl: 'http://localhost:3000'),
       ),
       deviceNetworkProvider.overrideWithValue(network ?? FakeDeviceNetwork()),
+      // Signed in: a valid session in (fake) secure storage.
+      secureKeyValueStoreProvider.overrideWithValue(MemorySecureStore()..put(livePair(1))),
     ],
   );
   addTearDown(container.dispose);

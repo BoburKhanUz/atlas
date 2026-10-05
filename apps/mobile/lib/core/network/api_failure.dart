@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../session/signed_out_reason.dart';
 import 'api_error_code.dart';
 import 'user_messages.dart';
 
@@ -153,4 +154,31 @@ final class UnexpectedResponseFailure extends ApiFailure {
   bool get retryable => statusCode == null || statusCode! >= 500;
   @override
   String describe() => 'unexpected response ${statusCode ?? '-'}: $reason';
+}
+
+/// The session can no longer be used (terminal refresh answer, logout, or
+/// no session at all): the request was not sent or not retried. The app is
+/// already on its way to the sign-in screen.
+final class SessionEndedFailure extends ApiFailure {
+  const SessionEndedFailure(this.reason);
+  final SignedOutReason reason;
+  @override
+  String get userMessage => UserMessages.forSignedOut(reason) ?? UserMessages.signInRequired;
+  @override
+  bool get retryable => false;
+  @override
+  String describe() => 'session ended (${reason.name})';
+}
+
+/// Secure storage refused to read or save the session. Nothing was
+/// claimed as signed in.
+final class SecureStorageFailure extends ApiFailure {
+  const SecureStorageFailure(this.operation);
+  final String operation;
+  @override
+  String get userMessage => UserMessages.secureStorage;
+  @override
+  bool get retryable => true;
+  @override
+  String describe() => 'secure storage $operation failed';
 }

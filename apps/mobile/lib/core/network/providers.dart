@@ -4,6 +4,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/environment_config.dart';
+import '../session/providers.dart';
+import '../session/session_interceptor.dart';
 import 'access_token_source.dart';
 import 'api_client.dart';
 import 'connectivity.dart';
@@ -13,8 +15,8 @@ final environmentConfigProvider = Provider<AtlasEnvironmentConfig>(
   (ref) => throw UnimplementedError('environmentConfigProvider must be overridden'),
 );
 
-/// Phase 3.3 overrides this with the secure-storage session.
-final accessTokenSourceProvider = Provider<AccessTokenSource>((ref) => const NoAccessToken());
+/// The Bearer token comes from the secure-storage session.
+final accessTokenSourceProvider = Provider<AccessTokenSource>((ref) => ref.watch(sessionControllerProvider));
 
 final deviceNetworkProvider = Provider<DeviceNetwork>((ref) => PlatformDeviceNetwork());
 
@@ -29,6 +31,7 @@ final dioProvider = Provider<Dio>((ref) {
     config: ref.watch(environmentConfigProvider),
     tokens: ref.watch(accessTokenSourceProvider),
     reachability: ref.watch(apiReachabilityProvider),
+    session: (dio) => AtlasSessionInterceptor(ref.watch(sessionControllerProvider), dio),
   );
   ref.onDispose(dio.close);
   return dio;

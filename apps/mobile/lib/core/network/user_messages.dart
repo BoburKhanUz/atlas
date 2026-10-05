@@ -1,3 +1,4 @@
+import '../session/signed_out_reason.dart';
 import 'api_error_code.dart';
 import 'api_failure.dart';
 
@@ -11,6 +12,21 @@ abstract final class UserMessages {
   static const cancelled = 'So‘rov bekor qilindi.';
   static const unexpected = 'Kutilmagan javob olindi. Qayta urinib ko‘ring.';
   static const generic = 'Nimadir xato ketdi. Qayta urinib ko‘ring.';
+  static const signInRequired = 'Davom etish uchun tizimga kiring.';
+  static const secureStorage =
+      'Sessiyani qurilmada xavfsiz saqlab bo‘lmadi. Qayta urinib ko‘ring yoki qurilmani qayta ishga tushiring.';
+
+  /// Explanation shown on the sign-in screen, or null when none is needed.
+  static String? forSignedOut(SignedOutReason reason) => switch (reason) {
+    SignedOutReason.none || SignedOutReason.loggedOut => null,
+    SignedOutReason.expired => 'Sessiya muddati tugadi. Iltimos, qayta kiring.',
+    SignedOutReason.revoked => 'Sessiya yakunlangan. Iltimos, qayta kiring.',
+    SignedOutReason.reused => 'Xavfsizlik uchun sessiya yakunlandi. Iltimos, qayta kiring.',
+    SignedOutReason.clientMismatch ||
+    SignedOutReason.raced ||
+    SignedOutReason.rejected => 'Sessiya tugadi. Iltimos, qayta kiring.',
+    SignedOutReason.storageUnavailable => 'Saqlangan sessiyani o‘qib bo‘lmadi. Iltimos, qayta kiring.',
+  };
 
   static String forHttp(ApiHttpFailure f) {
     final specific = switch (f.code) {

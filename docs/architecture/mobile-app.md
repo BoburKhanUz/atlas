@@ -62,11 +62,12 @@ The folders marked with a phase are created in that phase, not as empty placehol
 ## Routing: `go_router` 18
 
 - **Tab shell:** `StatefulShellRoute.indexedStack` with five branches: Home, Wardrobe, Outfits, Stylist, Profile. Each tab keeps its own navigation stack and scroll position, and re-tapping the active tab returns to its root.
-- **Guard (3.3):**
-  - Unauthenticated → `/login`.
-  - Authenticated but onboarding not finished → `/onboarding`.
-  - Authenticated users are kept away from auth screens.
-  - The router listens to the session state, so a terminal session error moves the user to login from anywhere.
+- **Guard (3.3, implemented):** one pure function, `authRedirect(AuthState, location)` in `lib/app/router.dart`, with the router listening to `SessionController`.
+  - `AuthRestoring` → `/splash`.
+  - `Unauthenticated`, `SessionExpired` and `Authenticating` → `/login` (or `/register`).
+  - `Authenticated`, `Refreshing` and `LoggingOut` → the shell. They are kept away from splash and auth screens.
+  - A refresh never navigates. Only a session that ended leads to sign-in, so there is no Login → refresh → Login loop. Tests check that every redirect target is stable.
+  - Onboarding (authenticated but not finished → `/onboarding`) is added with its phase.
 - **Full-screen flows** above the shell: add item, item detail, outfit detail, chat thread.
 - **Deep links:** none in v1. Paths are stable, so they can be added later.
 
@@ -162,7 +163,16 @@ Three distinct situations:
 ## Secure token storage (3.3)
 
 - **Storage:** `flutter_secure_storage`. On Android, values are encrypted with keys held in the Android Keystore; on iOS they go to the Keychain with `first_unlock_this_device`, not synced to iCloud. The exact plugin options are fixed and verified in 3.3.
-- **Stored:** the access token, refresh token, their expiry times, `sessionExpiresAt` and the user id. The pair is written in one value (JSON), so a crash can never leave mismatched halves.
+- **Stored:** one entry, `atlas.session.v1`, holding JSON with:
+  - the access token, refresh token, their expiry times and `sessionExpiresAt`;
+  - the `SessionUser` (id, email, name) for offline start;
+  - the server clock offset, measured from the response `Date` header so expiry checks survive a wrong device clock.
+  The pair is written as one value and read back before it counts, so a crash can never leave mismatched halves.
+- **Options (verified by tests):** Android uses namespace `atlas_session`, with AES-GCM data encryption under an RSA-OAEP key held in the Keystore. iOS uses `first_unlock_this_device` with `synchronizable: false`.
+- **Failure handling:**
+  - A storage failure during login or registration means the user is not authenticated, and the new server session is logged out.
+  - During refresh, the old pair stays active (no mixed pair). The request fails with `SecureStorageFailure`, and the next refresh within 60 s gets the same new pair again as a grace replay.
+  - An unreadable store at startup is not deleted.
 - **Never stored or logged:** tokens in SharedPreferences, files, SQLite, Hive, logs, analytics or crash reports. Signed media URLs are never persisted; they expire (`urlExpiresAt`) and are refetched.
 - **Android backup:**
   - `allowBackup="false"`, plus `dataExtractionRules` that exclude everything from cloud backup and device transfer. A restored Keystore-encrypted value would be unreadable anyway.
@@ -177,13 +187,30 @@ Three distinct situations:
 | Refresh response | What the app does |
 |---|---|
 | 200 (V01) | Save the new pair to secure storage **first**, then replace the in-memory pair; retry the original request once |
-| `SESSION_RACE` (V02/V03) | Re-read secure storage. If it holds a newer token, refresh with that. Otherwise wait 1 s and retry the refresh once, since a grace replay may succeed. A second race (V04) deletes the local tokens without any server call and shows login; that token is never presented again |
+| `SESSION_RACE` (V02/V03) | Re-read secure storage. If it holds a newer pair (another writer saved it), use it: re-send the original request once, without a refresh (V02). Only if that still gets 401, refresh once with the newest token (V03). If storage holds the same token, wait 1 s and refresh once more with it, since a grace replay may succeed. A second race (V04) deletes the local tokens without any server call and shows login; that token is never presented again |
 | `SESSION_BUSY` 503 (V06/V07) | Wait `Retry-After` plus jitter and retry. After 3 attempts, show a "server busy" banner, keep the tokens and allow no automatic refresh for 30 s |
 | Network error or timeout (V08/V09) | Retry after 1 s, then 2 s, but only within 45 s of the first attempt (monotonic clock). Then show offline mode, keep the tokens and allow a 30 s cool-down |
 | Terminal codes `INVALID_TOKEN`, `SESSION_EXPIRED`, `SESSION_REVOKED`, `REFRESH_REUSED`, `CLIENT_MISMATCH` (V05) | Delete the local tokens and go to login with an explanation. No retries, and **never** call logout because a refresh failed |
 
-- **Proactive refresh:** when `accessTokenExpiresAt` is under 60 s away, the app refreshes before sending the request. It still follows the same single-flight rules.
-- **Logout:** `POST /auth/logout` with `{ refreshToken }` and Bearer. Local tokens are cleared whatever the response (logout is idempotent server-side). `SESSION_BUSY` on logout is retried once in the background.
+- **Proactive refresh:** when `accessTokenExpiresAt` is under 30 s away (judged on the server clock offset), the app refreshes before sending the request. It follows the same single-flight rules: 5 concurrent requests cause one refresh.
+- **Stale 401:** each request remembers the token generation it was sent with. A 401 for an older pair than the active one is re-sent without another refresh.
+- **Re-sent requests:** a request re-sent after recovery that still gets 401 is returned as is, with no loop and no logout.
+- **Implementation:**
+  - `lib/core/session/recovery.dart` holds the pure episode logic and the rules.
+  - `session_controller.dart` holds the coordinator, storage and state.
+  - `session_interceptor.dart` holds the Dio interceptor.
+  - Login, register, refresh and logout use a separate Dio with no Bearer, no automatic retries and no session interceptor.
+- **Logout:**
+  - `POST /auth/logout` with `{ refreshToken }` (no Bearer needed; the token identifies the family).
+  - The in-memory pair is dropped first, and authenticated requests still running are cancelled with `SessionEndedFailure`.
+  - The server call is skipped when the device is offline. It is bounded by 12 s, with one `SESSION_BUSY` retry after `Retry-After` ≤ 2 s.
+  - Secure storage is cleared whatever the response (logout is idempotent server-side).
+- **Startup:**
+  - No stored pair → sign-in.
+  - Locally past `sessionExpiresAt` → cleared.
+  - Valid access token → shell, with no network call.
+  - Expired access token while offline → shell with the session kept.
+  - Expired access token while online → one controlled refresh. The splash waits at most 8 s; a later result still applies.
 
 ## Upload architecture (3.5–3.6)
 
