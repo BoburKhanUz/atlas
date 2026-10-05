@@ -1,0 +1,5 @@
+# Generated files we do not keep (tests/docs stubs, CI helpers).
+test/**
+doc/**
+.travis.yml
+git_push.sh

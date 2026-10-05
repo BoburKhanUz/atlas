@@ -46,3 +46,7 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Environment configs with real hosts are created by the release pipeline.
+/config/staging.json
+/config/production.json

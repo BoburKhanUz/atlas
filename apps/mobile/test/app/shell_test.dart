@@ -1,24 +1,43 @@
+import 'dart:async';
+
 import 'package:atlas_mobile/app/app.dart';
 import 'package:atlas_mobile/app/router.dart';
 import 'package:atlas_mobile/app/shell.dart';
-import 'package:atlas_mobile/core/config/app_config.dart';
+import 'package:atlas_mobile/core/config/environment_config.dart';
+import 'package:atlas_mobile/core/network/connectivity.dart';
+import 'package:atlas_mobile/core/network/providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
-Future<GoRouter> pumpApp(WidgetTester tester) async {
+Future<GoRouter> pumpApp(WidgetTester tester, {FakeDeviceNetwork? network}) async {
   final container = ProviderContainer(
     overrides: [
-      appConfigProvider.overrideWithValue(
-        AppConfig.fromValues(environment: 'development', apiBaseUrl: 'http://localhost:3000'),
+      environmentConfigProvider.overrideWithValue(
+        AtlasEnvironmentConfig.fromValues(environment: 'development', apiBaseUrl: 'http://localhost:3000'),
       ),
+      deviceNetworkProvider.overrideWithValue(network ?? FakeDeviceNetwork()),
     ],
   );
   addTearDown(container.dispose);
   await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const AtlasApp()));
   await tester.pumpAndSettle();
   return container.read(routerProvider);
+}
+
+class FakeDeviceNetwork implements DeviceNetwork {
+  FakeDeviceNetwork({this.online = true});
+  bool online;
+  final controller = StreamController<bool>.broadcast();
+  @override
+  Future<bool> hasNetwork() async => online;
+  @override
+  Stream<bool> get changes => controller.stream;
+  void set(bool value) {
+    online = value;
+    controller.add(value);
+  }
 }
 
 String location(GoRouter router) => router.routerDelegate.currentConfiguration.uri.toString();
@@ -69,5 +88,17 @@ void main() {
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     await pumpApp(tester);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('offline banner appears when the device loses network and disappears when it returns', (tester) async {
+    final network = FakeDeviceNetwork();
+    await pumpApp(tester, network: network);
+    expect(find.text('Internet aloqasi yo‘q'), findsNothing);
+    network.set(false);
+    await tester.pumpAndSettle();
+    expect(find.text('Internet aloqasi yo‘q'), findsOneWidget);
+    network.set(true);
+    await tester.pumpAndSettle();
+    expect(find.text('Internet aloqasi yo‘q'), findsNothing);
   });
 }

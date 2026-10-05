@@ -1,6 +1,8 @@
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../core/widgets/network_banner.dart';
+
 /// One bottom-navigation tab.
 class AtlasTab {
   const AtlasTab({required this.label, required this.icon, required this.selectedIcon});
@@ -30,24 +32,30 @@ class AtlasShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: navigationShell,
-      bottomNavigationBar: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: Theme.of(context).dividerTheme.color!)),
-        ),
-        child: NavigationBar(
-          selectedIndex: navigationShell.currentIndex,
-          onDestinationSelected: (index) =>
-              navigationShell.goBranch(index, initialLocation: index == navigationShell.currentIndex),
-          destinations: [
-            for (final tab in atlasTabs)
-              NavigationDestination(
-                icon: Icon(tab.icon),
-                selectedIcon: Icon(tab.selectedIcon),
-                label: tab.label,
-                tooltip: '',
-              ),
-          ],
-        ),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const NetworkBanner(),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: Theme.of(context).dividerTheme.color!)),
+            ),
+            child: NavigationBar(
+              selectedIndex: navigationShell.currentIndex,
+              onDestinationSelected: (index) =>
+                  navigationShell.goBranch(index, initialLocation: index == navigationShell.currentIndex),
+              destinations: [
+                for (final tab in atlasTabs)
+                  NavigationDestination(
+                    icon: Icon(tab.icon),
+                    selectedIcon: Icon(tab.selectedIcon),
+                    label: tab.label,
+                    tooltip: '',
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

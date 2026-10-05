@@ -19,14 +19,14 @@ Code is organised by feature, with a thin shared core. There are no use-case cla
 ```
 apps/mobile/
   lib/
-    main.dart                  entry: read AppConfig, start ProviderScope
+    main.dart                  entry: validate AtlasEnvironmentConfig, start ProviderScope
     app/                       app root, router, tab shell
     core/
-      config/                  AppConfig from --dart-define (environment, API base URL)
+      config/                  AtlasEnvironmentConfig (environment, URL, logging, timeouts, retry)
       design/                  tokens (colours, spacing, radii, motion), typography, ThemeData
       widgets/                 shared UI: buttons, cards, skeletons, empty, error and offline states
       logging/                 redacting logger (silent in release)
-      network/       (3.2)     Dio instance, auth interceptor, error mapping, connectivity
+      network/                 Dio + interceptors, ApiFailure + error mapper, retry, connectivity
       session/       (3.3)     token store (secure storage), refresh coordinator (recovery vectors)
     features/
       auth/          (3.3)     login, register, logout
@@ -39,7 +39,8 @@ apps/mobile/
       profile/       (3.9)     profile, preferences, colour profile, sessions, account deletion
       <feature>/data           API calls and mapping for that feature (when it has any)
       <feature>/presentation   screens, widgets, controllers (Riverpod Notifiers)
-  packages/atlas_api/  (3.2)   client generated from docs/api/openapi.json (never edited by hand)
+  packages/atlas_api/          client generated from docs/api/openapi.json (never edited by hand)
+  tool/openapi/                generation pipeline (prepare spec → openapi-generator → build_runner)
   config/                      --dart-define files per environment (no secrets)
   test/                        unit and widget tests, mirroring lib/
   integration_test/  (3.10)    on-device tests against a real backend
@@ -69,17 +70,94 @@ The folders marked with a phase are created in that phase, not as empty placehol
 - **Full-screen flows** above the shell: add item, item detail, outfit detail, chat thread.
 - **Deep links:** none in v1. Paths are stable, so they can be added later.
 
-## API client integration (3.2)
+## API client integration (3.2, implemented)
 
-- **Generation:** `packages/atlas_api` is generated from `docs/api/openapi.json` with the generator CI already uses (openapi-generator v7.10.0, `dart-dio`). A script, `tool/generate_api.sh`, does it. Generated code is committed so builds don't need Docker. CI regenerates the client and fails if it differs from the committed copy, and requires 0 analyzer errors.
-- **Known generator issue:** the multipart `file` field of `createWardrobeItem` comes out as `String`, not as binary. This is fixed through generator configuration (type mapping) and regeneration, never by editing generated files.
-- **One shared `Dio`** with:
-  - the base URL from `AppConfig`
-  - `X-Atlas-Client: mobile` on **every** request
-  - `Authorization: Bearer <access>` on authenticated operations
-  - timeouts: connect 10 s, receive 20 s, refresh call 12 s (the contract value)
-  - interceptors, in this order: auth header → 401 recovery (session coordinator) → error mapping
-- **Feature data code** calls the generated API classes and maps their models into small view models only where the screen needs a different shape.
+### Generated client
+
+- **Package:** `packages/atlas_api` is generated from `docs/api/openapi.json` by `tool/openapi/generate_api.sh`, with the generator CI already uses: openapi-generator **v7.10.0**, `dart-dio`, `built_value`.
+- **Config:** `tool/openapi/generator-config.yaml`. `enumUnknownDefaultCase: true` means a new backend enum value (for example a new error code) decodes as `unknown_default_open_api` instead of failing the whole response.
+- **Committed and checked:** generated code, including the built_value `.g.dart` files, is committed so builds need neither Docker nor build_runner. `generate_api.sh --check` regenerates into a temporary directory and fails if the committed copy differs. Generation is deterministic: two independent runs produce an identical tree.
+- **Never edited by hand.** The app analyzes it separately: 0 errors, plus generator warnings about unused imports.
+- **Spec preparation** (`tool/openapi/prepare_spec.dart`, generation only). The contract file itself is never changed. It works around two limitations of the pinned generator with OpenAPI 3.1:
+  1. **Binary content.** The contract marks binary payloads OpenAPI 3.1 style (`type: string, contentMediaType: …`), which the generator types as `String`. The step adds the equivalent 3.0 spelling, `format: binary`, to the 5 binary schemas: the multipart `file` of `POST /wardrobe/items` and `POST /color-profile/analyze`, and the three image responses of `GET /media/{key}`. The upload therefore takes a real `MultipartFile`.
+  2. **Non-string `const`** (`Detection.mock`, `OkResponse.ok`, both `const: true`). The generator turns these into a *string* enum, so the real JSON `true` decoded as "unknown". The step relaxes them to `{type: boolean}` for generation only; the server still enforces the value. String `const`s are kept.
+
+  Both are covered by `test/tool/prepare_spec_test.dart`: exact pointers, nothing else changed, idempotent.
+
+### HTTP layer (`lib/core/network/`)
+
+- **One shared `Dio`** (`buildAtlasDio`), built from `AtlasEnvironmentConfig`:
+  - base URL and timeouts: connect 10 s, receive 20 s, send 60 s, plus 12 s per refresh call in 3.3
+  - `followRedirects: false`, so an `Authorization` header is never forwarded to another host
+  - no cookie jar
+- **Interceptors, in order:**
+  1. `AtlasClientHeadersInterceptor`:
+     - `X-Atlas-Client: mobile` on every request; callers cannot override it.
+     - `Accept: application/json`.
+     - Strips any `Cookie` header.
+     - Rejects credential-like query parameters as a programming error.
+  2. `AtlasBearerInterceptor`:
+     - Adds `Authorization: Bearer <access>` only to operations whose contract `security` includes `bearerAuth`.
+     - Removes `Authorization` everywhere else: login, register, refresh, health and signed media.
+     - Reads the token per request from `AccessTokenSource` (Phase 3.3 provides it).
+     - There is no cookie fallback. The generated client's own auth interceptors are never installed (`AtlasApi(interceptors: [])`); its `ApiKeyAuthInterceptor` would send the token as an `atlas_at` cookie.
+  3. `AtlasLoggingInterceptor`: logs method, path (never the query, which can hold a media signature), status, duration and error code. Never headers or bodies.
+  4. `AtlasReachabilityInterceptor`: any HTTP response means the API is reachable; a connection error or timeout means it is not.
+  5. `AtlasRetryInterceptor` (see *Retry*).
+- **`AtlasApiClient.call(...)`** wraps every generated operation. It returns the data or throws exactly one `ApiFailure`. Phase 3.3 adds the 401 recovery coordinator in front of it.
+
+### Errors (`ApiFailure`, `ApiErrorMapper`)
+
+**Failure types:**
+
+| Failure | Meaning |
+|---|---|
+| `NoNetworkFailure` | The device has no network |
+| `ApiUnreachableFailure` | The device is online but the API can't be reached |
+| `TimeoutFailure` | A request timed out |
+| `InsecureConnectionFailure` | TLS failed; never retried or bypassed |
+| `CancelledFailure` | The request was cancelled |
+| `UnexpectedResponseFailure` | Non-contract response: HTML from a proxy, or a body that fails the schema |
+| `ApiHttpFailure` | A documented error response (details below) |
+
+**`ApiHttpFailure` fields:**
+- `statusCode`
+- `code`: the `ApiErrorCode` enum of all 22 contract codes, plus `unknown`, which keeps `rawCode`
+- `serverMessage` and `requestId`
+- `retryAfter`, parsed from `Retry-After` as delta-seconds or an HTTP date
+- `fieldErrors`, from `VALIDATION_ERROR` `details`
+
+**Kinds and retryability:**
+- **Terminal session codes** (not retryable): `INVALID_TOKEN`, `SESSION_EXPIRED`, `SESSION_REVOKED`, `REFRESH_REUSED`, `CLIENT_MISMATCH`.
+- **Retryable:** `SESSION_RACE`, `SESSION_BUSY`, `IDEMPOTENCY_IN_PROGRESS`, `RATE_LIMITED`, `INTERNAL`.
+- **Not retryable:** image errors, `IDEMPOTENCY_KEY_MISMATCH`, validation, conflict, forbidden and not found.
+
+**User messages:** every failure has an Uzbek `userMessage`. The backend message is shown only for validation and conflict errors, and only when it doesn't look technical. Raw exceptions are never shown.
+
+**Programming errors** (an `Error` such as a rejected query parameter) are rethrown as themselves, never disguised as network failures.
+
+### Retry
+
+| Situation | Automatic retry |
+|---|---|
+| Timeout or connection error on GET/HEAD/OPTIONS (or a JSON request explicitly marked idempotent) | After 1 s, then 2 s, only within 45 s of the first attempt |
+| `503 SESSION_BUSY` | After `Retry-After` plus up to 250 ms jitter, at most 2 retries. The contract guarantees no side effects, so this applies to any method whose body can be replayed. A `Retry-After` over 30 s is not waited for |
+| Any other HTTP error, certificate errors | Never |
+| POST/PATCH/DELETE, account changes | Never automatically |
+| Multipart uploads | Never automatically. The caller retries with the **same** `Idempotency-Key` (3.5) |
+
+### Connectivity
+
+Three distinct situations:
+1. **No device network:** detected by `connectivity_plus` through `PlatformDeviceNetwork`.
+2. **Network up but API unreachable:** learned from failing requests. "Wi-Fi connected" is never taken as proof the API is reachable.
+3. **API answered with an HTTP error.**
+
+`networkStatusProvider` combines them, and the shell shows a thin offline banner for 1 and 2.
+
+### Signed media URLs
+
+`SignedMediaUrl.isUsable(urlExpiresAt)` treats a URL as expired 60 s early. Signed URLs are never persisted or logged; reload the item to get a fresh one.
 
 ## Secure token storage (3.3)
 
@@ -142,13 +220,29 @@ Every backend code from `ErrorResponse.code` maps to a typed kind and an Uzbek u
 - **Validation errors** (`details[].path`) map onto form fields.
 - **Raw exception text is never shown.** `requestId` is shown in the error details for support.
 
-## Environment configuration
+## Environment configuration (3.2, implemented)
 
-- **How values are passed:** `--dart-define-from-file=config/<env>.json`. `AppConfig.fromEnvironment()` validates the values at startup.
-- **`ATLAS_ENV`:** `development`, `staging` or `production`.
-- **`ATLAS_API_BASE_URL`:** the backend origin, without a trailing slash. `https` is required outside development.
-- **Committed files:** only `config/development.json`, which points at the local backend (`http://10.0.2.2:3000` for the Android emulator). Staging and production files hold no secrets but are created by the release pipeline; `config/production.example.json` documents the shape.
-- **No secrets in the app:** the app has none (no API keys); every credential comes from the user's session.
+`AtlasEnvironmentConfig`, in `lib/core/config/environment_config.dart`, is validated at startup and fails fast. Values come from `--dart-define-from-file=config/<env>.json` or from `--dart-define`.
+
+| | development | staging | production |
+|---|---|---|---|
+| `ATLAS_API_BASE_URL` | http or https (local backend allowed) | **https required** | **https required**; local/private hosts rejected |
+| debug features | yes (debug builds only) | no | no |
+| log policy | verbose (`off` in release builds) | warnings | **off** |
+| timeouts and retry policy | defaults (see *Retry*) | same | same |
+
+- **Base URL:** must be an origin only, with no path, query, fragment or credentials.
+- **Committed configs:** only `config/development.json` and placeholder `*.example.json` files. Real `staging.json` and `production.json` are git-ignored and created by the release pipeline.
+- **No secrets:** none are in the app or the config files.
+
+**Commands:**
+```bash
+flutter run --dart-define-from-file=config/development.json
+flutter run --dart-define-from-file=config/staging.json            # created by the pipeline
+flutter build apk --release --dart-define-from-file=config/production.json
+# or explicitly:
+flutter build apk --release --dart-define=ATLAS_ENV=production --dart-define=ATLAS_API_BASE_URL=https://api.example.com
+```
 
 ## Android and iOS configuration
 

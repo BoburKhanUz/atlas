@@ -1,0 +1,16 @@
+# openapi-generator v7.10.0, generator dart-dio (same generator/version as the
+# backend CI job "dart-client"). Used by tool/openapi/generate_api.sh only.
+pubName: atlas_api
+pubLibrary: atlas_api
+pubVersion: 0.2.1
+pubDescription: "ATLAS API client generated from docs/api/openapi.json — do not edit by hand"
+pubAuthor: ATLAS
+pubAuthorEmail: noreply@atlas.invalid
+pubHomepage: ""
+pubPublishTo: none
+serializationLibrary: built_value
+dateLibrary: core
+# New backend enum values (e.g. a new error code) decode to
+# `unknown_default_open_api` instead of failing the whole response.
+enumUnknownDefaultCase: true
+sortParamsByRequiredFlag: true

@@ -20,6 +20,13 @@ flutter run --dart-define-from-file=config/development.json
 
 The backend must be running (see the root `README.md`). Configuration is described in `config/README.md`.
 
+## API client
+
+```bash
+tool/openapi/generate_api.sh          # regenerate packages/atlas_api from docs/api/openapi.json (Docker)
+tool/openapi/generate_api.sh --check  # fail if the committed client is out of date
+```
+
 ## Checks
 
 ```bash
@@ -35,7 +42,9 @@ flutter build apk --debug --dart-define-from-file=config/development.json
 | `lib/app/` | App root, router (`go_router`), tab shell |
 | `lib/core/design/` | Design tokens, typography, theme |
 | `lib/core/widgets/` | Shared UI: buttons, cards, skeletons, empty, error and offline states |
-| `lib/core/config/` | Build-time configuration |
+| `lib/core/config/` | `AtlasEnvironmentConfig` (environment, URL, logging, timeouts, retry) |
+| `lib/core/network/` | HTTP layer around the generated client: headers, Bearer, retry, errors, connectivity |
+| `packages/atlas_api/` | Generated API client. **Never edit**; regenerate with `tool/openapi/generate_api.sh` |
 | `lib/core/logging/` | Redacting logger, silent in release builds |
 | `lib/features/<feature>/` | One folder per product area |
 | `test/` | Unit and widget tests, mirroring `lib/` |

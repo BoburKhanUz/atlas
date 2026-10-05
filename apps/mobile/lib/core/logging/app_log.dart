@@ -1,28 +1,34 @@
 import 'package:flutter/foundation.dart';
 
-/// Minimal logger. Every message goes through [redact] first, and nothing is
-/// emitted in release builds. Never log request/response bodies of auth
-/// endpoints; even redacted, keep logs to ids, codes and timings.
+import '../config/environment_config.dart';
+
+/// Minimal logger. Every message goes through [redact] first. What is
+/// emitted is decided by the environment's [LogPolicy] (production and every
+/// release build: nothing). Never log headers or request/response bodies;
+/// keep logs to methods, paths, status codes, error codes and timings.
 abstract final class AppLog {
+  /// Set once at startup from the environment configuration.
+  static LogPolicy policy = kReleaseMode ? LogPolicy.off : LogPolicy.verbose;
+
   /// Replaced in tests to capture output.
   @visibleForTesting
   static void Function(String line) sink = _debugSink;
 
-  /// Forced on/off in tests; defaults to "not a release build".
-  @visibleForTesting
-  static bool? enabledOverride;
-
-  static bool get enabled => enabledOverride ?? !kReleaseMode;
-
-  static void debug(String message) => _emit('D', message);
-  static void info(String message) => _emit('I', message);
-  static void warn(String message) => _emit('W', message);
+  static void debug(String message) => _emit(_Level.debug, message);
+  static void info(String message) => _emit(_Level.info, message);
+  static void warn(String message) => _emit(_Level.warn, message);
   static void error(String message, [Object? error]) =>
-      _emit('E', error == null ? message : '$message: ${error.runtimeType}');
+      _emit(_Level.error, error == null ? message : '$message: ${error.runtimeType}');
 
-  static void _emit(String level, String message) {
-    if (!enabled) return;
-    sink('[atlas][$level] ${redact(message)}');
+  static bool _allowed(_Level level) => switch (policy) {
+    LogPolicy.verbose => true,
+    LogPolicy.warnings => level == _Level.warn || level == _Level.error,
+    LogPolicy.off => false,
+  };
+
+  static void _emit(_Level level, String message) {
+    if (!_allowed(level)) return;
+    sink('[atlas][${level.tag}] ${redact(message)}');
   }
 
   static void _debugSink(String line) => debugPrint(line);
@@ -57,4 +63,14 @@ abstract final class AppLog {
     }
     return out;
   }
+}
+
+enum _Level {
+  debug('D'),
+  info('I'),
+  warn('W'),
+  error('E');
+
+  const _Level(this.tag);
+  final String tag;
 }

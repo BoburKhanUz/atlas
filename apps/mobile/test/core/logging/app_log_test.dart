@@ -1,3 +1,4 @@
+import 'package:atlas_mobile/core/config/environment_config.dart';
 import 'package:atlas_mobile/core/logging/app_log.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -51,22 +52,32 @@ void main() {
       lines.clear();
       AppLog.sink = lines.add;
     });
-    tearDown(() => AppLog.enabledOverride = null);
+    tearDown(() => AppLog.policy = LogPolicy.verbose);
 
     test('messages are redacted before they reach the sink', () {
-      AppLog.enabledOverride = true;
+      AppLog.policy = LogPolicy.verbose;
       AppLog.info('refreshed with Bearer $refresh');
       expect(lines.single, isNot(contains(refresh)));
     });
 
-    test('nothing is emitted when disabled (release builds)', () {
-      AppLog.enabledOverride = false;
+    test('nothing is emitted with LogPolicy.off (production, release builds)', () {
+      AppLog.policy = LogPolicy.off;
       AppLog.error('boom', StateError('x'));
+      AppLog.info('hello');
       expect(lines, isEmpty);
     });
 
+    test('LogPolicy.warnings emits only warnings and errors', () {
+      AppLog.policy = LogPolicy.warnings;
+      AppLog.debug('d');
+      AppLog.info('i');
+      AppLog.warn('w');
+      AppLog.error('e');
+      expect(lines, ['[atlas][W] w', '[atlas][E] e']);
+    });
+
     test('errors log only their type, never their message', () {
-      AppLog.enabledOverride = true;
+      AppLog.policy = LogPolicy.verbose;
       AppLog.error('request failed', StateError('secret $refresh'));
       expect(lines.single, contains('StateError'));
       expect(lines.single, isNot(contains(refresh)));

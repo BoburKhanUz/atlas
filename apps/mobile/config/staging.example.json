@@ -1,0 +1,4 @@
+{
+  "ATLAS_ENV": "staging",
+  "ATLAS_API_BASE_URL": "https://staging-api.example.com"
+}

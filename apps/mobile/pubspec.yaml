@@ -7,6 +7,12 @@ environment:
   sdk: ^3.13.5
 
 dependencies:
+  atlas_api:
+    path: packages/atlas_api
+  built_collection: ^5.1.2
+  built_value: ^8.13.0
+  connectivity_plus: ^7.3.2
+  dio: ^5.11.1
   flutter:
     sdk: flutter
   flutter_riverpod: ^3.4.3
