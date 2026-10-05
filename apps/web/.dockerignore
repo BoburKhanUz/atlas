@@ -1,0 +1,13 @@
+node_modules
+.next
+storage
+public/uploads
+*.db
+*.db-journal
+.env
+.env.*
+*.log
+coverage
+tests
+Dockerfile
+.dockerignore

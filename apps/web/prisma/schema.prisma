@@ -1,0 +1,269 @@
+// ATLAS — Prisma schema (MVP).
+// PostgreSQL is the source of truth. Schema changes go through migrations in
+// prisma/migrations (`bun run db:migrate` in dev, `prisma migrate deploy` in
+// CI/production). JSON values are still stored as TEXT strings, as in the
+// original Z.ai MVP; moving them to jsonb/text[] is a planned follow-up.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Auth ────────────────────────────────────────────────────────────────────
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  profile      UserProfile?
+  preferences  UserPreferences?
+  wardrobeItems WardrobeItem[]
+  conversations AiConversation[]
+  outfits      Outfit[]
+  feedback     OutfitFeedback[]
+  memories     AiMemory[]
+  colorProfiles ColorProfile[]
+  sessions     Session[]
+}
+
+// Refresh-token sessions. Only the SHA-256 hash of the opaque refresh token is
+// stored. Rotation marks the old row revoked and points it at its successor;
+// presenting a rotated token again (after a short grace) revokes every session.
+model Session {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash    String    @unique // sha256 hex of the refresh token
+  expiresAt    DateTime
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime?
+  revokedAt    DateTime?
+  replacedById String?
+  userAgent    String?   // truncated to 200 chars
+
+  @@index([userId])
+}
+
+// ─── User Profile (spec section 9) ───────────────────────────────────────────
+model UserProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  gender          String?  // male | female | other
+  ageRange        String?  // 18-24 | 25-34 | 35-44 | 45+
+  height          Float?   // cm
+  weight          Float?   // kg
+  bodyShape       String?  // pear | apple | hourglass | rectangle | inverted_triangle
+  skinTone        String?  // light | medium | tan | deep
+  skinUndertone   String?  // warm | cool | neutral
+  hairColor       String?
+  eyeColor        String?
+  clothingSize    String?  // S | M | L | XL
+  preferredFit    String?  // slim | regular | relaxed
+  typicalBudget   Int?     // UZS — only used in future shopping module
+
+  colorProfileId  String?
+  colorProfile    ColorProfile? @relation(fields: [colorProfileId], references: [id], onDelete: SetNull)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ─── User Preferences / Memory (spec section 14, 6) ─────────────────────────
+model UserPreferences {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  preferredStyles String   @default("[]") // JSON array: ["smart_casual","minimal"]
+  dislikedStyles String   @default("[]")
+  favoriteColors String   @default("[]")
+  dislikedColors String   @default("[]")
+  language        String   @default("uz") // uz | ru | en
+
+  // Memory entries accumulate over time as user interacts
+  memories        AiMemory[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ─── Wardrobe (spec section 7, 23) ───────────────────────────────────────────
+model WardrobeItem {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // AI-detected primary attributes (spec section 5)
+  category     String   // shirt | pants | dress | shoes | bag | accessory | outerwear
+  subcategory  String?
+  colors       String   @default("[]") // JSON array
+  pattern      String?  // solid | striped | checked | floral | graphic
+  material     String?  // cotton | linen | denim | wool | silk | leather | synthetic
+  sleeveLength String?  // short | long | sleeveless | three_quarter
+  fit          String?  // slim | regular | relaxed | oversized
+  style        String?  // smart_casual | casual | formal | sporty | bohemian
+  season       String   @default("[]") // JSON array ["spring","summer","autumn","winter"]
+  gender       String?  // male | female | unisex
+  formality    String?  // casual | smart_casual | formal | black_tie
+
+  // Per-attribute confidence scores (spec: AI must never pretend certainty)
+  confidences  String   @default("{}") // JSON object {category: 0.98, color: 0.99, material: 0.61}
+
+  // Was this item corrected by the user? Used to improve future inference (spec section 6)
+  wasCorrected Boolean  @default(false)
+  correctionLog String  @default("[]") // JSON array of {field, from, to, at}
+
+  // Images
+  images       WardrobeImage[]
+
+  // Outfit references
+  outfitItems  OutfitItem[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId, category])
+  @@index([userId, style])
+}
+
+model WardrobeImage {
+  id           String   @id @default(cuid())
+  wardrobeItemId String
+  wardrobeItem  WardrobeItem @relation(fields: [wardrobeItemId], references: [id], onDelete: Cascade)
+
+  // Private storage keys (users/<userId>/<uuid>.<ext>). Never public URLs —
+  // the API turns them into short-lived signed URLs (lib/storage/media.ts).
+  storageKey   String
+  thumbnailKey String?
+  isPrimary    Boolean  @default(false)
+  width        Int?
+  height       Int?
+
+  createdAt    DateTime @default(now())
+}
+
+// ─── Outfits (spec section 12, future Phase 5) ──────────────────────────────
+model Outfit {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name         String?
+  occasion     String?  // work | wedding | date | travel | casual | other
+  weatherSnapshot String? @default("{}") // JSON snapshot of weather context
+  score        Int?     // 0-100 compatibility score (spec section 12)
+  reasonsJson  String   @default("[]") // JSON array of strings
+  explanation  String?  // natural-language from LLM
+
+  isSaved      Boolean  @default(false)
+  items        OutfitItem[]
+  feedback     OutfitFeedback[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId, isSaved])
+}
+
+model OutfitItem {
+  id            String   @id @default(cuid())
+  outfitId      String
+  outfit        Outfit   @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  wardrobeItemId String
+  wardrobeItem   WardrobeItem @relation(fields: [wardrobeItemId], references: [id], onDelete: Cascade)
+  role          String?  // top | bottom | shoes | accessory
+  createdAt     DateTime @default(now())
+}
+
+model OutfitFeedback {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  outfitId     String
+  outfit       Outfit  @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  feedback     String   // liked | disliked | saved | rejected
+  note         String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId, outfitId])
+}
+
+// ─── AI Conversation (spec section 13, 15) ───────────────────────────────────
+model AiConversation {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title        String?
+  contextJson  String   @default("{}") // weather/event/profile snapshot at conversation start
+  messages     AiMessage[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model AiMessage {
+  id             String   @id @default(cuid())
+  conversationId String
+  conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String   // user | assistant | system
+  content        String
+  metadataJson   String   @default("{}") // RAG context, model info, etc.
+  createdAt      DateTime @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+model AiMemory {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  preferencesId String?
+  preferences  UserPreferences? @relation(fields: [preferencesId], references: [id], onDelete: SetNull)
+  kind         String   // preference | correction | feedback | fact
+  key          String
+  value        String
+  createdAt    DateTime @default(now())
+
+  @@index([userId, kind])
+}
+
+// ─── Weather Cache (spec section 11, 25) ─────────────────────────────────────
+model WeatherCache {
+  id           String   @id @default(cuid())
+  // Composite key: lat,lng rounded to 2 decimal places (~1km resolution)
+  cacheKey     String   @unique // e.g. "41.31,69.24"
+  dataJson     String   // full Open-Meteo response
+  fetchedAt    DateTime @default(now())
+  expiresAt    DateTime
+
+  @@index([cacheKey, expiresAt])
+}
+
+// ─── Color Profile (spec section 10, future Phase 7) ────────────────────────
+model ColorProfile {
+  id            String   @id @default(cuid())
+  // Owner — every analysis creates a row; all are deleted with the account.
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Personal palette result derived from selfie analysis
+  undertone     String?  // warm | cool | neutral
+  season        String?  // spring | summer | autumn | winter
+  contrastLevel String?  // low | medium | high
+  recommendedColors String @default("[]")
+  neutralColors String  @default("[]")
+  cautionColors String  @default("[]")
+  analysisJson  String   @default("{}") // raw analysis breakdown
+  userProfiles  UserProfile[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+}

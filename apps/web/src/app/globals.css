@@ -1,0 +1,177 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* ─── Premium minimal palette — spec section 21 ────────────────────────────
+   Background  #F8F8F6   (warm off-white, not pure white — calmer)
+   Surface     #FFFFFF   (cards, surfaces)
+   Primary Text #111111  (near-black, not pure black — softer)
+   Secondary    #6B7280  (gray-500 — neutral)
+   Accent       #0F766E  (teal-700 — premium, not neon)
+   Success      #22C55E  (green-500)
+   No dark mode in MVP — calm, light-only premium aesthetic.
+─────────────────────────────────────────────────────────────────────────── */
+:root {
+  --radius: 0.875rem;
+  --background: #F8F8F6;
+  --foreground: #111111;
+  --card: #FFFFFF;
+  --card-foreground: #111111;
+  --popover: #FFFFFF;
+  --popover-foreground: #111111;
+  --primary: #0F766E;        /* accent teal */
+  --primary-foreground: #FFFFFF;
+  --secondary: #F4F4F2;
+  --secondary-foreground: #111111;
+  --muted: #F4F4F2;
+  --muted-foreground: #6B7280;
+  --accent: #F4F4F2;
+  --accent-foreground: #0F766E;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  --success: #22C55E;
+  --success-foreground: #FFFFFF;
+  --border: #E7E5E4;        /* stone-200 — softer than gray */
+  --input: #E7E5E4;
+  --ring: #0F766E;
+  --chart-1: #0F766E;
+  --chart-2: #6B7280;
+  --chart-3: #D2B48C;
+  --chart-4: #111111;
+  --chart-5: #22C55E;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #111111;
+  --sidebar-primary: #0F766E;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F4F4F2;
+  --sidebar-accent-foreground: #0F766E;
+  --sidebar-border: #E7E5E4;
+  --sidebar-ring: #0F766E;
+}
+
+/* Dark mode intentionally disabled — premium light-only aesthetic in MVP */
+.dark {
+  color-scheme: light;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html, body {
+    @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    font-feature-settings: "ss01", "cv11";
+    letter-spacing: -0.011em;
+  }
+
+  /* App shell: mobile = centered column + bottom nav; ≥md = sidebar layout */
+  .app-shell {
+    background: var(--background);
+  }
+
+  /* Visible keyboard focus for every interactive element (a11y). Components
+     that draw their own focus-visible ring override this via utilities. */
+  :where(a, button, [role="button"], input, select, textarea, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* Premium typography helpers */
+  .display-xl {
+    font-size: clamp(2rem, 6vw, 3rem);
+    line-height: 1.05;
+    letter-spacing: -0.035em;
+    font-weight: 600;
+  }
+  .display-lg {
+    font-size: clamp(1.5rem, 4.5vw, 2rem);
+    line-height: 1.1;
+    letter-spacing: -0.028em;
+    font-weight: 600;
+  }
+  .display-md {
+    font-size: clamp(1.25rem, 3.5vw, 1.5rem);
+    line-height: 1.2;
+    letter-spacing: -0.022em;
+    font-weight: 600;
+  }
+
+  /* Calm surface card with very subtle shadow + warm border */
+  .surface-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 1px 2px rgba(17, 17, 17, 0.04), 0 0 0 0.5px rgba(17, 17, 17, 0.02);
+  }
+
+  /* Bottom navigation: floating, no harsh border, subtle blur */
+  .nav-bar {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 24px rgba(17, 17, 17, 0.06);
+  }
+
+  /* Hide scrollbar but keep scroll functionality (for horizontal category tabs) */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Skeleton shimmer used during AI analysis — subtle, premium */
+  .skeleton-shimmer {
+    background: linear-gradient(90deg, #F4F4F2 25%, #FFFFFF 37%, #F4F4F2 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.4s ease infinite;
+  }
+  @keyframes shimmer {
+    0% { background-position: 100% 50%; }
+    100% { background-position: 0 50%; }
+  }
+}

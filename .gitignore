@@ -1,0 +1,25 @@
+# Dependencies & build output
+node_modules/
+.next/
+out/
+build/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Environment & secrets — only .env.example is committed
+.env
+.env.*
+!.env.example
+*.pem
+
+# Local data — never commit databases or user uploads
+*.db
+*.db-journal
+/storage/
+apps/web/storage/
+apps/web/public/uploads/
+
+# Logs & OS noise
+*.log
+.DS_Store

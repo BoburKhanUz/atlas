@@ -1,0 +1,52 @@
+{
+  "common": {
+    "appName": "AI Stilist",
+    "loading": "Yuklanmoqda…",
+    "retry": "Qayta urinish",
+    "back": "Orqaga",
+    "goHome": "Bosh sahifaga qaytish",
+    "skipToContent": "Asosiy kontentga o'tish",
+    "cancel": "Bekor qilish"
+  },
+  "nav": {
+    "label": "Asosiy navigatsiya",
+    "home": "Bosh sahifa",
+    "wardrobe": "Garderob",
+    "stylist": "AI Stilist",
+    "outfits": "Outfitlar",
+    "profile": "Profil"
+  },
+  "auth": {
+    "tagline": "Shaxsiy garderobingizdagi kiyimlardan avtomatik outfit tavsiya qiluvchi aqlli stilist. Faqat sizniki — xarid yo‘q.",
+    "modeLabel": "Kirish yoki ro'yxatdan o'tish",
+    "login": "Kirish",
+    "register": "Ro'yxatdan o'tish",
+    "nameLabel": "Ismingiz",
+    "namePlaceholder": "Ali",
+    "emailLabel": "Email",
+    "emailPlaceholder": "ali@example.com",
+    "passwordLabel": "Parol",
+    "passwordHint": "Kamida 8 belgi",
+    "submitLogin": "Kirish",
+    "submitRegister": "Boshlash",
+    "busy": "Biroz kuting…",
+    "welcomeTitle": "Xush kelibsiz",
+    "registeredTitle": "Ro‘yxatdan o‘tdingiz",
+    "welcomeDescription": "Garderobingizni to‘ldirishni boshlaymizmi?",
+    "sessionExpired": "Sessiya muddati tugadi. Iltimos, qaytadan kiring.",
+    "terms": "Davom etish orqali siz foydalanuvchi shartlariga rozilik bildirasiz. Garderobingiz ma'lumotlari shaxsiy saqlanadi."
+  },
+  "errors": {
+    "network": "Tarmoq xatosi yuz berdi",
+    "request": "So'rov xatosi ({status})",
+    "unexpected": "Kutilmagan xatolik yuz berdi",
+    "pageTitle": "Nimadir noto'g'ri ketdi",
+    "pageDescription": "Sahifani yuklashda xatolik yuz berdi. Qayta urinib ko'ring.",
+    "notFoundTitle": "Sahifa topilmadi",
+    "notFoundDescription": "Siz qidirgan sahifa mavjud emas yoki ko'chirilgan."
+  },
+  "states": {
+    "loadFailed": "Yuklab bo'lmadi",
+    "empty": "Hozircha bo‘sh"
+  }
+}
