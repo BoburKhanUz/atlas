@@ -242,22 +242,47 @@ Three distinct situations:
   - Expired access token while offline → shell with the session kept.
   - Expired access token while online → one controlled refresh. The splash waits at most 8 s; a later result still applies.
 
-## Upload architecture (3.5–3.6)
+## Wardrobe and upload (3.5, implemented)
 
-- **Sources:** camera and gallery (system photo picker). Images are prepared on-device before upload:
-  - HEIC/HEIF/AVIF is converted to JPEG, since the backend returns 415 for those.
-  - Images are downscaled so the longest side is at most 4096 px.
-  - JPEG quality is around 0.9.
-  - Images whose shortest side is under 256 px are rejected locally (backend `IMAGE_DIMENSIONS`).
-  - The app ensures the file is ≤ 8 MB (backend 413).
-- **Idempotency:** each upload gets an `Idempotency-Key` (UUID v4, matching `^[A-Za-z0-9_-]{8,128}$`), created once per user action and kept with the pending upload. Retries reuse the key:
-  - The same key with the same bytes replays the stored result (`Idempotent-Replayed: true`), so there are never duplicate items.
-  - `IDEMPOTENCY_IN_PROGRESS` (409 with `Retry-After`) means the app waits and retries.
-  - `IDEMPOTENCY_KEY_MISMATCH` means the app's own bug (different bytes under the same key); it starts a new upload with a new key.
-- **Analysis:** it happens inside the upload request; the 201 response already contains the detected item. There is no server-side analysis job.
-  - UI states: preparing → uploading (byte progress) → analysing (request sent, waiting for the response) → done or needs correction (low confidences) → failed (retry available).
-  - Pending uploads (prepared file path plus idempotency key) are kept in the app's private storage, so a restart or network loss resumes with the same key instead of getting stuck.
-  - The item list from the server is the source of truth.
+- **List (`WardrobeListController`):**
+  - Cursor pages of 30 from `GET /api/v1/wardrobe/items`; the next page loads near the end of the grid.
+  - The category filter is the contract enum, where `all` sends no parameter. There is no search, because the contract has none.
+  - Pull-to-refresh.
+  - Loading, empty, error and offline states. A failed refresh or next page keeps the items on screen.
+  - A late answer for an old category is ignored.
+  - The list is rebuilt for each signed-in user.
+- **Detail:** read-only (photo, attributes, correction history), plus delete with confirmation. A 404 on delete counts as already deleted.
+- **Add (`AddItemController`):** choose → preparing → preview → uploading (byte progress) → analysing (all bytes sent, waiting for the response that carries the detected item) → success, failed (Retry) or rejected (choose another photo).
+- **Image preparation (`ImagePreparer`):**
+  - flutter_image_compress re-encodes to JPEG:
+    - EXIF rotation baked into the pixels (`autoCorrectionAngle`);
+    - `keepExif: false`;
+    - downscaled so the longest side is at most 4096 px;
+    - quality 90 → 85 → 80 → 75 until the file is ≤ 8 MB.
+  - Every encoder output is then re-checked in pure Dart, failing closed:
+    - it must parse as a complete JPEG;
+    - `JpegSanitizer` drops APP1 (EXIF/GPS, XMP), APP2 (ICC, MPF gain maps), APP3–13, APP15, COM and anything after EOI, losslessly, and verifies none is left;
+    - sizes 256 ≤ shortest side and longest side ≤ 4096, and ≤ 8 MB;
+    - for a JPEG source with EXIF orientation 5–8 (90° rotations), the output's axes must be swapped, or the photo is rejected.
+  - HEIC/HEIF/AVIF are decoded by the platform (Android ImageDecoder/BitmapFactory, iOS ImageIO) and must come out as JPEG.
+  - The bytes stay in memory; the picker's temporary copy is deleted.
+- **Idempotency:**
+  - One `Idempotency-Key` (128 random bits, base64url) per photo. Every Retry sends the same key, the same bytes and the same file name, which matters because the backend's request hash includes the multipart file name.
+  - Network failures are never retried automatically.
+  - `IDEMPOTENCY_IN_PROGRESS` waits `Retry-After` (at most 30 s) up to 3 times.
+  - `IDEMPOTENCY_KEY_MISMATCH`, 413, 415 and 422 discard the job, and a new photo is needed.
+  - A replay (`Idempotent-Replayed`) never duplicates the item in the list.
+  - A 401 during upload refreshes the session and re-sends the multipart request (`FormData.clone`).
+- **Signed images (`SignedImage`):**
+  - Fetched with the shared Dio. The media operation has no security requirement, so no Bearer and no cookie are sent; relative URLs resolve against the API origin.
+  - Cached in memory only, under `imageId + variant`, never the URL or signature.
+  - An expired URL (60 s margin) is not fetched. It, or a 400/403/404 answer, asks the owner to reload the item or list for fresh URLs.
+  - Errors never carry the URL, and logs show the path only.
+- **Permissions:**
+  - Android: none added. image_picker's camera intent and picker need no `CAMERA` or storage permission; this is checked in the merged release manifest.
+  - iOS: `NSCameraUsageDescription` and `NSPhotoLibraryUsageDescription` in Uzbek. `requestFullMetadata: false`.
+  - Permission is asked only when the user taps Camera or Gallery.
+- **Phase 3.6:** analysis-state UX beyond the upload response, low-confidence/needs-correction UX, attribute editing (`PATCH`), and resuming a pending upload after an app restart.
 
 ## Offline behaviour
 

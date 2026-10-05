@@ -15,6 +15,8 @@ import '../features/onboarding/providers.dart';
 import '../features/outfits/presentation/outfits_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
 import '../features/stylist/presentation/stylist_screen.dart';
+import '../features/wardrobe/presentation/add_item_screen.dart';
+import '../features/wardrobe/presentation/item_detail_screen.dart';
 import '../features/wardrobe/presentation/wardrobe_screen.dart';
 import 'shell.dart';
 
@@ -31,6 +33,10 @@ abstract final class AtlasRoutes {
   static const outfits = '/outfits';
   static const stylist = '/stylist';
   static const profile = '/profile';
+
+  /// Full-screen flows (above the tab shell).
+  static const wardrobeAdd = '/wardrobe/add';
+  static String wardrobeItem(String id) => '/wardrobe/item/$id';
 }
 
 /// The only place that decides where the user may be, from the auth state
@@ -83,6 +89,11 @@ GoRouter buildRouter({
     GoRoute(path: AtlasRoutes.login, builder: (_, _) => const LoginScreen()),
     GoRoute(path: AtlasRoutes.register, builder: (_, _) => const RegisterScreen()),
     GoRoute(path: AtlasRoutes.onboarding, builder: (_, _) => const OnboardingScreen()),
+    atlasFullScreenRoute(path: AtlasRoutes.wardrobeAdd, builder: (_, _) => const AddItemScreen()),
+    atlasFullScreenRoute(
+      path: '/wardrobe/item/:id',
+      builder: (_, state) => ItemDetailScreen(id: state.pathParameters['id']!),
+    ),
     ...fullScreenRoutes,
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) => AtlasShell(navigationShell: navigationShell),

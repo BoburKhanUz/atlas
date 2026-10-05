@@ -82,6 +82,21 @@ class AtlasApiClient {
     return data;
   }
 
+  /// Same as [call], with the whole response (for headers such as
+  /// `Idempotent-Replayed`).
+  Future<Response<T>> callResponse<T extends Object>(Future<Response<T>> Function(AtlasApi api) operation) async {
+    final Response<T> response;
+    try {
+      response = await operation(api);
+    } on DioException catch (e, stack) {
+      throw await _failureFor(e, stack);
+    }
+    if (response.data == null) {
+      throw UnexpectedResponseFailure(statusCode: response.statusCode, reason: 'empty body');
+    }
+    return response;
+  }
+
   /// Same as [call] for operations whose success has no body we need.
   Future<void> callVoid(Future<Response<Object?>> Function(AtlasApi api) operation) async {
     try {

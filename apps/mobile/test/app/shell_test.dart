@@ -4,14 +4,17 @@ import 'package:atlas_mobile/app/app.dart';
 import 'package:atlas_mobile/app/router.dart';
 import 'package:atlas_mobile/app/shell.dart';
 import 'package:atlas_mobile/core/config/environment_config.dart';
+import 'package:atlas_mobile/core/network/api_client.dart';
 import 'package:atlas_mobile/core/network/connectivity.dart';
 import 'package:atlas_mobile/core/network/providers.dart';
 import 'package:atlas_mobile/core/session/providers.dart';
+import 'package:atlas_mobile/core/session/session_interceptor.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../support/fake_http.dart';
 import '../support/fake_session.dart';
 
 Future<GoRouter> pumpApp(WidgetTester tester, {FakeDeviceNetwork? network}) async {
@@ -25,6 +28,19 @@ Future<GoRouter> pumpApp(WidgetTester tester, {FakeDeviceNetwork? network}) asyn
       deviceNetworkProvider.overrideWithValue(network ?? FakeDeviceNetwork()),
       // Signed in: a valid session in (fake) secure storage.
       secureKeyValueStoreProvider.overrideWithValue(storage),
+      // The production HTTP stack, answered by a fake backend.
+      dioProvider.overrideWith(
+        (ref) => buildAtlasDio(
+          config: ref.watch(environmentConfigProvider),
+          tokens: ref.watch(accessTokenSourceProvider),
+          reachability: ref.watch(apiReachabilityProvider),
+          adapter: FakeBackend()
+            ..script(P.wardrobe, [
+              JsonReply(200, {'items': <Object>[], 'nextCursor': null}),
+            ]),
+          session: (dio) => AtlasSessionInterceptor(ref.watch(sessionControllerProvider), dio),
+        ),
+      ),
     ],
   );
   addTearDown(container.dispose);
@@ -63,7 +79,7 @@ void main() {
   testWidgets('each tab opens its screen and route', (tester) async {
     final router = await pumpApp(tester);
     const expected = {
-      'Garderob': (AtlasRoutes.wardrobe, 'Kiyimlaringiz'),
+      'Garderob': (AtlasRoutes.wardrobe, 'Garderob bo‘sh'),
       'Obrazlar': (AtlasRoutes.outfits, 'Tavsiya etilgan va saqlangan obrazlaringiz shu yerda bo‘ladi.'),
       'Stilist': (AtlasRoutes.stylist, 'AI stilist'),
       'Profil': (AtlasRoutes.profile, 'Profilingiz'),
@@ -84,7 +100,7 @@ void main() {
     await tester.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text('Bosh sahifa')));
     await tester.pumpAndSettle();
     // The wardrobe screen is still in the tree (offstage), not rebuilt from scratch.
-    expect(find.text('Kiyimlaringiz', skipOffstage: false), findsOneWidget);
+    expect(find.text('Garderob bo‘sh', skipOffstage: false), findsOneWidget);
   });
 
   testWidgets('no overflow on a small phone with large text', (tester) async {

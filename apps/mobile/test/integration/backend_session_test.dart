@@ -38,9 +38,14 @@ final _skip = _base == null ? 'set ATLAS_IT_BASE_URL to run against a local back
 class CountingAdapter implements HttpClientAdapter {
   final _inner = IOHttpClientAdapter();
   final counts = <String, int>{};
+
+  /// Authorization header (or null) of every request, by path.
+  final authorization = <String, List<Object?>>{};
   @override
   Future<ResponseBody> fetch(RequestOptions o, Stream<Uint8List>? body, Future<void>? cancel) {
     counts[o.uri.path] = (counts[o.uri.path] ?? 0) + 1;
+    final auth = o.headers.entries.where((e) => e.key.toLowerCase() == 'authorization').map((e) => e.value).firstOrNull;
+    (authorization[o.uri.path] ??= []).add(auth);
     return _inner.fetch(o, body, cancel);
   }
 

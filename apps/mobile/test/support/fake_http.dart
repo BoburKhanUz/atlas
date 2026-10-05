@@ -41,6 +41,14 @@ class RawReply extends FakeReply {
   final String contentType;
 }
 
+/// Binary body (images).
+class BytesReply extends FakeReply {
+  BytesReply(this.status, this.bytes, {this.contentType = 'image/jpeg'});
+  final int status;
+  final Uint8List bytes;
+  final String contentType;
+}
+
 /// A transport failure (timeout, refused connection, …).
 class TransportFailure extends FakeReply {
   TransportFailure(this.type, [this.error]);
@@ -79,6 +87,14 @@ class FakeAdapter implements HttpClientAdapter {
           headers: {
             Headers.contentTypeHeader: ['application/json; charset=utf-8'],
             for (final h in headers.entries) h.key.toLowerCase(): [h.value],
+          },
+        );
+      case BytesReply(:final status, :final bytes, :final contentType):
+        return ResponseBody.fromBytes(
+          bytes,
+          status,
+          headers: {
+            Headers.contentTypeHeader: [contentType],
           },
         );
       case RawReply(:final status, :final text, :final contentType):

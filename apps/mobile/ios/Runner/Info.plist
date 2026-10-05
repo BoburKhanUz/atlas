@@ -71,5 +71,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>ATLAS kiyimingizni garderobga qo‘shish uchun kamerani faqat siz suratga olishni tanlaganingizda ishlatadi.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ATLAS garderobga qo‘shish uchun faqat siz tanlagan rasmni oladi. Joylashuv ma’lumotlari rasmdan olib tashlanadi.</string>
 </dict>
 </plist>

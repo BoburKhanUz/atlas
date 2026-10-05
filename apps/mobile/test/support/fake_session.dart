@@ -189,6 +189,14 @@ class FakeBackend implements HttpClientAdapter {
             for (final h in headers.entries) h.key.toLowerCase(): [h.value],
           },
         );
+      case BytesReply(:final status, :final bytes, :final contentType):
+        return ResponseBody.fromBytes(
+          bytes,
+          status,
+          headers: {
+            Headers.contentTypeHeader: [contentType],
+          },
+        );
       case RawReply(:final status, :final text, :final contentType):
         return ResponseBody.fromString(
           text,
@@ -224,6 +232,10 @@ class SessionHarness {
   SessionHarness({SessionTokens? stored, bool online = true, this.startupWait = const Duration(seconds: 8)})
     : network = FakeNetwork(online: online) {
     if (stored != null) kv.put(stored);
+    // Opening the Wardrobe tab lists items: an empty wardrobe by default.
+    backend.script(P.wardrobe, [
+      JsonReply(200, {'items': <Object>[], 'nextCursor': null}),
+    ]);
     store = TokenStore(kv);
     final config = AtlasEnvironmentConfig.fromValues(environment: 'development', apiBaseUrl: 'http://api.test');
     session = SessionController(
