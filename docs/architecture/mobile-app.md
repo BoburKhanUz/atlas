@@ -30,7 +30,7 @@ apps/mobile/
       session/       (3.3)     token store (secure storage), refresh coordinator (recovery vectors)
     features/
       auth/          (3.3)     login, register, logout
-      onboarding/    (3.4)
+      onboarding/    (3.4)     gate (who sees it), steps, one PATCH /profile on Finish
       home/                    today: weather and outfit entry points
       wardrobe/      (3.5–3.6) list, add (camera/gallery/upload), item detail and edit
       outfits/       (3.7)     generate, list, detail, save, feedback
@@ -62,12 +62,42 @@ The folders marked with a phase are created in that phase, not as empty placehol
 ## Routing: `go_router` 18
 
 - **Tab shell:** `StatefulShellRoute.indexedStack` with five branches: Home, Wardrobe, Outfits, Stylist, Profile. Each tab keeps its own navigation stack and scroll position, and re-tapping the active tab returns to its root.
-- **Guard (3.3, implemented):** one pure function, `authRedirect(AuthState, location)` in `lib/app/router.dart`, with the router listening to `SessionController`.
+- **Guard (3.3/3.4, implemented):** one pure function, `authRedirect(AuthState, OnboardingStatus, location)` in `lib/app/router.dart`, with the router listening to `SessionController` and `OnboardingGate`.
   - `AuthRestoring` → `/splash`.
   - `Unauthenticated`, `SessionExpired` and `Authenticating` → `/login` (or `/register`).
-  - `Authenticated`, `Refreshing` and `LoggingOut` → the shell. They are kept away from splash and auth screens.
+  - `Authenticated`, `Refreshing` and `LoggingOut` → the shell, once onboarding is decided:
+    - `checking` → splash;
+    - `required` → `/onboarding`;
+    - `notRequired` → the shell, kept away from splash, auth screens and onboarding.
   - A refresh never navigates. Only a session that ended leads to sign-in, so there is no Login → refresh → Login loop. Tests check that every redirect target is stable.
-  - Onboarding (authenticated but not finished → `/onboarding`) is added with its phase.
+- **Tab shell behaviour (3.4):**
+  - Re-tapping the active tab returns it to its root, and its `AtlasPage` scrolls to the top (`TabReselect`; it jumps when reduced motion is on).
+  - Android back pops inside a tab first. On another tab's root it goes to Home; on Home the app exits.
+- **Full-screen routes (from 3.5):** `atlasFullScreenRoute(path:, builder:)` defines a top-level route.
+  - It lives on the root navigator and covers the bottom bar.
+  - It is opened with `context.push(path)`; back returns to the tab exactly as it was.
+  - The auth redirect applies to it like any other route.
+
+## Onboarding (3.4, implemented)
+
+- **Who sees it (`OnboardingGate`):** decided once per signed-in user.
+  - A local `completed`/`skipped` marker for this user means no.
+  - Otherwise, `GET /api/v1/profile` with no style or colour preferences means yes.
+  - Any failure or a 6 s timeout means no, so the user is never blocked.
+  - A token refresh never re-decides; only a different user or the end of the session does.
+- **Steps:** welcome → style (liked/disliked) → profile (`gender`, `preferredFit`) → colours (favourite/disliked) → finish.
+  - Every step after the welcome has "Skip step", which drops that step's answers, and "Skip all", which leaves without sending anything.
+  - System back goes to the previous step.
+- **Answers:** in memory only (an auto-disposed Riverpod Notifier). They are never stored, never logged, and gone after Finish.
+- **Finish:** sends one `PATCH /api/v1/profile` with exactly the chosen fields, in contract wire values.
+  - Empty lists and unset fields are omitted, and nothing is sent when nothing was chosen.
+  - On failure the answers are kept and the button becomes "Retry". `SESSION_BUSY` alone is repeated by the transport retry policy, since it has no side effects.
+  - A session that ends during the save goes to sign-in through the auth state.
+- **Marker:** `atlas.onboarding.v1.<userId>` in secure storage holds `completed` or `skipped`.
+  - It is a client-side UX marker, not the server's onboarding state, and holds no answers.
+  - It survives logout, so it is per user and per device.
+- **Deferred:** selfie colour analysis (3.9), location permission (3.7, when weather is first used), first wardrobe item (3.5, offered as a link on the finish step), language (Uzbek only for now).
+- **Contract follow-up before 3.9:** `ProfileRow` is documented as `{id, userId}` only, so the generated client cannot read back `gender` or `preferredFit`.
 - **Full-screen flows** above the shell: add item, item detail, outfit detail, chat thread.
 - **Deep links:** none in v1. Paths are stable, so they can be added later.
 

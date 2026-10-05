@@ -15,6 +15,8 @@ import 'package:material_ui/material_ui.dart';
 import '../support/fake_session.dart';
 
 Future<GoRouter> pumpApp(WidgetTester tester, {FakeDeviceNetwork? network}) async {
+  final storage = MemorySecureStore()..put(livePair(1));
+  markOnboarded(storage);
   final container = ProviderContainer(
     overrides: [
       environmentConfigProvider.overrideWithValue(
@@ -22,7 +24,7 @@ Future<GoRouter> pumpApp(WidgetTester tester, {FakeDeviceNetwork? network}) asyn
       ),
       deviceNetworkProvider.overrideWithValue(network ?? FakeDeviceNetwork()),
       // Signed in: a valid session in (fake) secure storage.
-      secureKeyValueStoreProvider.overrideWithValue(MemorySecureStore()..put(livePair(1))),
+      secureKeyValueStoreProvider.overrideWithValue(storage),
     ],
   );
   addTearDown(container.dispose);

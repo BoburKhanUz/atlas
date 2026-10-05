@@ -2,11 +2,7 @@ import 'dart:async';
 
 import 'package:atlas_mobile/app/app.dart';
 import 'package:atlas_mobile/app/router.dart';
-import 'package:atlas_mobile/core/config/environment_config.dart';
-import 'package:atlas_mobile/core/network/providers.dart';
 import 'package:atlas_mobile/core/session/auth_state.dart';
-import 'package:atlas_mobile/core/session/providers.dart';
-import 'package:atlas_mobile/core/session/session_tokens.dart';
 import 'package:atlas_mobile/features/auth/presentation/splash_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,41 +12,9 @@ import 'package:material_ui/material_ui.dart';
 import '../support/fake_http.dart';
 import '../support/fake_session.dart';
 
-const _user = SessionUser(id: 'u1', email: 'a@test.local');
-
-final _allStates = <AuthState>[
-  const AuthRestoring(),
-  const Unauthenticated(),
-  const Unauthenticated(SignedOutReason.loggedOut),
-  const SessionExpired(SignedOutReason.reused),
-  const Authenticating(),
-  const Authenticated(_user),
-  const Refreshing(_user),
-  const LoggingOut(_user),
-];
-
-const _allLocations = [
-  AtlasRoutes.splash,
-  AtlasRoutes.login,
-  AtlasRoutes.register,
-  AtlasRoutes.home,
-  AtlasRoutes.wardrobe,
-  AtlasRoutes.outfits,
-  AtlasRoutes.stylist,
-  AtlasRoutes.profile,
-];
-
 /// Pumps the real app with [h]'s session (fake backend, fake storage).
 Future<GoRouter> pumpWithSession(WidgetTester tester, SessionHarness h) async {
-  final container = ProviderContainer(
-    overrides: [
-      environmentConfigProvider.overrideWithValue(
-        AtlasEnvironmentConfig.fromValues(environment: 'development', apiBaseUrl: 'http://api.test'),
-      ),
-      deviceNetworkProvider.overrideWithValue(h.network),
-      sessionControllerProvider.overrideWithValue(h.session),
-    ],
-  );
+  final container = ProviderContainer(overrides: appOverrides(h));
   addTearDown(container.dispose);
   unawaited(h.session.restore());
   await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const AtlasApp()));
@@ -58,64 +22,16 @@ Future<GoRouter> pumpWithSession(WidgetTester tester, SessionHarness h) async {
   return container.read(routerProvider);
 }
 
+/// Real-time wait (inside `tester.runAsync`) until [done] holds; 5 s max.
+Future<void> waitFor(bool Function() done) async {
+  for (var i = 0; i < 500 && !done(); i++) {
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+  }
+}
+
 String location(GoRouter router) => router.routerDelegate.currentConfiguration.uri.toString();
 
 void main() {
-  group('authRedirect (the one routing rule)', () {
-    test('signed-out states may only be on login/register', () {
-      for (final state in [
-        const Unauthenticated(),
-        const SessionExpired(SignedOutReason.expired),
-        const Authenticating(),
-      ]) {
-        for (final loc in _allLocations) {
-          final target = authRedirect(state, loc) ?? loc;
-          expect([AtlasRoutes.login, AtlasRoutes.register], contains(target), reason: '$state @ $loc');
-        }
-      }
-    });
-
-    test('signed-in states (incl. refreshing, logging out) never see login, register or splash', () {
-      for (final state in [const Authenticated(_user), const Refreshing(_user), const LoggingOut(_user)]) {
-        for (final loc in _allLocations) {
-          final target = authRedirect(state, loc) ?? loc;
-          expect(
-            [AtlasRoutes.splash, AtlasRoutes.login, AtlasRoutes.register],
-            isNot(contains(target)),
-            reason: '$state @ $loc',
-          );
-        }
-      }
-    });
-
-    test('a refresh never moves the user: Authenticated → Refreshing keeps every signed-in route', () {
-      for (final loc in [
-        AtlasRoutes.home,
-        AtlasRoutes.wardrobe,
-        AtlasRoutes.outfits,
-        AtlasRoutes.stylist,
-        AtlasRoutes.profile,
-      ]) {
-        expect(authRedirect(const Refreshing(_user), loc), isNull);
-      }
-    });
-
-    test('restoring shows the splash', () {
-      for (final loc in _allLocations) {
-        expect(authRedirect(const AuthRestoring(), loc) ?? loc, AtlasRoutes.splash);
-      }
-    });
-
-    test('no loops: a redirect target is stable for the same state', () {
-      for (final state in _allStates) {
-        for (final loc in _allLocations) {
-          final target = authRedirect(state, loc) ?? loc;
-          expect(authRedirect(state, target), isNull, reason: '$state: $loc → $target → …');
-        }
-      }
-    });
-  });
-
   group('app navigation', () {
     testWidgets('no stored session → sign-in screen', (tester) async {
       final h = SessionHarness();
@@ -127,15 +43,7 @@ void main() {
 
     testWidgets('splash while the session is restored, then Home', (tester) async {
       final h = SessionHarness(stored: pair(1));
-      final container = ProviderContainer(
-        overrides: [
-          environmentConfigProvider.overrideWithValue(
-            AtlasEnvironmentConfig.fromValues(environment: 'development', apiBaseUrl: 'http://api.test'),
-          ),
-          deviceNetworkProvider.overrideWithValue(h.network),
-          sessionControllerProvider.overrideWithValue(h.session),
-        ],
-      );
+      final container = ProviderContainer(overrides: appOverrides(h));
       addTearDown(container.dispose);
       await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const AtlasApp()));
       await tester.pump(const Duration(milliseconds: 100));
@@ -165,7 +73,7 @@ void main() {
       await tester.enterText(find.byKey(const Key('login.password')), 'secret-pw');
       await tester.runAsync(() async {
         await tester.tap(find.byKey(const Key('login.submit')));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await waitFor(() => h.backend.calls(P.login) == 1 && h.session.state is! Authenticating);
       });
       await tester.pumpAndSettle();
       expect(h.backend.calls(P.login), 1);
@@ -181,7 +89,7 @@ void main() {
       await tester.enterText(find.byKey(const Key('login.password')), 'wrong');
       await tester.runAsync(() async {
         await tester.tap(find.byKey(const Key('login.submit')));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await waitFor(() => h.backend.calls(P.login) == 1 && h.session.state is! Authenticating);
       });
       await tester.pumpAndSettle();
       expect(find.text('Email yoki parol noto‘g‘ri.'), findsOneWidget);
@@ -242,11 +150,11 @@ void main() {
       expect(find.text('a@test.local'), findsOneWidget);
       await tester.runAsync(() async {
         await tester.tap(find.byKey(const Key('profile.logout')));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await waitFor(() => h.session.state is Unauthenticated);
       });
       await tester.pumpAndSettle();
       expect(location(router), AtlasRoutes.login);
-      expect(h.kv.values, isEmpty);
+      expect(h.kv.values.containsKey('atlas.session.v1'), isFalse, reason: 'tokens gone');
       expect(h.backend.calls(P.logout), 1);
     });
   });

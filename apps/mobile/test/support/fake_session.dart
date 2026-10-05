@@ -6,11 +6,15 @@ import 'dart:typed_data';
 import 'package:atlas_mobile/core/config/environment_config.dart';
 import 'package:atlas_mobile/core/network/api_client.dart';
 import 'package:atlas_mobile/core/network/connectivity.dart';
+import 'package:atlas_mobile/core/network/providers.dart';
+import 'package:atlas_mobile/core/session/providers.dart';
 import 'package:atlas_mobile/core/session/session_controller.dart';
 import 'package:atlas_mobile/core/session/session_interceptor.dart';
 import 'package:atlas_mobile/core/session/session_tokens.dart';
 import 'package:atlas_mobile/core/session/token_store.dart';
+import 'package:atlas_mobile/features/onboarding/data/onboarding_marker_store.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 
 import 'fake_http.dart';
 
@@ -293,3 +297,23 @@ class SessionHarness {
       .map((r) => (jsonDecode(r.bodyText) as Map<String, Object?>)['refreshToken'] as String?)
       .toList();
 }
+
+/// Provider overrides that run the whole app on [h]: its session, secure
+/// storage, Dio and API client (all against [FakeBackend]). With
+/// [onboarded], user u1 already has the "onboarding completed" marker.
+List<Override> appOverrides(SessionHarness h, {bool onboarded = true}) {
+  if (onboarded) markOnboarded(h.kv);
+  return [
+    environmentConfigProvider.overrideWithValue(
+      AtlasEnvironmentConfig.fromValues(environment: 'development', apiBaseUrl: 'http://api.test'),
+    ),
+    deviceNetworkProvider.overrideWithValue(h.network),
+    sessionControllerProvider.overrideWithValue(h.session),
+    secureKeyValueStoreProvider.overrideWithValue(h.kv),
+    dioProvider.overrideWithValue(h.dio),
+    atlasApiClientProvider.overrideWithValue(h.client),
+  ];
+}
+
+void markOnboarded(MemorySecureStore kv, [String userId = 'u1']) =>
+    kv.values[OnboardingMarkerStore.keyFor(userId)] = OnboardingMarker.completed.name;

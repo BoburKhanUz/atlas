@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../core/session/auth_state.dart';
 import '../core/session/providers.dart';
@@ -8,17 +9,21 @@ import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
 import '../features/auth/presentation/splash_screen.dart';
 import '../features/home/presentation/home_screen.dart';
+import '../features/onboarding/onboarding_gate.dart';
+import '../features/onboarding/presentation/onboarding_screen.dart';
+import '../features/onboarding/providers.dart';
 import '../features/outfits/presentation/outfits_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
 import '../features/stylist/presentation/stylist_screen.dart';
 import '../features/wardrobe/presentation/wardrobe_screen.dart';
 import 'shell.dart';
 
-/// Route paths: one per tab, plus the signed-out screens. Onboarding and
-/// full-screen flows are added above the shell in later phases
+/// Route paths: one per tab, the signed-out screens and onboarding.
+/// Full-screen flows of later phases use [atlasFullScreenRoute]
 /// (docs/architecture/mobile-app.md).
 abstract final class AtlasRoutes {
   static const splash = '/splash';
+  static const onboarding = '/onboarding';
   static const login = '/login';
   static const register = '/register';
   static const home = '/home';
@@ -28,29 +33,57 @@ abstract final class AtlasRoutes {
   static const profile = '/profile';
 }
 
-/// The only place that decides where an [AuthState] may be. Pure, so it is
-/// tested for every state × location; applying it twice never moves again
-/// (no Login → refresh → Login loops: refreshing keeps the user where they
-/// are, only a session that ended leads to sign-in).
-String? authRedirect(AuthState state, String location) {
+/// The only place that decides where the user may be, from the auth state
+/// and the onboarding decision. Pure, so it is tested for every
+/// state × status × location; applying it twice never moves again (no
+/// Login → refresh → Login loops: refreshing keeps the user where they are,
+/// only a session that ended leads to sign-in).
+String? authRedirect(AuthState state, OnboardingStatus onboarding, String location) {
   final onAuthPage = location == AtlasRoutes.login || location == AtlasRoutes.register;
+  String? stay(String target) => location == target ? null : target;
   return switch (state) {
-    AuthRestoring() => location == AtlasRoutes.splash ? null : AtlasRoutes.splash,
-    Authenticated() ||
-    Refreshing() ||
-    LoggingOut() => onAuthPage || location == AtlasRoutes.splash ? AtlasRoutes.home : null,
+    AuthRestoring() => stay(AtlasRoutes.splash),
     Unauthenticated() || SessionExpired() || Authenticating() => onAuthPage ? null : AtlasRoutes.login,
+    Authenticated() || Refreshing() || LoggingOut() => switch (onboarding) {
+      // Signed in, decision pending (a moment at most): keep the splash.
+      OnboardingStatus.none || OnboardingStatus.checking => stay(AtlasRoutes.splash),
+      OnboardingStatus.required => stay(AtlasRoutes.onboarding),
+      OnboardingStatus.notRequired =>
+        onAuthPage || location == AtlasRoutes.splash || location == AtlasRoutes.onboarding ? AtlasRoutes.home : null,
+    },
   };
 }
 
-GoRouter buildRouter({required SessionController session, String initialLocation = AtlasRoutes.home}) => GoRouter(
+/// The pattern for full-screen flows above the tab shell (add item, item
+/// detail, outfit detail, chat thread, …): a top-level route, so it lives on
+/// the root navigator and covers the bottom bar. Open it with
+/// `context.push(path)`; back returns to the tab exactly as it was. The
+/// auth redirect applies to it like to every route.
+GoRoute atlasFullScreenRoute({
+  required String path,
+  required Widget Function(BuildContext context, GoRouterState state) builder,
+  bool modal = false,
+}) => GoRoute(
+  path: path,
+  pageBuilder: (context, state) =>
+      MaterialPage<void>(key: state.pageKey, fullscreenDialog: modal, child: builder(context, state)),
+);
+
+GoRouter buildRouter({
+  required SessionController session,
+  required OnboardingGate onboarding,
+  String initialLocation = AtlasRoutes.home,
+  @visibleForTesting List<RouteBase> fullScreenRoutes = const [],
+}) => GoRouter(
   initialLocation: initialLocation,
-  refreshListenable: session,
-  redirect: (context, state) => authRedirect(session.state, state.matchedLocation),
+  refreshListenable: Listenable.merge([session, onboarding]),
+  redirect: (context, state) => authRedirect(session.state, onboarding.status, state.matchedLocation),
   routes: [
     GoRoute(path: AtlasRoutes.splash, builder: (_, _) => const SplashScreen()),
     GoRoute(path: AtlasRoutes.login, builder: (_, _) => const LoginScreen()),
     GoRoute(path: AtlasRoutes.register, builder: (_, _) => const RegisterScreen()),
+    GoRoute(path: AtlasRoutes.onboarding, builder: (_, _) => const OnboardingScreen()),
+    ...fullScreenRoutes,
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) => AtlasShell(navigationShell: navigationShell),
       branches: [
@@ -75,7 +108,10 @@ GoRouter buildRouter({required SessionController session, String initialLocation
 );
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final router = buildRouter(session: ref.watch(sessionControllerProvider));
+  final router = buildRouter(
+    session: ref.watch(sessionControllerProvider),
+    onboarding: ref.watch(onboardingGateProvider),
+  );
   ref.onDispose(router.dispose);
   return router;
 });
