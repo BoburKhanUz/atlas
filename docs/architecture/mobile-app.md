@@ -33,8 +33,8 @@ apps/mobile/
       onboarding/    (3.4)     gate (who sees it), steps, one PATCH /profile on Finish
       home/                    today: weather and outfit entry points
       wardrobe/      (3.5–3.6) list, add (camera/gallery/upload), item detail and edit
-      outfits/       (3.7)     generate, list, detail, save, feedback
-      weather/       (3.7)     location permission, current weather
+      outfits/       (3.7)     generate, list, detail, save, feedback (implemented)
+      weather/       (3.7)     location permission, current weather (implemented)
       stylist/       (3.8)     conversations and chat
       profile/       (3.9)     profile, preferences, colour profile, sessions, account deletion
       <feature>/data           API calls and mapping for that feature (when it has any)
@@ -314,6 +314,53 @@ Three distinct situations:
   - `retrieveLostData()` (Android) restores a camera photo lost to process death.
   - SHA-256 is pure Dart (`sha256.dart`), with no new dependency.
 - **Logging:** confidence values, attribute values, the key, the hash, signed URLs and image bytes are never logged (tested).
+
+## Weather and outfits (3.7, implemented)
+
+- **Location (`weather/data`):**
+  - `geolocator` is the only location dependency. The app asks for "while in use" only, at coarse ("low") accuracy, with one position read bounded by 10 s. There is no position stream and no background location.
+  - Android declares only `ACCESS_COARSE_LOCATION`; the plugin's foreground location service is removed in the manifest (`tools:node="remove"`). iOS declares only `NSLocationWhenInUseUsageDescription`.
+  - The system prompt appears only from a user action (the weather card, or generating outfits), and automatic paths show it at most once per app session. Home opening or app resume never prompts: they use a stored city, or the device only when permission was already granted.
+  - States: granted, denied, permanently denied (offers settings), service disabled (offers location settings), timeout and unavailable. Manual city is always offered.
+- **Privacy:**
+  - The platform adapter rounds the raw position to 2 decimals (about 1 km, the server's cache cell) and validates the **rounded** values before anything else sees them. `RoundedLocation.toString()` prints no coordinates.
+  - Coordinates and `Position` objects are never logged, persisted or put into errors. Platform errors are logged by type only.
+  - Manual city: 13 regional centres of Uzbekistan with public coordinates (no geocoding service). Only the city id is stored, per user, in secure storage under `atlas.weather.city.<userId>`. Coordinates, weather and location history are never stored.
+- **Weather cache:**
+  - In memory per rounded cell. Weather is fresh for 30 minutes from the server's `fetchedAt`, matching the server cache.
+  - Refreshed when Home opens or the app resumes and the data is stale, plus pull-to-refresh. No polling.
+  - A failed refresh keeps the last weather visible, marked stale. Stale weather is never sent to outfit generation.
+- **Generate (`GenerateController`):**
+  - Sends the occasion (contract enum), a new seed per tap ("Boshqa variant") and `topN: 3`.
+  - Weather: the fresh weather object when known, else the rounded location (the server looks the weather up), else none.
+  - The backend does all recommending; nothing is scored in Flutter.
+  - No automatic retry; a double tap sends one request. A failure keeps the occasion; 401 goes through session recovery.
+- **D1 — temporary contract/generator workaround:**
+  - `OutfitGenerateResponse.weatherUsed` is `anyOf: [inline object, null]`. The pinned generator wraps it in a non-nullable `AnyOf`, so a legitimate `null` fails to deserialize.
+  - The generated `generateOutfits` operation is still called (same path, Bearer and session recovery). Only when its deserializer rejects a 2xx body whose `weatherUsed` is exactly `null` is the body re-validated by the **generated** serializer with a placeholder, and returned with `weatherUsed: null`.
+  - Any other mismatch still fails as a contract error. This is the only contract-side client workaround; remove it once the contract or generator is fixed.
+- **Save and feedback:**
+  - Generated candidates are not stored. "Saqlash" sends one `POST /outfits` (`isSaved: true`).
+  - Like/dislike on an unstored candidate first sends `POST /outfits` (`isSaved: false`), then `POST /outfits/{id}/feedback`. Later feedback reuses that id, and a later Save is `PATCH isSaved: true`, not a second POST.
+- **D4 — unknown save outcome:**
+  - `POST /outfits` has no Idempotency-Key, so the client cannot make it exactly-once.
+  - A 4xx means nothing was stored. A lost answer (timeout, connection, 5xx) leads to **one** read of `GET /outfits?saved=true`, or the unfiltered list for a feedback save.
+  - The save counts as confirmed only when **exactly one** outfit matches every saved field exactly (items with roles, occasion, rounded score, reasons, explanation, saved flag), was created inside the attempt's window by the **server's** `Date`, and is not already known.
+  - Anything else shows "save status unknown". Save and feedback are then blocked, nothing is re-sent, and the user can check again, open Saved, or explicitly "Yana saqlash" (a new action that may create a duplicate, with a warning).
+- **Lists and detail:**
+  - Saved and recent lists (the last 50; the contract has no pagination).
+  - Detail: rename (1–80 characters, trimmed; an empty name cannot be sent because null fields are omitted), save/unsave (`PATCH isSaved`, not `rejected` feedback) and delete with confirmation.
+  - One request per action. 404 means the outfit is gone. Lists refresh after every change.
+- **Images (D5):**
+  - Generated items only carry a bare signed `imageUrl` (no image id, no expiry). It is cached in memory under `item:<wardrobe item id>` plus the thumbnail variant (`SignedImageRef.expiresAt` may be null), never under the URL.
+  - On 400/403/404 the wardrobe item is reloaded (at most every 30 s) for a fresh signed URL. Expiry is never parsed from the URL.
+  - Stored outfits use their `ImageObject`s, and a rejected image reloads the list or detail.
+- **Contract follow-ups (backend, not done here):**
+  - Name the `weatherUsed` schema, or otherwise make it generator-safe, so D1 can be removed.
+  - Add an `Idempotency-Key` to `POST /api/v1/outfits` (D4).
+  - Give generated items an `ImageObject` (id and expiry) instead of a bare `imageUrl`.
+  - `GET /api/v1/weather/current` answers 500 when the provider fails instead of degrading.
+  - `GET /api/v1/outfits` has no pagination.
 
 ## Offline behaviour
 

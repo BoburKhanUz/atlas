@@ -23,9 +23,15 @@ class SignedImageRef {
     required this.expiresAt,
     this.variant = ImageVariant.display,
   });
+
+  /// Cache identity together with [variant]. For a generated outfit item
+  /// (only a bare `imageUrl`) it is `item:<wardrobe item id>`.
   final String imageId;
   final String url;
-  final DateTime expiresAt;
+
+  /// Null when the API gives no expiry (generated outfit items): the URL is
+  /// then tried, and a rejection asks the owner for a fresh one.
+  final DateTime? expiresAt;
   final ImageVariant variant;
 
   /// Never prints the URL (it is a credential until it expires).
@@ -157,7 +163,8 @@ class _SignedImageState extends ConsumerState<SignedImage> {
   Widget build(BuildContext context) {
     final provider = SignedImageProvider(widget.image, ref.watch(mediaFetcherProvider));
     final cached = PaintingBinding.instance.imageCache.containsKey(provider.key);
-    if (!cached && !SignedMediaUrl.isUsable(widget.image.expiresAt)) {
+    final expiresAt = widget.image.expiresAt;
+    if (!cached && expiresAt != null && !SignedMediaUrl.isUsable(expiresAt)) {
       _expired();
       return const _Placeholder(loading: true);
     }

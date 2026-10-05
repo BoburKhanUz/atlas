@@ -9,12 +9,14 @@ import 'package:atlas_mobile/core/network/connectivity.dart';
 import 'package:atlas_mobile/core/network/providers.dart';
 import 'package:atlas_mobile/core/session/providers.dart';
 import 'package:atlas_mobile/core/session/session_interceptor.dart';
+import 'package:atlas_mobile/features/weather/providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../support/fake_http.dart';
+import '../support/fake_location.dart';
 import '../support/fake_session.dart';
 
 Future<GoRouter> pumpApp(WidgetTester tester, {FakeDeviceNetwork? network}) async {
@@ -28,6 +30,7 @@ Future<GoRouter> pumpApp(WidgetTester tester, {FakeDeviceNetwork? network}) asyn
       deviceNetworkProvider.overrideWithValue(network ?? FakeDeviceNetwork()),
       // Signed in: a valid session in (fake) secure storage.
       secureKeyValueStoreProvider.overrideWithValue(storage),
+      deviceLocatorProvider.overrideWithValue(FakeLocator()),
       // The production HTTP stack, answered by a fake backend.
       dioProvider.overrideWith(
         (ref) => buildAtlasDio(
@@ -80,10 +83,10 @@ void main() {
     final router = await pumpApp(tester);
     const expected = {
       'Garderob': (AtlasRoutes.wardrobe, 'Garderob bo‘sh'),
-      'Obrazlar': (AtlasRoutes.outfits, 'Tavsiya etilgan va saqlangan obrazlaringiz shu yerda bo‘ladi.'),
+      'Obrazlar': (AtlasRoutes.outfits, 'Saqlangan'),
       'Stilist': (AtlasRoutes.stylist, 'AI stilist'),
       'Profil': (AtlasRoutes.profile, 'Profilingiz'),
-      'Bosh sahifa': (AtlasRoutes.home, 'Kunlik tavsiyalar'),
+      'Bosh sahifa': (AtlasRoutes.home, 'Bugun nima kiyaman?'),
     };
     for (final MapEntry(key: tab, value: (route, text)) in expected.entries) {
       await tester.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text(tab)));

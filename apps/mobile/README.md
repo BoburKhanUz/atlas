@@ -35,7 +35,7 @@ flutter test
 flutter build apk --debug --dart-define-from-file=config/development.json
 ```
 
-Session integration tests against a **local, disposable** backend (skipped otherwise; see the header of `test/integration/backend_session_test.dart`; they cover sessions, onboarding, the wardrobe, attribute corrections and interrupted-upload recovery):
+Session integration tests against a **local, disposable** backend (skipped otherwise; see the header of `test/integration/backend_session_test.dart`; they cover sessions, onboarding, the wardrobe, attribute corrections, interrupted-upload recovery, weather and outfits; run the backend with `WEATHER_PROVIDER=mock`):
 
 ```bash
 ATLAS_IT_BASE_URL=http://127.0.0.1:3100 flutter test test/integration/
@@ -54,6 +54,9 @@ ATLAS_IT_BASE_URL=http://127.0.0.1:3100 flutter test test/integration/
 | `lib/features/auth/` | Splash, sign-in and registration screens |
 | `lib/features/onboarding/` | Onboarding gate, steps and the single profile save |
 | `lib/features/wardrobe/` | Wardrobe list, item detail, add flow, image preparation (JPEG, EXIF/GPS removal), idempotent upload, analysis review (confidence levels), attribute editor (PATCH), interrupted-upload recovery |
+| `lib/features/weather/` | Location (one coarse read, rounded to ~1 km), manual city, current weather with an in-memory 30-minute cache |
+| `lib/features/outfits/` | Outfit suggestions (backend-made), save/feedback, saved and recent lists, detail (rename, unsave, delete) |
+| `lib/features/home/` | Today: the weather card and the entry to outfit suggestions |
 | `test/fixtures/images/` | Image fixtures for the preparation tests (see its README) |
 | `packages/atlas_api/` | Generated API client. **Never edit**; regenerate with `tool/openapi/generate_api.sh` |
 | `lib/core/logging/` | Redacting logger, silent in release builds |

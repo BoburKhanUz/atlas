@@ -73,6 +73,8 @@
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>ATLAS kiyimingizni garderobga qo‘shish uchun kamerani faqat siz suratga olishni tanlaganingizda ishlatadi.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>ATLAS obrazlarni ob-havoga moslash uchun taxminiy joylashuvingizni faqat siz so‘raganingizda bir marta oladi. Joylashuv saqlanmaydi.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>ATLAS garderobga qo‘shish uchun faqat siz tanlagan rasmni oladi. Joylashuv ma’lumotlari rasmdan olib tashlanadi.</string>
 </dict>

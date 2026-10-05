@@ -13,10 +13,12 @@ import 'package:atlas_mobile/core/session/session_interceptor.dart';
 import 'package:atlas_mobile/core/session/session_tokens.dart';
 import 'package:atlas_mobile/core/session/token_store.dart';
 import 'package:atlas_mobile/features/onboarding/data/onboarding_marker_store.dart';
+import 'package:atlas_mobile/features/weather/providers.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 
 import 'fake_http.dart';
+import 'fake_location.dart';
 
 /// Test tokens, assembled at runtime (no realistic token literals in the
 /// sources). Each is unique and easy to grep for in captured logs.
@@ -220,6 +222,9 @@ abstract final class P {
   static const logout = '/api/v1/auth/logout';
   static const me = '/api/v1/auth/me';
   static const wardrobe = '/api/v1/wardrobe/items';
+  static const weather = '/api/v1/weather/current';
+  static const outfits = '/api/v1/outfits';
+  static const generate = '/api/v1/outfits/generate';
 }
 
 Map<String, Object?> meJson() => {
@@ -265,6 +270,10 @@ class SessionHarness {
 
   final backend = FakeBackend();
   final kv = MemorySecureStore();
+
+  /// Device location (never the platform plugin in tests): permission not
+  /// asked yet, so nothing prompts unless a test says so.
+  final locator = FakeLocator();
   final reachability = ApiReachability();
   final FakeNetwork network;
   final Duration startupWait;
@@ -324,6 +333,7 @@ List<Override> appOverrides(SessionHarness h, {bool onboarded = true}) {
     secureKeyValueStoreProvider.overrideWithValue(h.kv),
     dioProvider.overrideWithValue(h.dio),
     atlasApiClientProvider.overrideWithValue(h.client),
+    deviceLocatorProvider.overrideWithValue(h.locator),
   ];
 }
 
