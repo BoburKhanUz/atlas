@@ -36,7 +36,8 @@ import { GET as weather } from '@/app/api/v1/weather/current/route'
 import { GET as health } from '@/app/api/health/route'
 import { GET as openapi } from '@/app/api/v1/openapi.json/route'
 import { hashToken, signAccessToken } from '@/lib/auth'
-import { setLLMProviderForTesting } from '@/lib/ai/llm-provider'
+import { setLLMProviderForTesting } from '@/lib/ai/providers'
+import { MockProvider } from '@/lib/ai/providers/mock'
 import { resetRateLimits } from '@/lib/rate-limit'
 import { setStorageProviderForTesting } from '@/lib/storage/provider'
 import { setWeatherProviderForTesting } from '@/lib/weather/provider'
@@ -134,7 +135,7 @@ describe.skipIf(!enabled)('OAS-04: real responses match the OpenAPI contract', (
         precipitationAmount: 0, humidity: 40, windSpeed: 8, uvIndex: 4, source: 'mock', fetchedAt: new Date().toISOString(),
       }),
     })
-    setLLMProviderForTesting({ name: 'contract-mock', complete: async () => ({ content: 'Test javobi.', provider: 'contract-mock', model: 'mock' }) } as never)
+    setLLMProviderForTesting(new MockProvider({ respond: () => 'Test javobi.' }))
     resetRateLimits()
   })
   afterAll(async () => {

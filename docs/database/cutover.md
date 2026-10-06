@@ -133,7 +133,9 @@ psql --single-transaction -v ON_ERROR_STOP=1 -f docs/database/rollback/down-sess
 ```
 
 It refuses to run if `session_families` is not applied or a later migration
-is. `down-idempotency-keys.sql` and `down-media-variants.sql` are optional
+is. Since Phase 4.0 the later migration `20261007000000_ai_usage` (AI quota
+counters) is applied too: reverse it first with `down-ai-usage.sql` (same
+command); it drops only usage counts, never user content. `down-idempotency-keys.sql` and `down-media-variants.sql` are optional
 full reversals (Phase 2 ignores the new table and columns); run them after
 `down-session-families.sql`, in that order.
 

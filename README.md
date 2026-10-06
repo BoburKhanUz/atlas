@@ -26,6 +26,9 @@ openssl rand -base64 48
 # ...and the session encryption key (exactly 32 bytes) as SESSION_ENC_KEY:
 openssl rand -base64 32
 # Also set POSTGRES_PASSWORD.
+# AI: for local use without a paid provider set AI_LLM_PROVIDER=mock and
+# AI_ALLOW_MOCK_IN_PRODUCTION=1 (the container runs a production build, which
+# otherwise refuses mock AI). See docs/ai/provider-architecture.md.
 docker compose up --build
 ```
 
@@ -86,7 +89,12 @@ See `.env.example`. The server exits at startup if the required secrets are miss
 | `MEDIA_URL_TTL_SECONDS` | Signed media URL lifetime (default 3600) |
 | `PUBLIC_BASE_URL` | Optional. Origin for absolute image URLs (mobile), e.g. `https://api.atlas.example`; https in production; never derived from the Host header |
 | `WEATHER_PROVIDER` | `open-meteo` (default) or `mock`. Verify Open-Meteo's terms before commercial launch |
-| `LLM_PROVIDER` | Only the Z.ai SDK provider exists; no provider is selected yet (see `docs/ai/provider-evaluation.md`) |
+| `AI_LLM_PROVIDER` | `mock` (development default), `gemini` or `openai`. Production refuses `mock` and a real provider without key or model. See `docs/ai/provider-architecture.md` |
+| `AI_LLM_MODEL` | Model id for `gemini`/`openai` (required; there is no built-in choice) |
+| `GEMINI_API_KEY`, `OPENAI_API_KEY` | Server-side key of the selected provider. Never in the mobile app or in git |
+| `AI_LLM_TIMEOUT_MS` | Per-attempt AI timeout, 1000–55000 ms (default 25000) |
+| `AI_VISION_PROVIDER` | `mock` only, until real clothing analysis (Phase 4.1) |
+| `AI_ALLOW_MOCK_IN_PRODUCTION` | `1` acknowledges mock AI in a production build (local Docker, e2e; required until Phase 4.1 because vision is still the mock) |
 | `TRUST_PROXY` | `1` only behind a proxy that overwrites `X-Forwarded-For`; enables per-IP rate limits |
 | `PRISMA_LOG_QUERIES` | `1` logs SQL (may contain user data; debugging only) |
 

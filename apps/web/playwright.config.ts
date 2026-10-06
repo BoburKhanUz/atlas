@@ -39,6 +39,10 @@ const baseEnv = {
   SESSION_ENC_KEY,
   STORAGE_LOCAL_DIR,
   WEATHER_PROVIDER: 'mock',
+  // Production build with mock AI: no paid provider in tests. The flag is the
+  // explicit acknowledgement the production config requires (src/lib/ai/config.ts).
+  AI_LLM_PROVIDER: 'mock',
+  AI_ALLOW_MOCK_IN_PRODUCTION: '1',
   NODE_ENV: 'production',
   COOKIE_SECURE: '0', // plain http
   NEXT_TELEMETRY_DISABLED: '1',

@@ -10,7 +10,8 @@
  *   - Reference real weather + event context.
  */
 
-import { getLLMProvider, type LLMMessage } from './llm-provider'
+import { generateText } from './client'
+import type { LLMMessage } from './providers/types'
 
 interface WardrobeSummary {
   category: string
@@ -166,12 +167,11 @@ export async function runStylistTurn(
     { role: 'user', content: userMessage },
   ]
 
-  const provider = getLLMProvider()
-  const response = await provider.complete(messages, { temperature: 0.7, maxTokens: 600 })
+  const response = await generateText('stylist_chat', { messages, temperature: 0.7, maxOutputTokens: 600 })
 
   return {
-    assistantMessage: response.content,
-    provider: response.provider,
+    assistantMessage: response.text,
+    provider: response.metadata.provider,
     contextSummary: {
       wardrobeItemCount: context.wardrobe.length,
       weatherProvided: !!context.weather,

@@ -46,7 +46,14 @@ services:
       STORAGE_DRIVER: local
       STORAGE_LOCAL_DIR: /app/storage/uploads
       WEATHER_PROVIDER: ${WEATHER_PROVIDER:-open-meteo}
-      LLM_PROVIDER: ${LLM_PROVIDER:-}
+      # The app refuses to start without a valid AI configuration (see .env.example).
+      AI_LLM_PROVIDER: ${AI_LLM_PROVIDER:-}
+      AI_LLM_MODEL: ${AI_LLM_MODEL:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      AI_LLM_TIMEOUT_MS: ${AI_LLM_TIMEOUT_MS:-}
+      AI_VISION_PROVIDER: ${AI_VISION_PROVIDER:-mock}
+      AI_ALLOW_MOCK_IN_PRODUCTION: ${AI_ALLOW_MOCK_IN_PRODUCTION:-}
       TRUST_PROXY: ${TRUST_PROXY:-0}
     ports:
       - "127.0.0.1:3000:3000"

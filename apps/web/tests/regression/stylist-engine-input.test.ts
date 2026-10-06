@@ -23,7 +23,8 @@ vi.mock('@/lib/ai/recommendation', async (importOriginal) => {
 
 import { POST } from '@/app/api/v1/stylist/chat/route'
 import { generateOutfits } from '@/lib/ai/recommendation'
-import { setLLMProviderForTesting } from '@/lib/ai/llm-provider'
+import { setLLMProviderForTesting } from '@/lib/ai/providers'
+import { MockProvider } from '@/lib/ai/providers/mock'
 import { authHeader, jsonRequest } from '../helpers'
 
 const rows = [
@@ -56,10 +57,7 @@ async function chat(body: Record<string, unknown>) {
 describe('POST /api/v1/stylist/chat engine input', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    setLLMProviderForTesting({
-      name: 'fake',
-      complete: async () => ({ content: 'Mana tavsiya.', provider: 'fake' }),
-    })
+    setLLMProviderForTesting(new MockProvider({ respond: () => 'Mana tavsiya.' }))
     db.wardrobeItem.findMany.mockResolvedValue(rows)
     db.user.findUnique.mockResolvedValue(null)
     db.userPreferences.findUnique.mockResolvedValue(null)

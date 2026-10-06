@@ -13,7 +13,7 @@ import {
   type StoredImage,
 } from '@/lib/storage/provider'
 import { serializeWardrobeItem } from '@/lib/wardrobe/serialize'
-import { analyzeClothing, type ClothingDetection } from '@/lib/ai/mock-vision'
+import { analyzeGarment, type ClothingDetection } from '@/lib/ai/vision-service'
 import {
   claimIdempotencyKey,
   completeIdempotencyKey,
@@ -123,8 +123,8 @@ export const POST = withApi(async (req) => {
     }
     const image = stored
 
-    // 2. Run mock vision analysis
-    const detection = await analyzeClothing({ buffer, filename })
+    // 2. Clothing analysis (VisionService; the deterministic mock until Phase 4.1)
+    const detection = await analyzeGarment({ buffer, filename })
 
     // 3. Persist the item + image row (+ complete the idempotency key) in one transaction.
     const item = await db.$transaction(async (tx) => {

@@ -6,6 +6,7 @@
  */
 
 import path from 'path'
+import { parseAiConfig } from '@/lib/ai/config'
 
 const MIN_SECRET_LENGTH = 32
 
@@ -175,4 +176,5 @@ export function assertServerConfig(): void {
   getMediaSigningSecret()
   getSessionEncKeys()
   getPublicBaseUrl()
+  parseAiConfig()
 }

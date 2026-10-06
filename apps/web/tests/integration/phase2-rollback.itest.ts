@@ -24,6 +24,8 @@ const PHASE2_DIR = process.env.PHASE2_DIR ?? ''
 const NEW_DIR = path.resolve(__dirname, '../..')
 const ROLLBACK_DIR = path.resolve(NEW_DIR, '../../docs/database/rollback')
 const DOWN_SQL = path.join(ROLLBACK_DIR, 'down-session-families.sql')
+// Applied after session_families by the new build; reversed first (Phase 4.0).
+const DOWN_AI_USAGE = path.join(ROLLBACK_DIR, 'down-ai-usage.sql')
 const runnable = enabled && !!PHASE2_DIR && existsSync(path.join(PHASE2_DIR, '.next/standalone/server.js')) && existsSync(path.join(NEW_DIR, '.next/standalone/server.js'))
 
 const SECRETS = {
@@ -62,6 +64,9 @@ async function startServer(which: 'phase2' | 'next', db: string, storage: string
       ...process.env,
       ...SECRETS,
       NODE_ENV: 'production',
+      // the new build fails closed without a real AI provider (Phase 4.0); Phase 2 ignores these
+      AI_LLM_PROVIDER: 'mock',
+      AI_ALLOW_MOCK_IN_PRODUCTION: '1',
       HOSTNAME: '127.0.0.1',
       PORT: String(port),
       DATABASE_URL: dbUrl(db),
@@ -94,6 +99,12 @@ async function startServer(which: 'phase2' | 'next', db: string, storage: string
         child.kill('SIGTERM')
       }),
   }
+}
+
+/** Drops the AI quota table first, as docs/database/cutover.md says (rollback past Phase 4.0). */
+function downAiUsage(db: string) {
+  const r = downScript(db, DOWN_AI_USAGE)
+  expect(r.code, r.output).toBe(0)
 }
 
 function downScript(db: string, file = DOWN_SQL, singleTransaction = true) {
@@ -256,6 +267,7 @@ describe.skipIf(!runnable)('Phase 2 rollback and roll-forward (real builds)', ()
     expect(m.code, m.output).toBe(0)
     expect(sql(db, `SELECT count(*) FROM "Session" WHERE "familyId" IS NULL`)).toBe('0')
 
+    downAiUsage(db)
     const before = snapshot(db)
     const down = downScript(db)
     expect(down.code, down.output).toBe(0)
@@ -355,6 +367,7 @@ describe.skipIf(!runnable)('Phase 2 rollback and roll-forward (real builds)', ()
     }
 
     // ── rollback R-C ──
+    downAiUsage(db)
     const down = downScript(db)
     expect(down.code, down.output).toBe(0)
     if (rb03 && rb03.code === 0) expect(migrate(PHASE2_DIR, db).code).toBe(0)
@@ -404,10 +417,10 @@ describe.skipIf(!runnable)('Phase 2 rollback and roll-forward (real builds)', ()
     // ── RB-04 roll forward ──
     const f = migrate(NEW_DIR, db)
     expect(f.code, f.output).toBe(0)
-    // only session_families was applied again; media + idempotency kept their original rows
+    // only session_families and ai_usage were applied again; media + idempotency kept their original rows
     expect(migrationRows(db).map((r) => `${r.migration_name}:${r.finished}`)).toEqual([
       '20261004000000_init:true', '20261005000000_sessions:true', '20261006000100_media_variants:true',
-      '20261006000200_idempotency_keys:true', '20261006000300_session_families:true',
+      '20261006000200_idempotency_keys:true', '20261006000300_session_families:true', '20261007000000_ai_usage:true',
     ])
     expect(sql(db, `SELECT count(*) FROM "Session" WHERE "familyId" IS NULL`)).toBe('0')
     expect(Number(sql(db, `SELECT count(*) FROM "Session" WHERE "rotatedAtSource" = 'legacy'`))).toBeGreaterThan(0)
@@ -447,17 +460,21 @@ describe.skipIf(!runnable)('Phase 2 rollback and roll-forward (real builds)', ()
     const media = path.join(ROLLBACK_DIR, 'down-media-variants.sql')
     // wrong order: later migrations still applied → refused, nothing changed
     const before = snapshot(db)
-    for (const f of [idem, media]) {
+    for (const f of [DOWN_SQL, idem, media]) {
       const r = downScript(db, f)
       expect(r.code).not.toBe(0)
       expect(r.output).toMatch(/later migrations are applied/)
     }
     expect(snapshot(db)).toEqual(before)
     // right order
-    for (const f of [DOWN_SQL, idem, media]) {
+    for (const f of [DOWN_AI_USAGE, DOWN_SQL, idem, media]) {
       const r = downScript(db, f)
       expect(r.code, `${path.basename(f)}: ${r.output}`).toBe(0)
     }
+    // the AI usage script refuses a second run (nothing to reverse)
+    const again = downScript(db, DOWN_AI_USAGE)
+    expect(again.code).not.toBe(0)
+    expect(again.output).toMatch(/is not applied/)
     const ref = 'itest_rb_ref2'
     expect(migrate(PHASE2_DIR, ref).code).toBe(0)
     expect(snapshot(db).schema).toBe(snapshot(ref).schema)
@@ -561,6 +578,7 @@ describe.skipIf(!runnable)('Phase 2 rollback and roll-forward (real builds)', ()
     }
 
     // ── R-C rollback: the expired family stays dead under Phase 2, the recent one keeps working ──
+    downAiUsage(db)
     const down = downScript(db)
     expect(down.code, down.output).toBe(0)
     p2 = await startServer('phase2', db, storage)
@@ -600,6 +618,7 @@ describe.skipIf(!runnable)('Phase 2 rollback and roll-forward (real builds)', ()
     sql(db, `INSERT INTO "User" ("id","email","passwordHash","updatedAt") VALUES ('u1','u1@test.local','x', now());
              INSERT INTO "Session" ("id","userId","tokenHash","expiresAt") VALUES ('s1','u1','h1', now() + interval '1 day')`)
     expect(migrate(NEW_DIR, db).code).toBe(0)
+    downAiUsage(db)
     const before = snapshot(db)
     const beforeRows = migrationRows(db)
 

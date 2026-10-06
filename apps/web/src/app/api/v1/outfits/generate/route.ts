@@ -7,13 +7,12 @@ import { OutfitGenerateRequest } from '@/server/schemas/requests'
 import { getWeatherProvider } from '@/lib/weather/provider'
 import {
   generateOutfits,
-  buildExplanationContext,
   type OutfitCandidate,
   type WardrobeItemSummary,
   type WeatherSnapshot,
 } from '@/lib/ai/recommendation'
 import { presentPrimaryImage } from '@/lib/storage/media'
-import { getLLMProvider, type LLMMessage } from '@/lib/ai/llm-provider'
+import { explainOutfit } from '@/lib/ai/outfit-intelligence'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -199,28 +198,10 @@ export const POST = withApi(async (req) => {
     })
   }
 
-  // ── 6. Generate natural-language explanation for top candidate only ───────
-  // Spec section 17: "Nega?" expandable explanation. LLM is called for the
-  // TOP outfit (1 LLM call per generate request — keeps things fast + cheap).
-  // Lower-ranked candidates get a shorter derived reason instead.
-  const provider = getLLMProvider()
-  let topExplanation: string | null = null
-  try {
-    const context = buildExplanationContext(candidates[0], occasion ?? undefined)
-    const messages: LLMMessage[] = [
-      {
-        role: 'system',
-        content:
-          'Siz shaxsiy AI stilistsiz. Tabiiy o\'zbek tilida qisqa (maksimal 60 so\'z), do\'stona javob yozing. Emoji ortiqcha emas. Javob faqat matn bo\'lsin.',
-      },
-      { role: 'user', content: context },
-    ]
-    const response = await provider.complete(messages, { temperature: 0.5, maxTokens: 180 })
-    topExplanation = response.content
-  } catch (err) {
-    log.warn('outfit generate: LLM explanation failed', { err })
-    // Soft-fail: lower candidates get fallback text anyway
-  }
+  // ── 6. Natural-language explanation for the top candidate only ───────────
+  // Spec section 17: "Nega?" expandable explanation. One AI call per generate
+  // request; a failure leaves the explanation null (soft fail).
+  const topExplanation = await explainOutfit(candidates[0], occasion ?? undefined)
 
   // ── 7. Serialize candidates for the response ──────────────────────────────
   const imageUrlFor = (itemId: string): string | null => {

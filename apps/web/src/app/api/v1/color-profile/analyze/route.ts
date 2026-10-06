@@ -4,7 +4,7 @@ import { requireAuth, unauthorized } from '@/lib/api-helpers'
 import { ApiError, withApi, parseForm, UPLOAD_BODY_LIMIT } from '@/server/http'
 import { log } from '@/server/log'
 import { InvalidImageError } from '@/lib/storage/provider'
-import { analyzeSelfie, type ColorAnalysisResult } from '@/lib/ai/color-analysis'
+import { analyzeColorSelfie, type ColorAnalysisResult } from '@/lib/ai/color-service'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -45,7 +45,7 @@ export const POST = withApi(async (req) => {
   // Run analysis
   let analysis: ColorAnalysisResult
   try {
-    analysis = await analyzeSelfie({ buffer })
+    analysis = await analyzeColorSelfie({ buffer })
   } catch (err) {
     if (err instanceof InvalidImageError) {
       throw new ApiError('INVALID_IMAGE')

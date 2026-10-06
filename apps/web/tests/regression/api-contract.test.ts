@@ -27,7 +27,8 @@ import { POST as saveOutfit } from '@/app/api/v1/outfits/route'
 import { POST as chat } from '@/app/api/v1/stylist/chat/route'
 import { GET as health } from '@/app/api/health/route'
 import { generateOutfits } from '@/lib/ai/recommendation'
-import { setLLMProviderForTesting } from '@/lib/ai/llm-provider'
+import { setLLMProviderForTesting } from '@/lib/ai/providers'
+import { MockProvider } from '@/lib/ai/providers/mock'
 import { authHeader, jsonRequest } from '../helpers'
 
 const ID = { params: Promise.resolve({ id: 'item_1' }) }
@@ -64,7 +65,7 @@ const wardrobeRows = [
 
 beforeEach(() => {
   vi.clearAllMocks()
-  setLLMProviderForTesting({ name: 'fake', complete: async () => ({ content: 'Mana tavsiya.', provider: 'fake' }) })
+  setLLMProviderForTesting(new MockProvider({ respond: () => 'Mana tavsiya.' }))
   db.wardrobeItem.findMany.mockResolvedValue(wardrobeRows)
   db.user.findUnique.mockResolvedValue(null)
   db.aiConversation.findFirst.mockResolvedValue(null)

@@ -25,6 +25,8 @@ const DB = 'itest_lt'
 const DAY = 24 * 3600 * 1000
 const MIN = 60_000
 const DOWN_SQL = path.resolve(__dirname, '../../../../docs/database/rollback/down-session-families.sql')
+// The AI quota table (Phase 4.0) is applied after session_families and reversed first.
+const DOWN_AI_USAGE = path.resolve(__dirname, '../../../../docs/database/rollback/down-ai-usage.sql')
 
 const token = () => crypto.randomBytes(32).toString('base64url')
 const ms = (q: string) => Number(sql(DB, `SELECT (extract(epoch FROM (${q})) * 1000)::bigint`))
@@ -229,6 +231,12 @@ describe.skipIf(!enabled)('legacy session lifetime across the cutover (real Post
     setClock(DB, null)
     const c = chains.get('d59')!
     const limitBefore = absOf(c)
+    const downAi = spawnSync(
+      'psql',
+      ['--single-transaction', '-X', '-v', 'ON_ERROR_STOP=1', '-h', PG.host, '-p', PG.port, '-U', PG.user, '-d', DB, '-f', DOWN_AI_USAGE],
+      { encoding: 'utf8' },
+    )
+    expect(downAi.status, `${downAi.stdout}${downAi.stderr}`).toBe(0)
     const down = spawnSync(
       'psql',
       ['--single-transaction', '-X', '-v', 'ON_ERROR_STOP=1', '-h', PG.host, '-p', PG.port, '-U', PG.user, '-d', DB, '-f', DOWN_SQL],

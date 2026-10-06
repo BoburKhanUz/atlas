@@ -6,7 +6,7 @@ import { log } from '@/server/log'
 import { occasionFromEvent } from '@/server/schemas/catalog'
 import { StylistChatRequest } from '@/server/schemas/requests'
 import { runStylistTurn, type StylistContext } from '@/lib/ai/stylist'
-import type { LLMMessage } from '@/lib/ai/llm-provider'
+import type { LLMMessage } from '@/lib/ai/providers/types'
 import { generateOutfits, buildExplanationContext, isCompleteWeather } from '@/lib/ai/recommendation'
 import { retrieveKnowledge, formatKnowledgeContext } from '@/lib/ai/fashion-knowledge'
 import {
@@ -194,6 +194,10 @@ export const POST = withApi(async (req) => {
 
   let assistantText: string
   let contextSummary: { wardrobeItemCount: number; weatherProvided: boolean; eventProvided: boolean }
+  // Stored with the message (not part of the API): who answered, and whether
+  // the text is the fixed fallback rather than an AI answer.
+  let provider = 'none'
+  let fallback = false
   try {
     const result = await runStylistTurn(
       message,
@@ -211,11 +215,13 @@ export const POST = withApi(async (req) => {
     )
     assistantText = result.assistantMessage
     contextSummary = result.contextSummary
+    provider = result.provider
   } catch (err) {
     // Soft-fail: if the LLM is unavailable, give the user a clear message
     // rather than a 500. Spec: must feel like intelligent stylist — errors
     // should be honest, not masked.
     log.error('stylist: LLM error', { err })
+    fallback = true
     assistantText =
       'Kechirasiz, hozir AI stilist javob bera olmaydi. Iltimos, bir necha soniyadan so‘ng qayta urinib ko‘ring.'
     contextSummary = {
@@ -233,7 +239,8 @@ export const POST = withApi(async (req) => {
       content: assistantText,
       metadataJson: JSON.stringify({
         ...contextSummary,
-        provider: 'zai',
+        provider,
+        ...(fallback ? { fallback: true } : {}),
       }),
     },
   })

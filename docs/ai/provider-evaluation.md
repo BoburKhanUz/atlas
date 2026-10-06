@@ -2,15 +2,16 @@
 
 Status: proposal. No vendor is selected or recommended here. The goal is a provider-independent design and a small, repeatable evaluation.
 
-## Current state
+## Current state (Phase 4.0)
 
-- `LLMProvider` (`apps/web/src/lib/ai/llm-provider.ts`) is the only interface call sites may use: `complete(messages, options) -> { content, provider, usage? }`. The only implementation is the Z.ai SDK, which does not work outside Z.ai.
-- Garment vision is a mock (category from filename).
+- The provider layer is implemented: see [`provider-architecture.md`](provider-architecture.md). `LLMProvider` and `VisionProvider` live in `apps/web/src/lib/ai/providers/`, with REST adapters for Gemini and OpenAI (no SDKs) and a mock. The Z.ai SDK is removed.
+- No provider is selected: Gemini and OpenAI are candidates for this evaluation. Development uses the mock.
+- Garment vision is still a mock (category from filename) until Phase 4.1.
 
 ## Design
 
 ### LLMProvider (exists)
-Keep as the single text-generation boundary. Add implementations behind it and select via `LLM_PROVIDER`. Call sites must not import vendor SDKs.
+Keep as the single text-generation boundary. Implementations are selected via `AI_LLM_PROVIDER`. Call sites must not import vendor SDKs.
 
 ### VisionProvider (planned)
 Extracts garment attributes from an image and returns schema-validated JSON with per-attribute confidence.

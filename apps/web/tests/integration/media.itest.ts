@@ -230,8 +230,12 @@ describe.skipIf(!enabled)('wardrobe uploads (real PostgreSQL + local storage)', 
       }
       const env = process.env as Record<string, string | undefined>
       const nodeEnv = env.NODE_ENV
+      const ai = { AI_LLM_PROVIDER: env.AI_LLM_PROVIDER, AI_ALLOW_MOCK_IN_PRODUCTION: env.AI_ALLOW_MOCK_IN_PRODUCTION }
       try {
         env.NODE_ENV = 'production'
+        // production also validates the AI configuration (Phase 4.0); acknowledge the mock
+        env.AI_LLM_PROVIDER = 'mock'
+        env.AI_ALLOW_MOCK_IN_PRODUCTION = '1'
         process.env.PUBLIC_BASE_URL = 'http://api.atlas.example'
         expect(() => assertServerConfig()).toThrow(/https/)
         process.env.PUBLIC_BASE_URL = 'http://localhost:3000'
@@ -240,6 +244,10 @@ describe.skipIf(!enabled)('wardrobe uploads (real PostgreSQL + local storage)', 
         expect(() => assertServerConfig()).not.toThrow()
       } finally {
         env.NODE_ENV = nodeEnv
+        for (const [k, v] of Object.entries(ai)) {
+          if (v === undefined) delete env[k]
+          else env[k] = v
+        }
       }
     })
   })

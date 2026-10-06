@@ -33,6 +33,7 @@ model User {
   sessions     Session[]
   sessionFamilies SessionFamily[]
   idempotencyKeys IdempotencyKey[]
+  aiUsage      AiUsage[]
 }
 
 // Refresh-token sessions. Only the SHA-256 hash of the opaque refresh token is
@@ -320,4 +321,21 @@ model IdempotencyKey {
 
   @@unique([userId, route, key])
   @@index([expiresAt])
+}
+
+// ─── Per-user daily AI usage (quota counters) ────────────────────────────────
+// One row per (user, feature, day in Uzbekistan time); incremented atomically
+// by src/lib/ai/quota.ts. Holds counts only, never content.
+model AiUsage {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  feature   String   // stylist_chat | clothing_analysis | color_analysis
+  day       DateTime @db.Date
+  count     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, feature, day])
+  @@index([day])
 }
