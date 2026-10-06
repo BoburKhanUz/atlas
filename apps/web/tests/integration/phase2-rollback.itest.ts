@@ -27,6 +27,7 @@ const DOWN_SQL = path.join(ROLLBACK_DIR, 'down-session-families.sql')
 // Applied after session_families by the new build; reversed first, newest first (Phase 4.0, 4.1).
 const DOWN_AI_USAGE = path.join(ROLLBACK_DIR, 'down-ai-usage.sql')
 const DOWN_ANALYSIS_METADATA = path.join(ROLLBACK_DIR, 'down-wardrobe-analysis-metadata.sql')
+const DOWN_COLOR_PROFILE = path.join(ROLLBACK_DIR, 'down-color-profile-v2.sql')
 const runnable = enabled && !!PHASE2_DIR && existsSync(path.join(PHASE2_DIR, '.next/standalone/server.js')) && existsSync(path.join(NEW_DIR, '.next/standalone/server.js'))
 
 const SECRETS = {
@@ -105,7 +106,7 @@ async function startServer(which: 'phase2' | 'next', db: string, storage: string
 
 /** Reverses the Phase 4 migrations first, newest first, as docs/database/cutover.md says. */
 function downAiUsage(db: string) {
-  for (const file of [DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE]) {
+  for (const file of [DOWN_COLOR_PROFILE, DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE]) {
     const r = downScript(db, file)
     expect(r.code, `${path.basename(file)}: ${r.output}`).toBe(0)
   }
@@ -425,7 +426,7 @@ describe.skipIf(!runnable)('Phase 2 rollback and roll-forward (real builds)', ()
     expect(migrationRows(db).map((r) => `${r.migration_name}:${r.finished}`)).toEqual([
       '20261004000000_init:true', '20261005000000_sessions:true', '20261006000100_media_variants:true',
       '20261006000200_idempotency_keys:true', '20261006000300_session_families:true', '20261007000000_ai_usage:true',
-      '20261008000000_wardrobe_analysis_metadata:true',
+      '20261008000000_wardrobe_analysis_metadata:true', '20261009000000_color_profile_v2:true',
     ])
     expect(sql(db, `SELECT count(*) FROM "Session" WHERE "familyId" IS NULL`)).toBe('0')
     expect(Number(sql(db, `SELECT count(*) FROM "Session" WHERE "rotatedAtSource" = 'legacy'`))).toBeGreaterThan(0)
@@ -465,19 +466,19 @@ describe.skipIf(!runnable)('Phase 2 rollback and roll-forward (real builds)', ()
     const media = path.join(ROLLBACK_DIR, 'down-media-variants.sql')
     // wrong order: later migrations still applied → refused, nothing changed
     const before = snapshot(db)
-    for (const f of [DOWN_AI_USAGE, DOWN_SQL, idem, media]) {
+    for (const f of [DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE, DOWN_SQL, idem, media]) {
       const r = downScript(db, f)
       expect(r.code).not.toBe(0)
       expect(r.output).toMatch(/later migrations are applied/)
     }
     expect(snapshot(db)).toEqual(before)
     // right order
-    for (const f of [DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE, DOWN_SQL, idem, media]) {
+    for (const f of [DOWN_COLOR_PROFILE, DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE, DOWN_SQL, idem, media]) {
       const r = downScript(db, f)
       expect(r.code, `${path.basename(f)}: ${r.output}`).toBe(0)
     }
     // the Phase 4 scripts refuse a second run (nothing to reverse)
-    for (const f of [DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE]) {
+    for (const f of [DOWN_COLOR_PROFILE, DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE]) {
       const again = downScript(db, f)
       expect(again.code).not.toBe(0)
       expect(again.output).toMatch(/is not applied/)

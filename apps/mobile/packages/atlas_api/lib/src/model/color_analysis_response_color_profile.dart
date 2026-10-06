@@ -5,6 +5,7 @@
 // ignore_for_file: unused_element
 import 'package:atlas_api/src/model/color_analysis_response_color_profile_contrast_level.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:atlas_api/src/model/color_analysis_response_color_profile_secondary_confidence.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -23,8 +24,11 @@ part 'color_analysis_response_color_profile.g.dart';
 /// * [neutralColors]
 /// * [recommendedColors]
 /// * [season]
+/// * [secondaryConfidence]
+/// * [secondarySeason]
 /// * [skinTone]
 /// * [undertone]
+/// * [undertoneConfidence]
 @BuiltValue()
 abstract class ColorAnalysisResponseColorProfile
     implements Built<ColorAnalysisResponseColorProfile, ColorAnalysisResponseColorProfileBuilder> {
@@ -59,11 +63,20 @@ abstract class ColorAnalysisResponseColorProfile
   @BuiltValueField(wireName: r'season')
   ColorAnalysisResponseColorProfileContrastLevel? get season;
 
+  @BuiltValueField(wireName: r'secondaryConfidence')
+  ColorAnalysisResponseColorProfileSecondaryConfidence? get secondaryConfidence;
+
+  @BuiltValueField(wireName: r'secondarySeason')
+  ColorAnalysisResponseColorProfileContrastLevel? get secondarySeason;
+
   @BuiltValueField(wireName: r'skinTone')
   ColorAnalysisResponseColorProfileContrastLevel? get skinTone;
 
   @BuiltValueField(wireName: r'undertone')
   ColorAnalysisResponseColorProfileContrastLevel? get undertone;
+
+  @BuiltValueField(wireName: r'undertoneConfidence')
+  ColorAnalysisResponseColorProfileSecondaryConfidence? get undertoneConfidence;
 
   ColorAnalysisResponseColorProfile._();
 
@@ -130,6 +143,20 @@ class _$ColorAnalysisResponseColorProfileSerializer implements PrimitiveSerializ
             object.season,
             specifiedType: const FullType.nullable(ColorAnalysisResponseColorProfileContrastLevel),
           );
+    yield r'secondaryConfidence';
+    yield object.secondaryConfidence == null
+        ? null
+        : serializers.serialize(
+            object.secondaryConfidence,
+            specifiedType: const FullType.nullable(ColorAnalysisResponseColorProfileSecondaryConfidence),
+          );
+    yield r'secondarySeason';
+    yield object.secondarySeason == null
+        ? null
+        : serializers.serialize(
+            object.secondarySeason,
+            specifiedType: const FullType.nullable(ColorAnalysisResponseColorProfileContrastLevel),
+          );
     yield r'skinTone';
     yield object.skinTone == null
         ? null
@@ -143,6 +170,13 @@ class _$ColorAnalysisResponseColorProfileSerializer implements PrimitiveSerializ
         : serializers.serialize(
             object.undertone,
             specifiedType: const FullType.nullable(ColorAnalysisResponseColorProfileContrastLevel),
+          );
+    yield r'undertoneConfidence';
+    yield object.undertoneConfidence == null
+        ? null
+        : serializers.serialize(
+            object.undertoneConfidence,
+            specifiedType: const FullType.nullable(ColorAnalysisResponseColorProfileSecondaryConfidence),
           );
   }
 
@@ -232,6 +266,22 @@ class _$ColorAnalysisResponseColorProfileSerializer implements PrimitiveSerializ
           if (valueDes == null) continue;
           result.season.replace(valueDes);
           break;
+        case r'secondaryConfidence':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(ColorAnalysisResponseColorProfileSecondaryConfidence),
+          ) as ColorAnalysisResponseColorProfileSecondaryConfidence?;
+          if (valueDes == null) continue;
+          result.secondaryConfidence.replace(valueDes);
+          break;
+        case r'secondarySeason':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(ColorAnalysisResponseColorProfileContrastLevel),
+          ) as ColorAnalysisResponseColorProfileContrastLevel?;
+          if (valueDes == null) continue;
+          result.secondarySeason.replace(valueDes);
+          break;
         case r'skinTone':
           final valueDes = serializers.deserialize(
             value,
@@ -247,6 +297,14 @@ class _$ColorAnalysisResponseColorProfileSerializer implements PrimitiveSerializ
           ) as ColorAnalysisResponseColorProfileContrastLevel?;
           if (valueDes == null) continue;
           result.undertone.replace(valueDes);
+          break;
+        case r'undertoneConfidence':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(ColorAnalysisResponseColorProfileSecondaryConfidence),
+          ) as ColorAnalysisResponseColorProfileSecondaryConfidence?;
+          if (valueDes == null) continue;
+          result.undertoneConfidence.replace(valueDes);
           break;
         default:
           unhandled.add(key);

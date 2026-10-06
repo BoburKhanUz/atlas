@@ -105,16 +105,23 @@ export const OPERATIONS: Operation[] = [
   },
   {
     method: 'GET', path: '/api/v1/color-profile', route: 'api/v1/color-profile', operationId: 'getColorProfile', tags: ['profile'],
-    summary: 'Latest colour analysis', auth: 'required',
+    summary: 'The current colour profile (one per user). undertone: warm, neutral_warm, neutral, neutral_cool, cool or unknown; season null when no season is supported; hair/eye colour null when not measurable; confidences 0–1 (overall ≤ 0.8), null for profiles from before Phase 4.3.', auth: 'required',
     success: [{ status: 200, description: 'Colour profile, or status not_analyzed', schema: Res.ColorProfileResponse }],
     errors: [],
   },
   {
+    method: 'DELETE', path: '/api/v1/color-profile', route: 'api/v1/color-profile', operationId: 'deleteColorProfile', tags: ['profile'],
+    summary: 'Delete the colour profile and the selfie-derived skin tone, undertone, hair and eye colour (idempotent; selfies are never stored)', auth: 'required',
+    success: [{ status: 200, description: 'Deleted (or there was nothing to delete)', schema: Res.OkResponse }],
+    errors: [],
+  },
+  {
     method: 'POST', path: '/api/v1/color-profile/analyze', route: 'api/v1/color-profile/analyze', operationId: 'analyzeColorProfile', tags: ['profile'],
-    summary: 'Analyse a selfie (not stored) into a colour profile', auth: 'required',
-    multipart: { fields: { file: { description: 'Selfie (JPEG, PNG, WebP), ≤ 8 MB', binary: true, required: true } } },
+    summary: 'Analyse a selfie into a colour profile, replacing the current one. Deterministic and on the server only: the selfie is not stored, logged or sent to any AI provider. Nothing is stored for any error.',
+    auth: 'required',
+    multipart: { fields: { file: { description: 'Selfie (JPEG, PNG, WebP), ≤ 8 MB, shortest side ≥ 256 px', binary: true, required: true } } },
     success: [{ status: 200, description: 'Colour profile', schema: Res.ColorAnalysisResponse }],
-    errors: ['BAD_REQUEST', 'INVALID_IMAGE'],
+    errors: ['BAD_REQUEST', 'INVALID_IMAGE', 'IMAGE_DIMENSIONS', 'PHOTO_QUALITY_TOO_LOW', 'SKIN_NOT_VISIBLE', 'ANALYSIS_UNAVAILABLE'],
   },
   // ─── Wardrobe ─────────────────────────────────────────────────────────────
   {

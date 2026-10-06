@@ -91,7 +91,7 @@ The job has been validated locally (actionlint 1.7.7; every step run on Linux). 
 - **The AI stylist doesn't stream.** It shows one answer per request, with a 70 s timeout.
 - **Lists aren't paginated where the API isn't** (outfits, conversations).
 - **No push notifications, analytics or crash reporting.** These are product decisions. With no crash reporting, release crashes are invisible until one is added.
-- **The colour profile can't be deleted on its own.** Account deletion removes it.
+- ~~The colour profile can't be deleted on its own.~~ Phase 4.3: `DELETE /api/v1/color-profile` and a delete action on the colour-profile screen.
 - **Profile body fields** (gender, fit, sizes and so on) are not shown or edited, because `ProfileRow` lacks them in the contract.
 - **Flutter build warning:** some plugins haven't migrated to Flutter's "Built-in Kotlin". It isn't an error today, but a future Flutter upgrade will need updated plugins.
 - **Mobile follow-up:** in Profile editing, `ProfileDraft` ignores an add to a full list, but still removes the value from the opposite list. The UI prevents this: chips are disabled at the limit. Onboarding was fixed in 3.10; Profile should get the same no-op rule.
@@ -101,7 +101,7 @@ The job has been validated locally (actionlint 1.7.7; every step run on Linux). 
 | Area | Follow-up |
 |---|---|
 | Profile | Expand `ProfileRow` (body fields) in OpenAPI, then regenerate the client |
-| Colour profile | Delete endpoint; `Idempotency-Key` on `POST /color-profile/analyze`; contract statuses (backend returns 422 `INVALID_IMAGE` where the contract lists 415/413; HEIC is accepted); history if needed |
+| Colour profile | `Idempotency-Key` on `POST /color-profile/analyze` (an explicit re-analysis replaces the single profile, so a duplicate is harmless). Done in Phase 4.3: delete endpoint; HEIC refused; typed quality/skin errors; one profile per user (no history) |
 | Outfits | Generator-safe/named `weatherUsed` schema; `Idempotency-Key` on `POST /outfits`; `ImageObject` (id, expiry) for generated items instead of a bare `imageUrl`; pagination for `GET /outfits` |
 | Weather | `GET /weather/current` should degrade instead of returning 500 when the provider fails |
 | Stylist | `Idempotency-Key` on `POST /stylist/chat`; a flag on stored AI fallback answers; 404 for an unknown/foreign `conversationId` (today a new conversation starts); delete/rename and pagination for conversations; streaming |

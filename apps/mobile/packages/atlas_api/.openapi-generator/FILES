@@ -23,6 +23,7 @@ lib/src/model/auth_response.dart
 lib/src/model/color_analysis_response.dart
 lib/src/model/color_analysis_response_color_profile.dart
 lib/src/model/color_analysis_response_color_profile_contrast_level.dart
+lib/src/model/color_analysis_response_color_profile_secondary_confidence.dart
 lib/src/model/color_profile_response.dart
 lib/src/model/color_profile_response_one_of.dart
 lib/src/model/color_profile_response_one_of1.dart

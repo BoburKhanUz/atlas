@@ -36,6 +36,9 @@ const _contract = <(String, int, ApiErrorKind, bool)>[
   ('NOT_A_GARMENT', 422, ApiErrorKind.invalidImage, false),
   ('AI_QUOTA_EXCEEDED', 429, ApiErrorKind.rateLimited, true),
   ('AI_UNAVAILABLE', 503, ApiErrorKind.server, true),
+  ('PHOTO_QUALITY_TOO_LOW', 422, ApiErrorKind.invalidImage, false),
+  ('SKIN_NOT_VISIBLE', 422, ApiErrorKind.invalidImage, false),
+  ('ANALYSIS_UNAVAILABLE', 503, ApiErrorKind.server, true),
 ];
 
 Response<dynamic> _resp(int status, Object? data, {Map<String, List<String>> headers = const {}}) => Response<dynamic>(
@@ -46,7 +49,7 @@ Response<dynamic> _resp(int status, Object? data, {Map<String, List<String>> hea
 );
 
 void main() {
-  test('the mapper knows exactly the 25 contract codes', () {
+  test('the mapper knows exactly the 28 contract codes', () {
     expect(
       ApiErrorCode.values.where((c) => c != ApiErrorCode.unknown).map((c) => c.wire).toSet(),
       _contract.map((c) => c.$1).toSet(),

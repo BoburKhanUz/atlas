@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../core/design/tokens.dart';
+import '../../../core/network/api_error_code.dart';
+import '../../../core/network/api_failure.dart';
 import '../../../core/widgets/atlas_button.dart';
 import '../../wardrobe/data/image_preparer.dart' show PreparationError;
 import '../../wardrobe/data/photo_picker.dart';
@@ -31,11 +33,11 @@ class SelfieAnalysisScreen extends ConsumerWidget {
           Text('Rang profilini selfi orqali aniqlash', style: text.titleLarge),
           const SizedBox(height: AtlasSpacing.md),
           for (final line in const [
-            'Rasm faqat bir marta tahlil qilinadi va serverda saqlanmaydi.',
+            'Rasm faqat bir marta tahlil qilinadi va serverda saqlanmaydi; tashqi AI xizmatiga yuborilmaydi.',
             'Faqat natija saqlanadi: mavsum, ton, kontrast, teri/soch/ko‘z rangi va mos ranglar.',
-            'Bu natijani hozircha alohida o‘chirib bo‘lmaydi — hisobni o‘chirsangiz, u ham o‘chadi.',
+            'Natijani istalgan vaqtda «Rang profili» sahifasida o‘chirishingiz mumkin.',
             'Rasm yuborishdan oldin undagi joylashuv va boshqa ma’lumotlar (EXIF/GPS) olib tashlanadi.',
-            'Bu AI tavsiyasi, tibbiy xulosa emas. Yorug‘lik va kamera natijaga ta’sir qiladi.',
+            'Bu taxminiy styling tavsiyasi, tibbiy xulosa emas. Yorug‘lik va kamera natijaga ta’sir qiladi.',
           ])
             Padding(
               padding: const EdgeInsets.only(bottom: AtlasSpacing.xs),
@@ -106,7 +108,7 @@ class SelfieAnalysisScreen extends ConsumerWidget {
         text: switch (s.rejection) {
           PreparationError.tooSmall => 'Rasm juda kichik. Kattaroq rasm tanlang.',
           PreparationError.tooLarge => 'Rasm juda katta. Boshqa rasm tanlang.',
-          _ => 'Bu rasmni tahlil qilib bo‘lmadi. Boshqa rasm tanlang.',
+          _ => serverRejection(s.failure),
         },
         actions: [AtlasButton(key: const Key('selfie.again'), label: 'Boshqa rasm', onPressed: c.restart)],
       ),
@@ -173,4 +175,22 @@ class _Message extends StatelessWidget {
       ...actions,
     ],
   );
+}
+
+/// The server's reason for refusing the photo, as advice for the next one.
+@visibleForTesting
+String serverRejection(ApiFailure? f) {
+  if (f is! ApiHttpFailure) return 'Bu rasmni tahlil qilib bo‘lmadi. Boshqa rasm tanlang.';
+  return switch (f.code) {
+    ApiErrorCode.photoQualityTooLow => switch (f.fieldErrors.where((e) => e.path == 'reason').firstOrNull?.message) {
+      'too_dark' => 'Rasm juda qorong‘i. Yorug‘roq joyda, yuzingizga yorug‘lik tushadigan selfi oling.',
+      'overexposed' => 'Rasm juda yorug‘. To‘g‘ridan-to‘g‘ri quyosh yoki chiroqqa qaramasdan qayta oling.',
+      'blurry' => 'Rasm xira chiqdi. Telefonni qimirlatmasdan, aniq selfi oling.',
+      'background' => 'Yuz va fonni ajratib bo‘lmadi. Oddiy, teriga o‘xshamagan fon oldida suratga oling.',
+      _ => 'Rasm sifati tahlil uchun yetarli emas. Kunduzgi yorug‘likda, aniq selfi oling.',
+    },
+    ApiErrorCode.skinNotVisible => 'Rasmda yuz terisi yetarlicha ko‘rinmadi. Yuzingiz to‘liq ko‘rinadigan selfi oling.',
+    ApiErrorCode.imageDimensions => 'Rasm juda kichik. Kattaroq rasm tanlang.',
+    _ => 'Bu rasmni tahlil qilib bo‘lmadi. Boshqa rasm tanlang.',
+  };
 }

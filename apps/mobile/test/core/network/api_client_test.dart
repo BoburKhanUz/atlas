@@ -268,9 +268,12 @@ void main() {
           'NOT_A_GARMENT',
           'AI_QUOTA_EXCEEDED',
           'AI_UNAVAILABLE',
+          'PHOTO_QUALITY_TOO_LOW',
+          'SKIN_NOT_VISIBLE',
+          'ANALYSIS_UNAVAILABLE',
         ]),
       );
-      expect(ErrorResponseCodeEnum.values.length, 26); // 25 contract codes + unknown_default_open_api
+      expect(ErrorResponseCodeEnum.values.length, 29); // 28 contract codes + unknown_default_open_api
     });
   });
 }

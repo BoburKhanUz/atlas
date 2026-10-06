@@ -27,6 +27,7 @@ import { analyzeGarment } from '@/lib/ai/vision-service'
 import { analyzeColorSelfie } from '@/lib/ai/color-service'
 import { analyzeSelfie } from '@/lib/ai/color-analysis'
 import { authHeader, jsonRequest } from '../helpers'
+import { selfie } from '../unit/ai/selfie-fixtures'
 
 const rows = [
   { id: 'item_shirt', category: 'shirt', subcategory: 'oxford_shirt', colors: JSON.stringify(['white']), pattern: 'solid', material: 'cotton', sleeveLength: 'long', fit: 'regular', style: 'smart_casual', season: JSON.stringify(['spring', 'autumn']), gender: 'male', formality: 'smart_casual', images: [] },
@@ -117,9 +118,15 @@ describe('VisionService and ColorService keep the deterministic results', () => 
   })
 
   it('colour analysis returns exactly the deterministic result and is measured', async () => {
-    const buffer = await sharp({ create: { width: 300, height: 300, channels: 3, background: '#E0AC69' } }).jpeg().toBuffer()
+    const buffer = await selfie()
     expect(await analyzeColorSelfie({ buffer })).toEqual(await analyzeSelfie({ buffer }))
-    expect(aiLines()[0]).toMatchObject({ feature: 'color_analysis', provider: 'deterministic', outcome: 'ok' })
+    expect(aiLines()[0]).toMatchObject({ feature: 'color_analysis', provider: 'deterministic', model: 'color-analysis-v2', outcome: 'ok' })
+  })
+
+  it('a photo the colour analysis refuses (Phase 4.3: a flat image) is recorded as invalid_request, not as an error', async () => {
+    const flat = await sharp({ create: { width: 300, height: 300, channels: 3, background: '#E0AC69' } }).jpeg().toBuffer()
+    await expect(analyzeColorSelfie({ buffer: flat })).rejects.toThrow('photo quality')
+    expect(aiLines()[0]).toMatchObject({ feature: 'color_analysis', outcome: 'invalid_request' })
   })
 
   it('analysis failures are recorded and rethrown unchanged', async () => {

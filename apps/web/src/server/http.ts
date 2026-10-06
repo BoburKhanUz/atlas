@@ -55,6 +55,9 @@ const DEFAULT_MESSAGES: Record<ErrorCode, string> = {
   NOT_A_GARMENT: 'Rasmda bitta kiyim aniq ko‘rinmadi. Bitta kiyimni yorug‘ joyda suratga oling.',
   AI_QUOTA_EXCEEDED: 'Bugungi AI limiti tugadi. Limit Toshkent vaqti bilan yarim tunda yangilanadi.',
   AI_UNAVAILABLE: 'AI xizmati hozir ishlamayapti. Birozdan so‘ng qayta urinib ko‘ring.',
+  PHOTO_QUALITY_TOO_LOW: 'Rasm sifati tahlil uchun yetarli emas. Kunduzgi yorug‘likda, aniq selfi oling.',
+  SKIN_NOT_VISIBLE: 'Rasmda yuz terisi yetarlicha ko‘rinmadi. Yuzingiz to‘liq ko‘rinadigan selfi oling.',
+  ANALYSIS_UNAVAILABLE: 'Rang tahlili hozir bajarilmadi. Birozdan so‘ng qayta urinib ko‘ring.',
 }
 
 const STATUS: Record<ErrorCode, number> = {
@@ -83,6 +86,9 @@ const STATUS: Record<ErrorCode, number> = {
   NOT_A_GARMENT: 422,
   AI_QUOTA_EXCEEDED: 429,
   AI_UNAVAILABLE: 503,
+  PHOTO_QUALITY_TOO_LOW: 422,
+  SKIN_NOT_VISIBLE: 422,
+  ANALYSIS_UNAVAILABLE: 503,
 }
 
 /** HTTP status for an error code (used by the OpenAPI document). */

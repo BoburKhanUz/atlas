@@ -171,7 +171,7 @@ describe.skipIf(!enabled)('VIS: real-provider clothing analysis (real PostgreSQL
   it('VIS-07: the metadata migration labels existing items as the mock explicitly; the rollback drops only the metadata', async () => {
     const db_ = 'itest_vis_migration'
     const META = MIGRATION_NAMES.indexOf('20261008000000_wardrobe_analysis_metadata')
-    expect(META).toBe(MIGRATION_NAMES.length - 1)
+    expect(META).toBeGreaterThan(0)
     createDb(db_)
     try {
       const before = migrationsDir(META)
@@ -179,7 +179,7 @@ describe.skipIf(!enabled)('VIS: real-provider clothing analysis (real PostgreSQL
       rmDir(before)
       sql(db_, `INSERT INTO "User" ("id","email","passwordHash","updatedAt") VALUES ('u1','u1@test.local','x', now());
                INSERT INTO "WardrobeItem" ("id","userId","category","updatedAt","createdAt") VALUES ('w1','u1','shirt', now(), TIMESTAMP '2026-10-01 10:00:00')`)
-      const all = migrationsDir()
+      const all = migrationsDir(META + 1) // up to and including this migration (its down script needs it to be the newest)
       expect((await prisma(db_, all)).code).toBe(0)
       rmDir(all)
       expect(rows(db_, `SELECT "analysisProvider" AS p, "analysisModel" AS m, "analysisVersion" AS v, "analyzedAt" = "createdAt" AS same, "analysisRawConfidences" AS raw FROM "WardrobeItem"`)).toEqual([

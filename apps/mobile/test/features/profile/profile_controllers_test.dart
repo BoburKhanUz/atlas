@@ -434,4 +434,129 @@ void main() {
     expect(h.kv.stored, isNull);
     expect(h.backend.calls(P.logout), 0);
   });
+
+  group('Phase 4.3 colour profile', () {
+    Future<(Profile, SelfieAnalysisController)> start() async {
+      final p = Profile();
+      await p.start();
+      p.c.listen(selfieAnalysisControllerProvider, (_, _) {});
+      p.c.listen(colorProfileProvider, (_, _) {});
+      return (p, p.c.read(selfieAnalysisControllerProvider.notifier));
+    }
+
+    SelfieAnalysisState of(Profile p) => p.c.read(selfieAnalysisControllerProvider);
+
+    test('the analysis result carries undertone confidence and the secondary season', () async {
+      final (p, s) = await start();
+      p.h.backend.script(P.analyze, [
+        JsonReply(200, {
+          'colorProfile': {
+            ...colorCore(season: 'spring'),
+            'undertone': 'neutral_warm',
+            'confidence': 0.62,
+            'undertoneConfidence': 0.55,
+            'secondarySeason': 'autumn',
+            'secondaryConfidence': 0.21,
+          },
+          'disclaimer': disclaimer,
+        }),
+      ]);
+      await s.pick(PhotoSource.gallery);
+      final r = of(p).result!.profile;
+      expect((r.season, r.undertone, r.confidence), ('spring', 'neutral_warm', 0.62));
+      expect((r.undertoneConfidence, r.secondarySeason, r.secondaryConfidence), (0.55, 'autumn', 0.21));
+    });
+
+    test('GET carries the confidences too (null for profiles from before Phase 4.3)', () async {
+      final p = Profile();
+      p.h.backend.script(P.colorProfile, [
+        JsonReply(200, {
+          'status': 'analyzed',
+          'colorProfile': {
+            ...colorCore(),
+            'confidence': 0.4,
+            'undertoneConfidence': null,
+            'secondarySeason': null,
+            'secondaryConfidence': null,
+          },
+          'disclaimer': disclaimer,
+        }),
+      ]);
+      await p.h.session.restore();
+      final current = await p.c.read(colorProfileRepositoryProvider).current() as Analysed;
+      expect(current.profile.confidence, 0.4);
+      expect(current.profile.secondarySeason, isNull);
+    });
+
+    for (final (code, reason) in [
+      ('PHOTO_QUALITY_TOO_LOW', 'blurry'),
+      ('PHOTO_QUALITY_TOO_LOW', 'too_dark'),
+      ('SKIN_NOT_VISIBLE', null),
+    ]) {
+      test('422 $code ${reason ?? ''} → rejected (a new photo is needed), nothing re-sent', () async {
+        final (p, s) = await start();
+        p.h.backend.script(P.analyze, [
+          JsonReply(
+            422,
+            errorBody(
+              code,
+              details: reason == null
+                  ? null
+                  : [
+                      {'path': 'reason', 'message': reason},
+                    ],
+            ),
+          ),
+        ]);
+        await s.pick(PhotoSource.gallery);
+        expect(of(p).phase, SelfiePhase.rejected);
+        expect(of(p).hasImage, isFalse);
+        expect(p.h.backend.calls(P.analyze), 1);
+      });
+    }
+
+    test('503 ANALYSIS_UNAVAILABLE → failed (nothing was stored): the same photo can be retried explicitly', () async {
+      final (p, s) = await start();
+      p.h.backend.script(P.analyze, [
+        JsonReply(503, errorBody('ANALYSIS_UNAVAILABLE')),
+        JsonReply(200, analysisJson()),
+      ]);
+      await s.pick(PhotoSource.gallery);
+      expect(of(p).phase, SelfiePhase.failed);
+      expect(of(p).hasImage, isTrue);
+      expect(p.h.backend.calls(P.colorProfile), 1, reason: 'no "unknown" check: the server said nothing was stored');
+      await s.analyse();
+      expect(of(p).phase, SelfiePhase.done);
+    });
+
+    test('delete → DELETE /color-profile once; the screen state becomes "not analysed"', () async {
+      final p = Profile();
+      p.h.backend.script(P.colorProfile, [
+        JsonReply(200, analysedJson()),
+        JsonReply(200, {'ok': true}),
+      ]);
+      await p.start();
+      p.c.listen(colorProfileProvider, (_, _) {});
+      for (var i = 0; i < 20 && p.c.read(colorProfileProvider).current is! Analysed; i++) {
+        await pumpEventQueue();
+      }
+      await p.c.read(colorProfileProvider.notifier).delete();
+      final deletes = p.h.backend.to(P.colorProfile).where((r) => r.method == 'DELETE');
+      expect(deletes, hasLength(1));
+      expect(p.c.read(colorProfileProvider).current, isA<NotAnalysed>());
+    });
+
+    test('a failed delete keeps the profile shown, with the error', () async {
+      final p = Profile();
+      p.h.backend.script(P.colorProfile, [JsonReply(200, analysedJson()), JsonReply(500, errorBody('INTERNAL'))]);
+      await p.start();
+      p.c.listen(colorProfileProvider, (_, _) {});
+      for (var i = 0; i < 20 && p.c.read(colorProfileProvider).current is! Analysed; i++) {
+        await pumpEventQueue();
+      }
+      await p.c.read(colorProfileProvider.notifier).delete();
+      expect(p.c.read(colorProfileProvider).current, isA<Analysed>());
+      expect(p.c.read(colorProfileProvider).failure, isNotNull);
+    });
+  });
 }

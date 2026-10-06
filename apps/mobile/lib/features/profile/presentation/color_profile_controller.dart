@@ -36,6 +36,26 @@ class ColorProfileController extends Notifier<ColorProfileViewState> {
     await _load();
   }
 
+  /// Deletes the colour profile on the server; on success the screen shows
+  /// "not analysed". A failure keeps the profile shown with the error.
+  Future<void> delete() async {
+    if (state.status != ColorProfileStatus.ready) return;
+    final before = state.current;
+    state = ColorProfileViewState(status: ColorProfileStatus.refreshing, current: before);
+    try {
+      await ref.read(colorProfileRepositoryProvider).delete();
+      if (!ref.mounted) return;
+      state = const ColorProfileViewState(
+        status: ColorProfileStatus.ready,
+        current: NotAnalysed('Rang profili o‘chirildi. Selfi orqali qayta aniqlashingiz mumkin.'),
+      );
+    } on ApiFailure catch (f) {
+      if (!ref.mounted) return;
+      AppLog.info('colour profile not deleted: ${f.describe()}');
+      state = ColorProfileViewState(status: ColorProfileStatus.ready, current: before, failure: f);
+    }
+  }
+
   /// The server's current state (after an analysis or a check).
   void replace(ColorProfileState current) =>
       state = ColorProfileViewState(status: ColorProfileStatus.ready, current: current);

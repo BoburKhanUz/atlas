@@ -56,6 +56,11 @@ abstract final class UserMessages {
       ApiErrorCode.notAGarment => 'Rasmda bitta kiyim aniq ko‘rinmadi. Bitta kiyimni yorug‘ joyda suratga oling.',
       ApiErrorCode.aiQuotaExceeded => 'Bugungi AI limiti tugadi. Limit Toshkent vaqti bilan yarim tunda yangilanadi.',
       ApiErrorCode.aiUnavailable => 'AI xizmati hozir ishlamayapti. Birozdan so‘ng qayta urinib ko‘ring.',
+      ApiErrorCode.photoQualityTooLow =>
+        'Rasm sifati tahlil uchun yetarli emas. Kunduzgi yorug‘likda, aniq selfi oling.',
+      ApiErrorCode.skinNotVisible =>
+        'Rasmda yuz terisi yetarlicha ko‘rinmadi. Yuzingiz to‘liq ko‘rinadigan selfi oling.',
+      ApiErrorCode.analysisUnavailable => 'Rang tahlili hozir bajarilmadi. Birozdan so‘ng qayta urinib ko‘ring.',
       ApiErrorCode.unknown => null,
     };
     if (specific != null) return specific;

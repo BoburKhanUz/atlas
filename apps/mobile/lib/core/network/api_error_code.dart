@@ -26,6 +26,9 @@ enum ApiErrorCode {
   notAGarment('NOT_A_GARMENT', ApiErrorKind.invalidImage),
   aiQuotaExceeded('AI_QUOTA_EXCEEDED', ApiErrorKind.rateLimited),
   aiUnavailable('AI_UNAVAILABLE', ApiErrorKind.server),
+  photoQualityTooLow('PHOTO_QUALITY_TOO_LOW', ApiErrorKind.invalidImage),
+  skinNotVisible('SKIN_NOT_VISIBLE', ApiErrorKind.invalidImage),
+  analysisUnavailable('ANALYSIS_UNAVAILABLE', ApiErrorKind.server),
   unknown('', ApiErrorKind.unknown);
 
   const ApiErrorCode(this.wire, this.kind);

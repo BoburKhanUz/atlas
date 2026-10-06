@@ -411,12 +411,12 @@ Three distinct situations:
 - **Colour profile:**
   - `GET /color-profile` has two states (`oneOf`): not analysed (with message), or analysed (season, undertone, contrast, recommended/neutral/caution colours, skin/hair/eye colour, date, disclaimer). Both decode with the generated client.
 - **Selfie analysis:**
-  - A consent screen comes **before** any camera or photo permission prompt. It says the image is processed once and not stored by the server; only derived colours are kept; those can't yet be deleted on their own (account deletion removes them); and the result is an AI suggestion.
+  - A consent screen comes **before** any camera or photo permission prompt. It says the image is processed once and not stored by the server, nor sent to an external AI service; only derived colours are kept; they can be deleted on the colour-profile screen (Phase 4.3) or with the account; and the result is a styling estimate.
   - Camera (front preferred) or gallery.
   - The 3.5 `ImagePreparer` with `maxSide: 1024` produces JPEG with EXIF/GPS stripped (fail-closed), within the existing size limits. The wardrobe keeps its default of 4096.
   - Bytes stay in memory only (the picker's temporary copy is deleted); there are no selfie URLs.
   - One multipart POST per action, never retried automatically (no Idempotency-Key exists).
-  - Outcomes: 422 → rejected (choose another photo); 4xx → failed (explicit retry); timeout, network or 5xx → **unknown**, then one `GET /color-profile` shows the server's current result **as such** (with its date, never claimed as this attempt). Analysing again is explicit. A confidence below 0.4 shows a warning.
+  - Outcomes: 422 → rejected (choose another photo; Phase 4.3 shows advice per `PHOTO_QUALITY_TOO_LOW` reason and for `SKIN_NOT_VISIBLE`); 4xx and 503 `ANALYSIS_UNAVAILABLE` → failed (explicit retry); timeout, network or other 5xx → **unknown**, then one `GET /color-profile` shows the server's current result **as such** (with its date, never claimed as this attempt). Analysing again is explicit. A confidence below 0.4 shows a warning.
 - **Account deletion:**
   - Typed confirmation (`O‘CHIRISH`) and an explanation that deletion is immediate, irreversible and ends every session. One `DELETE /account`, never retried automatically.
   - 200 or 404 means deleted. 404 is authoritative: the user row is gone, while the access token is a stateless JWT.

@@ -78,8 +78,9 @@ Class | Method | HTTP request | Description
 [*OutfitsApi*](doc/OutfitsApi.md) | [**saveOutfit**](doc/OutfitsApi.md#saveoutfit) | **POST** /api/v1/outfits | Save an outfit made of own wardrobe items
 [*OutfitsApi*](doc/OutfitsApi.md) | [**sendOutfitFeedback**](doc/OutfitsApi.md#sendoutfitfeedback) | **POST** /api/v1/outfits/{id}/feedback | Like, dislike, save or reject an outfit
 [*OutfitsApi*](doc/OutfitsApi.md) | [**updateOutfit**](doc/OutfitsApi.md#updateoutfit) | **PATCH** /api/v1/outfits/{id} | Rename or (un)save an outfit
-[*ProfileApi*](doc/ProfileApi.md) | [**analyzeColorProfile**](doc/ProfileApi.md#analyzecolorprofile) | **POST** /api/v1/color-profile/analyze | Analyse a selfie (not stored) into a colour profile
-[*ProfileApi*](doc/ProfileApi.md) | [**getColorProfile**](doc/ProfileApi.md#getcolorprofile) | **GET** /api/v1/color-profile | Latest colour analysis
+[*ProfileApi*](doc/ProfileApi.md) | [**analyzeColorProfile**](doc/ProfileApi.md#analyzecolorprofile) | **POST** /api/v1/color-profile/analyze | Analyse a selfie into a colour profile, replacing the current one. Deterministic and on the server only: the selfie is not stored, logged or sent to any AI provider. Nothing is stored for any error.
+[*ProfileApi*](doc/ProfileApi.md) | [**deleteColorProfile**](doc/ProfileApi.md#deletecolorprofile) | **DELETE** /api/v1/color-profile | Delete the colour profile and the selfie-derived skin tone, undertone, hair and eye colour (idempotent; selfies are never stored)
+[*ProfileApi*](doc/ProfileApi.md) | [**getColorProfile**](doc/ProfileApi.md#getcolorprofile) | **GET** /api/v1/color-profile | The current colour profile (one per user). undertone: warm, neutral_warm, neutral, neutral_cool, cool or unknown; season null when no season is supported; hair/eye colour null when not measurable; confidences 0–1 (overall ≤ 0.8), null for profiles from before Phase 4.3.
 [*ProfileApi*](doc/ProfileApi.md) | [**getProfile**](doc/ProfileApi.md#getprofile) | **GET** /api/v1/profile | Profile and style preferences
 [*ProfileApi*](doc/ProfileApi.md) | [**updateProfile**](doc/ProfileApi.md#updateprofile) | **PATCH** /api/v1/profile | Update name, profile fields or preferences
 [*ServiceApi*](doc/ServiceApi.md) | [**getHealth**](doc/ServiceApi.md#gethealth) | **GET** /api/health | Liveness and database check
@@ -101,6 +102,7 @@ Class | Method | HTTP request | Description
  - [ColorAnalysisResponse](doc/ColorAnalysisResponse.md)
  - [ColorAnalysisResponseColorProfile](doc/ColorAnalysisResponseColorProfile.md)
  - [ColorAnalysisResponseColorProfileContrastLevel](doc/ColorAnalysisResponseColorProfileContrastLevel.md)
+ - [ColorAnalysisResponseColorProfileSecondaryConfidence](doc/ColorAnalysisResponseColorProfileSecondaryConfidence.md)
  - [ColorProfileResponse](doc/ColorProfileResponse.md)
  - [ColorProfileResponseOneOf](doc/ColorProfileResponseOneOf.md)
  - [ColorProfileResponseOneOf1](doc/ColorProfileResponseOneOf1.md)

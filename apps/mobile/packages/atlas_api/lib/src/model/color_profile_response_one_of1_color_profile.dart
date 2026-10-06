@@ -14,6 +14,7 @@ part 'color_profile_response_one_of1_color_profile.g.dart';
 /// Properties:
 /// * [analyzedAt] - ISO 8601, UTC
 /// * [cautionColors]
+/// * [confidence]
 /// * [contrastLevel]
 /// * [eyeColor]
 /// * [hairColor]
@@ -21,8 +22,11 @@ part 'color_profile_response_one_of1_color_profile.g.dart';
 /// * [neutralColors]
 /// * [recommendedColors]
 /// * [season]
+/// * [secondaryConfidence]
+/// * [secondarySeason]
 /// * [skinTone]
 /// * [undertone]
+/// * [undertoneConfidence]
 @BuiltValue()
 abstract class ColorProfileResponseOneOf1ColorProfile
     implements Built<ColorProfileResponseOneOf1ColorProfile, ColorProfileResponseOneOf1ColorProfileBuilder> {
@@ -32,6 +36,9 @@ abstract class ColorProfileResponseOneOf1ColorProfile
 
   @BuiltValueField(wireName: r'cautionColors')
   BuiltList<String> get cautionColors;
+
+  @BuiltValueField(wireName: r'confidence')
+  num? get confidence;
 
   @BuiltValueField(wireName: r'contrastLevel')
   String? get contrastLevel;
@@ -54,11 +61,20 @@ abstract class ColorProfileResponseOneOf1ColorProfile
   @BuiltValueField(wireName: r'season')
   String? get season;
 
+  @BuiltValueField(wireName: r'secondaryConfidence')
+  num? get secondaryConfidence;
+
+  @BuiltValueField(wireName: r'secondarySeason')
+  String? get secondarySeason;
+
   @BuiltValueField(wireName: r'skinTone')
   String? get skinTone;
 
   @BuiltValueField(wireName: r'undertone')
   String? get undertone;
+
+  @BuiltValueField(wireName: r'undertoneConfidence')
+  num? get undertoneConfidence;
 
   ColorProfileResponseOneOf1ColorProfile._();
 
@@ -90,6 +106,10 @@ class _$ColorProfileResponseOneOf1ColorProfileSerializer
     yield serializers.serialize(object.analyzedAt, specifiedType: const FullType(DateTime));
     yield r'cautionColors';
     yield serializers.serialize(object.cautionColors, specifiedType: const FullType(BuiltList, [FullType(String)]));
+    yield r'confidence';
+    yield object.confidence == null
+        ? null
+        : serializers.serialize(object.confidence, specifiedType: const FullType.nullable(num));
     yield r'contrastLevel';
     yield object.contrastLevel == null
         ? null
@@ -112,6 +132,14 @@ class _$ColorProfileResponseOneOf1ColorProfileSerializer
     yield object.season == null
         ? null
         : serializers.serialize(object.season, specifiedType: const FullType.nullable(String));
+    yield r'secondaryConfidence';
+    yield object.secondaryConfidence == null
+        ? null
+        : serializers.serialize(object.secondaryConfidence, specifiedType: const FullType.nullable(num));
+    yield r'secondarySeason';
+    yield object.secondarySeason == null
+        ? null
+        : serializers.serialize(object.secondarySeason, specifiedType: const FullType.nullable(String));
     yield r'skinTone';
     yield object.skinTone == null
         ? null
@@ -120,6 +148,10 @@ class _$ColorProfileResponseOneOf1ColorProfileSerializer
     yield object.undertone == null
         ? null
         : serializers.serialize(object.undertone, specifiedType: const FullType.nullable(String));
+    yield r'undertoneConfidence';
+    yield object.undertoneConfidence == null
+        ? null
+        : serializers.serialize(object.undertoneConfidence, specifiedType: const FullType.nullable(num));
   }
 
   @override
@@ -153,6 +185,11 @@ class _$ColorProfileResponseOneOf1ColorProfileSerializer
             specifiedType: const FullType(BuiltList, [FullType(String)]),
           ) as BuiltList<String>;
           result.cautionColors.replace(valueDes);
+          break;
+        case r'confidence':
+          final valueDes = serializers.deserialize(value, specifiedType: const FullType.nullable(num)) as num?;
+          if (valueDes == null) continue;
+          result.confidence = valueDes;
           break;
         case r'contrastLevel':
           final valueDes = serializers.deserialize(value, specifiedType: const FullType.nullable(String)) as String?;
@@ -192,6 +229,16 @@ class _$ColorProfileResponseOneOf1ColorProfileSerializer
           if (valueDes == null) continue;
           result.season = valueDes;
           break;
+        case r'secondaryConfidence':
+          final valueDes = serializers.deserialize(value, specifiedType: const FullType.nullable(num)) as num?;
+          if (valueDes == null) continue;
+          result.secondaryConfidence = valueDes;
+          break;
+        case r'secondarySeason':
+          final valueDes = serializers.deserialize(value, specifiedType: const FullType.nullable(String)) as String?;
+          if (valueDes == null) continue;
+          result.secondarySeason = valueDes;
+          break;
         case r'skinTone':
           final valueDes = serializers.deserialize(value, specifiedType: const FullType.nullable(String)) as String?;
           if (valueDes == null) continue;
@@ -201,6 +248,11 @@ class _$ColorProfileResponseOneOf1ColorProfileSerializer
           final valueDes = serializers.deserialize(value, specifiedType: const FullType.nullable(String)) as String?;
           if (valueDes == null) continue;
           result.undertone = valueDes;
+          break;
+        case r'undertoneConfidence':
+          final valueDes = serializers.deserialize(value, specifiedType: const FullType.nullable(num)) as num?;
+          if (valueDes == null) continue;
+          result.undertoneConfidence = valueDes;
           break;
         default:
           unhandled.add(key);

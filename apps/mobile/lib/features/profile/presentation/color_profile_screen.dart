@@ -51,6 +51,12 @@ class ColorProfileScreen extends ConsumerWidget {
               variant: AtlasButtonVariant.secondary,
               onPressed: () => context.push(AtlasRoutes.profileColorAnalyze),
             ),
+            const SizedBox(height: AtlasSpacing.xs),
+            TextButton(
+              key: const Key('color.delete'),
+              onPressed: s.status == ColorProfileStatus.ready ? () => _confirmDelete(context, c) : null,
+              child: const Text('Rang profilini o‘chirish'),
+            ),
           ],
         ),
       ),
@@ -60,6 +66,25 @@ class ColorProfileScreen extends ConsumerWidget {
       body: SafeArea(child: body),
     );
   }
+}
+
+Future<void> _confirmDelete(BuildContext context, ColorProfileController c) async {
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Rang profilini o‘chirasizmi?'),
+      content: const Text('Mavsum, ton, soch va ko‘z rangi o‘chiriladi. Selfi serverda saqlanmagan.'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Bekor qilish')),
+        TextButton(
+          key: const Key('color.confirmDelete'),
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('O‘chirish'),
+        ),
+      ],
+    ),
+  );
+  if (ok == true) await c.delete();
 }
 
 /// One colour profile (server's current one, or an analysis result).
@@ -96,6 +121,17 @@ class ColorProfileView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Mavsum: ${ProfileLabels.season(p.season)}', key: const Key('color.season'), style: text.titleLarge),
+              if (p.season == null)
+                const Text(
+                  'Bu rasm bo‘yicha mavsumni ishonchli aniqlab bo‘lmadi. Boshqa selfi bilan qayta urinib ko‘ring.',
+                  key: Key('color.noSeason'),
+                )
+              else if (p.secondarySeason != null)
+                Text(
+                  'Yaqin variant: ${ProfileLabels.season(p.secondarySeason)}',
+                  key: const Key('color.secondary'),
+                  style: text.bodySmall,
+                ),
               const SizedBox(height: AtlasSpacing.xs),
               Text(
                 'Ton: ${ProfileLabels.undertone(p.undertone)} · Kontrast: ${ProfileLabels.contrast(p.contrastLevel)}',

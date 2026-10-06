@@ -1,11 +1,19 @@
 import 'package:atlas_api/atlas_api.dart'
-    show ColorProfileResponseOneOf, ColorProfileResponseOneOf1, ColorProfileResponseOneOf1ColorProfile;
+    show
+        ColorAnalysisResponseColorProfileSecondaryConfidence,
+        ColorProfileResponseOneOf,
+        ColorProfileResponseOneOf1,
+        ColorProfileResponseOneOf1ColorProfile;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../outfits/data/generated_outfits.dart' show NullableText;
 import '../../wardrobe/data/image_preparer.dart' show PreparedImage;
+
+extension on ColorAnalysisResponseColorProfileSecondaryConfidence? {
+  num? get number => this?.anyOf.values.values.whereType<num>().firstOrNull;
+}
 
 /// A colour profile result (from GET or from an analysis).
 @immutable
@@ -22,10 +30,17 @@ class ColorProfile {
     this.hairColor,
     this.eyeColor,
     this.confidence,
+    this.undertoneConfidence,
+    this.secondarySeason,
+    this.secondaryConfidence,
   });
 
   final DateTime analyzedAt;
+
+  /// null when the photo did not support any season.
   final String? season;
+
+  /// warm, neutral_warm, neutral, neutral_cool, cool or unknown.
   final String? undertone;
   final String? contrastLevel;
   final List<String> recommendedColors;
@@ -35,8 +50,13 @@ class ColorProfile {
   final String? hairColor;
   final String? eyeColor;
 
-  /// Only an analysis response carries it (GET does not).
+  /// Overall confidence (0–0.8); null for profiles from before Phase 4.3.
   final num? confidence;
+  final num? undertoneConfidence;
+
+  /// The next closest season (null when unknown).
+  final String? secondarySeason;
+  final num? secondaryConfidence;
 
   /// Never prints colour results.
   @override
@@ -60,7 +80,8 @@ final class Analysed extends ColorProfileState {
 }
 
 /// Colour profile operations. [analyze] is ONE multipart POST (no
-/// Idempotency-Key exists for it) and is never retried automatically.
+/// Idempotency-Key exists for it) and is never retried automatically; it
+/// replaces the current profile. [delete] removes it (idempotent).
 class ColorProfileRepository {
   ColorProfileRepository(this._client);
   final AtlasApiClient _client;
@@ -85,6 +106,10 @@ class ColorProfileRepository {
     skinTone: c.skinTone,
     hairColor: c.hairColor,
     eyeColor: c.eyeColor,
+    confidence: c.confidence,
+    undertoneConfidence: c.undertoneConfidence,
+    secondarySeason: c.secondarySeason,
+    secondaryConfidence: c.secondaryConfidence,
   );
 
   /// The prepared (JPEG, metadata-free) selfie bytes go up once; the server
@@ -113,8 +138,15 @@ class ColorProfileRepository {
         hairColor: c.hairColor.text,
         eyeColor: c.eyeColor.text,
         confidence: c.confidence,
+        undertoneConfidence: c.undertoneConfidence.number,
+        secondarySeason: c.secondarySeason.text,
+        secondaryConfidence: c.secondaryConfidence.number,
       ),
       r.disclaimer,
     );
   }
+
+  /// Deletes the colour profile and the selfie-derived values (skin tone,
+  /// undertone, hair and eye colour) on the server. Safe to repeat.
+  Future<void> delete() => _client.call((api) => api.getProfileApi().deleteColorProfile());
 }

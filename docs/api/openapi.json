@@ -86,6 +86,26 @@
                   }
                 ]
               },
+              "secondaryConfidence": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "secondarySeason": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
               "skinTone": {
                 "anyOf": [
                   {
@@ -105,12 +125,26 @@
                     "type": "null"
                   }
                 ]
+              },
+              "undertoneConfidence": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               }
             },
             "required": [
               "id",
               "undertone",
+              "undertoneConfidence",
               "season",
+              "secondarySeason",
+              "secondaryConfidence",
+              "confidence",
               "contrastLevel",
               "recommendedColors",
               "neutralColors",
@@ -118,8 +152,7 @@
               "skinTone",
               "hairColor",
               "eyeColor",
-              "analyzedAt",
-              "confidence"
+              "analyzedAt"
             ],
             "type": "object"
           },
@@ -172,6 +205,16 @@
                       "type": "string"
                     },
                     "type": "array"
+                  },
+                  "confidence": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   },
                   "contrastLevel": {
                     "anyOf": [
@@ -228,6 +271,26 @@
                       }
                     ]
                   },
+                  "secondaryConfidence": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "secondarySeason": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
                   "skinTone": {
                     "anyOf": [
                       {
@@ -247,12 +310,26 @@
                         "type": "null"
                       }
                     ]
+                  },
+                  "undertoneConfidence": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   }
                 },
                 "required": [
                   "id",
                   "undertone",
+                  "undertoneConfidence",
                   "season",
+                  "secondarySeason",
+                  "secondaryConfidence",
+                  "confidence",
                   "contrastLevel",
                   "recommendedColors",
                   "neutralColors",
@@ -603,7 +680,10 @@
               "SESSION_BUSY",
               "NOT_A_GARMENT",
               "AI_QUOTA_EXCEEDED",
-              "AI_UNAVAILABLE"
+              "AI_UNAVAILABLE",
+              "PHOTO_QUALITY_TOO_LOW",
+              "SKIN_NOT_VISIBLE",
+              "ANALYSIS_UNAVAILABLE"
             ],
             "type": "string"
           },
@@ -4090,6 +4170,72 @@
       }
     },
     "/api/v1/color-profile": {
+      "delete": {
+        "operationId": "deleteColorProfile",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Deleted (or there was nothing to delete)"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: FORBIDDEN",
+            "x-error-codes": [
+              "FORBIDDEN"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Delete the colour profile and the selfie-derived skin tone, undertone, hair and eye colour (idempotent; selfies are never stored)",
+        "tags": [
+          "profile"
+        ]
+      },
       "get": {
         "operationId": "getColorProfile",
         "responses": {
@@ -4138,7 +4284,7 @@
             "cookieAuth": []
           }
         ],
-        "summary": "Latest colour analysis",
+        "summary": "The current colour profile (one per user). undertone: warm, neutral_warm, neutral, neutral_cool, cool or unknown; season null when no season is supported; hair/eye colour null when not measurable; confidences 0–1 (overall ≤ 0.8), null for profiles from before Phase 4.3.",
         "tags": [
           "profile"
         ]
@@ -4154,7 +4300,7 @@
                 "properties": {
                   "file": {
                     "contentMediaType": "application/octet-stream",
-                    "description": "Selfie (JPEG, PNG, WebP), ≤ 8 MB",
+                    "description": "Selfie (JPEG, PNG, WebP), ≤ 8 MB, shortest side ≥ 256 px",
                     "type": "string"
                   }
                 },
@@ -4252,9 +4398,12 @@
                 }
               }
             },
-            "description": "Error. code: INVALID_IMAGE",
+            "description": "Error. code: IMAGE_DIMENSIONS | INVALID_IMAGE | PHOTO_QUALITY_TOO_LOW | SKIN_NOT_VISIBLE",
             "x-error-codes": [
-              "INVALID_IMAGE"
+              "IMAGE_DIMENSIONS",
+              "INVALID_IMAGE",
+              "PHOTO_QUALITY_TOO_LOW",
+              "SKIN_NOT_VISIBLE"
             ]
           },
           "500": {
@@ -4269,6 +4418,19 @@
             "x-error-codes": [
               "INTERNAL"
             ]
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: ANALYSIS_UNAVAILABLE",
+            "x-error-codes": [
+              "ANALYSIS_UNAVAILABLE"
+            ]
           }
         },
         "security": [
@@ -4279,7 +4441,7 @@
             "cookieAuth": []
           }
         ],
-        "summary": "Analyse a selfie (not stored) into a colour profile",
+        "summary": "Analyse a selfie into a colour profile, replacing the current one. Deterministic and on the server only: the selfie is not stored, logged or sent to any AI provider. Nothing is stored for any error.",
         "tags": [
           "profile"
         ]

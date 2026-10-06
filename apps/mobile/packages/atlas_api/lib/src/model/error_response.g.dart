@@ -47,6 +47,15 @@ const ErrorResponseCodeEnum _$errorResponseCodeEnum_AI_QUOTA_EXCEEDED = const Er
   'AI_QUOTA_EXCEEDED',
 );
 const ErrorResponseCodeEnum _$errorResponseCodeEnum_AI_UNAVAILABLE = const ErrorResponseCodeEnum._('AI_UNAVAILABLE');
+const ErrorResponseCodeEnum _$errorResponseCodeEnum_PHOTO_QUALITY_TOO_LOW = const ErrorResponseCodeEnum._(
+  'PHOTO_QUALITY_TOO_LOW',
+);
+const ErrorResponseCodeEnum _$errorResponseCodeEnum_SKIN_NOT_VISIBLE = const ErrorResponseCodeEnum._(
+  'SKIN_NOT_VISIBLE',
+);
+const ErrorResponseCodeEnum _$errorResponseCodeEnum_ANALYSIS_UNAVAILABLE = const ErrorResponseCodeEnum._(
+  'ANALYSIS_UNAVAILABLE',
+);
 const ErrorResponseCodeEnum _$errorResponseCodeEnum_unknownDefaultOpenApi = const ErrorResponseCodeEnum._(
   'unknownDefaultOpenApi',
 );
@@ -103,6 +112,12 @@ ErrorResponseCodeEnum _$errorResponseCodeEnumValueOf(String name) {
       return _$errorResponseCodeEnum_AI_QUOTA_EXCEEDED;
     case 'AI_UNAVAILABLE':
       return _$errorResponseCodeEnum_AI_UNAVAILABLE;
+    case 'PHOTO_QUALITY_TOO_LOW':
+      return _$errorResponseCodeEnum_PHOTO_QUALITY_TOO_LOW;
+    case 'SKIN_NOT_VISIBLE':
+      return _$errorResponseCodeEnum_SKIN_NOT_VISIBLE;
+    case 'ANALYSIS_UNAVAILABLE':
+      return _$errorResponseCodeEnum_ANALYSIS_UNAVAILABLE;
     case 'unknownDefaultOpenApi':
       return _$errorResponseCodeEnum_unknownDefaultOpenApi;
     default:
@@ -137,6 +152,9 @@ final BuiltSet<ErrorResponseCodeEnum> _$errorResponseCodeEnumValues = BuiltSet<E
     _$errorResponseCodeEnum_NOT_A_GARMENT,
     _$errorResponseCodeEnum_AI_QUOTA_EXCEEDED,
     _$errorResponseCodeEnum_AI_UNAVAILABLE,
+    _$errorResponseCodeEnum_PHOTO_QUALITY_TOO_LOW,
+    _$errorResponseCodeEnum_SKIN_NOT_VISIBLE,
+    _$errorResponseCodeEnum_ANALYSIS_UNAVAILABLE,
     _$errorResponseCodeEnum_unknownDefaultOpenApi,
   ],
 );
@@ -170,6 +188,9 @@ class _$ErrorResponseCodeEnumSerializer implements PrimitiveSerializer<ErrorResp
     'NOT_A_GARMENT': 'NOT_A_GARMENT',
     'AI_QUOTA_EXCEEDED': 'AI_QUOTA_EXCEEDED',
     'AI_UNAVAILABLE': 'AI_UNAVAILABLE',
+    'PHOTO_QUALITY_TOO_LOW': 'PHOTO_QUALITY_TOO_LOW',
+    'SKIN_NOT_VISIBLE': 'SKIN_NOT_VISIBLE',
+    'ANALYSIS_UNAVAILABLE': 'ANALYSIS_UNAVAILABLE',
     'unknownDefaultOpenApi': 'unknown_default_open_api',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
@@ -198,6 +219,9 @@ class _$ErrorResponseCodeEnumSerializer implements PrimitiveSerializer<ErrorResp
     'NOT_A_GARMENT': 'NOT_A_GARMENT',
     'AI_QUOTA_EXCEEDED': 'AI_QUOTA_EXCEEDED',
     'AI_UNAVAILABLE': 'AI_UNAVAILABLE',
+    'PHOTO_QUALITY_TOO_LOW': 'PHOTO_QUALITY_TOO_LOW',
+    'SKIN_NOT_VISIBLE': 'SKIN_NOT_VISIBLE',
+    'ANALYSIS_UNAVAILABLE': 'ANALYSIS_UNAVAILABLE',
     'unknown_default_open_api': 'unknownDefaultOpenApi',
   };
 

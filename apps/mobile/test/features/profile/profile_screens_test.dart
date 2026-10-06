@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:atlas_mobile/app/app.dart';
 import 'package:atlas_mobile/app/router.dart';
+import 'package:atlas_mobile/core/network/api_error_code.dart';
+import 'package:atlas_mobile/core/network/api_failure.dart';
 import 'package:atlas_mobile/features/auth/presentation/login_screen.dart';
 import 'package:atlas_mobile/features/profile/presentation/profile_edit_screen.dart';
 import 'package:atlas_mobile/features/profile/presentation/selfie_analysis_screen.dart';
@@ -157,7 +159,8 @@ void main() {
     expect(find.byType(SelfieAnalysisScreen), findsOneWidget);
     expect(find.byKey(const Key('selfie.consent')), findsOneWidget);
     expect(find.textContaining('serverda saqlanmaydi'), findsOneWidget);
-    expect(find.textContaining('alohida o‘chirib bo‘lmaydi'), findsOneWidget);
+    expect(find.textContaining('«Rang profili» sahifasida o‘chirishingiz mumkin'), findsOneWidget);
+    expect(find.textContaining('tashqi AI xizmatiga yuborilmaydi'), findsOneWidget);
     expect(app.picker.calls, isEmpty, reason: 'no permission prompt before consent');
     app.h.backend.gates[P.analyze] = Gate();
     await app.tap(find.byKey(const Key('selfie.camera')));
@@ -181,6 +184,81 @@ void main() {
     await app.open(find.byKey(const Key('color.reanalyze')));
     await app.tap(find.byKey(const Key('selfie.gallery')));
     expect(find.byKey(const Key('color.lowConfidence')), findsOneWidget);
+  });
+
+  testWidgets(
+    'colour (4.3): no season → says it could not be determined; delete asks first, then shows "not analysed"',
+    (tester) async {
+      final app = ProfileApp(tester);
+      app.h.backend.script(P.colorProfile, [
+        JsonReply(200, {
+          'status': 'analyzed',
+          'colorProfile': {
+            ...colorCore(),
+            'season': null,
+            'undertone': 'unknown',
+            'recommendedColors': <String>[],
+            'neutralColors': <String>[],
+            'cautionColors': <String>[],
+            'confidence': 0.2,
+            'undertoneConfidence': 0.1,
+            'secondarySeason': null,
+            'secondaryConfidence': null,
+          },
+          'disclaimer': disclaimer,
+        }),
+        JsonReply(200, {'ok': true}),
+      ]);
+      await app.start(at: AtlasRoutes.profileColor);
+      expect(find.text('Mavsum: aniqlanmadi'), findsOneWidget);
+      expect(find.byKey(const Key('color.noSeason')), findsOneWidget);
+      expect(find.textContaining('Ton: aniqlanmadi'), findsOneWidget);
+      await app.reveal(find.byKey(const Key('color.delete')));
+      expect(find.text('Rang profilini o‘chirasizmi?'), findsOneWidget);
+      expect(
+        app.h.backend.to(P.colorProfile).where((r) => r.method == 'DELETE'),
+        isEmpty,
+        reason: 'nothing before confirming',
+      );
+      await app.tap(find.byKey(const Key('color.confirmDelete')));
+      expect(app.h.backend.to(P.colorProfile).where((r) => r.method == 'DELETE'), hasLength(1));
+      expect(find.byKey(const Key('color.notAnalysed')), findsOneWidget);
+    },
+  );
+
+  testWidgets('colour (4.3): a secondary season is shown as the close alternative', (tester) async {
+    final app = ProfileApp(tester);
+    app.h.backend.script(P.colorProfile, [
+      JsonReply(200, {
+        'status': 'analyzed',
+        'colorProfile': {
+          ...colorCore(),
+          'confidence': 0.6,
+          'undertoneConfidence': 0.5,
+          'secondarySeason': 'spring',
+          'secondaryConfidence': 0.3,
+        },
+        'disclaimer': disclaimer,
+      }),
+    ]);
+    await app.start(at: AtlasRoutes.profileColor);
+    expect(find.text('Yaqin variant: Bahor'), findsOneWidget);
+  });
+
+  test('colour (4.3): server rejections become specific advice', () {
+    ApiHttpFailure f(String code, [String? reason]) => ApiHttpFailure(
+      statusCode: 422,
+      code: ApiErrorCode.fromWire(code),
+      fieldErrors: [if (reason != null) FieldError('reason', reason)],
+    );
+    expect(serverRejection(f('PHOTO_QUALITY_TOO_LOW', 'blurry')), contains('xira'));
+    expect(serverRejection(f('PHOTO_QUALITY_TOO_LOW', 'too_dark')), contains('qorong‘i'));
+    expect(serverRejection(f('PHOTO_QUALITY_TOO_LOW', 'overexposed')), contains('yorug‘'));
+    expect(serverRejection(f('PHOTO_QUALITY_TOO_LOW', 'background')), contains('fon'));
+    expect(serverRejection(f('PHOTO_QUALITY_TOO_LOW')), contains('sifati'));
+    expect(serverRejection(f('SKIN_NOT_VISIBLE')), contains('yuz terisi'));
+    expect(serverRejection(f('INVALID_IMAGE')), contains('tahlil qilib bo‘lmadi'));
+    expect(serverRejection(null), contains('tahlil qilib bo‘lmadi'));
   });
 
   testWidgets('colour: a lost answer shows "unknown" with the server\'s current result', (tester) async {

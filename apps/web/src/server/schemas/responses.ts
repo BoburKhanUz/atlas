@@ -10,6 +10,7 @@ import { z } from 'zod'
 
 const DateTime = z.iso.datetime().describe('ISO 8601, UTC')
 const nullableString = z.string().nullable()
+const nullableNumber = z.number().nullable()
 const Int = z.number().int()
 
 // ─── Errors ─────────────────────────────────────────────────────────────────
@@ -40,6 +41,9 @@ export const ERROR_CODES = [
   'NOT_A_GARMENT',
   'AI_QUOTA_EXCEEDED',
   'AI_UNAVAILABLE',
+  'PHOTO_QUALITY_TOO_LOW',
+  'SKIN_NOT_VISIBLE',
+  'ANALYSIS_UNAVAILABLE',
 ] as const
 
 export const ErrorResponse = z
@@ -264,10 +268,21 @@ export const ProfilePatchResponse = z.strictObject({
   user: z.looseObject({ id: z.string(), email: z.string(), name: nullableString, profile: ProfileRow.nullable(), preferences: PreferencesRow.nullable() }),
 })
 
+/**
+ * Phase 4.3: undertone is warm, neutral_warm, neutral, neutral_cool, cool or
+ * unknown (weak evidence); season is null when the photo supports none;
+ * hair/eye colours are null when they could not be measured reliably;
+ * confidences are 0–1 (capped: overall 0.8, undertone 0.75) and null for
+ * profiles from before Phase 4.3.
+ */
 const colorProfileFields = {
   id: z.string(),
   undertone: nullableString,
+  undertoneConfidence: nullableNumber,
   season: nullableString,
+  secondarySeason: nullableString,
+  secondaryConfidence: nullableNumber,
+  confidence: nullableNumber,
   contrastLevel: nullableString,
   recommendedColors: z.array(z.string()),
   neutralColors: z.array(z.string()),

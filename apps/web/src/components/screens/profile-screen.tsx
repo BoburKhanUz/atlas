@@ -86,12 +86,12 @@ export function ProfileScreen() {
   useEffect(() => {
     api<{
       colorProfile: {
-        season: 'spring' | 'summer' | 'autumn' | 'winter'
+        season: 'spring' | 'summer' | 'autumn' | 'winter' | null
       } | null
     }>('/api/v1/color-profile')
       .then((res) => {
-        if (res.colorProfile) {
-          const labels: Record<typeof res.colorProfile.season, string> = {
+        if (res.colorProfile?.season) {
+          const labels: Record<NonNullable<typeof res.colorProfile.season>, string> = {
             spring: 'Bahor',
             summer: 'Yoz',
             autumn: 'Kuz',

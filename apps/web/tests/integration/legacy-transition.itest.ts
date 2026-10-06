@@ -28,6 +28,7 @@ const DOWN_SQL = path.resolve(__dirname, '../../../../docs/database/rollback/dow
 // The AI quota table (Phase 4.0) is applied after session_families and reversed first.
 const DOWN_AI_USAGE = path.resolve(__dirname, '../../../../docs/database/rollback/down-ai-usage.sql')
 const DOWN_ANALYSIS_METADATA = path.resolve(__dirname, '../../../../docs/database/rollback/down-wardrobe-analysis-metadata.sql')
+const DOWN_COLOR_PROFILE = path.resolve(__dirname, '../../../../docs/database/rollback/down-color-profile-v2.sql')
 
 const token = () => crypto.randomBytes(32).toString('base64url')
 const ms = (q: string) => Number(sql(DB, `SELECT (extract(epoch FROM (${q})) * 1000)::bigint`))
@@ -232,7 +233,7 @@ describe.skipIf(!enabled)('legacy session lifetime across the cutover (real Post
     setClock(DB, null)
     const c = chains.get('d59')!
     const limitBefore = absOf(c)
-    for (const file of [DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE]) {
+    for (const file of [DOWN_COLOR_PROFILE, DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE]) {
       const downAi = spawnSync(
         'psql',
         ['--single-transaction', '-X', '-v', 'ON_ERROR_STOP=1', '-h', PG.host, '-p', PG.port, '-U', PG.user, '-d', DB, '-f', file],

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/logging/app_log.dart';
+import '../../../core/network/api_error_code.dart';
 import '../../../core/network/api_failure.dart';
 import '../../wardrobe/data/image_preparer.dart';
 import '../../wardrobe/data/photo_picker.dart';
@@ -162,7 +163,10 @@ class SelfieAnalysisController extends Notifier<SelfieAnalysisState> {
     state = const SelfieAnalysisState();
   }
 
+  /// ANALYSIS_UNAVAILABLE (503): the server analysed nothing and stored
+  /// nothing — a definite failure that the same photo may retry.
   static bool _definitelyNotAnalysed(ApiFailure f) => switch (f) {
+    ApiHttpFailure(code: ApiErrorCode.analysisUnavailable) => true,
     ApiHttpFailure(:final statusCode) => statusCode < 500,
     SessionEndedFailure() || InsecureConnectionFailure() || SecureStorageFailure() => true,
     _ => false,

@@ -27,16 +27,17 @@ type Phase = 'intro' | 'capture' | 'analyzing' | 'result'
 
 interface ColorProfile {
   id: string
-  undertone: 'warm' | 'cool' | 'neutral'
-  season: 'spring' | 'summer' | 'autumn' | 'winter'
-  contrastLevel: 'low' | 'medium' | 'high'
+  undertone: 'warm' | 'neutral_warm' | 'neutral' | 'neutral_cool' | 'cool' | 'unknown' | null
+  /** null when the photo did not support any season (Phase 4.3). */
+  season: 'spring' | 'summer' | 'autumn' | 'winter' | null
+  contrastLevel: 'low' | 'medium' | 'high' | null
   recommendedColors: string[]
   neutralColors: string[]
   cautionColors: string[]
   skinTone: 'light' | 'medium' | 'tan' | 'deep'
   hairColor: string | null
   eyeColor: string | null
-  confidence: number
+  confidence: number | null
   analyzedAt: string
 }
 
@@ -278,9 +279,9 @@ function IntroPhase({
               Bu AI tavsiyasi
             </p>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Rang tahlilisi AI tomonidan amalga oshiriladi — tibbiy yoki
-              ilmiy diagnosis emas. Selfie shaxsiy saqlanadi va modelni
-              o&apos;rgatish uchun ishlatilmaydi.
+              Rang tahlili taxminiy styling tavsiyasi — tibbiy yoki ilmiy
+              xulosa emas. Selfie faqat serverda tahlil qilinadi, saqlanmaydi
+              va tashqi AI xizmatiga yuborilmaydi.
             </p>
           </div>
         </div>
@@ -297,8 +298,7 @@ function IntroPhase({
           <div className="flex-1">
             <p className="font-medium text-sm">Oldingi natijani ko&apos;rish</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {SEASON_INFO[existingProfile.season].label} palitrasida tahlil
-              qilingan
+              {existingProfile.season ? `${SEASON_INFO[existingProfile.season].label} palitrasida tahlil qilingan` : 'Mavsum aniqlanmagan'}
             </p>
           </div>
           <ArrowLeft className="w-4 h-4 text-muted-foreground rotate-180" />
@@ -472,6 +472,17 @@ function ResultPhase({
   profile: ColorProfile
   onRetry: () => void
 }) {
+  if (!profile.season) {
+    return (
+      <div className="surface-card p-6 mb-4 text-center">
+        <h2 className="display-lg mb-2">Mavsumni aniqlab bo&apos;lmadi</h2>
+        <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto mb-4">
+          Rasm bo&apos;yicha ishonchli xulosa chiqmadi. Kunduzgi yorug&apos;likda, yuzingiz to&apos;liq ko&apos;rinadigan boshqa selfi bilan qayta urinib ko&apos;ring.
+        </p>
+        <Button onClick={onRetry} className="h-11">Qayta urinish</Button>
+      </div>
+    )
+  }
   const SeasonIcon = SEASON_INFO[profile.season].icon
   const seasonInfo = SEASON_INFO[profile.season]
 

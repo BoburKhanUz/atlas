@@ -12,6 +12,7 @@ Serializers _$serializers =
           ..add(ColorAnalysisResponse.serializer)
           ..add(ColorAnalysisResponseColorProfile.serializer)
           ..add(ColorAnalysisResponseColorProfileContrastLevel.serializer)
+          ..add(ColorAnalysisResponseColorProfileSecondaryConfidence.serializer)
           ..add(ColorProfileResponse.serializer)
           ..add(ColorProfileResponseOneOf.serializer)
           ..add(ColorProfileResponseOneOf1.serializer)

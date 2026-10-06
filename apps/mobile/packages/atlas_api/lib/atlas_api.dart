@@ -24,6 +24,7 @@ export 'package:atlas_api/src/model/auth_response.dart';
 export 'package:atlas_api/src/model/color_analysis_response.dart';
 export 'package:atlas_api/src/model/color_analysis_response_color_profile.dart';
 export 'package:atlas_api/src/model/color_analysis_response_color_profile_contrast_level.dart';
+export 'package:atlas_api/src/model/color_analysis_response_color_profile_secondary_confidence.dart';
 export 'package:atlas_api/src/model/color_profile_response.dart';
 export 'package:atlas_api/src/model/color_profile_response_one_of.dart';
 export 'package:atlas_api/src/model/color_profile_response_one_of1.dart';

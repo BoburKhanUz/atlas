@@ -18,6 +18,7 @@ import 'package:atlas_api/src/model/auth_response.dart';
 import 'package:atlas_api/src/model/color_analysis_response.dart';
 import 'package:atlas_api/src/model/color_analysis_response_color_profile.dart';
 import 'package:atlas_api/src/model/color_analysis_response_color_profile_contrast_level.dart';
+import 'package:atlas_api/src/model/color_analysis_response_color_profile_secondary_confidence.dart';
 import 'package:atlas_api/src/model/color_profile_response.dart';
 import 'package:atlas_api/src/model/color_profile_response_one_of.dart';
 import 'package:atlas_api/src/model/color_profile_response_one_of1.dart';
@@ -103,6 +104,7 @@ part 'serializers.g.dart';
   ColorAnalysisResponse,
   ColorAnalysisResponseColorProfile,
   ColorAnalysisResponseColorProfileContrastLevel,
+  ColorAnalysisResponseColorProfileSecondaryConfidence,
   ColorProfileResponse,
   ColorProfileResponseOneOf,
   ColorProfileResponseOneOf1,

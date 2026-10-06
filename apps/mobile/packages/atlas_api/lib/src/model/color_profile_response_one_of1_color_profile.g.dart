@@ -12,6 +12,8 @@ class _$ColorProfileResponseOneOf1ColorProfile extends ColorProfileResponseOneOf
   @override
   final BuiltList<String> cautionColors;
   @override
+  final num? confidence;
+  @override
   final String? contrastLevel;
   @override
   final String? eyeColor;
@@ -26,9 +28,15 @@ class _$ColorProfileResponseOneOf1ColorProfile extends ColorProfileResponseOneOf
   @override
   final String? season;
   @override
+  final num? secondaryConfidence;
+  @override
+  final String? secondarySeason;
+  @override
   final String? skinTone;
   @override
   final String? undertone;
+  @override
+  final num? undertoneConfidence;
 
   factory _$ColorProfileResponseOneOf1ColorProfile([
     void Function(ColorProfileResponseOneOf1ColorProfileBuilder)? updates,
@@ -37,6 +45,7 @@ class _$ColorProfileResponseOneOf1ColorProfile extends ColorProfileResponseOneOf
   _$ColorProfileResponseOneOf1ColorProfile._({
     required this.analyzedAt,
     required this.cautionColors,
+    this.confidence,
     this.contrastLevel,
     this.eyeColor,
     this.hairColor,
@@ -44,8 +53,11 @@ class _$ColorProfileResponseOneOf1ColorProfile extends ColorProfileResponseOneOf
     required this.neutralColors,
     required this.recommendedColors,
     this.season,
+    this.secondaryConfidence,
+    this.secondarySeason,
     this.skinTone,
     this.undertone,
+    this.undertoneConfidence,
   }) : super._();
   @override
   ColorProfileResponseOneOf1ColorProfile rebuild(
@@ -62,6 +74,7 @@ class _$ColorProfileResponseOneOf1ColorProfile extends ColorProfileResponseOneOf
     return other is ColorProfileResponseOneOf1ColorProfile &&
         analyzedAt == other.analyzedAt &&
         cautionColors == other.cautionColors &&
+        confidence == other.confidence &&
         contrastLevel == other.contrastLevel &&
         eyeColor == other.eyeColor &&
         hairColor == other.hairColor &&
@@ -69,8 +82,11 @@ class _$ColorProfileResponseOneOf1ColorProfile extends ColorProfileResponseOneOf
         neutralColors == other.neutralColors &&
         recommendedColors == other.recommendedColors &&
         season == other.season &&
+        secondaryConfidence == other.secondaryConfidence &&
+        secondarySeason == other.secondarySeason &&
         skinTone == other.skinTone &&
-        undertone == other.undertone;
+        undertone == other.undertone &&
+        undertoneConfidence == other.undertoneConfidence;
   }
 
   @override
@@ -78,6 +94,7 @@ class _$ColorProfileResponseOneOf1ColorProfile extends ColorProfileResponseOneOf
     var _$hash = 0;
     _$hash = $jc(_$hash, analyzedAt.hashCode);
     _$hash = $jc(_$hash, cautionColors.hashCode);
+    _$hash = $jc(_$hash, confidence.hashCode);
     _$hash = $jc(_$hash, contrastLevel.hashCode);
     _$hash = $jc(_$hash, eyeColor.hashCode);
     _$hash = $jc(_$hash, hairColor.hashCode);
@@ -85,8 +102,11 @@ class _$ColorProfileResponseOneOf1ColorProfile extends ColorProfileResponseOneOf
     _$hash = $jc(_$hash, neutralColors.hashCode);
     _$hash = $jc(_$hash, recommendedColors.hashCode);
     _$hash = $jc(_$hash, season.hashCode);
+    _$hash = $jc(_$hash, secondaryConfidence.hashCode);
+    _$hash = $jc(_$hash, secondarySeason.hashCode);
     _$hash = $jc(_$hash, skinTone.hashCode);
     _$hash = $jc(_$hash, undertone.hashCode);
+    _$hash = $jc(_$hash, undertoneConfidence.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -96,6 +116,7 @@ class _$ColorProfileResponseOneOf1ColorProfile extends ColorProfileResponseOneOf
     return (newBuiltValueToStringHelper(r'ColorProfileResponseOneOf1ColorProfile')
           ..add('analyzedAt', analyzedAt)
           ..add('cautionColors', cautionColors)
+          ..add('confidence', confidence)
           ..add('contrastLevel', contrastLevel)
           ..add('eyeColor', eyeColor)
           ..add('hairColor', hairColor)
@@ -103,8 +124,11 @@ class _$ColorProfileResponseOneOf1ColorProfile extends ColorProfileResponseOneOf
           ..add('neutralColors', neutralColors)
           ..add('recommendedColors', recommendedColors)
           ..add('season', season)
+          ..add('secondaryConfidence', secondaryConfidence)
+          ..add('secondarySeason', secondarySeason)
           ..add('skinTone', skinTone)
-          ..add('undertone', undertone))
+          ..add('undertone', undertone)
+          ..add('undertoneConfidence', undertoneConfidence))
         .toString();
   }
 }
@@ -120,6 +144,10 @@ class ColorProfileResponseOneOf1ColorProfileBuilder
   ListBuilder<String>? _cautionColors;
   ListBuilder<String> get cautionColors => _$this._cautionColors ??= ListBuilder<String>();
   set cautionColors(ListBuilder<String>? cautionColors) => _$this._cautionColors = cautionColors;
+
+  num? _confidence;
+  num? get confidence => _$this._confidence;
+  set confidence(num? confidence) => _$this._confidence = confidence;
 
   String? _contrastLevel;
   String? get contrastLevel => _$this._contrastLevel;
@@ -149,6 +177,14 @@ class ColorProfileResponseOneOf1ColorProfileBuilder
   String? get season => _$this._season;
   set season(String? season) => _$this._season = season;
 
+  num? _secondaryConfidence;
+  num? get secondaryConfidence => _$this._secondaryConfidence;
+  set secondaryConfidence(num? secondaryConfidence) => _$this._secondaryConfidence = secondaryConfidence;
+
+  String? _secondarySeason;
+  String? get secondarySeason => _$this._secondarySeason;
+  set secondarySeason(String? secondarySeason) => _$this._secondarySeason = secondarySeason;
+
   String? _skinTone;
   String? get skinTone => _$this._skinTone;
   set skinTone(String? skinTone) => _$this._skinTone = skinTone;
@@ -156,6 +192,10 @@ class ColorProfileResponseOneOf1ColorProfileBuilder
   String? _undertone;
   String? get undertone => _$this._undertone;
   set undertone(String? undertone) => _$this._undertone = undertone;
+
+  num? _undertoneConfidence;
+  num? get undertoneConfidence => _$this._undertoneConfidence;
+  set undertoneConfidence(num? undertoneConfidence) => _$this._undertoneConfidence = undertoneConfidence;
 
   ColorProfileResponseOneOf1ColorProfileBuilder() {
     ColorProfileResponseOneOf1ColorProfile._defaults(this);
@@ -166,6 +206,7 @@ class ColorProfileResponseOneOf1ColorProfileBuilder
     if ($v != null) {
       _analyzedAt = $v.analyzedAt;
       _cautionColors = $v.cautionColors.toBuilder();
+      _confidence = $v.confidence;
       _contrastLevel = $v.contrastLevel;
       _eyeColor = $v.eyeColor;
       _hairColor = $v.hairColor;
@@ -173,8 +214,11 @@ class ColorProfileResponseOneOf1ColorProfileBuilder
       _neutralColors = $v.neutralColors.toBuilder();
       _recommendedColors = $v.recommendedColors.toBuilder();
       _season = $v.season;
+      _secondaryConfidence = $v.secondaryConfidence;
+      _secondarySeason = $v.secondarySeason;
       _skinTone = $v.skinTone;
       _undertone = $v.undertone;
+      _undertoneConfidence = $v.undertoneConfidence;
       _$v = null;
     }
     return this;
@@ -205,6 +249,7 @@ class ColorProfileResponseOneOf1ColorProfileBuilder
               'analyzedAt',
             ),
             cautionColors: cautionColors.build(),
+            confidence: confidence,
             contrastLevel: contrastLevel,
             eyeColor: eyeColor,
             hairColor: hairColor,
@@ -212,8 +257,11 @@ class ColorProfileResponseOneOf1ColorProfileBuilder
             neutralColors: neutralColors.build(),
             recommendedColors: recommendedColors.build(),
             season: season,
+            secondaryConfidence: secondaryConfidence,
+            secondarySeason: secondarySeason,
             skinTone: skinTone,
             undertone: undertone,
+            undertoneConfidence: undertoneConfidence,
           );
     } catch (_) {
       late String _$failedField;

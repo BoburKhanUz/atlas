@@ -89,7 +89,7 @@ const GENDER_IDS = idSet(GENDERS)
 const FORMALITY_IDS = idSet(FORMALITIES)
 const OCCASION_IDS = idSet(OCCASIONS)
 const WEATHER_CONDITIONS = new Set(['clear', 'partly_cloudy', 'cloudy', 'rain', 'thunderstorm', 'snow', 'fog'])
-const UNDERTONES = new Set(['warm', 'cool', 'neutral'])
+const UNDERTONES = new Set(['warm', 'neutral_warm', 'neutral', 'neutral_cool', 'cool'])
 const CONTRASTS = new Set(['low', 'medium', 'high'])
 
 const pick = (allowed: Set<string>, v: string | null | undefined): string | null => (v && allowed.has(v) ? v : null)

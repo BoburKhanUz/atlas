@@ -306,12 +306,20 @@ model ColorProfile {
   recommendedColors String @default("[]")
   neutralColors String  @default("[]")
   cautionColors String  @default("[]")
-  analysisJson  String   @default("{}") // raw analysis breakdown
+  analysisJson  String   @default("{}") // audit/calibration metadata only: no colour values, no image data (Phase 4.3)
+  // Phase 4.3: which algorithm produced the profile, and how sure it is.
+  // Rows from before Phase 4.3 are "color-heuristic-v1" with null confidences.
+  analysisVersion     String?
+  confidence          Float?  // overall (= season) confidence, 0–0.8
+  undertoneConfidence Float?
+  secondarySeason     String?
+  secondaryConfidence Float?
   userProfiles  UserProfile[]
-  createdAt     DateTime @default(now())
+  createdAt     DateTime @default(now()) // time of the analysis (re-set when it is replaced)
   updatedAt     DateTime @updatedAt
 
-  @@index([userId])
+  // One current profile per user: a new analysis replaces it (no history).
+  @@unique([userId])
 }
 
 // ─── Idempotency keys for retried uploads (24 h) ─────────────────────────────

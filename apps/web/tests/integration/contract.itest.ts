@@ -12,7 +12,7 @@ import os from 'os'
 import path from 'path'
 import sharp from 'sharp'
 import { NextRequest } from 'next/server'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { POST as register } from '@/app/api/v1/auth/register/route'
 import { POST as login } from '@/app/api/v1/auth/login/route'
 import { POST as refresh } from '@/app/api/v1/auth/refresh/route'
@@ -20,7 +20,10 @@ import { POST as logout } from '@/app/api/v1/auth/logout/route'
 import { GET as me } from '@/app/api/v1/auth/me/route'
 import { DELETE as deleteAccount } from '@/app/api/v1/account/route'
 import * as profileRoute from '@/app/api/v1/profile/route'
+import * as colorProfileRoute from '@/app/api/v1/color-profile/route'
 import { GET as getColorProfile } from '@/app/api/v1/color-profile/route'
+import * as colorAnalysis from '@/lib/ai/color-analysis'
+import { selfie as syntheticSelfie } from '../unit/ai/selfie-fixtures'
 import { POST as analyzeColor } from '@/app/api/v1/color-profile/analyze/route'
 import * as wardrobeRoute from '@/app/api/v1/wardrobe/items/route'
 import * as wardrobeItemRoute from '@/app/api/v1/wardrobe/items/[id]/route'
@@ -212,12 +215,25 @@ describe.skipIf(!enabled)('OAS-04: real responses match the OpenAPI contract', (
     await call('getProfile', profileRoute.GET as Handler, req('/api/v1/profile', { headers: u.auth }))
 
     await call('getColorProfile', getColorProfile as Handler, req('/api/v1/color-profile', { headers: u.auth })) // not_analyzed
-    const selfie = await sharp({ create: { width: 400, height: 400, channels: 3, background: '#E0AC69' } }).jpeg().toBuffer()
+    const selfie = await syntheticSelfie({ skin: '#f1c9a5', hair: '#3b2416', eyes: '#5a3a22' })
     const an = await call('analyzeColorProfile', analyzeColor as Handler, await multipart('/api/v1/color-profile/analyze', selfie, { headers: u.auth, name: 'me.jpg' }))
     expect(an.status).toBe(200)
     await call('getColorProfile', getColorProfile as Handler, req('/api/v1/color-profile', { headers: u.auth })) // analyzed
-    await call('analyzeColorProfile', analyzeColor as Handler, await multipart('/api/v1/color-profile/analyze', null, { headers: u.auth, fields: { x: '1' } })) // BAD_REQUEST
-    await call('analyzeColorProfile', analyzeColor as Handler, await multipart('/api/v1/color-profile/analyze', selfie, { headers: u.auth, type: 'text/plain' })) // INVALID_IMAGE
+    const colour = (file: Buffer | null, opts: Parameters<typeof multipart>[2] = {}) =>
+      multipart('/api/v1/color-profile/analyze', file, { headers: u.auth, ...opts }).then((r) => call('analyzeColorProfile', analyzeColor as Handler, r))
+    await colour(null, { fields: { x: '1' } }) // BAD_REQUEST
+    await colour(selfie, { type: 'text/plain' }) // INVALID_IMAGE
+    await colour(await image(200, 200)) // IMAGE_DIMENSIONS
+    await colour(await image(400, 500, '#E0AC69')) // PHOTO_QUALITY_TOO_LOW (flat)
+    await colour(await syntheticSelfie({ skin: '#3a6ea5', hair: null })) // SKIN_NOT_VISIBLE
+    const broken = vi.spyOn(colorAnalysis, 'analyzeSelfie').mockRejectedValue(new Error('bug'))
+    try {
+      await colour(selfie) // ANALYSIS_UNAVAILABLE
+    } finally {
+      broken.mockRestore()
+    }
+    await call('deleteColorProfile', colorProfileRoute.DELETE as Handler, req('/api/v1/color-profile', { method: 'DELETE', headers: u.auth }))
+    await call('getColorProfile', getColorProfile as Handler, req('/api/v1/color-profile', { headers: u.auth })) // not_analyzed again
 
     await call('deleteAccount', deleteAccount as Handler, req('/api/v1/account', { method: 'DELETE', headers: ghost })) // NOT_FOUND
     const gone = await mobileAccount()
