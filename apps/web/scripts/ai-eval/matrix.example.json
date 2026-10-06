@@ -1,0 +1,12 @@
+{
+  "configs": [
+    { "label": "gemini-A-768", "provider": "gemini", "model": "gemini-3.5-flash-lite", "maxSide": 768, "geminiMediaResolution": "high", "geminiThinkingLevel": "minimal" },
+    { "label": "gemini-A-1024", "provider": "gemini", "model": "gemini-3.5-flash-lite", "maxSide": 1024, "geminiMediaResolution": "high", "geminiThinkingLevel": "minimal" },
+    { "label": "gemini-B-768", "provider": "gemini", "model": "gemini-3.8-flash", "maxSide": 768, "geminiMediaResolution": "high", "geminiThinkingLevel": "low" },
+    { "label": "gemini-B-1024", "provider": "gemini", "model": "gemini-3.8-flash", "maxSide": 1024, "geminiMediaResolution": "high", "geminiThinkingLevel": "low" },
+    { "label": "openai-A-768", "provider": "openai", "model": "gpt-6-luna", "maxSide": 768, "openaiDetail": "high", "price": { "inputUsdPerMTok": 0.1, "outputUsdPerMTok": 0.5 } },
+    { "label": "openai-A-1024", "provider": "openai", "model": "gpt-6-luna", "maxSide": 1024, "openaiDetail": "high", "price": { "inputUsdPerMTok": 0.1, "outputUsdPerMTok": 0.5 } },
+    { "label": "openai-B-768", "provider": "openai", "model": "gpt-5.4-mini", "maxSide": 768, "openaiDetail": "high" },
+    { "label": "openai-B-1024", "provider": "openai", "model": "gpt-5.4-mini", "maxSide": 1024, "openaiDetail": "high" }
+  ]
+}

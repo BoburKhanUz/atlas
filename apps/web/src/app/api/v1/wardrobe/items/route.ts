@@ -13,7 +13,7 @@ import {
   type StoredImage,
 } from '@/lib/storage/provider'
 import { serializeWardrobeItem } from '@/lib/wardrobe/serialize'
-import { analyzeGarment, type ClothingDetection } from '@/lib/ai/vision-service'
+import { analyzeGarment, GarmentAnalysisError, isMockAnalysis, type ClothingDetection } from '@/lib/ai/vision-service'
 import {
   claimIdempotencyKey,
   completeIdempotencyKey,
@@ -43,7 +43,31 @@ function detectionFromItem(item: WardrobeItem): ClothingDetection {
     gender: item.gender,
     formality: item.formality,
     confidence: JSON.parse(item.confidences) as Record<string, number>,
-    mock: true,
+    mock: isMockAnalysis(item.analysisProvider),
+  }
+}
+
+/** Seconds a client should wait before retrying after AI_UNAVAILABLE (no provider details exposed). */
+const AI_UNAVAILABLE_RETRY_AFTER = '15'
+
+const NOT_A_GARMENT_MESSAGES: Record<'multiple_garments' | 'no_garment' | 'unclear', string> = {
+  multiple_garments: 'Rasmda bir nechta kiyim bor. Har bir kiyimni alohida suratga oling.',
+  no_garment: 'Rasmda kiyim topilmadi. Kiyim, poyabzal, sumka yoki aksessuarni suratga oling.',
+  unclear: 'Rasm aniq emas. Kiyimni yorug‘ joyda, aniq qilib suratga oling.',
+}
+
+/** Maps a failed analysis to the public error contract (nothing is stored). */
+function analysisError(err: GarmentAnalysisError): ApiError {
+  const f = err.failure
+  switch (f.kind) {
+    case 'ai_unavailable':
+      return new ApiError('AI_UNAVAILABLE', undefined, undefined, { 'Retry-After': AI_UNAVAILABLE_RETRY_AFTER })
+    case 'quota_exceeded':
+      return new ApiError('AI_QUOTA_EXCEEDED', undefined, undefined, { 'Retry-After': String(f.retryAfterSeconds) })
+    case 'not_a_garment':
+      return new ApiError('NOT_A_GARMENT', NOT_A_GARMENT_MESSAGES[f.subject], [{ path: 'subject', message: f.subject }])
+    case 'image_rejected':
+      return new ApiError('INVALID_IMAGE', 'Bu rasmni tahlil qilib bo‘lmadi. Boshqa rasm tanlang.')
   }
 }
 
@@ -59,7 +83,8 @@ function itemResponse(item: WardrobeItem & { images: WardrobeImage[] }, detectio
  * Multipart form-data:
  *   - file: image (required) — JPEG, PNG or WebP, ≤ 8 MB; shortest side
  *     ≥ 256 px, no side > 8000 px. HEIC/HEIF/AVIF → 415 (clients convert).
- *   - filename: optional override (defaults to file.name)
+ *   - filename: optional override (defaults to file.name); a hint for the
+ *     development mock only, never sent to an AI provider
  * Optional header `Idempotency-Key` (8–128 chars [A-Za-z0-9_-]): a retry with
  * the same key and payload within 24 h returns the original item (201,
  * `Idempotent-Replayed: true`) instead of creating a duplicate.
@@ -123,8 +148,17 @@ export const POST = withApi(async (req) => {
     }
     const image = stored
 
-    // 2. Clothing analysis (VisionService; the deterministic mock until Phase 4.1)
-    const detection = await analyzeGarment({ buffer, filename })
+    // 2. Clothing analysis, outside the DB transaction. Real providers get a
+    // prepared copy (never the raw upload or the file name) and use quota;
+    // any failure stores nothing (cleanup below).
+    let analysis: Awaited<ReturnType<typeof analyzeGarment>>
+    try {
+      analysis = await analyzeGarment({ buffer, filename, userId: authUser.sub })
+    } catch (err) {
+      if (err instanceof GarmentAnalysisError) throw analysisError(err)
+      throw err
+    }
+    const { detection, metadata } = analysis
 
     // 3. Persist the item + image row (+ complete the idempotency key) in one transaction.
     const item = await db.$transaction(async (tx) => {
@@ -145,6 +179,11 @@ export const POST = withApi(async (req) => {
           confidences: JSON.stringify(detection.confidence),
           wasCorrected: false,
           correctionLog: '[]',
+          analysisProvider: metadata.provider,
+          analysisModel: metadata.model,
+          analysisVersion: metadata.version,
+          analyzedAt: metadata.analyzedAt,
+          analysisRawConfidences: metadata.rawConfidences ? JSON.stringify(metadata.rawConfidences) : null,
           images: {
             create: [
               {

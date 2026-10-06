@@ -36,7 +36,9 @@ import { GET as weather } from '@/app/api/v1/weather/current/route'
 import { GET as health } from '@/app/api/health/route'
 import { GET as openapi } from '@/app/api/v1/openapi.json/route'
 import { hashToken, signAccessToken } from '@/lib/auth'
-import { setLLMProviderForTesting } from '@/lib/ai/providers'
+import { setLLMProviderForTesting, setVisionProviderForTesting } from '@/lib/ai/providers'
+import { AiProviderError } from '@/lib/ai/providers/errors'
+import { CONFIDENCE_KEYS } from '@/lib/ai/garment-analysis'
 import { MockProvider } from '@/lib/ai/providers/mock'
 import { resetRateLimits } from '@/lib/rate-limit'
 import { setStorageProviderForTesting } from '@/lib/storage/provider'
@@ -253,6 +255,27 @@ describe.skipIf(!enabled)('OAS-04: real responses match the OpenAPI contract', (
     await up(crypto.randomBytes(3000)) // INVALID_IMAGE
     await up(Buffer.concat([await image(300, 300), crypto.randomBytes(8 * 1024 * 1024 + 10)])) // PAYLOAD_TOO_LARGE
     await call('createWardrobeItem', wardrobeRoute.POST as Handler, req(W, { method: 'POST', headers: { ...u.auth, 'content-length': '2' }, json: {} })) // UNSUPPORTED_MEDIA_TYPE
+
+    // Real-provider path (scripted provider, no network): success with mock=false, then each AI error.
+    const zero = Object.fromEntries(CONFIDENCE_KEYS.map((key) => [key, 0]))
+    const scripted = (step: () => unknown) =>
+      setVisionProviderForTesting({ name: 'gemini', model: 'contract-vision', analyzeImage: async () => ({ output: step(), metadata: { provider: 'gemini', model: 'contract-vision', usage: {} } }) })
+    try {
+      scripted(() => ({ subject: 'single_garment', category: 'shoes', subcategory: 'boots', colors: ['black'], pattern: 'solid', material: 'leather', sleeveLength: null, fit: null, style: 'classic', season: ['winter'], gender: 'unisex', formality: 'smart_casual', confidence: { ...zero, category: 0.9 } }))
+      const real = await up(await image(500, 600, '#151515'))
+      expect(real.status).toBe(201)
+      expect((await real.json()).detection.mock).toBe(false)
+      scripted(() => ({ subject: 'no_garment', category: null, subcategory: null, colors: [], pattern: null, material: null, sleeveLength: null, fit: null, style: null, season: [], gender: null, formality: null, confidence: zero }))
+      await up(await image(500, 500)) // NOT_A_GARMENT
+      scripted(() => {
+        throw new AiProviderError('unavailable', 'gemini', { status: 503 })
+      })
+      await up(await image(500, 500)) // AI_UNAVAILABLE
+      sql(DB, `INSERT INTO "AiUsage" ("id","userId","feature","day","count","updatedAt") VALUES ('${crypto.randomUUID()}','${u.userId}','clothing_analysis', (now() AT TIME ZONE 'Asia/Tashkent')::date, 50, now()) ON CONFLICT ("userId","feature","day") DO UPDATE SET "count" = 50`)
+      await up(await image(500, 500)) // AI_QUOTA_EXCEEDED
+    } finally {
+      setVisionProviderForTesting(null)
+    }
 
     const list = await call('listWardrobeItems', wardrobeRoute.GET as Handler, req(`${W}?limit=2`, { headers: u.auth }))
     const page = await list.json()

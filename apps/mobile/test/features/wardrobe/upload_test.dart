@@ -7,6 +7,7 @@ import 'package:atlas_mobile/features/wardrobe/data/image_preparer.dart';
 import 'package:atlas_mobile/features/wardrobe/data/jpeg_sanitizer.dart';
 import 'package:atlas_mobile/features/wardrobe/data/photo_picker.dart';
 import 'package:atlas_mobile/features/wardrobe/presentation/add_item_controller.dart';
+import 'package:atlas_mobile/features/wardrobe/presentation/wardrobe_messages.dart';
 import 'package:atlas_mobile/features/wardrobe/providers.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -233,6 +234,62 @@ void main() {
         expect(s.uploads, hasLength(1));
       });
     }
+
+    for (final (subject, reason) in [
+      ('no_garment', RejectReason.notAGarment),
+      ('multiple_garments', RejectReason.multipleGarments),
+      ('unclear', RejectReason.unclearPhoto),
+      (null, RejectReason.notAGarment),
+    ]) {
+      test('NOT_A_GARMENT ($subject) → rejected with its own explanation, not retried', () async {
+        final s = Setup();
+        await s.ready();
+        final details = subject == null
+            ? null
+            : [
+                {'path': 'subject', 'message': subject},
+              ];
+        s.replies([JsonReply(422, errorBody('NOT_A_GARMENT', details: details))]);
+        await s.c.upload();
+        expect((s.state.phase, s.state.reject), (AddPhase.rejected, reason));
+        expect(s.uploads, hasLength(1));
+      });
+    }
+
+    test('AI_QUOTA_EXCEEDED → rejected with the daily-limit explanation, not retried', () async {
+      final s = Setup();
+      await s.ready();
+      s.replies([
+        JsonReply(429, errorBody('AI_QUOTA_EXCEEDED'), headers: {'Retry-After': '3600'}),
+      ]);
+      await s.c.upload();
+      expect((s.state.phase, s.state.reject), (AddPhase.rejected, RejectReason.aiQuota));
+      expect(WardrobeMessages.reject(RejectReason.aiQuota), contains('yarim tunda'));
+      expect(s.uploads, hasLength(1));
+    });
+
+    test('AI_UNAVAILABLE → failed with the same job (Retry sends the SAME key), never automatic', () async {
+      final s = Setup();
+      await s.ready();
+      s.replies([
+        JsonReply(503, errorBody('AI_UNAVAILABLE'), headers: {'Retry-After': '15'}),
+        JsonReply(201, uploadJson('ai-1')),
+      ]);
+      await s.c.upload();
+      expect(s.state.phase, AddPhase.failed);
+      expect(
+        s.state.failure,
+        isA<ApiHttpFailure>()
+            .having((f) => f.code, 'code', ApiErrorCode.aiUnavailable)
+            .having((f) => f.retryable, 'retryable', true),
+      );
+      expect(s.state.failure!.userMessage, contains('AI tahlil xizmati'));
+      expect(s.uploads, hasLength(1));
+      await s.c.upload(); // Retry
+      expect(s.uploads, hasLength(2));
+      expect(s.state.phase, AddPhase.completed);
+      expect(s.uploads[1].header('Idempotency-Key'), s.uploads[0].header('Idempotency-Key'));
+    });
 
     test('server error → failed, Retry possible', () async {
       final s = Setup();

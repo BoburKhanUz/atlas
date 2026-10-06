@@ -6,30 +6,15 @@ Status: proposal. No vendor is selected or recommended here. The goal is a provi
 
 - The provider layer is implemented: see [`provider-architecture.md`](provider-architecture.md). `LLMProvider` and `VisionProvider` live in `apps/web/src/lib/ai/providers/`, with REST adapters for Gemini and OpenAI (no SDKs) and a mock. The Z.ai SDK is removed.
 - No provider is selected: Gemini and OpenAI are candidates for this evaluation. Development uses the mock.
-- Garment vision is still a mock (category from filename) until Phase 4.1.
+- Phase 4.1: clothing analysis runs on a real vision provider when `AI_VISION_PROVIDER` is `gemini` or `openai` (the mock stays for development and e2e). The vision bake-off procedure and harness are in [`vision-evaluation.md`](vision-evaluation.md). No vision provider is selected until it has run.
 
 ## Design
 
 ### LLMProvider (exists)
 Keep as the single text-generation boundary. Implementations are selected via `AI_LLM_PROVIDER`. Call sites must not import vendor SDKs.
 
-### VisionProvider (planned)
-Extracts garment attributes from an image and returns schema-validated JSON with per-attribute confidence.
-
-```ts
-interface VisionProvider {
-  name: string
-  analyzeGarment(image: { bytes: Uint8Array; mimeType: string }): Promise<GarmentAnalysis>
-}
-interface Attr<T> { value: T; confidence: number /* 0..1 */ }
-interface GarmentAnalysis {
-  category: Attr<string>; colors: Attr<string[]>; pattern: Attr<string>
-  fit: Attr<string>; formality: Attr<string>; seasonality?: Attr<string[]>
-  provider: string; usage?: Record<string, number>
-}
-```
-
-Rules: validate every response with a Zod schema; on invalid output retry once, then return an error (never fabricate values); low-confidence attributes are shown to the user for confirmation; images come only from the private storage layer.
+### VisionProvider (exists, Phase 4.1)
+`VisionProvider.analyzeImage` is generic; the garment contract (prompt, strict JSON Schema, Zod and catalog validation) lives in `apps/web/src/lib/ai/garment-analysis.ts`. Invalid output is never retried and never partially used: the upload fails with `AI_UNAVAILABLE` and nothing is stored. Confidences are not calibrated yet and are capped below the "high" band; see [`vision-evaluation.md`](vision-evaluation.md).
 
 ### Future AI service boundary
 If AI workloads outgrow the Next.js API, move providers behind a separate Python/FastAPI service with a narrow HTTP contract (`/vision/garment`, `/llm/complete`), the same schemas, auth between services, and no direct DB access. Until then the providers live in-process.

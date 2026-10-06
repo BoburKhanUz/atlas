@@ -1,6 +1,6 @@
 import sharp from 'sharp'
 import { describe, expect, it } from 'vitest'
-import { prepareVisionImage } from '@/lib/ai/providers/vision-input'
+import { MAX_VISION_BYTES, prepareVisionImage } from '@/lib/ai/providers/vision-input'
 
 async function photo(width: number, height: number, withExif: boolean) {
   const img = sharp({ create: { width, height, channels: 3, background: '#336699' } }).jpeg()
@@ -36,6 +36,25 @@ describe('prepareVisionImage: what may leave the server', () => {
   it('never enlarges small images', async () => {
     const meta = await sharp((await prepareVisionImage(await photo(300, 200, false), 1024)).image).metadata()
     expect([meta.width, meta.height]).toEqual([300, 200])
+  })
+
+  it('flattens transparency onto white (not the JPEG default black)', async () => {
+    const transparent = await sharp({ create: { width: 300, height: 300, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).png().toBuffer()
+    const out = await prepareVisionImage(transparent, 512)
+    const { data } = await sharp(out.image).raw().toBuffer({ resolveWithObject: true })
+    const mean = data.reduce((a, b) => a + b, 0) / data.length
+    expect(mean).toBeGreaterThan(245)
+    const webp = await sharp({ create: { width: 300, height: 300, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).webp().toBuffer()
+    const { data: w } = await sharp((await prepareVisionImage(webp, 512)).image).raw().toBuffer({ resolveWithObject: true })
+    expect(w.reduce((a, b) => a + b, 0) / w.length).toBeGreaterThan(245)
+  })
+
+  it('the 768 px evaluation configuration also works, and output stays far below the byte limit', async () => {
+    const big = await sharp({ create: { width: 4000, height: 3000, channels: 3, background: '#884422' } }).jpeg().toBuffer()
+    const out = await prepareVisionImage(big, 768)
+    const meta = await sharp(out.image).metadata()
+    expect([meta.width, meta.height]).toEqual([768, 576])
+    expect(out.image.byteLength).toBeLessThan(MAX_VISION_BYTES)
   })
 
   it('rejects an out-of-range maxSide and undecodable input', async () => {

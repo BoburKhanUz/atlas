@@ -9,7 +9,7 @@ import 'package:built_value/serializer.dart';
 
 part 'detection.g.dart';
 
-/// Attributes detected from the photo (mock vision for now)
+/// Attributes detected from the photo
 ///
 /// Properties:
 /// * [category]
@@ -19,7 +19,7 @@ part 'detection.g.dart';
 /// * [formality]
 /// * [gender]
 /// * [material]
-/// * [mock]
+/// * [mock] - true when the deterministic development mock produced the attributes; false for a real vision provider
 /// * [pattern]
 /// * [season]
 /// * [sleeveLength]
@@ -48,6 +48,7 @@ abstract class Detection implements Built<Detection, DetectionBuilder> {
   @BuiltValueField(wireName: r'material')
   String? get material;
 
+  /// true when the deterministic development mock produced the attributes; false for a real vision provider
   @BuiltValueField(wireName: r'mock')
   bool get mock;
 

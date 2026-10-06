@@ -59,9 +59,9 @@ export async function generateText(feature: AiFeature, request: TextRequest, opt
 /** Image analysis for `feature`. The image must already be prepared (see prepareVisionImage). */
 export async function analyzeImage(feature: AiFeature, request: ImageRequest, opts: CallOptions = {}): Promise<VisionResult> {
   const provider = getVisionProvider()
-  const timeoutMs = request.timeoutMs ?? getAiConfig().llm.timeoutMs
-  // Vision prices differ per model and are added with real vision (Phase 4.1).
-  return run(feature, provider, () => provider.analyzeImage({ ...request, timeoutMs }), request.signal, null, opts)
+  const { timeoutMs: defaultTimeout, price } = getAiConfig().vision
+  const timeoutMs = request.timeoutMs ?? defaultTimeout
+  return run(feature, provider, () => provider.analyzeImage({ ...request, timeoutMs }), request.signal, price, opts)
 }
 
 export { AiProviderError, isAiProviderError }

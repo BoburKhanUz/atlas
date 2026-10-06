@@ -12,6 +12,11 @@ abstract final class WardrobeMessages {
     RejectReason.unreadable => 'Rasmni o‘qib bo‘lmadi. Boshqa rasm tanlang.',
     RejectReason.orientation => 'Rasmni to‘g‘ri burib bo‘lmadi. Boshqa rasm tanlang.',
     RejectReason.keyMismatch => 'Yuklashni qaytadan boshlash kerak. Rasmni yana bir bor tanlang.',
+    RejectReason.notAGarment => 'Rasmda kiyim topilmadi. Kiyim, poyabzal, sumka yoki aksessuarni suratga oling.',
+    RejectReason.multipleGarments => 'Rasmda bir nechta kiyim bor. Har bir kiyimni alohida suratga oling.',
+    RejectReason.unclearPhoto => 'Rasm aniq emas. Kiyimni yorug‘ joyda, aniq qilib suratga oling.',
+    RejectReason.aiQuota =>
+      'Bugungi AI tahlil limiti tugadi (kuniga 50 ta). Limit Toshkent vaqti bilan yarim tunda yangilanadi.',
     RejectReason.accessDenied =>
       source == PhotoSource.camera
           ? 'Kameraga ruxsat berilmagan. Sozlamalardan ATLAS uchun kamerani yoqing.'

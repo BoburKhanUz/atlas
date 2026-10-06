@@ -23,7 +23,7 @@ export interface OpenAIOptions {
   baseUrl?: string
 }
 
-type ContentPart = { type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string; detail: 'auto' } }
+type ContentPart = { type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string; detail: 'low' | 'high' | 'auto' } }
 
 export class OpenAIProvider implements LLMProvider, VisionProvider {
   readonly name = 'openai'
@@ -59,7 +59,7 @@ export class OpenAIProvider implements LLMProvider, VisionProvider {
     assertVisionRequest(this.name, req)
     const content: ContentPart[] = [
       { type: 'text', text: req.instruction },
-      { type: 'image_url', image_url: { url: `data:${req.mimeType};base64,${toBase64(req.image)}`, detail: 'auto' } },
+      { type: 'image_url', image_url: { url: `data:${req.mimeType};base64,${toBase64(req.image)}`, detail: req.options?.openaiDetail ?? 'auto' } },
     ]
     const result = await this.call(
       [{ role: 'user', content }],

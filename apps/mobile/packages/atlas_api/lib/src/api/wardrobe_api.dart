@@ -30,7 +30,7 @@ class WardrobeApi {
   /// Parameters:
   /// * [file] - JPEG, PNG or WebP, ≤ 8 MB; shortest side ≥ 256 px, sides ≤ 8000 px. HEIC must be converted by the client.
   /// * [idempotencyKey] - Makes retries safe for 24 h: the same key and payload returns the original result (Idempotent-Replayed: true); a different payload → 409 IDEMPOTENCY_KEY_MISMATCH; still processing → 409 IDEMPOTENCY_IN_PROGRESS with Retry-After.
-  /// * [filename] - Optional name used as a detection hint (defaults to the file name)
+  /// * [filename] - Optional name; a hint for the development mock only, never sent to an AI provider (defaults to the file name)
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request

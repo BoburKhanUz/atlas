@@ -260,8 +260,17 @@ void main() {
     });
 
     test('error enum preserves every contract code and tolerates unknown ones', () {
-      expect(ErrorResponseCodeEnum.values.map((e) => e.name), containsAll(['SESSION_BUSY', 'IDEMPOTENCY_IN_PROGRESS']));
-      expect(ErrorResponseCodeEnum.values.length, 23); // 22 contract codes + unknown_default_open_api
+      expect(
+        ErrorResponseCodeEnum.values.map((e) => e.name),
+        containsAll([
+          'SESSION_BUSY',
+          'IDEMPOTENCY_IN_PROGRESS',
+          'NOT_A_GARMENT',
+          'AI_QUOTA_EXCEEDED',
+          'AI_UNAVAILABLE',
+        ]),
+      );
+      expect(ErrorResponseCodeEnum.values.length, 26); // 25 contract codes + unknown_default_open_api
     });
   });
 }

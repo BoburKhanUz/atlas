@@ -37,6 +37,9 @@ export const ERROR_CODES = [
   'SESSION_RACE',
   'CLIENT_MISMATCH',
   'SESSION_BUSY',
+  'NOT_A_GARMENT',
+  'AI_QUOTA_EXCEEDED',
+  'AI_UNAVAILABLE',
 ] as const
 
 export const ErrorResponse = z
@@ -116,8 +119,12 @@ export const WardrobeItem = z.strictObject({
 })
 
 export const Detection = z
-  .strictObject({ ...garmentAttributes, confidence: z.record(z.string(), z.number()), mock: z.literal(true) })
-  .describe('Attributes detected from the photo (mock vision for now)')
+  .strictObject({
+    ...garmentAttributes,
+    confidence: z.record(z.string(), z.number()),
+    mock: z.boolean().describe('true when the deterministic development mock produced the attributes; false for a real vision provider'),
+  })
+  .describe('Attributes detected from the photo')
 
 export const WardrobeUploadResponse = z.strictObject({ item: WardrobeItem, detection: Detection })
 export const WardrobeListResponse = z.strictObject({ items: z.array(WardrobeItem), nextCursor: nullableString })

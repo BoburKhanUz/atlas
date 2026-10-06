@@ -169,8 +169,11 @@ describe('VisionService and ColorService keep the deterministic results', () => 
   it('wardrobe analysis returns exactly the mock vision detection (mock: true) and is measured', async () => {
     const buffer = await sharp({ create: { width: 400, height: 500, channels: 3, background: '#f5f5f5' } }).jpeg().toBuffer()
     const input = { buffer, filename: 'oq-futbolka.jpg' }
-    expect(await analyzeGarment(input)).toEqual(await analyzeClothing(input))
-    expect((await analyzeGarment(input)).mock).toBe(true)
+    const at = new Date('2026-10-08T10:00:00Z')
+    const analysis = await analyzeGarment({ ...input, userId: 'u1' }, () => at)
+    expect(analysis.detection).toEqual(await analyzeClothing(input))
+    expect(analysis.detection.mock).toBe(true)
+    expect(analysis.metadata).toEqual({ provider: 'mock', model: 'mock-vision', version: 'mock', analyzedAt: at, rawConfidences: null })
     expect(aiLines()[0]).toMatchObject({ feature: 'clothing_analysis', provider: 'mock', model: 'mock-vision', outcome: 'ok' })
     expect(lines.join('\n')).not.toContain('futbolka')
   })
@@ -182,7 +185,7 @@ describe('VisionService and ColorService keep the deterministic results', () => 
   })
 
   it('analysis failures are recorded and rethrown unchanged', async () => {
-    await expect(analyzeGarment({ buffer: Buffer.from('not an image'), filename: 'x.jpg' })).rejects.toThrow()
+    await expect(analyzeGarment({ buffer: Buffer.from('not an image'), filename: 'x.jpg', userId: 'u1' })).rejects.toThrow()
     expect(aiLines()[0]).toMatchObject({ feature: 'clothing_analysis', outcome: 'error' })
   })
 })

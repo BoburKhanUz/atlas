@@ -32,7 +32,28 @@ import '../providers.dart';
 enum AddPhase { choose, preparing, preview, uploading, analysing, completed, needsCorrection, failed, rejected }
 
 /// Why a photo cannot be uploaded at all (a new photo is needed).
-enum RejectReason { tooSmall, tooLarge, unreadable, orientation, unsupported, dimensions, keyMismatch, accessDenied }
+enum RejectReason {
+  tooSmall,
+  tooLarge,
+  unreadable,
+  orientation,
+  unsupported,
+  dimensions,
+  keyMismatch,
+  accessDenied,
+
+  /// NOT_A_GARMENT with detail `subject`: no clothing item in the photo.
+  notAGarment,
+
+  /// NOT_A_GARMENT, subject `multiple_garments`.
+  multipleGarments,
+
+  /// NOT_A_GARMENT, subject `unclear`.
+  unclearPhoto,
+
+  /// AI_QUOTA_EXCEEDED: today's analysis limit is used up.
+  aiQuota,
+}
 
 @immutable
 class AddItemState {
@@ -255,6 +276,9 @@ class AddItemController extends Notifier<AddItemState> {
         ApiErrorCode.unsupportedImageFormat || ApiErrorCode.unsupportedMediaType => RejectReason.unsupported,
         ApiErrorCode.imageDimensions => RejectReason.dimensions,
         ApiErrorCode.invalidImage => RejectReason.unreadable,
+        ApiErrorCode.notAGarment => _notAGarmentReason(f),
+        ApiErrorCode.aiQuotaExceeded => RejectReason.aiQuota,
+        // AI_UNAVAILABLE stays a retryable failure (same job, same key).
         _ => null,
       };
       if (reject != null) return AddItemState(phase: AddPhase.rejected, reject: reject);
@@ -262,6 +286,16 @@ class AddItemController extends Notifier<AddItemState> {
     // Network, timeout, 5xx, busy, rate limit, still in progress: keep the
     // job; the user retries it (never automatically).
     return AddItemState(phase: AddPhase.failed, job: job, failure: f, recovered: recovered);
+  }
+
+  /// The server names what it saw in the `subject` detail.
+  static RejectReason _notAGarmentReason(ApiHttpFailure f) {
+    final subject = f.fieldErrors.where((e) => e.path == 'subject').firstOrNull?.message;
+    return switch (subject) {
+      'multiple_garments' => RejectReason.multipleGarments,
+      'unclear' => RejectReason.unclearPhoto,
+      _ => RejectReason.notAGarment,
+    };
   }
 
   /// completed or needsCorrection, from the server's item and the

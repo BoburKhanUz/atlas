@@ -22,7 +22,7 @@ part 'error_response.g.dart';
 abstract class ErrorResponse implements Built<ErrorResponse, ErrorResponseBuilder> {
   @BuiltValueField(wireName: r'code')
   ErrorResponseCodeEnum get code;
-  // enum codeEnum {  BAD_REQUEST,  VALIDATION_ERROR,  UNAUTHORIZED,  FORBIDDEN,  NOT_FOUND,  CONFLICT,  PAYLOAD_TOO_LARGE,  UNSUPPORTED_MEDIA_TYPE,  INVALID_IMAGE,  UNSUPPORTED_IMAGE_FORMAT,  IMAGE_DIMENSIONS,  IDEMPOTENCY_KEY_MISMATCH,  IDEMPOTENCY_IN_PROGRESS,  RATE_LIMITED,  INTERNAL,  INVALID_TOKEN,  SESSION_EXPIRED,  SESSION_REVOKED,  REFRESH_REUSED,  SESSION_RACE,  CLIENT_MISMATCH,  SESSION_BUSY,  };
+  // enum codeEnum {  BAD_REQUEST,  VALIDATION_ERROR,  UNAUTHORIZED,  FORBIDDEN,  NOT_FOUND,  CONFLICT,  PAYLOAD_TOO_LARGE,  UNSUPPORTED_MEDIA_TYPE,  INVALID_IMAGE,  UNSUPPORTED_IMAGE_FORMAT,  IMAGE_DIMENSIONS,  IDEMPOTENCY_KEY_MISMATCH,  IDEMPOTENCY_IN_PROGRESS,  RATE_LIMITED,  INTERNAL,  INVALID_TOKEN,  SESSION_EXPIRED,  SESSION_REVOKED,  REFRESH_REUSED,  SESSION_RACE,  CLIENT_MISMATCH,  SESSION_BUSY,  NOT_A_GARMENT,  AI_QUOTA_EXCEEDED,  AI_UNAVAILABLE,  };
 
   @BuiltValueField(wireName: r'details')
   BuiltList<ErrorResponseDetailsInner>? get details;
@@ -187,6 +187,12 @@ class ErrorResponseCodeEnum extends EnumClass {
   static const ErrorResponseCodeEnum CLIENT_MISMATCH = _$errorResponseCodeEnum_CLIENT_MISMATCH;
   @BuiltValueEnumConst(wireName: r'SESSION_BUSY')
   static const ErrorResponseCodeEnum SESSION_BUSY = _$errorResponseCodeEnum_SESSION_BUSY;
+  @BuiltValueEnumConst(wireName: r'NOT_A_GARMENT')
+  static const ErrorResponseCodeEnum NOT_A_GARMENT = _$errorResponseCodeEnum_NOT_A_GARMENT;
+  @BuiltValueEnumConst(wireName: r'AI_QUOTA_EXCEEDED')
+  static const ErrorResponseCodeEnum AI_QUOTA_EXCEEDED = _$errorResponseCodeEnum_AI_QUOTA_EXCEEDED;
+  @BuiltValueEnumConst(wireName: r'AI_UNAVAILABLE')
+  static const ErrorResponseCodeEnum AI_UNAVAILABLE = _$errorResponseCodeEnum_AI_UNAVAILABLE;
   @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
   static const ErrorResponseCodeEnum unknownDefaultOpenApi = _$errorResponseCodeEnum_unknownDefaultOpenApi;
 

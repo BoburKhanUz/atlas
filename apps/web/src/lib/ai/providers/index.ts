@@ -9,7 +9,7 @@ import { MockProvider } from './mock'
 import { OpenAIProvider } from './openai'
 import type { LLMProvider, VisionProvider } from './types'
 
-export type { LLMMessage, LLMProvider, LLMRequest, LLMResult, VisionProvider, VisionRequest, VisionResult } from './types'
+export type { LLMMessage, LLMProvider, LLMRequest, LLMResult, VisionOptions, VisionProvider, VisionRequest, VisionResult } from './types'
 
 let llm: LLMProvider | null = null
 let vision: VisionProvider | null = null
@@ -30,9 +30,19 @@ export function getLLMProvider(): LLMProvider {
   return llm
 }
 
+export function createVisionProvider(config: AiConfig['vision']): VisionProvider {
+  switch (config.provider) {
+    case 'gemini':
+      return new GeminiProvider({ apiKey: config.apiKey ?? '', model: config.model })
+    case 'openai':
+      return new OpenAIProvider({ apiKey: config.apiKey ?? '', model: config.model })
+    case 'mock':
+      return new MockProvider()
+  }
+}
+
 export function getVisionProvider(): VisionProvider {
-  // Only the mock exists until Phase 4.1 (config refuses anything else).
-  vision ??= new MockProvider()
+  vision ??= createVisionProvider(getAiConfig().vision)
   return vision
 }
 

@@ -79,6 +79,12 @@ class _Choose extends StatelessWidget {
             'Joylashuv va boshqa yashirin ma’lumotlar rasmdan olib tashlanadi.',
             style: text.bodySmall?.copyWith(color: AtlasColors.textSecondary),
           ),
+          const SizedBox(height: AtlasSpacing.xxs),
+          Text(
+            'Rasm tahlil uchun tashqi AI xizmatiga yuborilishi mumkin.',
+            key: const Key('add.aiDisclosure'),
+            style: text.bodySmall?.copyWith(color: AtlasColors.textSecondary),
+          ),
         ],
       ),
     );

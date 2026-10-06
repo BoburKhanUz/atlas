@@ -53,6 +53,10 @@ abstract final class UserMessages {
       ApiErrorCode.clientMismatch => 'Sessiya tugadi. Iltimos, qayta kiring.',
       ApiErrorCode.sessionRace => 'Sessiya yangilanmoqda. Bir lahzadan so‘ng qayta urinib ko‘ring.',
       ApiErrorCode.sessionBusy => 'Server band. Bir necha soniyadan so‘ng qayta urinib ko‘ring.',
+      ApiErrorCode.notAGarment => 'Rasmda bitta kiyim aniq ko‘rinmadi. Bitta kiyimni yorug‘ joyda suratga oling.',
+      ApiErrorCode.aiQuotaExceeded =>
+        'Bugungi AI tahlil limiti tugadi. Limit Toshkent vaqti bilan yarim tunda yangilanadi.',
+      ApiErrorCode.aiUnavailable => 'AI tahlil xizmati hozir ishlamayapti. Birozdan so‘ng qayta urinib ko‘ring.',
       ApiErrorCode.unknown => null,
     };
     if (specific != null) return specific;

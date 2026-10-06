@@ -5,8 +5,9 @@
  * concurrent requests can never exceed the limit.
  *
  * The day is the calendar day in Uzbekistan (UTC+5, no daylight saving).
- * NOT yet enforced by any route: enforcing it adds HTTP 429 responses to the
- * public API, which is a separate, approved change.
+ * Enforced for clothing analysis with a real provider (Phase 4.1,
+ * src/lib/ai/vision-service.ts → 429 AI_QUOTA_EXCEEDED). Stylist chat and
+ * colour analysis are not enforced yet.
  */
 import crypto from 'crypto'
 import { db } from '@/lib/db'
@@ -24,6 +25,13 @@ const UZBEKISTAN_OFFSET_MS = 5 * 60 * 60 * 1000
 /** The quota day (YYYY-MM-DD) for `now`, in Uzbekistan time. */
 export function quotaDay(now: Date = new Date()): string {
   return new Date(now.getTime() + UZBEKISTAN_OFFSET_MS).toISOString().slice(0, 10)
+}
+
+/** Seconds until the next quota day starts (midnight in Uzbekistan), at least 1. */
+export function secondsUntilNextQuotaDay(now: Date = new Date()): number {
+  const local = now.getTime() + UZBEKISTAN_OFFSET_MS
+  const nextLocalMidnight = Math.floor(local / 86_400_000) * 86_400_000 + 86_400_000
+  return Math.max(1, Math.ceil((nextLocalMidnight - local) / 1000))
 }
 
 export interface QuotaDecision {

@@ -45,19 +45,20 @@ void main() {
     expect(jsonEncode(_withoutAddedFormats(prepared)), jsonEncode(original));
   });
 
-  test('relaxes exactly the two boolean consts (Detection.mock, OkResponse.ok); string consts stay', () {
-    final spec = _load();
-    expect(relaxNonStringConst(spec), [
-      '/components/schemas/Detection/properties/mock',
-      '/components/schemas/OkResponse/properties/ok',
-    ]);
-    final schemas = ((spec! as Map)['components'] as Map)['schemas'] as Map;
-    expect(((schemas['Detection'] as Map)['properties'] as Map)['mock'], {'type': 'boolean'});
-    final status =
-        ((((schemas['ColorProfileResponse'] as Map)['oneOf'] as List)[0] as Map)['properties'] as Map)['status'];
-    expect(status, containsPair('const', 'not_analyzed'));
-    expect(relaxNonStringConst(spec), isEmpty); // idempotent
-  });
+  test(
+    'relaxes exactly the one boolean const (OkResponse.ok; Detection.mock is a plain boolean now); string consts stay',
+    () {
+      final spec = _load();
+      expect(relaxNonStringConst(spec), ['/components/schemas/OkResponse/properties/ok']);
+      final schemas = ((spec! as Map)['components'] as Map)['schemas'] as Map;
+      expect(((schemas['Detection'] as Map)['properties'] as Map)['mock'], containsPair('type', 'boolean'));
+      expect(((schemas['Detection'] as Map)['properties'] as Map)['mock'], isNot(contains('const')));
+      final status =
+          ((((schemas['ColorProfileResponse'] as Map)['oneOf'] as List)[0] as Map)['properties'] as Map)['status'];
+      expect(status, containsPair('const', 'not_analyzed'));
+      expect(relaxNonStringConst(spec), isEmpty); // idempotent
+    },
+  );
 
   test('is idempotent (a second run adds nothing)', () {
     final spec = _load();

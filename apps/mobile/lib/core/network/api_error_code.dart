@@ -23,6 +23,9 @@ enum ApiErrorCode {
   sessionRace('SESSION_RACE', ApiErrorKind.sessionRace),
   clientMismatch('CLIENT_MISMATCH', ApiErrorKind.sessionTerminal),
   sessionBusy('SESSION_BUSY', ApiErrorKind.sessionBusy),
+  notAGarment('NOT_A_GARMENT', ApiErrorKind.invalidImage),
+  aiQuotaExceeded('AI_QUOTA_EXCEEDED', ApiErrorKind.rateLimited),
+  aiUnavailable('AI_UNAVAILABLE', ApiErrorKind.server),
   unknown('', ApiErrorKind.unknown);
 
   const ApiErrorCode(this.wire, this.kind);

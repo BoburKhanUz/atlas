@@ -52,6 +52,9 @@ const DEFAULT_MESSAGES: Record<ErrorCode, string> = {
   SESSION_RACE: 'Sessiya boshqa so‘rov tomonidan yangilandi. Qayta urinib ko‘ring.',
   CLIENT_MISMATCH: 'Bu sessiya boshqa ilova turi uchun. Qayta kiring.',
   SESSION_BUSY: 'Server band. Birozdan so‘ng qayta urinib ko‘ring.',
+  NOT_A_GARMENT: 'Rasmda bitta kiyim aniq ko‘rinmadi. Bitta kiyimni yorug‘ joyda suratga oling.',
+  AI_QUOTA_EXCEEDED: 'Bugungi AI tahlil limiti tugadi. Limit Toshkent vaqti bilan yarim tunda yangilanadi.',
+  AI_UNAVAILABLE: 'AI tahlil xizmati hozir ishlamayapti. Birozdan so‘ng qayta urinib ko‘ring.',
 }
 
 const STATUS: Record<ErrorCode, number> = {
@@ -77,6 +80,9 @@ const STATUS: Record<ErrorCode, number> = {
   SESSION_RACE: 401,
   CLIENT_MISMATCH: 401,
   SESSION_BUSY: 503,
+  NOT_A_GARMENT: 422,
+  AI_QUOTA_EXCEEDED: 429,
+  AI_UNAVAILABLE: 503,
 }
 
 /** HTTP status for an error code (used by the OpenAPI document). */

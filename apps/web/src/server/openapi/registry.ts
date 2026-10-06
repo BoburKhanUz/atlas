@@ -123,11 +123,11 @@ export const OPERATIONS: Operation[] = [
     multipart: {
       fields: {
         file: { description: 'JPEG, PNG or WebP, ≤ 8 MB; shortest side ≥ 256 px, sides ≤ 8000 px. HEIC must be converted by the client.', binary: true, required: true },
-        filename: { description: 'Optional name used as a detection hint (defaults to the file name)' },
+        filename: { description: 'Optional name; a hint for the development mock only, never sent to an AI provider (defaults to the file name)' },
       },
     },
     success: [{ status: 201, description: 'Created (or replayed for a repeated Idempotency-Key)', schema: Res.WardrobeUploadResponse, headers: { 'Idempotent-Replayed': '"true" when this is the original response of an earlier request with the same Idempotency-Key' } }],
-    errors: ['BAD_REQUEST', 'UNSUPPORTED_IMAGE_FORMAT', 'IMAGE_DIMENSIONS', 'INVALID_IMAGE', 'PAYLOAD_TOO_LARGE', 'UNSUPPORTED_MEDIA_TYPE', 'IDEMPOTENCY_KEY_MISMATCH', 'IDEMPOTENCY_IN_PROGRESS', 'NOT_FOUND'],
+    errors: ['BAD_REQUEST', 'UNSUPPORTED_IMAGE_FORMAT', 'IMAGE_DIMENSIONS', 'INVALID_IMAGE', 'NOT_A_GARMENT', 'PAYLOAD_TOO_LARGE', 'UNSUPPORTED_MEDIA_TYPE', 'IDEMPOTENCY_KEY_MISMATCH', 'IDEMPOTENCY_IN_PROGRESS', 'NOT_FOUND', 'AI_QUOTA_EXCEEDED', 'AI_UNAVAILABLE'],
   },
   {
     method: 'GET', path: '/api/v1/wardrobe/items', route: 'api/v1/wardrobe/items', operationId: 'listWardrobeItems', tags: ['wardrobe'],

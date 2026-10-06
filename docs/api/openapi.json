@@ -445,7 +445,7 @@
       },
       "Detection": {
         "additionalProperties": false,
-        "description": "Attributes detected from the photo (mock vision for now)",
+        "description": "Attributes detected from the photo",
         "properties": {
           "category": {
             "type": "string"
@@ -506,7 +506,7 @@
             ]
           },
           "mock": {
-            "const": true,
+            "description": "true when the deterministic development mock produced the attributes; false for a real vision provider",
             "type": "boolean"
           },
           "pattern": {
@@ -600,7 +600,10 @@
               "REFRESH_REUSED",
               "SESSION_RACE",
               "CLIENT_MISMATCH",
-              "SESSION_BUSY"
+              "SESSION_BUSY",
+              "NOT_A_GARMENT",
+              "AI_QUOTA_EXCEEDED",
+              "AI_UNAVAILABLE"
             ],
             "type": "string"
           },
@@ -5717,7 +5720,7 @@
                     "type": "string"
                   },
                   "filename": {
-                    "description": "Optional name used as a detection hint (defaults to the file name)",
+                    "description": "Optional name; a hint for the development mock only, never sent to an AI provider (defaults to the file name)",
                     "type": "string"
                   }
                 },
@@ -5860,10 +5863,32 @@
                 }
               }
             },
-            "description": "Error. code: IMAGE_DIMENSIONS | INVALID_IMAGE",
+            "description": "Error. code: IMAGE_DIMENSIONS | INVALID_IMAGE | NOT_A_GARMENT",
             "x-error-codes": [
               "IMAGE_DIMENSIONS",
-              "INVALID_IMAGE"
+              "INVALID_IMAGE",
+              "NOT_A_GARMENT"
+            ]
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: AI_QUOTA_EXCEEDED",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying (retryable codes)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "x-error-codes": [
+              "AI_QUOTA_EXCEEDED"
             ]
           },
           "500": {
@@ -5877,6 +5902,27 @@
             "description": "Error. code: INTERNAL",
             "x-error-codes": [
               "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: AI_UNAVAILABLE",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying (retryable codes)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "x-error-codes": [
+              "AI_UNAVAILABLE"
             ]
           }
         },

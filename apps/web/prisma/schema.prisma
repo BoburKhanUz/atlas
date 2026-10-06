@@ -155,6 +155,15 @@ model WardrobeItem {
   wasCorrected Boolean  @default(false)
   correctionLog String  @default("[]") // JSON array of {field, from, to, at}
 
+  // Who analysed the photo (Phase 4.1). Rows from before Phase 4.1 are
+  // backfilled as the mock. `confidences` holds what clients see (capped
+  // until calibration); the model's own values stay in analysisRawConfidences.
+  analysisProvider       String?   // mock | gemini | openai
+  analysisModel          String?
+  analysisVersion        String?   // prompt + schema version (garment-analysis.ts)
+  analyzedAt             DateTime?
+  analysisRawConfidences String?   // JSON object; null for the mock
+
   // Images
   images       WardrobeImage[]
 

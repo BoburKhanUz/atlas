@@ -1,4 +1,4 @@
-# AI provider architecture (Phase 4.0)
+# AI provider architecture (Phase 4.0, vision in 4.1)
 
 ATLAS calls AI only from the backend. The mobile app and the web client call the ATLAS API; provider credentials exist only in the server's environment.
 
@@ -9,7 +9,9 @@ Flutter / web ─▶ ATLAS API (route handlers)
         AI application layer            apps/web/src/lib/ai/
         ├─ stylist.ts                   stylist chat (prompt + context, unchanged)
         ├─ outfit-intelligence.ts       explanation of the top outfit
-        ├─ vision-service.ts            clothing analysis (mock until 4.1)
+        ├─ vision-service.ts            clothing analysis (real provider or mock; 4.1)
+        │   ├─ garment-analysis.ts      versioned prompt, strict schema, validation
+        │   └─ color-check.ts           pixel cross-check of the primary colour
         └─ color-service.ts             selfie colours (deterministic, in-process)
                     │
                     ▼
@@ -27,9 +29,9 @@ The application layer never imports an adapter. It calls `generateText` or `anal
 ## Contracts (`providers/types.ts`)
 
 - `LLMProvider.generate({ messages, temperature?, maxOutputTokens?, jsonSchema?, timeoutMs, signal? })` returns `{ text, metadata }`.
-- `VisionProvider.analyzeImage({ image, mimeType, maxSide, instruction, jsonSchema?, maxOutputTokens?, timeoutMs, signal? })` returns `{ output, metadata }`.
+- `VisionProvider.analyzeImage({ image, mimeType, maxSide, instruction, jsonSchema?, maxOutputTokens?, options?, timeoutMs, signal? })` returns `{ output, metadata }`. `options` carries provider-specific image settings (Gemini `mediaResolution` and thinking level, OpenAI `detail`); each adapter reads only its own.
   - `output` is untrusted parsed JSON; the application layer validates it.
-  - The image must be prepared first with `prepareVisionImage(bytes, maxSide)`, which decodes, rotates upright, strips EXIF and GPS, re-encodes as JPEG and fits the image inside `maxSide` (≤ 2048).
+  - The image must be prepared first with `prepareVisionImage(bytes, maxSide)`, which decodes, rotates upright, strips EXIF and GPS, flattens transparency onto white, re-encodes as JPEG, fits the image inside `maxSide` (≤ 2048, never enlarged) and refuses a result over 4 MB.
   - Adapters refuse an image that is empty, over 4 MB, of another type, or has an out-of-range `maxSide`.
 - `metadata` is `{ provider, model, usage: { inputTokens?, outputTokens?, totalTokens? } }`.
 - Errors are `AiProviderError` with a `kind`. Messages carry the provider name, kind and HTTP status only, never a response body, prompt or key.
@@ -58,8 +60,8 @@ There is at most **one** retry, with a 400–800 ms jittered wait, or the Retry-
 | Auth | `x-goog-api-key` header (never in the URL) | `Authorization: Bearer` |
 | System messages | `systemInstruction` (joined) | `system` messages |
 | JSON output | `responseMimeType` + `responseJsonSchema` | `response_format` `json_schema`, `strict: true` |
-| Images | `inlineData` (base64) | `image_url` data URL |
-| Notes | `thought` parts are dropped | `store: false`; temperature omitted for fixed-temperature families (gpt-5, gpt-6, o-series) |
+| Images | text first, then `inlineData` (base64); `mediaResolution` | `image_url` data URL with `detail` |
+| Notes | `thought` parts are dropped; `thinkingConfig.thinkingLevel` for vision; `thoughtsTokenCount` counts as output usage | `store: false`; temperature omitted for fixed-temperature families (gpt-5, gpt-6, o-series) |
 
 Both adapters use the platform `fetch`, with no SDK dependency. Neither is the selected provider: the model id is always configured explicitly, and the choice is made by the bake-off in [`provider-evaluation.md`](provider-evaluation.md).
 
@@ -74,11 +76,18 @@ Configuration is read and validated at startup by `assertServerConfig`. All vari
 | `GEMINI_API_KEY` / `OPENAI_API_KEY` | Required for the selected provider |
 | `AI_LLM_TIMEOUT_MS` | 1000–55000 ms, default 25000. The outfit explanation uses 15000. |
 | `AI_LLM_PRICE_INPUT_USD_PER_MTOK`, `AI_LLM_PRICE_OUTPUT_USD_PER_MTOK` | Optional; set both or neither. Enables `costUsd` in telemetry. |
-| `AI_VISION_PROVIDER` | `mock` only, until Phase 4.1 |
-| `AI_ALLOW_MOCK_IN_PRODUCTION` | `1` acknowledges mock AI in a production build |
+| `AI_VISION_PROVIDER` | `mock`, `gemini` or `openai`. Development defaults to `mock`. Production must set it. |
+| `AI_VISION_MODEL` | Required for `gemini` and `openai` (the key is the same `GEMINI_API_KEY` / `OPENAI_API_KEY`) |
+| `AI_VISION_TIMEOUT_MS` | 1000–55000 ms, default 15000 (two attempts fit the 60 s route and the app's 70 s upload timeout) |
+| `AI_VISION_MAX_SIDE` | 256–2048 px, default 1024 |
+| `AI_VISION_RESOLUTION` | Gemini `mediaResolution`: `low`, `medium`, `high` (default), `ultra_high` |
+| `AI_VISION_GEMINI_THINKING_LEVEL` | `none`, `minimal`, `low` (default), `medium`, `high`; `none` sends no thinking config |
+| `AI_VISION_DETAIL` | OpenAI image `detail`: `low`, `high` (default), `auto` |
+| `AI_VISION_PRICE_INPUT_USD_PER_MTOK`, `AI_VISION_PRICE_OUTPUT_USD_PER_MTOK` | Optional, as for the LLM |
+| `AI_ALLOW_MOCK_IN_PRODUCTION` | `1` acknowledges mock AI (either role) in a production build |
 | `LLM_PROVIDER` | Removed. Setting it fails at startup instead of being silently ignored. |
 
-**Production fails closed.** It refuses a missing provider, the mock, or a real provider without its key or model. Clothing analysis is still the mock until Phase 4.1, so a production build can only start today with `AI_ALLOW_MOCK_IN_PRODUCTION=1`. Local Docker and the e2e suite use that flag. A real deployment must not use it once real vision exists.
+**Production fails closed.** For each role (LLM and vision) it refuses a missing provider, the mock, or a real provider without its key or model. With real providers for both roles, a production build starts without any flag. `AI_ALLOW_MOCK_IN_PRODUCTION=1` is only for local Docker and the e2e suite, which run production builds with the mock; a real deployment must not set it.
 
 ## Telemetry
 
@@ -101,13 +110,13 @@ The line never contains prompts, user messages, wardrobe data, images, provider 
 - `consumeAiQuota` increments with a single `INSERT … ON CONFLICT … WHERE count < limit`, so concurrent requests cannot exceed the limit. `refundAiQuota` gives one call back.
 - The rows cascade with the account.
 - Rollback: `docs/database/rollback/down-ai-usage.sql`.
-- **Not enforced by any route yet.** Enforcing adds HTTP 429 responses to the public API and needs its own approval.
+- **`clothing_analysis` is enforced since Phase 4.1** for real vision providers only (the mock never consumes quota): `POST /api/v1/wardrobe/items` answers 429 `AI_QUOTA_EXCEEDED` with `Retry-After` = seconds until the next Uzbekistan day. See [`vision-evaluation.md`](vision-evaluation.md) for when a call is charged or refunded. `stylist_chat` and `color_analysis` are not enforced yet.
 
 ## Behaviour kept from before Phase 4.0
 
 - The stylist prompt and context are unchanged. Temperature is 0.7, with at most 600 output tokens.
 - On provider failure the stylist still answers HTTP 200 with the fixed apology. The stored message is now marked `fallback: true`, with provider `none`; it was hard-coded to `zai`. Not presenting this as an AI answer is Phase 4.2 work.
 - The outfit explanation covers the top candidate only: temperature 0.5, at most 180 tokens. A failure gives `explanation: null`. Previously, a bad `LLM_PROVIDER` turned the whole request into a 500.
-- Clothing and colour analysis results are byte-for-byte the previous deterministic ones; `detection.mock` is still `true`.
+- Colour analysis is unchanged. With `AI_VISION_PROVIDER=mock`, clothing analysis is byte-for-byte the previous deterministic result and `detection.mock` is `true`.
 - The mock text says it is a demo ("Demo rejim: …").
-- The OpenAPI contract and the generated mobile client are unchanged.
+- Phase 4.0 left the OpenAPI contract unchanged. Phase 4.1 changed it: `Detection.mock` is a boolean (false for a real provider) and `createWardrobeItem` can answer `NOT_A_GARMENT` 422, `AI_QUOTA_EXCEEDED` 429 and `AI_UNAVAILABLE` 503.

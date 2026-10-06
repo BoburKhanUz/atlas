@@ -57,6 +57,16 @@ export interface LLMProvider {
 
 export type VisionImageMimeType = 'image/jpeg' | 'image/png' | 'image/webp'
 
+/** Provider-specific image settings; each adapter reads only its own. */
+export interface VisionOptions {
+  /** Gemini `mediaResolution` (tokens per image: low 280, medium 560, high 1120, ultra_high 2240). */
+  geminiMediaResolution?: 'low' | 'medium' | 'high' | 'ultra_high'
+  /** Gemini `thinkingConfig.thinkingLevel`; 'none' sends no thinking config. */
+  geminiThinkingLevel?: 'none' | 'minimal' | 'low' | 'medium' | 'high'
+  /** OpenAI image `detail`. */
+  openaiDetail?: 'low' | 'high' | 'auto'
+}
+
 export interface VisionRequest {
   /** Already prepared image bytes (rotated, metadata removed, ≤ maxSide). */
   image: Uint8Array
@@ -67,6 +77,7 @@ export interface VisionRequest {
   instruction: string
   jsonSchema?: StructuredOutputSchema
   maxOutputTokens?: number
+  options?: VisionOptions
   timeoutMs: number
   signal?: AbortSignal
 }

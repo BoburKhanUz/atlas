@@ -94,13 +94,35 @@ describe('Gemini REST adapter', () => {
     expect(calls[0].url).toContain('/models/a%2Fb:generateContent')
   })
 
-  it('vision: inline base64 image + instruction, JSON output parsed', async () => {
+  it('vision: instruction BEFORE the image, schema-constrained JSON parsed', async () => {
     const { p, calls } = make([geminiOk('{"category":"shirt"}')])
     const r = await p.analyzeImage(vision())
     expect(r.output).toEqual({ category: 'shirt' })
     expect(calls[0].body.contents).toEqual([
-      { role: 'user', parts: [{ inlineData: { mimeType: 'image/jpeg', data: 'AQID' } }, { text: 'Describe' }] },
+      { role: 'user', parts: [{ text: 'Describe' }, { inlineData: { mimeType: 'image/jpeg', data: 'AQID' } }] },
     ])
+    expect(calls[0].body.generationConfig).toEqual({ temperature: 0, responseMimeType: 'application/json', responseJsonSchema: { type: 'object' } })
+  })
+
+  it('vision: media resolution and thinking level from the options; "none" sends no thinking config', async () => {
+    const { p, calls } = make([geminiOk('{}'), geminiOk('{}')])
+    await p.analyzeImage(vision({ maxOutputTokens: 1024, options: { geminiMediaResolution: 'medium', geminiThinkingLevel: 'low', openaiDetail: 'low' } }))
+    expect(calls[0].body.generationConfig).toMatchObject({
+      maxOutputTokens: 1024,
+      mediaResolution: 'MEDIA_RESOLUTION_MEDIUM',
+      thinkingConfig: { thinkingLevel: 'low' },
+    })
+    await p.analyzeImage(vision({ options: { geminiMediaResolution: 'ultra_high', geminiThinkingLevel: 'none' } }))
+    expect(calls[1].body.generationConfig).toMatchObject({ mediaResolution: 'MEDIA_RESOLUTION_ULTRA_HIGH' })
+    expect(calls[1].body.generationConfig).not.toHaveProperty('thinkingConfig')
+  })
+
+  it('usage counts thinking tokens as output tokens', async () => {
+    const reply = geminiOk('{}', { usageMetadata: { promptTokenCount: 1400, candidatesTokenCount: 200, thoughtsTokenCount: 300, totalTokenCount: 1900 } })
+    const r = await make([reply]).p.analyzeImage(vision())
+    expect(r.metadata.usage).toEqual({ inputTokens: 1400, outputTokens: 500, totalTokens: 1900 })
+    const noThoughts = await make([geminiOk('{}')]).p.analyzeImage(vision())
+    expect(noThoughts.metadata.usage.outputTokens).toBe(30)
   })
 
   it('no API key → config error at construction', () => {
@@ -155,6 +177,17 @@ describe('OpenAI REST adapter', () => {
       { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,AQID', detail: 'auto' } },
     ])
     expect(calls[0].body).toMatchObject({ temperature: 0 })
+  })
+
+  it('vision: configured image detail, strict schema, store:false', async () => {
+    const schema = { type: 'object', additionalProperties: false, required: ['a'], properties: { a: { type: 'string' } } }
+    const { p, calls } = make([openaiOk('{"a":"x"}')], 'gpt-6-luna')
+    await p.analyzeImage(vision({ jsonSchema: { name: 'garment_analysis', schema }, maxOutputTokens: 1024, options: { openaiDetail: 'high', geminiMediaResolution: 'low' } }))
+    const body = calls[0].body as Record<string, unknown> & { messages: Array<{ content: Array<{ image_url?: { detail: string } }> }> }
+    expect(body.messages[0].content[1].image_url?.detail).toBe('high')
+    expect(body).toMatchObject({ store: false, max_completion_tokens: 1024, response_format: { type: 'json_schema', json_schema: { name: 'garment_analysis', schema, strict: true } } })
+    expect(body).not.toHaveProperty('temperature') // gpt-6 family
+    expect(JSON.stringify(body)).not.toContain('mediaResolution')
   })
 
   it('a conversation with only system messages is refused before any request', async () => {

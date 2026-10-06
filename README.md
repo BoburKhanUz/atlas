@@ -26,8 +26,8 @@ openssl rand -base64 48
 # ...and the session encryption key (exactly 32 bytes) as SESSION_ENC_KEY:
 openssl rand -base64 32
 # Also set POSTGRES_PASSWORD.
-# AI: for local use without a paid provider set AI_LLM_PROVIDER=mock and
-# AI_ALLOW_MOCK_IN_PRODUCTION=1 (the container runs a production build, which
+# AI: for local use without a paid provider set AI_LLM_PROVIDER=mock,
+# AI_VISION_PROVIDER=mock and AI_ALLOW_MOCK_IN_PRODUCTION=1 (the container runs a production build, which
 # otherwise refuses mock AI). See docs/ai/provider-architecture.md.
 docker compose up --build
 ```
@@ -93,8 +93,13 @@ See `.env.example`. The server exits at startup if the required secrets are miss
 | `AI_LLM_MODEL` | Model id for `gemini`/`openai` (required; there is no built-in choice) |
 | `GEMINI_API_KEY`, `OPENAI_API_KEY` | Server-side key of the selected provider. Never in the mobile app or in git |
 | `AI_LLM_TIMEOUT_MS` | Per-attempt AI timeout, 1000–55000 ms (default 25000) |
-| `AI_VISION_PROVIDER` | `mock` only, until real clothing analysis (Phase 4.1) |
-| `AI_ALLOW_MOCK_IN_PRODUCTION` | `1` acknowledges mock AI in a production build (local Docker, e2e; required until Phase 4.1 because vision is still the mock) |
+| `AI_VISION_PROVIDER` | Clothing analysis: `mock` (development default), `gemini` or `openai`. Production must set it. See `docs/ai/vision-evaluation.md` |
+| `AI_VISION_MODEL` | Model id for a real vision provider (required; no built-in choice) |
+| `AI_VISION_TIMEOUT_MS` | Per-attempt vision timeout, 1000–55000 ms (default 15000) |
+| `AI_VISION_MAX_SIDE` | Longest side sent to the provider, 256–2048 px (default 1024) |
+| `AI_VISION_RESOLUTION`, `AI_VISION_GEMINI_THINKING_LEVEL` | Gemini `mediaResolution` (default `high`) and thinking level (default `low`; `none` sends none) |
+| `AI_VISION_DETAIL` | OpenAI image detail `low`/`high`/`auto` (default `high`) |
+| `AI_ALLOW_MOCK_IN_PRODUCTION` | `1` acknowledges mock AI in a production build (local Docker, e2e). Not needed, and not to be set, when both roles use real providers |
 | `TRUST_PROXY` | `1` only behind a proxy that overwrites `X-Forwarded-For`; enables per-IP rate limits |
 | `PRISMA_LOG_QUERIES` | `1` logs SQL (may contain user data; debugging only) |
 

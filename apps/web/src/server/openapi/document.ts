@@ -161,7 +161,7 @@ function responses(op: Operation): Record<string, Json> {
     byStatus.set(status, [...(byStatus.get(status) ?? []), code])
   }
   for (const [status, codes] of [...byStatus.entries()].sort(([a], [b]) => a - b)) {
-    const retry = codes.some((c) => c === 'SESSION_BUSY' || c === 'IDEMPOTENCY_IN_PROGRESS' || c === 'RATE_LIMITED')
+    const retry = codes.some((c) => c === 'SESSION_BUSY' || c === 'IDEMPOTENCY_IN_PROGRESS' || c === 'RATE_LIMITED' || c === 'AI_QUOTA_EXCEEDED' || c === 'AI_UNAVAILABLE')
     out[String(status)] = {
       description: `Error. code: ${codes.join(' | ')}`,
       'x-error-codes': codes,

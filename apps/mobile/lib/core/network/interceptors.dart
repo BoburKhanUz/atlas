@@ -40,7 +40,9 @@ class AtlasAiTimeoutInterceptor extends Interceptor {
   AtlasAiTimeoutInterceptor(this.timeout);
   final Duration timeout;
 
-  static const aiOperations = {'/api/v1/stylist/chat', '/api/v1/outfits/generate'};
+  /// Wardrobe upload: real clothing analysis runs inside the request (the
+  /// server allows up to ~45 s with one provider retry).
+  static const aiOperations = {'/api/v1/stylist/chat', '/api/v1/outfits/generate', '/api/v1/wardrobe/items'};
 
   static bool isAiOperation(RequestOptions o) => o.method.toUpperCase() == 'POST' && aiOperations.contains(o.uri.path);
 

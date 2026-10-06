@@ -42,6 +42,8 @@ const baseEnv = {
   // Production build with mock AI: no paid provider in tests. The flag is the
   // explicit acknowledgement the production config requires (src/lib/ai/config.ts).
   AI_LLM_PROVIDER: 'mock',
+  // Deterministic mock vision: the e2e flows rely on its file-name hints.
+  AI_VISION_PROVIDER: 'mock',
   AI_ALLOW_MOCK_IN_PRODUCTION: '1',
   NODE_ENV: 'production',
   COOKIE_SECURE: '0', // plain http

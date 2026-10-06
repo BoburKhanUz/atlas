@@ -42,6 +42,11 @@ const ErrorResponseCodeEnum _$errorResponseCodeEnum_REFRESH_REUSED = const Error
 const ErrorResponseCodeEnum _$errorResponseCodeEnum_SESSION_RACE = const ErrorResponseCodeEnum._('SESSION_RACE');
 const ErrorResponseCodeEnum _$errorResponseCodeEnum_CLIENT_MISMATCH = const ErrorResponseCodeEnum._('CLIENT_MISMATCH');
 const ErrorResponseCodeEnum _$errorResponseCodeEnum_SESSION_BUSY = const ErrorResponseCodeEnum._('SESSION_BUSY');
+const ErrorResponseCodeEnum _$errorResponseCodeEnum_NOT_A_GARMENT = const ErrorResponseCodeEnum._('NOT_A_GARMENT');
+const ErrorResponseCodeEnum _$errorResponseCodeEnum_AI_QUOTA_EXCEEDED = const ErrorResponseCodeEnum._(
+  'AI_QUOTA_EXCEEDED',
+);
+const ErrorResponseCodeEnum _$errorResponseCodeEnum_AI_UNAVAILABLE = const ErrorResponseCodeEnum._('AI_UNAVAILABLE');
 const ErrorResponseCodeEnum _$errorResponseCodeEnum_unknownDefaultOpenApi = const ErrorResponseCodeEnum._(
   'unknownDefaultOpenApi',
 );
@@ -92,6 +97,12 @@ ErrorResponseCodeEnum _$errorResponseCodeEnumValueOf(String name) {
       return _$errorResponseCodeEnum_CLIENT_MISMATCH;
     case 'SESSION_BUSY':
       return _$errorResponseCodeEnum_SESSION_BUSY;
+    case 'NOT_A_GARMENT':
+      return _$errorResponseCodeEnum_NOT_A_GARMENT;
+    case 'AI_QUOTA_EXCEEDED':
+      return _$errorResponseCodeEnum_AI_QUOTA_EXCEEDED;
+    case 'AI_UNAVAILABLE':
+      return _$errorResponseCodeEnum_AI_UNAVAILABLE;
     case 'unknownDefaultOpenApi':
       return _$errorResponseCodeEnum_unknownDefaultOpenApi;
     default:
@@ -123,6 +134,9 @@ final BuiltSet<ErrorResponseCodeEnum> _$errorResponseCodeEnumValues = BuiltSet<E
     _$errorResponseCodeEnum_SESSION_RACE,
     _$errorResponseCodeEnum_CLIENT_MISMATCH,
     _$errorResponseCodeEnum_SESSION_BUSY,
+    _$errorResponseCodeEnum_NOT_A_GARMENT,
+    _$errorResponseCodeEnum_AI_QUOTA_EXCEEDED,
+    _$errorResponseCodeEnum_AI_UNAVAILABLE,
     _$errorResponseCodeEnum_unknownDefaultOpenApi,
   ],
 );
@@ -153,6 +167,9 @@ class _$ErrorResponseCodeEnumSerializer implements PrimitiveSerializer<ErrorResp
     'SESSION_RACE': 'SESSION_RACE',
     'CLIENT_MISMATCH': 'CLIENT_MISMATCH',
     'SESSION_BUSY': 'SESSION_BUSY',
+    'NOT_A_GARMENT': 'NOT_A_GARMENT',
+    'AI_QUOTA_EXCEEDED': 'AI_QUOTA_EXCEEDED',
+    'AI_UNAVAILABLE': 'AI_UNAVAILABLE',
     'unknownDefaultOpenApi': 'unknown_default_open_api',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
@@ -178,6 +195,9 @@ class _$ErrorResponseCodeEnumSerializer implements PrimitiveSerializer<ErrorResp
     'SESSION_RACE': 'SESSION_RACE',
     'CLIENT_MISMATCH': 'CLIENT_MISMATCH',
     'SESSION_BUSY': 'SESSION_BUSY',
+    'NOT_A_GARMENT': 'NOT_A_GARMENT',
+    'AI_QUOTA_EXCEEDED': 'AI_QUOTA_EXCEEDED',
+    'AI_UNAVAILABLE': 'AI_UNAVAILABLE',
     'unknown_default_open_api': 'unknownDefaultOpenApi',
   };
 

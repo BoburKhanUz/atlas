@@ -98,6 +98,8 @@ describe('signed media URLs', () => {
       colors: '["white"]', pattern: null, material: null, sleeveLength: null, fit: null,
       style: null, season: '[]', gender: null, formality: null, confidences: '{}',
       wasCorrected: false, correctionLog: '[]', createdAt: new Date(), updatedAt: new Date(),
+      analysisProvider: 'gemini', analysisModel: 'model-x', analysisVersion: 'v1', analyzedAt: new Date(),
+      analysisRawConfidences: '{"category":0.97}',
       images: [{
         id: 'img1', wardrobeItemId: 'i1', storageKey: 'users/u/00000000-0000-0000-0000-000000000000.jpg',
         thumbnailKey: 'users/u/00000000-0000-0000-0000-000000000000_thumb.jpg',
@@ -108,6 +110,11 @@ describe('signed media URLs', () => {
     expect(item.primaryImage?.url).toMatch(/^\/api\/v1\/media\/users\/u\/.+\?exp=\d+&sig=/)
     expect(JSON.stringify(item)).not.toContain('storageKey')
     expect(item).not.toHaveProperty('userId')
+    // analysis metadata and raw model confidences stay internal
+    for (const field of ['analysisProvider', 'analysisModel', 'analysisVersion', 'analyzedAt', 'analysisRawConfidences']) {
+      expect(item).not.toHaveProperty(field)
+    }
+    expect(JSON.stringify(item)).not.toContain('0.97')
   })
 })
 

@@ -57,9 +57,16 @@ export class GeminiProvider implements LLMProvider, VisionProvider {
 
   async analyzeImage(req: VisionRequest): Promise<VisionResult> {
     assertVisionRequest(this.name, req)
+    const thinking = req.options?.geminiThinkingLevel
+    const resolution = req.options?.geminiMediaResolution
     const result = await this.call({
-      contents: [{ role: 'user', parts: [{ inlineData: { mimeType: req.mimeType, data: toBase64(req.image) } }, { text: req.instruction }] }],
-      generationConfig: this.generationConfig(0, req.maxOutputTokens, req.jsonSchema?.schema ?? { type: 'object' }),
+      // Google recommends the text prompt before a single image.
+      contents: [{ role: 'user', parts: [{ text: req.instruction }, { inlineData: { mimeType: req.mimeType, data: toBase64(req.image) } }] }],
+      generationConfig: {
+        ...this.generationConfig(0, req.maxOutputTokens, req.jsonSchema?.schema ?? { type: 'object' }),
+        ...(resolution ? { mediaResolution: `MEDIA_RESOLUTION_${resolution.toUpperCase()}` } : {}),
+        ...(thinking && thinking !== 'none' ? { thinkingConfig: { thinkingLevel: thinking } } : {}),
+      },
     }, req.timeoutMs, req.signal)
     return { output: parseJsonOutput(this.name, result.value), metadata: result.metadata }
   }
@@ -111,5 +118,9 @@ function usageOf(json: unknown): ProviderUsage {
   const u = (json as { usageMetadata?: Record<string, unknown> }).usageMetadata
   const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : undefined)
   if (!u || typeof u !== 'object') return {}
-  return { inputTokens: num(u.promptTokenCount), outputTokens: num(u.candidatesTokenCount), totalTokens: num(u.totalTokenCount) }
+  // Thinking tokens are billed as output tokens.
+  const candidates = num(u.candidatesTokenCount)
+  const thoughts = num(u.thoughtsTokenCount)
+  const outputTokens = candidates === undefined && thoughts === undefined ? undefined : (candidates ?? 0) + (thoughts ?? 0)
+  return { inputTokens: num(u.promptTokenCount), outputTokens, totalTokens: num(u.totalTokenCount) }
 }

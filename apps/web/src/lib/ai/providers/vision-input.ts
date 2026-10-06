@@ -1,7 +1,8 @@
 /**
  * Vision input rules shared by every adapter, plus the one place that turns
  * an uploaded image into what may leave the server: decoded, rotated upright,
- * re-encoded as JPEG without EXIF/GPS metadata, longest side ≤ maxSide.
+ * flattened onto white, re-encoded as JPEG without any metadata (EXIF, GPS,
+ * XMP, ICC), longest side ≤ maxSide, at most MAX_VISION_BYTES.
  */
 import sharp from 'sharp'
 import { AiProviderError } from './errors'
@@ -41,8 +42,12 @@ export async function prepareVisionImage(input: Uint8Array, maxSide: number): Pr
   const image = await sharp(input, { limitInputPixels: MAX_INPUT_PIXELS })
     .rotate()
     .resize({ width: maxSide, height: maxSide, fit: 'inside', withoutEnlargement: true })
+    // Transparent PNG/WebP: JPEG has no alpha, and the default black would
+    // read as the garment's background colour.
+    .flatten({ background: '#ffffff' })
     .jpeg({ quality: 85 })
     .toBuffer()
+  if (image.byteLength > MAX_VISION_BYTES) throw new RangeError('prepared image exceeds the vision byte limit')
   return { image: new Uint8Array(image), mimeType: 'image/jpeg', maxSide }
 }
 
