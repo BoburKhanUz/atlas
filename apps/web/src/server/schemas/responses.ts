@@ -233,15 +233,24 @@ export const OutfitGenerateResponse = z.strictObject({
         preference: z.number(),
         feedback: z.number(),
       }),
-      reasons: z.array(z.string()),
+      reasons: z.array(z.string()).describe('Internal reason codes (stable, for debugging); show reasonLabels to users'),
+      reasonLabels: z.array(z.string()).describe('User-facing reason labels (Uzbek), same order as reasons'),
       contrastLevel: z.enum(['low', 'medium', 'high']),
-      items: z.array(z.strictObject({ ...outfitItemSummary, role: z.string(), imageUrl: nullableString })),
+      items: z.array(
+        z.strictObject({
+          ...outfitItemSummary,
+          role: z.string().describe('Legacy role: top, bottom, shoes or accessory (dresses and outerwear are "top")'),
+          layeringRole: z.enum(['top', 'bottom', 'dress', 'outerwear', 'footwear', 'accessory']),
+          imageUrl: nullableString,
+        }),
+      ),
       explanation: nullableString,
     }),
   ),
   weatherUsed: WeatherSnapshot.nullable(),
   occasion: nullableString,
   wardrobeItemCount: Int,
+  fallback: z.boolean().describe('true when the optional AI ranking/explanation was not used (deterministic order and explanations)'),
   message: z.string().optional().describe('Why no outfits were generated'),
 })
 

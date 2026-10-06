@@ -1,7 +1,8 @@
 /**
- * Phase 4.0: the outfit explanation and the wardrobe analysis go through the
- * provider-independent AI layer; failures stay soft; no content reaches the
- * logs. (The stylist changed in Phase 4.2: tests/regression/stylist-chat.test.ts.)
+ * Phase 4.0: the wardrobe analysis goes through the provider-independent AI
+ * layer; failures stay soft; no content reaches the logs. (The stylist changed
+ * in Phase 4.2: tests/regression/stylist-chat.test.ts; the outfit explanation
+ * in Phase 4.4: tests/regression/outfit-generate.test.ts.)
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import sharp from 'sharp'
@@ -70,39 +71,6 @@ const failing = (kind: 'unavailable' | 'auth') =>
       throw new AiProviderError(kind, 'mock')
     },
   })
-
-describe('outfit explanation through the AI layer', () => {
-  const generate = async () => generatePOST(jsonRequest('/api/v1/outfits/generate', { occasion: 'work', seed: 1 }, await authHeader()), undefined)
-
-  it('the top outfit gets the provider’s explanation; the request uses the explanation limits', async () => {
-    const seen: Array<{ temperature?: number; maxOutputTokens?: number; timeoutMs: number }> = []
-    setLLMProviderForTesting(
-      new MockProvider({
-        respond: (r) => {
-          seen.push(r)
-          return 'Ishga mos, toza obraz.'
-        },
-      }),
-    )
-    const res = await generate()
-    expect(res.status).toBe(200)
-    const body = await res.json()
-    expect(body.outfits[0].explanation).toBe('Ishga mos, toza obraz.')
-    expect(body.outfits.slice(1).every((o: { explanation: unknown }) => o.explanation === null)).toBe(true)
-    expect(seen).toHaveLength(1)
-    expect(seen[0]).toMatchObject({ temperature: 0.5, maxOutputTokens: 180, timeoutMs: 15000 })
-    expect(aiLines()[0]).toMatchObject({ feature: 'outfit_explanation', outcome: 'ok' })
-  })
-
-  it('a failing provider leaves the explanation null and the request succeeds (was a 500 for a bad provider)', async () => {
-    setLLMProviderForTesting(failing('auth'))
-    const res = await generate()
-    expect(res.status).toBe(200)
-    const body = await res.json()
-    expect(body.outfits.length).toBeGreaterThan(0)
-    expect(body.outfits[0].explanation).toBeNull()
-  })
-})
 
 describe('VisionService and ColorService keep the deterministic results', () => {
   it('wardrobe analysis returns exactly the mock vision detection (mock: true) and is measured', async () => {

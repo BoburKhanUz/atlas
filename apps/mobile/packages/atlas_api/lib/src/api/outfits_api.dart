@@ -108,7 +108,7 @@ class OutfitsApi {
     );
   }
 
-  /// Generate outfit suggestions from the wardrobe
+  /// Generate outfit suggestions from the wardrobe: a deterministic engine (hard filters, bounded candidates, scoring, stable order) plus optional AI reranking/explanation that never fails the request (fallback: true). The same wardrobe, context and seed always give the same result; omit seed for the best outfits, send a new seed for another deterministic option.
   ///
   ///
   /// Parameters:

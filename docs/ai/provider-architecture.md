@@ -10,7 +10,8 @@ Flutter / web ─▶ ATLAS API (route handlers)
         ├─ stylist-service.ts           stylist turn: quota, structured answer, grounding (4.2)
         │   ├─ stylist.ts               versioned prompt, schema, validation, W-reference resolution
         │   └─ stylist-context.ts       bounded context: ≤ 40 items, candidates, weather, colour profile, history
-        ├─ outfit-intelligence.ts       explanation of the top outfit
+        ├─ outfit-engine.ts             deterministic outfit engine (4.4; outfit-config.ts holds every constant)
+        ├─ outfit-intelligence.ts       optional AI rerank + explanation of engine candidates (4.4)
         ├─ vision-service.ts            clothing analysis (real provider or mock; 4.1)
         │   ├─ garment-analysis.ts      versioned prompt, strict schema, validation
         │   └─ color-check.ts           pixel cross-check of the primary colour
@@ -108,16 +109,17 @@ The line never contains prompts, user messages, wardrobe data, images, provider 
 | `stylist_chat` | 50 |
 | `clothing_analysis` | 50 |
 | `color_analysis` | 10 |
+| `outfit_explanation` | 30 |
 
 - `consumeAiQuota` increments with a single `INSERT … ON CONFLICT … WHERE count < limit`, so concurrent requests cannot exceed the limit. `refundAiQuota` gives one call back.
 - The rows cascade with the account.
 - Rollback: `docs/database/rollback/down-ai-usage.sql`.
-- **`clothing_analysis` is enforced since Phase 4.1** for real vision providers only (the mock never consumes quota): `POST /api/v1/wardrobe/items` answers 429 `AI_QUOTA_EXCEEDED` with `Retry-After` = seconds until the next Uzbekistan day. See [`vision-evaluation.md`](vision-evaluation.md) for when a call is charged or refunded. **`stylist_chat` is enforced since Phase 4.2** the same way (real providers only): `POST /api/v1/stylist/chat` answers 429 `AI_QUOTA_EXCEEDED`; see [`stylist-evaluation.md`](stylist-evaluation.md). `color_analysis` is not enforced: colour analysis is deterministic and in-process (no provider call), so it uses no AI quota (Phase 4.3, [`color-profile.md`](color-profile.md)).
+- **`clothing_analysis` is enforced since Phase 4.1** for real vision providers only (the mock never consumes quota): `POST /api/v1/wardrobe/items` answers 429 `AI_QUOTA_EXCEEDED` with `Retry-After` = seconds until the next Uzbekistan day. See [`vision-evaluation.md`](vision-evaluation.md) for when a call is charged or refunded. **`stylist_chat` is enforced since Phase 4.2** the same way (real providers only): `POST /api/v1/stylist/chat` answers 429 `AI_QUOTA_EXCEEDED`; see [`stylist-evaluation.md`](stylist-evaluation.md). `color_analysis` is not enforced: colour analysis is deterministic and in-process (no provider call), so it uses no AI quota (Phase 4.3, [`color-profile.md`](color-profile.md)). **`outfit_explanation` is used since Phase 4.4** (real providers only), but it never answers 429: when the limit is reached the outfits are returned with the deterministic order and explanations (`fallback: true`). See [`outfit-engine.md`](outfit-engine.md).
 
 ## Behaviour kept from before Phase 4.0
 
 - Phase 4.0 kept the stylist prompt and its soft fallback (HTTP 200 with a fixed apology, stored as `fallback: true`). **Phase 4.2 replaced both:** a versioned structured-output prompt, and failures that answer 503 `AI_UNAVAILABLE` and store nothing. See [`stylist-evaluation.md`](stylist-evaluation.md).
-- The outfit explanation covers the top candidate only: temperature 0.5, at most 180 tokens. A failure gives `explanation: null`. Previously, a bad `LLM_PROVIDER` turned the whole request into a 500.
+- Phase 4.0 kept the outfit explanation (top candidate only, `explanation: null` on failure). **Phase 4.4 replaced it:** the AI may only rerank the engine's candidates and explain the selected one through opaque references; every outfit always has an explanation (deterministic when the AI step is not used). See [`outfit-engine.md`](outfit-engine.md).
 - Phase 4.3 replaced the colour analysis with `color-analysis-v2` (still deterministic and in-process; see [`color-profile.md`](color-profile.md)). With `AI_VISION_PROVIDER=mock`, clothing analysis is byte-for-byte the previous deterministic result and `detection.mock` is `true`.
 - The mock text says it is a demo ("Demo rejim: …").
 - Phase 4.0 left the OpenAPI contract unchanged. Phase 4.1 changed it: `Detection.mock` is a boolean (false for a real provider) and `createWardrobeItem` can answer `NOT_A_GARMENT` 422, `AI_QUOTA_EXCEEDED` 429 and `AI_UNAVAILABLE` 503.

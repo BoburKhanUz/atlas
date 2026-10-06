@@ -57,6 +57,7 @@ Serializers _$serializers =
           ..add(OutfitGenerateResponseOutfitsInnerContrastLevelEnum.serializer)
           ..add(OutfitGenerateResponseOutfitsInnerFactors.serializer)
           ..add(OutfitGenerateResponseOutfitsInnerItemsInner.serializer)
+          ..add(OutfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnum.serializer)
           ..add(OutfitGenerateResponseWeatherUsed.serializer)
           ..add(OutfitGenerateResponseWeatherUsedAnyOf.serializer)
           ..add(OutfitListQuery.serializer)
@@ -148,6 +149,7 @@ Serializers _$serializers =
             const FullType(BuiltList, const [const FullType(OutfitGenerateResponseOutfitsInnerItemsInner)]),
             () => ListBuilder<OutfitGenerateResponseOutfitsInnerItemsInner>(),
           )
+          ..addBuilderFactory(const FullType(BuiltList, const [const FullType(String)]), () => ListBuilder<String>())
           ..addBuilderFactory(const FullType(BuiltList, const [const FullType(String)]), () => ListBuilder<String>())
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(OutfitSaveRequestItemsInner)]),

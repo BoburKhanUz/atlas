@@ -589,7 +589,7 @@ export function decideSeason(probs: Array<{ season: Season; p: number }>, eviden
 
 // ─── Palettes ───────────────────────────────────────────────────────────────
 
-const SEASONAL_PALETTES: Record<Season, { recommended: string[]; neutral: string[]; caution: string[] }> = {
+export const SEASONAL_PALETTES: Record<Season, { recommended: string[]; neutral: string[]; caution: string[] }> = {
   spring: {
     recommended: ['cream', 'light_blue', 'khaki', 'mustard', 'tan', 'beige', 'olive', 'orange'],
     neutral: ['cream', 'beige', 'tan', 'ivory'],

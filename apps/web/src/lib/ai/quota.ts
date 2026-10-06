@@ -5,9 +5,10 @@
  * concurrent requests can never exceed the limit.
  *
  * The day is the calendar day in Uzbekistan (UTC+5, no daylight saving).
- * Enforced for clothing analysis with a real provider (Phase 4.1,
- * src/lib/ai/vision-service.ts → 429 AI_QUOTA_EXCEEDED). Stylist chat and
- * colour analysis are not enforced yet.
+ * Enforced with a real provider only: clothing analysis (Phase 4.1) and
+ * stylist chat (Phase 4.2) answer 429 AI_QUOTA_EXCEEDED; the optional outfit
+ * explanation (Phase 4.4) falls back to the deterministic explanation instead
+ * (never an error). Colour analysis is deterministic and uses no quota.
  */
 import crypto from 'crypto'
 import { db } from '@/lib/db'
@@ -16,6 +17,8 @@ export const AI_DAILY_LIMITS = {
   stylist_chat: 50,
   clothing_analysis: 50,
   color_analysis: 10,
+  /** Optional AI reranking/explanation of generated outfits: conservative for the MVP (one call per generation). */
+  outfit_explanation: 30,
 } as const
 
 export type QuotaFeature = keyof typeof AI_DAILY_LIMITS

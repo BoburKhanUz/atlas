@@ -25,6 +25,7 @@ class GeneratedOutfits {
     required this.weatherUsed,
     required this.occasion,
     required this.wardrobeItemCount,
+    this.fallback = true,
     this.message,
   });
 
@@ -35,6 +36,7 @@ class GeneratedOutfits {
         : r.weatherUsed.anyOf.values.values.whereType<OutfitGenerateResponseWeatherUsedAnyOf>().firstOrNull,
     occasion: r.occasion.text,
     wardrobeItemCount: r.wardrobeItemCount,
+    fallback: r.fallback,
     message: r.message,
   );
 
@@ -46,9 +48,18 @@ class GeneratedOutfits {
   final String? occasion;
   final int wardrobeItemCount;
 
+  /// True when the order and explanations are the app's deterministic ones
+  /// (the AI step was not used or failed).
+  final bool fallback;
+
   /// Why there are no suggestions (e.g. the wardrobe is empty).
   final String? message;
 }
+
+/// The readable reason labels of a candidate (the server's Uzbek labels; the
+/// internal codes only when an older server sent no labels).
+List<String> readableReasons(OutfitGenerateResponseOutfitsInner o) =>
+    o.reasonLabels.isNotEmpty ? o.reasonLabels.toList() : o.reasons.toList();
 
 // ─── TEMPORARY contract/generator workaround (Phase 3.7, decision D1) ──────
 //

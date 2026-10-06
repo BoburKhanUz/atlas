@@ -22,7 +22,7 @@ export type ColorTemperature = 'warm' | 'cool' | 'neutral'
 
 // ─── Color metadata ─────────────────────────────────────────────────────────
 // Derived from catalog hex values. Lazy-computed on first use.
-interface ColorMeta {
+export interface ColorMeta {
   id: string
   hex: string
   hue: number // 0-360
@@ -76,7 +76,7 @@ function classifyTemperature(hue: number, saturation: number): ColorTemperature 
 
 let _cache: Map<string, ColorMeta> | null = null
 
-function getColorMeta(id: string): ColorMeta | null {
+export function getColorMeta(id: string): ColorMeta | null {
   if (!_cache) {
     _cache = new Map()
     for (const c of COLORS) {

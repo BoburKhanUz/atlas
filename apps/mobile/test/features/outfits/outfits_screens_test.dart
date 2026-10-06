@@ -154,6 +154,8 @@ void main() {
     );
     expect(find.byKey(const Key('candidate.t1')), findsOneWidget);
     expect(find.text('Ob-havoga mos'), findsWidgets);
+    expect(find.text('weather'), findsNothing); // internal reason codes are never shown
+    expect(find.text('Poyabzal'), findsWidgets); // layering role label
     await app.reveal(find.byKey(const Key('candidate.t1.why')));
     expect(find.byKey(const Key('candidate.t1.explanation')), findsOneWidget);
     await app.reveal(find.byKey(const Key('candidate.t1.like')));

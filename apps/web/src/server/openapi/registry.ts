@@ -170,7 +170,7 @@ export const OPERATIONS: Operation[] = [
   // ─── Outfits ──────────────────────────────────────────────────────────────
   {
     method: 'POST', path: '/api/v1/outfits/generate', route: 'api/v1/outfits/generate', operationId: 'generateOutfits', tags: ['outfits'],
-    summary: 'Generate outfit suggestions from the wardrobe', auth: 'required', jsonBody: Req.OutfitGenerateRequest,
+    summary: 'Generate outfit suggestions from the wardrobe: a deterministic engine (hard filters, bounded candidates, scoring, stable order) plus optional AI reranking/explanation that never fails the request (fallback: true). The same wardrobe, context and seed always give the same result; omit seed for the best outfits, send a new seed for another deterministic option.', auth: 'required', jsonBody: Req.OutfitGenerateRequest,
     success: [{ status: 200, description: 'Suggestions (empty with a message when the wardrobe is not enough)', schema: Res.OutfitGenerateResponse }],
     errors: [],
   },

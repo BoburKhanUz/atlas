@@ -53,13 +53,15 @@ Map<String, Object?> candidateJson(
     'preference': 0.5,
     'feedback': 0.5,
   },
-  'reasons': ['Ob-havoga mos', 'Ranglar uyg‘un'],
+  'reasons': ['weather', 'color_harmony'],
+  'reasonLabels': ['Ob-havoga mos', 'Ranglar uyg‘un'],
   'contrastLevel': 'medium',
   'items': [
     for (final (i, id) in itemIds.indexed)
       {
         'id': id,
         'role': const ['top', 'bottom', 'shoes', 'accessory'][i % 4],
+        'layeringRole': const ['top', 'bottom', 'footwear', 'accessory'][i % 4],
         'category': const ['shirt', 'pants', 'shoes', 'accessory'][i % 4],
         'subcategory': const ['tshirt', 'jeans', 'sneakers', 'belt'][i % 4],
         'colors': ['white'],
@@ -78,6 +80,7 @@ Map<String, Object?> generateJson({
   String? occasion,
   int wardrobeItemCount = 6,
   String? message,
+  bool fallback = true,
 }) => {
   'outfits':
       outfits ??
@@ -88,6 +91,7 @@ Map<String, Object?> generateJson({
   'weatherUsed': weatherUsed,
   'occasion': occasion,
   'wardrobeItemCount': wardrobeItemCount,
+  'fallback': fallback,
   'message': ?message,
 };
 

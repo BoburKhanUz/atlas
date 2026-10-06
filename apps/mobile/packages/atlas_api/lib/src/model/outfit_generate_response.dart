@@ -16,6 +16,7 @@ part 'outfit_generate_response.g.dart';
 /// OutfitGenerateResponse
 ///
 /// Properties:
+/// * [fallback] - true when the optional AI ranking/explanation was not used (deterministic order and explanations)
 /// * [message] - Why no outfits were generated
 /// * [occasion]
 /// * [outfits]
@@ -23,6 +24,10 @@ part 'outfit_generate_response.g.dart';
 /// * [weatherUsed]
 @BuiltValue()
 abstract class OutfitGenerateResponse implements Built<OutfitGenerateResponse, OutfitGenerateResponseBuilder> {
+  /// true when the optional AI ranking/explanation was not used (deterministic order and explanations)
+  @BuiltValueField(wireName: r'fallback')
+  bool get fallback;
+
   /// Why no outfits were generated
   @BuiltValueField(wireName: r'message')
   String? get message;
@@ -62,6 +67,8 @@ class _$OutfitGenerateResponseSerializer implements PrimitiveSerializer<OutfitGe
     OutfitGenerateResponse object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    yield r'fallback';
+    yield serializers.serialize(object.fallback, specifiedType: const FullType(bool));
     if (object.message != null) {
       yield r'message';
       yield serializers.serialize(object.message, specifiedType: const FullType(String));
@@ -105,6 +112,10 @@ class _$OutfitGenerateResponseSerializer implements PrimitiveSerializer<OutfitGe
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'fallback':
+          final valueDes = serializers.deserialize(value, specifiedType: const FullType(bool)) as bool;
+          result.fallback = valueDes;
+          break;
         case r'message':
           final valueDes = serializers.deserialize(value, specifiedType: const FullType(String)) as String;
           result.message = valueDes;

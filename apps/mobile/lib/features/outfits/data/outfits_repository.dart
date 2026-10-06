@@ -162,7 +162,8 @@ OutfitSaveRequest saveRequestFor(
     ..occasion = outfitOccasions.contains(occasion) ? OutfitSaveRequestOccasionEnum.valueOf(occasion!) : null
     ..weather = weatherUsed == null ? null : weatherRequest(fieldsOfUsed(weatherUsed)).toBuilder()
     ..score = candidate.score
-    ..reasons = ListBuilder(candidate.reasons)
+    // The readable labels (the internal codes are not meant for people).
+    ..reasons = ListBuilder(readableReasons(candidate))
     ..explanation = candidate.explanation.text
     ..isSaved = isSaved,
 );

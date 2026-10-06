@@ -26,7 +26,7 @@ describe.skipIf(!enabled)('AI quota (real PostgreSQL)', () => {
   })
 
   it('limits are the approved ones', () => {
-    expect(AI_DAILY_LIMITS).toEqual({ stylist_chat: 50, clothing_analysis: 50, color_analysis: 10 })
+    expect(AI_DAILY_LIMITS).toEqual({ stylist_chat: 50, clothing_analysis: 50, color_analysis: 10, outfit_explanation: 30 })
   })
 
   it('counts up to the limit, then refuses without counting', async () => {

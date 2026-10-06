@@ -72,7 +72,7 @@ Class | Method | HTTP request | Description
 [*AuthApi*](doc/AuthApi.md) | [**register**](doc/AuthApi.md#register) | **POST** /api/v1/auth/register | Create an account and sign in (web: cookies; mobile: tokens in the body)
 [*MediaApi*](doc/MediaApi.md) | [**getMedia**](doc/MediaApi.md#getmedia) | **GET** /api/v1/media/{key} | A private image through its signed URL (use the URLs from API responses as-is)
 [*OutfitsApi*](doc/OutfitsApi.md) | [**deleteOutfit**](doc/OutfitsApi.md#deleteoutfit) | **DELETE** /api/v1/outfits/{id} | Delete an outfit
-[*OutfitsApi*](doc/OutfitsApi.md) | [**generateOutfits**](doc/OutfitsApi.md#generateoutfits) | **POST** /api/v1/outfits/generate | Generate outfit suggestions from the wardrobe
+[*OutfitsApi*](doc/OutfitsApi.md) | [**generateOutfits**](doc/OutfitsApi.md#generateoutfits) | **POST** /api/v1/outfits/generate | Generate outfit suggestions from the wardrobe: a deterministic engine (hard filters, bounded candidates, scoring, stable order) plus optional AI reranking/explanation that never fails the request (fallback: true). The same wardrobe, context and seed always give the same result; omit seed for the best outfits, send a new seed for another deterministic option.
 [*OutfitsApi*](doc/OutfitsApi.md) | [**getOutfit**](doc/OutfitsApi.md#getoutfit) | **GET** /api/v1/outfits/{id} | One outfit with its items
 [*OutfitsApi*](doc/OutfitsApi.md) | [**listOutfits**](doc/OutfitsApi.md#listoutfits) | **GET** /api/v1/outfits | Recent outfits (50), optionally saved only
 [*OutfitsApi*](doc/OutfitsApi.md) | [**saveOutfit**](doc/OutfitsApi.md#saveoutfit) | **POST** /api/v1/outfits | Save an outfit made of own wardrobe items

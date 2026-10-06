@@ -8,6 +8,8 @@ part of 'outfit_generate_response.dart';
 
 class _$OutfitGenerateResponse extends OutfitGenerateResponse {
   @override
+  final bool fallback;
+  @override
   final String? message;
   @override
   final ColorAnalysisResponseColorProfileContrastLevel? occasion;
@@ -22,6 +24,7 @@ class _$OutfitGenerateResponse extends OutfitGenerateResponse {
       (OutfitGenerateResponseBuilder()..update(updates))._build();
 
   _$OutfitGenerateResponse._({
+    required this.fallback,
     this.message,
     this.occasion,
     required this.outfits,
@@ -39,6 +42,7 @@ class _$OutfitGenerateResponse extends OutfitGenerateResponse {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is OutfitGenerateResponse &&
+        fallback == other.fallback &&
         message == other.message &&
         occasion == other.occasion &&
         outfits == other.outfits &&
@@ -49,6 +53,7 @@ class _$OutfitGenerateResponse extends OutfitGenerateResponse {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, fallback.hashCode);
     _$hash = $jc(_$hash, message.hashCode);
     _$hash = $jc(_$hash, occasion.hashCode);
     _$hash = $jc(_$hash, outfits.hashCode);
@@ -61,6 +66,7 @@ class _$OutfitGenerateResponse extends OutfitGenerateResponse {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'OutfitGenerateResponse')
+          ..add('fallback', fallback)
           ..add('message', message)
           ..add('occasion', occasion)
           ..add('outfits', outfits)
@@ -72,6 +78,10 @@ class _$OutfitGenerateResponse extends OutfitGenerateResponse {
 
 class OutfitGenerateResponseBuilder implements Builder<OutfitGenerateResponse, OutfitGenerateResponseBuilder> {
   _$OutfitGenerateResponse? _$v;
+
+  bool? _fallback;
+  bool? get fallback => _$this._fallback;
+  set fallback(bool? fallback) => _$this._fallback = fallback;
 
   String? _message;
   String? get message => _$this._message;
@@ -103,6 +113,7 @@ class OutfitGenerateResponseBuilder implements Builder<OutfitGenerateResponse, O
   OutfitGenerateResponseBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _fallback = $v.fallback;
       _message = $v.message;
       _occasion = $v.occasion?.toBuilder();
       _outfits = $v.outfits.toBuilder();
@@ -132,6 +143,7 @@ class OutfitGenerateResponseBuilder implements Builder<OutfitGenerateResponse, O
       _$result =
           _$v ??
           _$OutfitGenerateResponse._(
+            fallback: BuiltValueNullFieldError.checkNotNull(fallback, r'OutfitGenerateResponse', 'fallback'),
             message: message,
             occasion: _occasion?.build(),
             outfits: outfits.build(),

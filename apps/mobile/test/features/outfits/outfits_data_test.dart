@@ -148,6 +148,25 @@ void main() {
     });
   });
 
+  group('Phase 4.4 fields', () {
+    test('readable reason labels, layering roles and the fallback flag are decoded', () {
+      final r = decodeWithNullWeatherUsed(generateJson(weatherUsed: null, fallback: false))!;
+      expect(r.fallback, isFalse);
+      final c = r.outfits.first;
+      expect(c.reasons, ['weather', 'color_harmony']);
+      expect(readableReasons(c), ['Ob-havoga mos', 'Ranglar uyg‘un']);
+      expect(c.items.map((i) => i.layeringRole.name), ['top', 'bottom', 'footwear']);
+      expect(c.items.map((i) => i.role), ['top', 'bottom', 'shoes']); // legacy role kept
+      expect(decodeWithNullWeatherUsed(generateJson(weatherUsed: null))!.fallback, isTrue);
+    });
+
+    test('without labels (older server) the reasons themselves are shown', () {
+      final json = candidateJson('t9')..['reasonLabels'] = <String>[];
+      final c = standardSerializers.deserializeWith(OutfitGenerateResponseOutfitsInner.serializer, json)!;
+      expect(readableReasons(c), ['weather', 'color_harmony']);
+    });
+  });
+
   group('save request', () {
     test('items with roles, rounded nothing, weather used, explicit isSaved', () {
       final req = saveRequestFor(

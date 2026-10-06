@@ -12,13 +12,14 @@ part 'outfit_save_request_items_inner.g.dart';
 ///
 /// Properties:
 /// * [itemId]
-/// * [role]
+/// * [role] - top, bottom, shoes or accessory (legacy roles), or dress, outerwear, footwear; must match the item category (validated)
 @BuiltValue()
 abstract class OutfitSaveRequestItemsInner
     implements Built<OutfitSaveRequestItemsInner, OutfitSaveRequestItemsInnerBuilder> {
   @BuiltValueField(wireName: r'itemId')
   String get itemId;
 
+  /// top, bottom, shoes or accessory (legacy roles), or dress, outerwear, footwear; must match the item category (validated)
   @BuiltValueField(wireName: r'role')
   String get role;
 

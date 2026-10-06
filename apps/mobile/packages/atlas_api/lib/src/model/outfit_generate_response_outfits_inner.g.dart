@@ -95,6 +95,8 @@ class _$OutfitGenerateResponseOutfitsInner extends OutfitGenerateResponseOutfits
   @override
   final BuiltList<OutfitGenerateResponseOutfitsInnerItemsInner> items;
   @override
+  final BuiltList<String> reasonLabels;
+  @override
   final BuiltList<String> reasons;
   @override
   final num score;
@@ -109,6 +111,7 @@ class _$OutfitGenerateResponseOutfitsInner extends OutfitGenerateResponseOutfits
     this.explanation,
     required this.factors,
     required this.items,
+    required this.reasonLabels,
     required this.reasons,
     required this.score,
     required this.tempId,
@@ -128,6 +131,7 @@ class _$OutfitGenerateResponseOutfitsInner extends OutfitGenerateResponseOutfits
         explanation == other.explanation &&
         factors == other.factors &&
         items == other.items &&
+        reasonLabels == other.reasonLabels &&
         reasons == other.reasons &&
         score == other.score &&
         tempId == other.tempId;
@@ -140,6 +144,7 @@ class _$OutfitGenerateResponseOutfitsInner extends OutfitGenerateResponseOutfits
     _$hash = $jc(_$hash, explanation.hashCode);
     _$hash = $jc(_$hash, factors.hashCode);
     _$hash = $jc(_$hash, items.hashCode);
+    _$hash = $jc(_$hash, reasonLabels.hashCode);
     _$hash = $jc(_$hash, reasons.hashCode);
     _$hash = $jc(_$hash, score.hashCode);
     _$hash = $jc(_$hash, tempId.hashCode);
@@ -154,6 +159,7 @@ class _$OutfitGenerateResponseOutfitsInner extends OutfitGenerateResponseOutfits
           ..add('explanation', explanation)
           ..add('factors', factors)
           ..add('items', items)
+          ..add('reasonLabels', reasonLabels)
           ..add('reasons', reasons)
           ..add('score', score)
           ..add('tempId', tempId))
@@ -186,6 +192,10 @@ class OutfitGenerateResponseOutfitsInnerBuilder
       _$this._items ??= ListBuilder<OutfitGenerateResponseOutfitsInnerItemsInner>();
   set items(ListBuilder<OutfitGenerateResponseOutfitsInnerItemsInner>? items) => _$this._items = items;
 
+  ListBuilder<String>? _reasonLabels;
+  ListBuilder<String> get reasonLabels => _$this._reasonLabels ??= ListBuilder<String>();
+  set reasonLabels(ListBuilder<String>? reasonLabels) => _$this._reasonLabels = reasonLabels;
+
   ListBuilder<String>? _reasons;
   ListBuilder<String> get reasons => _$this._reasons ??= ListBuilder<String>();
   set reasons(ListBuilder<String>? reasons) => _$this._reasons = reasons;
@@ -209,6 +219,7 @@ class OutfitGenerateResponseOutfitsInnerBuilder
       _explanation = $v.explanation?.toBuilder();
       _factors = $v.factors.toBuilder();
       _items = $v.items.toBuilder();
+      _reasonLabels = $v.reasonLabels.toBuilder();
       _reasons = $v.reasons.toBuilder();
       _score = $v.score;
       _tempId = $v.tempId;
@@ -244,6 +255,7 @@ class OutfitGenerateResponseOutfitsInnerBuilder
             explanation: _explanation?.build(),
             factors: factors.build(),
             items: items.build(),
+            reasonLabels: reasonLabels.build(),
             reasons: reasons.build(),
             score: BuiltValueNullFieldError.checkNotNull(score, r'OutfitGenerateResponseOutfitsInner', 'score'),
             tempId: BuiltValueNullFieldError.checkNotNull(tempId, r'OutfitGenerateResponseOutfitsInner', 'tempId'),
@@ -257,6 +269,8 @@ class OutfitGenerateResponseOutfitsInnerBuilder
         factors.build();
         _$failedField = 'items';
         items.build();
+        _$failedField = 'reasonLabels';
+        reasonLabels.build();
         _$failedField = 'reasons';
         reasons.build();
       } catch (e) {

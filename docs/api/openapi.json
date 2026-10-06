@@ -1284,6 +1284,7 @@
             ]
           },
           "seed": {
+            "description": "Omitted: the best outfits. Any number: a deterministic window of the top candidates (same seed, same result)",
             "type": "number"
           },
           "topN": {
@@ -1353,6 +1354,10 @@
       "OutfitGenerateResponse": {
         "additionalProperties": false,
         "properties": {
+          "fallback": {
+            "description": "true when the optional AI ranking/explanation was not used (deterministic order and explanations)",
+            "type": "boolean"
+          },
           "message": {
             "description": "Why no outfits were generated",
             "type": "string"
@@ -1455,6 +1460,17 @@
                           }
                         ]
                       },
+                      "layeringRole": {
+                        "enum": [
+                          "top",
+                          "bottom",
+                          "dress",
+                          "outerwear",
+                          "footwear",
+                          "accessory"
+                        ],
+                        "type": "string"
+                      },
                       "material": {
                         "anyOf": [
                           {
@@ -1466,6 +1482,7 @@
                         ]
                       },
                       "role": {
+                        "description": "Legacy role: top, bottom, shoes or accessory (dresses and outerwear are \"top\")",
                         "type": "string"
                       },
                       "season": {
@@ -1504,13 +1521,22 @@
                       "style",
                       "material",
                       "season",
+                      "layeringRole",
                       "imageUrl"
                     ],
                     "type": "object"
                   },
                   "type": "array"
                 },
+                "reasonLabels": {
+                  "description": "User-facing reason labels (Uzbek), same order as reasons",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
                 "reasons": {
+                  "description": "Internal reason codes (stable, for debugging); show reasonLabels to users",
                   "items": {
                     "type": "string"
                   },
@@ -1528,6 +1554,7 @@
                 "score",
                 "factors",
                 "reasons",
+                "reasonLabels",
                 "contrastLevel",
                 "items",
                 "explanation"
@@ -1587,7 +1614,8 @@
           "outfits",
           "weatherUsed",
           "occasion",
-          "wardrobeItemCount"
+          "wardrobeItemCount",
+          "fallback"
         ],
         "type": "object"
       },
@@ -1747,6 +1775,7 @@
                   "type": "string"
                 },
                 "role": {
+                  "description": "top, bottom, shoes or accessory (legacy roles), or dress, outerwear, footwear; must match the item category (validated)",
                   "maxLength": 30,
                   "minLength": 1,
                   "type": "string"
@@ -4873,7 +4902,7 @@
             "cookieAuth": []
           }
         ],
-        "summary": "Generate outfit suggestions from the wardrobe",
+        "summary": "Generate outfit suggestions from the wardrobe: a deterministic engine (hard filters, bounded candidates, scoring, stable order) plus optional AI reranking/explanation that never fails the request (fallback: true). The same wardrobe, context and seed always give the same result; omit seed for the best outfits, send a new seed for another deterministic option.",
         "tags": [
           "outfits"
         ]

@@ -17,8 +17,9 @@ part 'outfit_generate_response_outfits_inner_items_inner.g.dart';
 /// * [colors]
 /// * [id]
 /// * [imageUrl]
+/// * [layeringRole]
 /// * [material]
-/// * [role]
+/// * [role] - Legacy role: top, bottom, shoes or accessory (dresses and outerwear are \"top\")
 /// * [season]
 /// * [style]
 /// * [subcategory]
@@ -38,9 +39,14 @@ abstract class OutfitGenerateResponseOutfitsInnerItemsInner
   @BuiltValueField(wireName: r'imageUrl')
   ColorAnalysisResponseColorProfileContrastLevel? get imageUrl;
 
+  @BuiltValueField(wireName: r'layeringRole')
+  OutfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnum get layeringRole;
+  // enum layeringRoleEnum {  top,  bottom,  dress,  outerwear,  footwear,  accessory,  };
+
   @BuiltValueField(wireName: r'material')
   ColorAnalysisResponseColorProfileContrastLevel? get material;
 
+  /// Legacy role: top, bottom, shoes or accessory (dresses and outerwear are \"top\")
   @BuiltValueField(wireName: r'role')
   String get role;
 
@@ -96,6 +102,11 @@ class _$OutfitGenerateResponseOutfitsInnerItemsInnerSerializer
             object.imageUrl,
             specifiedType: const FullType.nullable(ColorAnalysisResponseColorProfileContrastLevel),
           );
+    yield r'layeringRole';
+    yield serializers.serialize(
+      object.layeringRole,
+      specifiedType: const FullType(OutfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnum),
+    );
     yield r'material';
     yield object.material == null
         ? null
@@ -167,6 +178,13 @@ class _$OutfitGenerateResponseOutfitsInnerItemsInnerSerializer
           if (valueDes == null) continue;
           result.imageUrl.replace(valueDes);
           break;
+        case r'layeringRole':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(OutfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnum),
+          ) as OutfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnum;
+          result.layeringRole = valueDes;
+          break;
         case r'material':
           final valueDes = serializers.deserialize(
             value,
@@ -229,4 +247,38 @@ class _$OutfitGenerateResponseOutfitsInnerItemsInnerSerializer
     );
     return result.build();
   }
+}
+
+class OutfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnum extends EnumClass {
+  @BuiltValueEnumConst(wireName: r'top')
+  static const OutfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnum top =
+      _$outfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnum_top;
+  @BuiltValueEnumConst(wireName: r'bottom')
+  static const OutfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnum bottom =
+      _$outfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnum_bottom;
+  @BuiltValueEnumConst(wireName: r'dress')
+  static const OutfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnum dress =
+      _$outfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnum_dress;
+  @BuiltValueEnumConst(wireName: r'outerwear')
+  static const OutfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnum outerwear =
+      _$outfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnum_outerwear;
+  @BuiltValueEnumConst(wireName: r'footwear')
+  static const OutfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnum footwear =
+      _$outfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnum_footwear;
+  @BuiltValueEnumConst(wireName: r'accessory')
+  static const OutfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnum accessory =
+      _$outfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnum_accessory;
+  @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
+  static const OutfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnum unknownDefaultOpenApi =
+      _$outfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnum_unknownDefaultOpenApi;
+
+  static Serializer<OutfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnum> get serializer =>
+      _$outfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnumSerializer;
+
+  const OutfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnum._(String name) : super(name);
+
+  static BuiltSet<OutfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnum> get values =>
+      _$outfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnumValues;
+  static OutfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnum valueOf(String name) =>
+      _$outfitGenerateResponseOutfitsInnerItemsInnerLayeringRoleEnumValueOf(name);
 }

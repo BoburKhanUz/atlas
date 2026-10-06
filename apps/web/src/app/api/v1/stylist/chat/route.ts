@@ -161,7 +161,6 @@ export const POST = withApi(async (req) => {
           occasion,
           profile: { gender: user?.profile?.gender ?? null, ...preferences },
           topN: 3,
-          seed: 1,
         })
       } catch (err) {
         log.error('stylist: recommendation engine error', { err })

@@ -35,6 +35,7 @@ class _CandidateCardState extends ConsumerState<CandidateCard> {
     final ctl = ref.read(generateControllerProvider.notifier);
     final text = Theme.of(context).textTheme;
     final explanation = o.explanation.text;
+    final reasons = readableReasons(o);
 
     return AtlasCard(
       key: Key('candidate.$id'),
@@ -74,7 +75,7 @@ class _CandidateCardState extends ConsumerState<CandidateCard> {
                       const SizedBox(height: AtlasSpacing.xxs),
                       Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: text.labelMedium),
                       Text(
-                        OutfitLabels.role(item.role),
+                        OutfitLabels.role(item.layeringRole.name),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: text.labelSmall,
@@ -85,13 +86,13 @@ class _CandidateCardState extends ConsumerState<CandidateCard> {
               },
             ),
           ),
-          if (o.reasons.isNotEmpty) ...[
+          if (reasons.isNotEmpty) ...[
             const SizedBox(height: AtlasSpacing.sm),
             Wrap(
               spacing: AtlasSpacing.xs,
               runSpacing: AtlasSpacing.xs,
               children: [
-                for (final r in o.reasons.take(_why ? o.reasons.length : 3))
+                for (final r in reasons.take(_why ? reasons.length : 3))
                   Chip(label: Text(r), visualDensity: VisualDensity.compact),
               ],
             ),

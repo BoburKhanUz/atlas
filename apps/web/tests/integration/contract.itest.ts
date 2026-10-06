@@ -319,6 +319,7 @@ describe.skipIf(!enabled)('OAS-04: real responses match the OpenAPI contract', (
     const saved = await call('saveOutfit', outfitsRoute.POST as Handler, req('/api/v1/outfits', { method: 'POST', headers: u.auth, json: { occasion: 'casual', isSaved: true, reasons: ['Mos'], items: ids.map((id, i) => ({ itemId: id, role: ['top', 'bottom', 'shoes'][i] })) } }))
     const outfitId = (await saved.json()).outfit.id
     await call('saveOutfit', outfitsRoute.POST as Handler, req('/api/v1/outfits', { method: 'POST', headers: other.auth, json: { items: [{ itemId: ids[0], role: 'top' }] } })) // FORBIDDEN
+    await call('saveOutfit', outfitsRoute.POST as Handler, req('/api/v1/outfits', { method: 'POST', headers: u.auth, json: { items: [{ itemId: ids[0], role: 'top' }, { itemId: ids[1], role: 'bottom' }] } })) // VALIDATION_ERROR (no footwear)
     await call('listOutfits', outfitsRoute.GET as Handler, req('/api/v1/outfits?saved=1', { headers: u.auth }))
     await call('listOutfits', outfitsRoute.GET as Handler, req('/api/v1/outfits?saved=maybe', { headers: u.auth })) // VALIDATION_ERROR
     await call('getOutfit', outfitRoute.GET as Handler, req(`/api/v1/outfits/${outfitId}`, { headers: u.auth }), params({ id: outfitId }))

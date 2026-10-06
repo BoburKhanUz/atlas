@@ -19,7 +19,8 @@ part 'outfit_generate_response_outfits_inner.g.dart';
 /// * [explanation]
 /// * [factors]
 /// * [items]
-/// * [reasons]
+/// * [reasonLabels] - User-facing reason labels (Uzbek), same order as reasons
+/// * [reasons] - Internal reason codes (stable, for debugging); show reasonLabels to users
 /// * [score]
 /// * [tempId]
 @BuiltValue()
@@ -38,6 +39,11 @@ abstract class OutfitGenerateResponseOutfitsInner
   @BuiltValueField(wireName: r'items')
   BuiltList<OutfitGenerateResponseOutfitsInnerItemsInner> get items;
 
+  /// User-facing reason labels (Uzbek), same order as reasons
+  @BuiltValueField(wireName: r'reasonLabels')
+  BuiltList<String> get reasonLabels;
+
+  /// Internal reason codes (stable, for debugging); show reasonLabels to users
   @BuiltValueField(wireName: r'reasons')
   BuiltList<String> get reasons;
 
@@ -95,6 +101,8 @@ class _$OutfitGenerateResponseOutfitsInnerSerializer
       object.items,
       specifiedType: const FullType(BuiltList, [FullType(OutfitGenerateResponseOutfitsInnerItemsInner)]),
     );
+    yield r'reasonLabels';
+    yield serializers.serialize(object.reasonLabels, specifiedType: const FullType(BuiltList, [FullType(String)]));
     yield r'reasons';
     yield serializers.serialize(object.reasons, specifiedType: const FullType(BuiltList, [FullType(String)]));
     yield r'score';
@@ -152,6 +160,13 @@ class _$OutfitGenerateResponseOutfitsInnerSerializer
             specifiedType: const FullType(BuiltList, [FullType(OutfitGenerateResponseOutfitsInnerItemsInner)]),
           ) as BuiltList<OutfitGenerateResponseOutfitsInnerItemsInner>;
           result.items.replace(valueDes);
+          break;
+        case r'reasonLabels':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(BuiltList, [FullType(String)]),
+          ) as BuiltList<String>;
+          result.reasonLabels.replace(valueDes);
           break;
         case r'reasons':
           final valueDes = serializers.deserialize(

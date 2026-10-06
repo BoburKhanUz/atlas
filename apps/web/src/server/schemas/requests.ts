@@ -86,7 +86,7 @@ export const OutfitSaveRequest = z.object({
     .array(
       z.object({
         itemId: idSchema,
-        role: z.string().trim().min(1).max(30),
+        role: z.string().trim().min(1).max(30).describe('top, bottom, shoes or accessory (legacy roles), or dress, outerwear, footwear; must match the item category (validated)'),
       }),
     )
     .min(1)
@@ -108,7 +108,7 @@ export const OutfitGenerateRequest = z.object({
   weather: weatherSnapshotSchema.optional().nullable(),
   lat: z.number().min(-90).max(90).optional().nullable(),
   lon: z.number().min(-180).max(180).optional().nullable(),
-  seed: z.number().finite().optional(),
+  seed: z.number().finite().optional().describe('Omitted: the best outfits. Any number: a deterministic window of the top candidates (same seed, same result)'),
   topN: z.number().int().min(1).max(5).optional(),
 })
 

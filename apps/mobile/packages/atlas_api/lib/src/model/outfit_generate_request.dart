@@ -16,7 +16,7 @@ part 'outfit_generate_request.g.dart';
 /// * [lat]
 /// * [lon]
 /// * [occasion]
-/// * [seed]
+/// * [seed] - Omitted: the best outfits. Any number: a deterministic window of the top candidates (same seed, same result)
 /// * [topN]
 /// * [weather]
 @BuiltValue()
@@ -31,6 +31,7 @@ abstract class OutfitGenerateRequest implements Built<OutfitGenerateRequest, Out
   OutfitGenerateRequestOccasionEnum? get occasion;
   // enum occasionEnum {  work,  wedding,  date,  travel,  casual,  other,  };
 
+  /// Omitted: the best outfits. Any number: a deterministic window of the top candidates (same seed, same result)
   @BuiltValueField(wireName: r'seed')
   num? get seed;
 

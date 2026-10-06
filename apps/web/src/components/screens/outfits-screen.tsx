@@ -28,6 +28,8 @@ import { cn } from '@/lib/utils'
 interface OutfitItemView {
   id: string
   role: string
+  /** Layer in the outfit: top, bottom, dress, outerwear, footwear or accessory. */
+  layeringRole?: string
   category: string
   subcategory: string | null
   colors: string[]
@@ -49,7 +51,10 @@ interface OutfitCandidateView {
     preference: number
     feedback: number
   }
+  /** Internal reason codes (stable). */
   reasons: string[]
+  /** Readable Uzbek labels for `reasons`, same order. */
+  reasonLabels?: string[]
   contrastLevel: 'low' | 'medium' | 'high'
   items: OutfitItemView[]
   explanation: string | null
@@ -70,6 +75,8 @@ interface GenerateResponse {
   } | null
   occasion: string | null
   wardrobeItemCount: number
+  /** True when the order and explanations are the deterministic fallback. */
+  fallback?: boolean
   message?: string
 }
 interface SavedOutfit {
@@ -214,7 +221,7 @@ export function OutfitsScreen() {
           occasion: occasion ?? null,
           weather: weather,
           score: candidate.score,
-          reasons: candidate.reasons,
+          reasons: candidate.reasonLabels ?? candidate.reasons,
           explanation: candidate.explanation,
           isSaved: true,
           items: candidate.items.map((it) => ({
@@ -259,7 +266,7 @@ export function OutfitsScreen() {
             occasion: occasion ?? null,
             weather: weather,
             score: candidate.score,
-            reasons: candidate.reasons,
+            reasons: candidate.reasonLabels ?? candidate.reasons,
             explanation: candidate.explanation,
             isSaved: false,
             items: candidate.items.map((it) => ({
@@ -618,8 +625,8 @@ function OutfitCard({
           </div>
         </div>
         <div className="flex gap-1">
-          {outfit.reasons.slice(0, 3).map((r) => (
-            <ReasonBadge key={r} reasonId={r} />
+          {outfit.reasons.slice(0, 3).map((r, i) => (
+            <ReasonBadge key={r} reasonId={r} label={outfit.reasonLabels?.[i]} />
           ))}
         </div>
       </div>
@@ -748,19 +755,24 @@ function OutfitCard({
   )
 }
 
-function ReasonBadge({ reasonId }: { reasonId: string }) {
+function ReasonBadge({ reasonId, label }: { reasonId: string; label?: string }) {
+  // The server sends the readable label; the code only picks the colour.
   const map: Record<string, { label: string; cls: string }> = {
     weather: { label: 'ob-havo', cls: 'bg-success/10 text-success' },
+    warm_layers: { label: 'issiq', cls: 'bg-success/10 text-success' },
+    rain_ready: { label: 'yomg‘ir', cls: 'bg-blue-500/10 text-blue-600' },
+    snow_ready: { label: 'qor', cls: 'bg-blue-500/10 text-blue-600' },
+    wind_ready: { label: 'shamol', cls: 'bg-blue-500/10 text-blue-600' },
     color_harmony: { label: 'rang', cls: 'bg-primary/10 text-primary' },
+    neutral_balance: { label: 'neytral', cls: 'bg-primary/10 text-primary' },
+    color_profile: { label: 'rang profili', cls: 'bg-primary/10 text-primary' },
     occasion: { label: 'tadbir', cls: 'bg-amber-500/10 text-amber-600' },
     style_match: { label: 'uslub', cls: 'bg-purple-500/10 text-purple-600' },
-    season: { label: 'mavsum', cls: 'bg-blue-500/10 text-blue-600' },
     preference: { label: 'sizniki', cls: 'bg-pink-500/10 text-pink-600' },
   }
-  // Strip any prefixed reason (e.g. "color:..." is a sub-reason — not a badge)
-  const base = reasonId.split(':')[0]
-  const entry = map[base]
-  if (!entry) return null
+  const known = map[reasonId]
+  if (!known && !label) return null
+  const entry = { label: label ?? known!.label, cls: known?.cls ?? 'bg-muted text-muted-foreground' }
   return (
     <span
       className={cn(

@@ -12,7 +12,17 @@ abstract final class OutfitLabels {
     'other': 'Boshqa',
   };
 
-  static const _roles = {'top': 'Ustki qism', 'bottom': 'Pastki qism', 'shoes': 'Poyabzal', 'accessory': 'Aksessuar'};
+  /// Saved roles (`top`, `bottom`, `shoes`, `accessory`) and the layering
+  /// roles of a generated outfit (`dress`, `outerwear`, `footwear`).
+  static const _roles = {
+    'top': 'Ustki qism',
+    'bottom': 'Pastki qism',
+    'shoes': 'Poyabzal',
+    'accessory': 'Aksessuar',
+    'dress': 'Ko‘ylak',
+    'outerwear': 'Tashqi kiyim',
+    'footwear': 'Poyabzal',
+  };
 
   /// The backend's canonical weather conditions.
   static const _conditions = {
