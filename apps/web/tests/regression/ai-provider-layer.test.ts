@@ -1,8 +1,7 @@
 /**
- * Phase 4.0: the stylist, the outfit explanation and the wardrobe analysis go
- * through the provider-independent AI layer. Their public behaviour (status,
- * response shape, fallback) is unchanged; failures stay soft; no content
- * reaches the logs.
+ * Phase 4.0: the outfit explanation and the wardrobe analysis go through the
+ * provider-independent AI layer; failures stay soft; no content reaches the
+ * logs. (The stylist changed in Phase 4.2: tests/regression/stylist-chat.test.ts.)
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import sharp from 'sharp'
@@ -19,7 +18,6 @@ const db = vi.hoisted(() => ({
 }))
 vi.mock('@/lib/db', () => ({ db }))
 
-import { POST as chatPOST } from '@/app/api/v1/stylist/chat/route'
 import { POST as generatePOST } from '@/app/api/v1/outfits/generate/route'
 import { setLLMProviderForTesting } from '@/lib/ai/providers'
 import { AiProviderError } from '@/lib/ai/providers/errors'
@@ -29,8 +27,6 @@ import { analyzeGarment } from '@/lib/ai/vision-service'
 import { analyzeColorSelfie } from '@/lib/ai/color-service'
 import { analyzeSelfie } from '@/lib/ai/color-analysis'
 import { authHeader, jsonRequest } from '../helpers'
-
-const USER_TEXT = 'Ertaga to‘yga nima kiyay? PRIVATE-USER-TEXT'
 
 const rows = [
   { id: 'item_shirt', category: 'shirt', subcategory: 'oxford_shirt', colors: JSON.stringify(['white']), pattern: 'solid', material: 'cotton', sleeveLength: 'long', fit: 'regular', style: 'smart_casual', season: JSON.stringify(['spring', 'autumn']), gender: 'male', formality: 'smart_casual', images: [] },
@@ -67,70 +63,12 @@ afterEach(() => {
 })
 
 const aiLines = () => lines.filter((l) => l.includes('"msg":"ai.call"')).map((l) => JSON.parse(l))
-const assistantRow = () => db.aiMessage.create.mock.calls.map((c) => c[0].data).find((d) => d.role === 'assistant')
 const failing = (kind: 'unavailable' | 'auth') =>
   new MockProvider({
     respond: () => {
       throw new AiProviderError(kind, 'mock')
     },
   })
-
-describe('stylist chat through the AI layer', () => {
-  const chat = async (body: Record<string, unknown>) => chatPOST(jsonRequest('/api/v1/stylist/chat', body, await authHeader()), undefined)
-
-  it('success: unchanged response shape; the stored message records the real provider', async () => {
-    setLLMProviderForTesting(new MockProvider({ respond: () => 'Oq ko‘ylak va to‘q ko‘k shim.' }))
-    const res = await chat({ message: USER_TEXT })
-    expect(res.status).toBe(200)
-    const body = await res.json()
-    expect(Object.keys(body).sort()).toEqual(['assistantMessage', 'contextSummary', 'conversationId'])
-    expect(body.assistantMessage).toBe('Oq ko‘ylak va to‘q ko‘k shim.')
-    const meta = JSON.parse(assistantRow().metadataJson)
-    expect(meta.provider).toBe('mock')
-    expect(meta).not.toHaveProperty('fallback')
-    expect(aiLines()).toEqual([expect.objectContaining({ feature: 'stylist_chat', provider: 'mock', outcome: 'ok' })])
-  })
-
-  it('the provider receives the system prompt, history and the user message, with the stylist limits', async () => {
-    const seen: unknown[] = []
-    setLLMProviderForTesting(
-      new MockProvider({
-        respond: (r) => {
-          seen.push(r)
-          return 'ok'
-        },
-      }),
-    )
-    await chat({ message: USER_TEXT })
-    expect(seen).toHaveLength(1)
-    const r = seen[0] as { messages: Array<{ role: string; content: string }>; temperature: number; maxOutputTokens: number }
-    expect(r.messages[0].role).toBe('system')
-    expect(r.messages[0].content).toContain('Siz shaxsiy AI stilistsiz')
-    expect(r.messages.at(-1)).toEqual({ role: 'user', content: USER_TEXT })
-    expect(r.temperature).toBe(0.7)
-    expect(r.maxOutputTokens).toBe(600)
-  })
-
-  it('provider failure: same soft fallback as before (HTTP 200, fixed text), now marked as a fallback in storage', async () => {
-    setLLMProviderForTesting(failing('unavailable'))
-    const res = await chat({ message: USER_TEXT })
-    expect(res.status).toBe(200)
-    const body = await res.json()
-    expect(body.assistantMessage).toMatch(/^Kechirasiz, hozir AI stilist javob bera olmaydi/)
-    const meta = JSON.parse(assistantRow().metadataJson)
-    expect(meta).toMatchObject({ provider: 'none', fallback: true })
-    expect(aiLines()[0]).toMatchObject({ feature: 'stylist_chat', outcome: 'unavailable', attempts: 2 })
-  })
-
-  it('logs never contain the user message or the prompt', async () => {
-    setLLMProviderForTesting(failing('auth'))
-    await chat({ message: USER_TEXT })
-    const all = lines.join('\n')
-    expect(all).not.toContain('PRIVATE-USER-TEXT')
-    expect(all).not.toContain('Siz shaxsiy AI stilistsiz')
-    expect(all).not.toContain('conv_1')
-  })
-})
 
 describe('outfit explanation through the AI layer', () => {
   const generate = async () => generatePOST(jsonRequest('/api/v1/outfits/generate', { occasion: 'work', seed: 1 }, await authHeader()), undefined)

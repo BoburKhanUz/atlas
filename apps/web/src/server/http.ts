@@ -53,8 +53,8 @@ const DEFAULT_MESSAGES: Record<ErrorCode, string> = {
   CLIENT_MISMATCH: 'Bu sessiya boshqa ilova turi uchun. Qayta kiring.',
   SESSION_BUSY: 'Server band. Birozdan so‘ng qayta urinib ko‘ring.',
   NOT_A_GARMENT: 'Rasmda bitta kiyim aniq ko‘rinmadi. Bitta kiyimni yorug‘ joyda suratga oling.',
-  AI_QUOTA_EXCEEDED: 'Bugungi AI tahlil limiti tugadi. Limit Toshkent vaqti bilan yarim tunda yangilanadi.',
-  AI_UNAVAILABLE: 'AI tahlil xizmati hozir ishlamayapti. Birozdan so‘ng qayta urinib ko‘ring.',
+  AI_QUOTA_EXCEEDED: 'Bugungi AI limiti tugadi. Limit Toshkent vaqti bilan yarim tunda yangilanadi.',
+  AI_UNAVAILABLE: 'AI xizmati hozir ishlamayapti. Birozdan so‘ng qayta urinib ko‘ring.',
 }
 
 const STATUS: Record<ErrorCode, number> = {

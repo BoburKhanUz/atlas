@@ -1,7 +1,7 @@
 /**
- * `Idempotency-Key` for POST requests that create resources (currently
- * POST /api/v1/wardrobe/items), so a mobile retry after a timeout never
- * creates a duplicate. Per user + route + key, 24 h:
+ * `Idempotency-Key` for POST requests that create resources (POST
+ * /api/v1/wardrobe/items and POST /api/v1/stylist/chat), so a mobile retry
+ * after a timeout never creates a duplicate. Per user + route + key, 24 h:
  *
  *   first request                         → processed; row in_progress → completed (with the resource id)
  *   same key, same payload, completed     → replay of the original resource (`Idempotent-Replayed: true`)
@@ -42,6 +42,11 @@ export function multipartRequestHash(parts: { fileBytes: Buffer; filename: strin
   h.update(JSON.stringify(parts.filename) + '\n')
   h.update(JSON.stringify(Object.entries(parts.fields).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))))
   return h.digest('hex')
+}
+
+/** SHA-256 over a JSON request body (keys in a fixed order chosen by the caller). */
+export function jsonRequestHash(body: Record<string, unknown>): string {
+  return crypto.createHash('sha256').update('json-v1\n').update(JSON.stringify(body)).digest('hex')
 }
 
 export type Claim =

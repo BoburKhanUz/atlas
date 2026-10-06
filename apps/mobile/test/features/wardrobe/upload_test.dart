@@ -283,7 +283,7 @@ void main() {
             .having((f) => f.code, 'code', ApiErrorCode.aiUnavailable)
             .having((f) => f.retryable, 'retryable', true),
       );
-      expect(s.state.failure!.userMessage, contains('AI tahlil xizmati'));
+      expect(s.state.failure!.userMessage, contains('AI xizmati hozir ishlamayapti'));
       expect(s.uploads, hasLength(1));
       await s.c.upload(); // Retry
       expect(s.uploads, hasLength(2));

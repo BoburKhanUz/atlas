@@ -43,8 +43,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         builder: (context) => AlertDialog(
           title: const Text('Yana yuborasizmi?'),
           content: const Text(
-            'Oldingi xabar serverga yetib borgan bo‘lishi mumkin. Yana yuborsangiz, u ikki marta saqlanishi mumkin. '
-            'Avval suhbatni yangilab tekshirishingiz mumkin.',
+            'Oldingi xabar serverga yetib borgan bo‘lishi mumkin. Aynan shu matnni qayta yuborsangiz, server uni '
+            'ikki marta saqlamaydi; matnni o‘zgartirsangiz, u yangi xabar bo‘ladi. Avval suhbatni yangilab tekshirishingiz mumkin.',
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Bekor qilish')),

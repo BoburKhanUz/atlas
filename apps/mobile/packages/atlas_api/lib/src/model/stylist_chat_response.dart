@@ -14,11 +14,12 @@ part 'stylist_chat_response.g.dart';
 /// StylistChatResponse
 ///
 /// Properties:
-/// * [assistantMessage]
+/// * [assistantMessage] - The stylist answer; wardrobe items are named in plain words (no internal references or ids)
 /// * [contextSummary]
 /// * [conversationId]
 @BuiltValue()
 abstract class StylistChatResponse implements Built<StylistChatResponse, StylistChatResponseBuilder> {
+  /// The stylist answer; wardrobe items are named in plain words (no internal references or ids)
   @BuiltValueField(wireName: r'assistantMessage')
   String get assistantMessage;
 

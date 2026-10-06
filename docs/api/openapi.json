@@ -2649,9 +2649,11 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "description": "Occasion the user typed (free text, trimmed; an occasion id or label is also used by the outfit engine)"
           },
           "message": {
+            "description": "Trimmed; 1–2000 characters",
             "maxLength": 2000,
             "minLength": 1,
             "type": "string"
@@ -2713,6 +2715,7 @@
         "additionalProperties": false,
         "properties": {
           "assistantMessage": {
+            "description": "The stylist answer; wardrobe items are named in plain words (no internal references or ids)",
             "type": "string"
           },
           "contextSummary": {
@@ -2722,6 +2725,7 @@
                 "type": "boolean"
               },
               "wardrobeItemCount": {
+                "description": "Wardrobe items given to the stylist for this answer (at most 40)",
                 "type": "integer"
               },
               "weatherProvided": {
@@ -5338,6 +5342,18 @@
     "/api/v1/stylist/chat": {
       "post": {
         "operationId": "stylistChat",
+        "parameters": [
+          {
+            "description": "Makes retries safe for 24 h: the same key and payload returns the original result (Idempotent-Replayed: true); a different payload → 409 IDEMPOTENCY_KEY_MISMATCH; still processing → 409 IDEMPOTENCY_IN_PROGRESS with Retry-After.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "pattern": "^[A-Za-z0-9_-]{8,128}$",
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -5357,7 +5373,15 @@
                 }
               }
             },
-            "description": "Assistant reply"
+            "description": "Assistant reply (or the original reply, replayed for a repeated Idempotency-Key)",
+            "headers": {
+              "Idempotent-Replayed": {
+                "description": "\"true\" when this is the original response of an earlier request with the same Idempotency-Key",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "400": {
             "content": {
@@ -5399,6 +5423,41 @@
               "FORBIDDEN"
             ]
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: NOT_FOUND",
+            "x-error-codes": [
+              "NOT_FOUND"
+            ]
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: IDEMPOTENCY_IN_PROGRESS | IDEMPOTENCY_KEY_MISMATCH",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying (retryable codes)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "x-error-codes": [
+              "IDEMPOTENCY_IN_PROGRESS",
+              "IDEMPOTENCY_KEY_MISMATCH"
+            ]
+          },
           "413": {
             "content": {
               "application/json": {
@@ -5410,6 +5469,27 @@
             "description": "Error. code: PAYLOAD_TOO_LARGE",
             "x-error-codes": [
               "PAYLOAD_TOO_LARGE"
+            ]
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: AI_QUOTA_EXCEEDED",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying (retryable codes)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "x-error-codes": [
+              "AI_QUOTA_EXCEEDED"
             ]
           },
           "500": {
@@ -5424,6 +5504,27 @@
             "x-error-codes": [
               "INTERNAL"
             ]
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: AI_UNAVAILABLE",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying (retryable codes)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "x-error-codes": [
+              "AI_UNAVAILABLE"
+            ]
           }
         },
         "security": [
@@ -5434,7 +5535,7 @@
             "cookieAuth": []
           }
         ],
-        "summary": "Send a message to the AI stylist",
+        "summary": "Send a message to the AI stylist. The user message and the answer are stored together, only when the turn succeeds: any error (incl. 503 AI_UNAVAILABLE and 429 AI_QUOTA_EXCEEDED) stores nothing. An unknown or foreign conversationId is 404 (never a new conversation).",
         "tags": [
           "stylist"
         ]

@@ -12,7 +12,7 @@ part 'stylist_chat_response_context_summary.g.dart';
 ///
 /// Properties:
 /// * [eventProvided]
-/// * [wardrobeItemCount]
+/// * [wardrobeItemCount] - Wardrobe items given to the stylist for this answer (at most 40)
 /// * [weatherProvided]
 @BuiltValue()
 abstract class StylistChatResponseContextSummary
@@ -20,6 +20,7 @@ abstract class StylistChatResponseContextSummary
   @BuiltValueField(wireName: r'eventProvided')
   bool get eventProvided;
 
+  /// Wardrobe items given to the stylist for this answer (at most 40)
   @BuiltValueField(wireName: r'wardrobeItemCount')
   int get wardrobeItemCount;
 

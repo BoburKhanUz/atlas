@@ -44,7 +44,7 @@ import { resetRateLimits } from '@/lib/rate-limit'
 import { setStorageProviderForTesting } from '@/lib/storage/provider'
 import { setWeatherProviderForTesting } from '@/lib/weather/provider'
 import { errorStatus } from '@/server/http'
-import { claimIdempotencyKey, multipartRequestHash } from '@/server/idempotency'
+import { claimIdempotencyKey, multipartRequestHash, jsonRequestHash } from '@/server/idempotency'
 import { errorCodesFor, serializeOpenApiDocument } from '@/server/openapi/document'
 import { OPERATIONS, type Operation } from '@/server/openapi/registry'
 import { ErrorResponse } from '@/server/schemas/responses'
@@ -321,6 +321,33 @@ describe.skipIf(!enabled)('OAS-04: real responses match the OpenAPI contract', (
     await call('listConversations', conversations as Handler, req('/api/v1/stylist/conversations', { headers: u.auth }))
     await call('getConversation', conversation as Handler, req(`/api/v1/stylist/conversations/${conversationId}`, { headers: u.auth }), params({ id: conversationId }))
     await call('getConversation', conversation as Handler, req(`/api/v1/stylist/conversations/${conversationId}`, { headers: other.auth }), params({ id: conversationId })) // NOT_FOUND
+    const say = (json: unknown, headers: Record<string, string> = {}) => call('stylistChat', chat as Handler, req('/api/v1/stylist/chat', { method: 'POST', headers: { ...u.auth, ...headers }, json }))
+    await call('stylistChat', chat as Handler, req('/api/v1/stylist/chat', { method: 'POST', headers: other.auth, json: { message: 'x', conversationId } })) // NOT_FOUND (foreign)
+    const ck = `contract-chat-${crypto.randomBytes(6).toString('hex')}`
+    await say({ message: 'Salom', conversationId }, { 'idempotency-key': ck })
+    await say({ message: 'Salom', conversationId }, { 'idempotency-key': ck }) // replay (200)
+    await say({ message: 'Boshqa', conversationId }, { 'idempotency-key': ck }) // IDEMPOTENCY_KEY_MISMATCH
+    const busyChat = `contract-chat-busy-${crypto.randomBytes(6).toString('hex')}`
+    await claimIdempotencyKey((await import('@/lib/db')).db, { userId: u.userId, route: 'POST /api/v1/stylist/chat', key: busyChat, requestHash: jsonRequestHash({ message: 'Band', conversationId: null, weather: null, event: null }) })
+    await say({ message: 'Band' }, { 'idempotency-key': busyChat }) // IDEMPOTENCY_IN_PROGRESS
+    await say({ message: '   ' }) // VALIDATION_ERROR
+    // Real-provider path (scripted, no network).
+    const llm = (step: () => string) =>
+      setLLMProviderForTesting({ name: 'openai', model: 'contract-llm', generate: async () => ({ text: step(), metadata: { provider: 'openai', model: 'contract-llm', usage: {} } }) })
+    try {
+      llm(() => JSON.stringify({ answer: 'Bugun [W1] kiying.', referencedItems: ['W1'], needsMoreInfo: false }))
+      const real = await say({ message: 'Nima kiyay?' })
+      expect(real.status).toBe(200)
+      expect((await real.json()).assistantMessage).not.toMatch(/W\d/)
+      llm(() => {
+        throw new AiProviderError('unavailable', 'openai', { status: 503 })
+      })
+      await say({ message: 'Nima kiyay?' }) // AI_UNAVAILABLE
+      sql(DB, `INSERT INTO "AiUsage" ("id","userId","feature","day","count","updatedAt") VALUES ('${crypto.randomUUID()}','${u.userId}','stylist_chat', (now() AT TIME ZONE 'Asia/Tashkent')::date, 50, now()) ON CONFLICT ("userId","feature","day") DO UPDATE SET "count" = 50`)
+      await say({ message: 'Nima kiyay?' }) // AI_QUOTA_EXCEEDED
+    } finally {
+      setLLMProviderForTesting(new MockProvider({ respond: () => 'Test javobi.' }))
+    }
 
     // weather and service
     await call('getCurrentWeather', weather as Handler, req('/api/v1/weather/current?lat=41.31&lon=69.28', { headers: u.auth }))

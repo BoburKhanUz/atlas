@@ -6,6 +6,7 @@ Status: proposal. No vendor is selected or recommended here. The goal is a provi
 
 - The provider layer is implemented: see [`provider-architecture.md`](provider-architecture.md). `LLMProvider` and `VisionProvider` live in `apps/web/src/lib/ai/providers/`, with REST adapters for Gemini and OpenAI (no SDKs) and a mock. The Z.ai SDK is removed.
 - No provider is selected: Gemini and OpenAI are candidates for this evaluation. Development uses the mock.
+- Phase 4.2: the stylist runs on a real LLM provider when `AI_LLM_PROVIDER` is `gemini` or `openai` (grounded structured answers; the mock stays for development and e2e). Its evaluation plan is in [`stylist-evaluation.md`](stylist-evaluation.md). No provider is selected until it has run.
 - Phase 4.1: clothing analysis runs on a real vision provider when `AI_VISION_PROVIDER` is `gemini` or `openai` (the mock stays for development and e2e). The vision bake-off procedure and harness are in [`vision-evaluation.md`](vision-evaluation.md). No vision provider is selected until it has run.
 
 ## Design

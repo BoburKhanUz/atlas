@@ -228,6 +228,103 @@ void main() {
     });
   });
 
+  group('Phase 4.2: idempotency and AI errors', () {
+    String? keyOf(Chat ch, int i) => ch.h.backend.to(P.chat)[i].header('Idempotency-Key') as String?;
+
+    test('every explicit send carries its own Idempotency-Key', () async {
+      final ch = Chat();
+      ch.h.backend.script(P.chat, [JsonReply(200, chatJson('c1')), JsonReply(200, chatJson('c1'))]);
+      await ch.start();
+      await ch.ctl.send('Birinchi');
+      await ch.ctl.send('Ikkinchi');
+      final a = keyOf(ch, 0), b = keyOf(ch, 1);
+      expect(a, matches(RegExp(r'^[A-Za-z0-9_-]{8,128}$')));
+      expect(b, isNot(a));
+    });
+
+    test('after UNKNOWN, a confirmed re-send of the same text repeats the exact request (same key and body)', () async {
+      final ch = Chat();
+      ch.h.backend.script(P.chat, [TransportFailure(DioExceptionType.receiveTimeout), JsonReply(200, chatJson('c1'))]);
+      await ch.start();
+      await ch.c.read(weatherControllerProvider.notifier).chooseCity(Cities.all.first);
+      expect(await ch.ctl.send('Salom', event: 'work'), SendResult.unknown);
+      ch.clock = DateTime.utc(
+        2026,
+        10,
+        5,
+        10,
+        40,
+      ); // weather is stale by now: the repeat still carries the original snapshot
+      expect(await ch.ctl.send('Salom', event: 'work', confirmResend: true), SendResult.sent);
+      expect(keyOf(ch, 1), keyOf(ch, 0));
+      expect(ch.bodies[1], ch.bodies[0]);
+      expect(ch.state.messages.where((m) => m.fromUser), hasLength(1));
+    });
+
+    test('after UNKNOWN, a confirmed send of DIFFERENT text is a new request with a new key', () async {
+      final ch = Chat();
+      ch.h.backend.script(P.chat, [TransportFailure(DioExceptionType.receiveTimeout), JsonReply(200, chatJson('c1'))]);
+      await ch.start();
+      await ch.ctl.send('Salom');
+      expect(await ch.ctl.send('Boshqa savol', confirmResend: true), SendResult.sent);
+      expect(keyOf(ch, 1), isNot(keyOf(ch, 0)));
+    });
+
+    test(
+      '503 AI_UNAVAILABLE → failed (the server stored nothing): draft kept, no confirmation needed, new key next time',
+      () async {
+        final ch = Chat();
+        ch.h.backend.script(P.chat, [
+          JsonReply(503, errorBody('AI_UNAVAILABLE'), headers: {'Retry-After': '15'}),
+          JsonReply(200, chatJson('c1')),
+        ]);
+        await ch.start();
+        expect(await ch.ctl.send('Salom'), SendResult.failed);
+        expect(ch.state.send, SendStatus.failed);
+        expect(ch.state.failure!.userMessage, contains('AI xizmati hozir ishlamayapti'));
+        expect(ch.state.resendNeedsConfirmation, isFalse);
+        expect(ch.state.messages, isEmpty);
+        expect(ch.h.backend.calls(P.chat), 1, reason: 'never retried automatically');
+        expect(await ch.ctl.send('Salom'), SendResult.sent);
+        expect(keyOf(ch, 1), isNot(keyOf(ch, 0)));
+      },
+    );
+
+    test('429 AI_QUOTA_EXCEEDED → failed with the daily-limit message', () async {
+      final ch = Chat();
+      ch.h.backend.script(P.chat, [
+        JsonReply(429, errorBody('AI_QUOTA_EXCEEDED'), headers: {'Retry-After': '3600'}),
+      ]);
+      await ch.start();
+      expect(await ch.ctl.send('Salom'), SendResult.failed);
+      expect(ch.state.failure!.userMessage, contains('limiti tugadi'));
+      expect(ch.state.resendNeedsConfirmation, isFalse);
+    });
+
+    test('404 for the conversation → failed; the app does not switch conversations', () async {
+      final ch = Chat(key: 'c1');
+      ch.h.backend.script(P.chat, [JsonReply(404, errorBody('NOT_FOUND'))]);
+      await ch.start();
+      expect(await ch.ctl.send('Salom'), SendResult.failed);
+      expect(ch.state.conversationId, 'c1');
+      expect(ch.state.startedNewConversation, isFalse);
+      expect(ch.state.messages.map((m) => m.content), ['Salom', 'Assalomu alaykum!']);
+    });
+
+    test(
+      '409 IDEMPOTENCY_IN_PROGRESS is not a definite failure → unknown (the first attempt may still be stored)',
+      () async {
+        final ch = Chat();
+        ch.h.backend.script(P.chat, [
+          JsonReply(409, errorBody('IDEMPOTENCY_IN_PROGRESS'), headers: {'Retry-After': '5'}),
+        ]);
+        await ch.start();
+        expect(await ch.ctl.send('Salom'), SendResult.unknown);
+        expect(ch.state.resendNeedsConfirmation, isTrue);
+      },
+    );
+  });
+
   group('loading', () {
     test('a missing conversation → notFound', () async {
       final ch = Chat(key: 'c1')..convReply = JsonReply(404, errorBody('NOT_FOUND'));

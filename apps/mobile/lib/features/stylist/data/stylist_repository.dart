@@ -86,14 +86,16 @@ class Conversation {
 }
 
 /// Stylist operations of docs/api/openapi.json. Every method throws
-/// `ApiFailure`. [send] is ONE request and is never retried automatically
-/// (the endpoint has no Idempotency-Key).
+/// `ApiFailure`. [send] is ONE request and is never retried automatically;
+/// its Idempotency-Key lets an explicit re-send of the same request return
+/// the stored answer instead of storing the message twice.
 class StylistRepository {
   StylistRepository(this._client);
   final AtlasApiClient _client;
 
   Future<StylistChatResponse> send({
     required String message,
+    required String idempotencyKey,
     String? conversationId,
     String? event,
     StylistWeather? weather,
@@ -114,7 +116,9 @@ class StylistRepository {
                 ..windSpeed = weather.windSpeed
                 ..uvIndex = weather.uvIndex),
     );
-    return _client.call((api) => api.getStylistApi().stylistChat(stylistChatRequest: request));
+    return _client.call(
+      (api) => api.getStylistApi().stylistChat(stylistChatRequest: request, idempotencyKey: idempotencyKey),
+    );
   }
 
   Future<List<ConversationSummary>> conversations() async {

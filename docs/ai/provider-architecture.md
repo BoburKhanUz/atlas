@@ -1,4 +1,4 @@
-# AI provider architecture (Phase 4.0, vision in 4.1)
+# AI provider architecture (Phase 4.0; vision 4.1; stylist 4.2)
 
 ATLAS calls AI only from the backend. The mobile app and the web client call the ATLAS API; provider credentials exist only in the server's environment.
 
@@ -7,7 +7,9 @@ Flutter / web ─▶ ATLAS API (route handlers)
                     │
                     ▼
         AI application layer            apps/web/src/lib/ai/
-        ├─ stylist.ts                   stylist chat (prompt + context, unchanged)
+        ├─ stylist-service.ts           stylist turn: quota, structured answer, grounding (4.2)
+        │   ├─ stylist.ts               versioned prompt, schema, validation, W-reference resolution
+        │   └─ stylist-context.ts       bounded context: ≤ 40 items, candidates, weather, colour profile, history
         ├─ outfit-intelligence.ts       explanation of the top outfit
         ├─ vision-service.ts            clothing analysis (real provider or mock; 4.1)
         │   ├─ garment-analysis.ts      versioned prompt, strict schema, validation
@@ -110,12 +112,11 @@ The line never contains prompts, user messages, wardrobe data, images, provider 
 - `consumeAiQuota` increments with a single `INSERT … ON CONFLICT … WHERE count < limit`, so concurrent requests cannot exceed the limit. `refundAiQuota` gives one call back.
 - The rows cascade with the account.
 - Rollback: `docs/database/rollback/down-ai-usage.sql`.
-- **`clothing_analysis` is enforced since Phase 4.1** for real vision providers only (the mock never consumes quota): `POST /api/v1/wardrobe/items` answers 429 `AI_QUOTA_EXCEEDED` with `Retry-After` = seconds until the next Uzbekistan day. See [`vision-evaluation.md`](vision-evaluation.md) for when a call is charged or refunded. `stylist_chat` and `color_analysis` are not enforced yet.
+- **`clothing_analysis` is enforced since Phase 4.1** for real vision providers only (the mock never consumes quota): `POST /api/v1/wardrobe/items` answers 429 `AI_QUOTA_EXCEEDED` with `Retry-After` = seconds until the next Uzbekistan day. See [`vision-evaluation.md`](vision-evaluation.md) for when a call is charged or refunded. **`stylist_chat` is enforced since Phase 4.2** the same way (real providers only): `POST /api/v1/stylist/chat` answers 429 `AI_QUOTA_EXCEEDED`; see [`stylist-evaluation.md`](stylist-evaluation.md). `color_analysis` is not enforced yet.
 
 ## Behaviour kept from before Phase 4.0
 
-- The stylist prompt and context are unchanged. Temperature is 0.7, with at most 600 output tokens.
-- On provider failure the stylist still answers HTTP 200 with the fixed apology. The stored message is now marked `fallback: true`, with provider `none`; it was hard-coded to `zai`. Not presenting this as an AI answer is Phase 4.2 work.
+- Phase 4.0 kept the stylist prompt and its soft fallback (HTTP 200 with a fixed apology, stored as `fallback: true`). **Phase 4.2 replaced both:** a versioned structured-output prompt, and failures that answer 503 `AI_UNAVAILABLE` and store nothing. See [`stylist-evaluation.md`](stylist-evaluation.md).
 - The outfit explanation covers the top candidate only: temperature 0.5, at most 180 tokens. A failure gives `explanation: null`. Previously, a bad `LLM_PROVIDER` turned the whole request into a 500.
 - Colour analysis is unchanged. With `AI_VISION_PROVIDER=mock`, clothing analysis is byte-for-byte the previous deterministic result and `detection.mock` is `true`.
 - The mock text says it is a demo ("Demo rejim: …").

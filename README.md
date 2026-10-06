@@ -89,7 +89,7 @@ See `.env.example`. The server exits at startup if the required secrets are miss
 | `MEDIA_URL_TTL_SECONDS` | Signed media URL lifetime (default 3600) |
 | `PUBLIC_BASE_URL` | Optional. Origin for absolute image URLs (mobile), e.g. `https://api.atlas.example`; https in production; never derived from the Host header |
 | `WEATHER_PROVIDER` | `open-meteo` (default) or `mock`. Verify Open-Meteo's terms before commercial launch |
-| `AI_LLM_PROVIDER` | `mock` (development default), `gemini` or `openai`. Production refuses `mock` and a real provider without key or model. See `docs/ai/provider-architecture.md` |
+| `AI_LLM_PROVIDER` | Stylist chat and outfit explanation: `mock` (development default), `gemini` or `openai`. Production refuses `mock` and a real provider without key or model. See `docs/ai/provider-architecture.md` and `docs/ai/stylist-evaluation.md` |
 | `AI_LLM_MODEL` | Model id for `gemini`/`openai` (required; there is no built-in choice) |
 | `GEMINI_API_KEY`, `OPENAI_API_KEY` | Server-side key of the selected provider. Never in the mobile app or in git |
 | `AI_LLM_TIMEOUT_MS` | Per-attempt AI timeout, 1000–55000 ms (default 25000) |

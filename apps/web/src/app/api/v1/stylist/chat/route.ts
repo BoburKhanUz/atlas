@@ -1,259 +1,239 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth, unauthorized } from '@/lib/api-helpers'
-import { withApi, parseJson } from '@/server/http'
+import { ApiError, withApi, parseJson } from '@/server/http'
 import { log } from '@/server/log'
 import { occasionFromEvent } from '@/server/schemas/catalog'
 import { StylistChatRequest } from '@/server/schemas/requests'
-import { runStylistTurn, type StylistContext } from '@/lib/ai/stylist'
-import type { LLMMessage } from '@/lib/ai/providers/types'
-import { generateOutfits, buildExplanationContext, isCompleteWeather } from '@/lib/ai/recommendation'
-import { retrieveKnowledge, formatKnowledgeContext } from '@/lib/ai/fashion-knowledge'
 import {
-  extractMemoriesFromMessage,
-  saveMemories,
-  loadMemoriesForContext,
-  formatMemoryContext,
-} from '@/lib/ai/user-memory'
+  claimIdempotencyKey,
+  completeIdempotencyKey,
+  idempotencyKeyOf,
+  jsonRequestHash,
+  releaseIdempotencyKey,
+  type Claim,
+} from '@/server/idempotency'
+import { generateOutfits, isCompleteWeather, type OutfitCandidate } from '@/lib/ai/recommendation'
+import { buildStylistContext, type WardrobeRow } from '@/lib/ai/stylist-context'
+import { runStylistTurn, StylistError, type StylistTurnResult } from '@/lib/ai/stylist-service'
+import { refundAiQuota } from '@/lib/ai/quota'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
 
-// Detect outfit-request intent — if user asks "what should I wear?" type
-// questions, we run the recommendation engine and inject the result into the
-// LLM context. Spec rule 9: "Recommendation Engine must exist separately
-// from LLM" — engine picks, LLM explains.
-const OUTFIT_REQUEST_PATTERNS = [
-  /nima\s*kiy/i,
-  /nima\s*tavsiya/i,
-  /outfit/i,
-  /kiyishim\s*kerak/i,
-  /kiysam\s*bo['']ladi/i,
-  /what\s*should\s*i\s*wear/i,
-  /ob-havo.*kiy/i,
-  /tadbir.*kiy/i,
-]
+const ROUTE = 'POST /api/v1/stylist/chat'
+const AI_UNAVAILABLE_RETRY_AFTER = '15'
+/** History rows loaded per turn (the context keeps the last 12 meaningful ones). */
+const HISTORY_ROWS = 60
 
+const json = <T>(raw: string, fallback: T): T => {
+  try {
+    return JSON.parse(raw) as T
+  } catch {
+    return fallback
+  }
+}
+
+interface ContextSummary {
+  wardrobeItemCount: number
+  weatherProvided: boolean
+  eventProvided: boolean
+}
+
+/** The original response of an earlier request with the same Idempotency-Key. */
+async function replay(userId: string, assistantMessageId: string | null) {
+  const message = assistantMessageId
+    ? await db.aiMessage.findFirst({ where: { id: assistantMessageId, role: 'assistant', conversation: { userId } } })
+    : null
+  // The conversation was deleted since: nothing to replay.
+  if (!message) throw new ApiError('NOT_FOUND')
+  const meta = json<Partial<ContextSummary>>(message.metadataJson, {})
+  return NextResponse.json(
+    {
+      conversationId: message.conversationId,
+      assistantMessage: message.content,
+      contextSummary: {
+        wardrobeItemCount: meta.wardrobeItemCount ?? 0,
+        weatherProvided: meta.weatherProvided ?? false,
+        eventProvided: meta.eventProvided ?? false,
+      },
+    },
+    { headers: { 'Idempotent-Replayed': 'true' } },
+  )
+}
+
+/**
+ * POST /api/v1/stylist/chat — one stylist turn.
+ *
+ * auth → validate → conversation ownership (unknown or foreign → 404) →
+ * Idempotency-Key (optional; replay returns the stored answer) → bounded
+ * context → quota (real providers) → provider → validation and grounding →
+ * user message + answer stored together in one transaction → 200.
+ *
+ * Nothing is stored unless the whole turn succeeds: AI_UNAVAILABLE (503),
+ * AI_QUOTA_EXCEEDED (429) and every other error leave the conversation as it
+ * was, so a 503 or 429 is a definite "not stored" for the client.
+ */
 export const POST = withApi(async (req) => {
   const authUser = await requireAuth(req)
   if (!authUser) return unauthorized()
+  const userId = authUser.sub
 
-  const { message, conversationId, weather, event } = await parseJson(req, StylistChatRequest)
-  // The engine only understands occasion ids; free-text events stay in the
-  // LLM context but must not reach the scorer.
-  const occasion = occasionFromEvent(event)
+  const body = await parseJson(req, StylistChatRequest)
+  const { message, conversationId, weather } = body
+  const event = body.event ? body.event : null // "" after trimming means none
+  const idempotencyKey = idempotencyKeyOf(req)
 
-  // ── 1. Load user's wardrobe as compact summary for the LLM ───────────────
-  // Each item gets a short opaque ref like "A1", "A2" so the LLM can quote it
-  // back in its reply (spec section 13).
-  const items = await db.wardrobeItem.findMany({
-    where: { userId: authUser.sub },
-    include: { images: true },
-    orderBy: { createdAt: 'asc' },
-  })
-
-  const wardrobe = items.map((i, idx) => ({
-    category: i.category,
-    subcategory: i.subcategory,
-    colors: JSON.parse(i.colors) as string[],
-    style: i.style,
-    material: i.material,
-    season: JSON.parse(i.season) as string[],
-    ref: `A${idx + 1}`,
-  }))
-
-  // ── 2. Load user profile + preferences (all optional) ───────────────────
-  const user = await db.user.findUnique({
-    where: { id: authUser.sub },
-    select: {
-      profile: true,
-      preferences: true,
-    },
-  })
-
-  const profile: StylistContext['profile'] = user?.profile
-    ? {
-        gender: user.profile.gender,
-        preferredStyles: user.preferences
-          ? (JSON.parse(user.preferences.preferredStyles) as string[])
-          : [],
-        dislikedStyles: user.preferences
-          ? (JSON.parse(user.preferences.dislikedStyles) as string[])
-          : [],
-        favoriteColors: user.preferences
-          ? (JSON.parse(user.preferences.favoriteColors) as string[])
-          : [],
-        dislikedColors: user.preferences
-          ? (JSON.parse(user.preferences.dislikedColors) as string[])
-          : [],
-        language: user.preferences?.language ?? 'uz',
-      }
-    : undefined
-
-  // ── 3. Load or create conversation ────────────────────────────────────────
-  let conversation = conversationId
-    ? await db.aiConversation.findFirst({
-        where: { id: conversationId, userId: authUser.sub },
-        include: { messages: { orderBy: { createdAt: 'asc' } } },
-      })
+  // ── 1. Ownership: an unknown or foreign id is 404, never a new conversation.
+  const conversation = conversationId
+    ? await db.aiConversation.findFirst({ where: { id: conversationId, userId }, select: { id: true } })
     : null
+  if (conversationId && !conversation) throw new ApiError('NOT_FOUND', 'Suhbat topilmadi.')
 
-  if (!conversation) {
-    conversation = await db.aiConversation.create({
-      data: {
-        userId: authUser.sub,
-        title: message.slice(0, 60),
-        contextJson: JSON.stringify({ weather: weather ?? null, event: event ?? null }),
-      },
-      include: { messages: true },
+  // ── 2. Idempotency: claim before any AI work.
+  let claim: Extract<Claim, { kind: 'claimed' }> | null = null
+  if (idempotencyKey) {
+    const result = await claimIdempotencyKey(db, {
+      userId,
+      route: ROUTE,
+      key: idempotencyKey,
+      requestHash: jsonRequestHash({ message, conversationId: conversationId ?? null, weather: weather ?? null, event }),
     })
+    if (result.kind === 'replay') return replay(userId, result.resourceId)
+    claim = result
   }
 
-  // Build conversation history for the LLM (only last 12 messages to stay in
-  // token budget). Spec section 13 — must feel like an ongoing conversation.
-  const history: LLMMessage[] = (conversation.messages ?? [])
-    .slice(-12)
-    .map((m) => ({
-      role: m.role === 'assistant' ? 'assistant' : 'user',
-      content: m.content,
-    })) as LLMMessage[]
-
-  // ── 4. Save the user's message first ──────────────────────────────────────
-  await db.aiMessage.create({
-    data: {
-      conversationId: conversation.id,
-      role: 'user',
-      content: message,
-      metadataJson: JSON.stringify({ weather, event }),
-    },
-  })
-
-  // ── 4a. Extract user preferences / statements from the message (Phase 6)
-  // Spec section 6 + 14: store as user-specific memory, never retrain a
-  // global model. Conservative regex-based extraction.
-  const extractedMemories = extractMemoriesFromMessage(message)
-  if (extractedMemories.length > 0) {
-    try {
-      await saveMemories(authUser.sub, extractedMemories)
-    } catch (err) {
-      // Soft-fail — memory save should not block the chat response
-      log.warn('stylist: saveMemories failed', { err })
-    }
-  }
-
-  // ── 4b. Load recent memories for context (Phase 6)
-  // The LLM should know what the user has told us before. Limit to 12 entries.
-  const memories = await loadMemoriesForContext(authUser.sub, 12)
-  const memoryContext = formatMemoryContext(memories)
-
-  // ── 4c. Retrieve relevant fashion knowledge rules (Phase 6 RAG)
-  // Keyword-based retrieval from the in-code knowledge base. Spec section 14:
-  // "RAG should complement structured data, not replace it."
-  const relevantRules = retrieveKnowledge(message, 5)
-  const knowledgeContext = formatKnowledgeContext(relevantRules)
-
-  // ── 5. Run the LLM turn with full wardrobe + weather + event context ──────
-  // If the user's message looks like an outfit-request question (e.g.,
-  // "Bugun nima kiyaman?"), we run the recommendation engine FIRST and
-  // inject the top candidate into the LLM context as a system hint.
-  // Spec rule 9: engine picks the outfit, LLM explains it in natural language.
-  const isOutfitRequest = OUTFIT_REQUEST_PATTERNS.some((p) => p.test(message))
-  let engineHint: string | null = null
-  if (isOutfitRequest && items.length > 0) {
-    try {
-      // Feed the engine the full DB rows — the LLM summary above omits id,
-      // pattern, fit, formality etc., which the scorer needs.
-      const candidates = generateOutfits({
-        wardrobe: items.map((i) => ({
-          id: i.id,
-          category: i.category,
-          subcategory: i.subcategory,
-          colors: JSON.parse(i.colors) as string[],
-          pattern: i.pattern,
-          material: i.material,
-          sleeveLength: i.sleeveLength,
-          fit: i.fit,
-          style: i.style,
-          season: JSON.parse(i.season) as string[],
-          gender: i.gender,
-          formality: i.formality,
-        })),
-        weather: isCompleteWeather(weather) ? weather : undefined,
-        occasion,
-        profile,
-        topN: 1,
-      })
-      if (candidates.length > 0) {
-        engineHint = buildExplanationContext(candidates[0], occasion)
-      }
-    } catch (err) {
-      log.error('stylist: recommendation engine error', { err })
-      // Soft-fail: continue without engine hint — LLM falls back to general
-    }
-  }
-
-  let assistantText: string
-  let contextSummary: { wardrobeItemCount: number; weatherProvided: boolean; eventProvided: boolean }
-  // Stored with the message (not part of the API): who answered, and whether
-  // the text is the fixed fallback rather than an AI answer.
-  let provider = 'none'
-  let fallback = false
+  let turn: StylistTurnResult | null = null
   try {
-    const result = await runStylistTurn(
-      message,
-      history,
-      {
-        wardrobe,
-        weather: weather ?? undefined,
-        event: event ?? undefined,
-        profile,
-      },
-      engineHint,
-      // Phase 6: memory + RAG knowledge as additional context blocks
-      memoryContext,
-      knowledgeContext,
-    )
-    assistantText = result.assistantMessage
-    contextSummary = result.contextSummary
-    provider = result.provider
-  } catch (err) {
-    // Soft-fail: if the LLM is unavailable, give the user a clear message
-    // rather than a 500. Spec: must feel like intelligent stylist — errors
-    // should be honest, not masked.
-    log.error('stylist: LLM error', { err })
-    fallback = true
-    assistantText =
-      'Kechirasiz, hozir AI stilist javob bera olmaydi. Iltimos, bir necha soniyadan so‘ng qayta urinib ko‘ring.'
-    contextSummary = {
-      wardrobeItemCount: wardrobe.length,
-      weatherProvided: !!weather,
+    // ── 3. Load what the context may use.
+    const [rows, user, history] = await Promise.all([
+      db.wardrobeItem.findMany({ where: { userId }, orderBy: { createdAt: 'asc' } }),
+      db.user.findUnique({ where: { id: userId }, select: { profile: { include: { colorProfile: true } }, preferences: true } }),
+      conversation
+        ? db.aiMessage.findMany({ where: { conversationId: conversation.id }, orderBy: { createdAt: 'desc' }, take: HISTORY_ROWS })
+        : Promise.resolve([]),
+    ])
+    const items: WardrobeRow[] = rows.map((i) => ({
+      id: i.id,
+      category: i.category,
+      subcategory: i.subcategory,
+      colors: json<string[]>(i.colors, []),
+      pattern: i.pattern,
+      material: i.material,
+      sleeveLength: i.sleeveLength,
+      fit: i.fit,
+      style: i.style,
+      season: json<string[]>(i.season, []),
+      gender: i.gender,
+      formality: i.formality,
+      createdAt: i.createdAt,
+    }))
+    const prefs = user?.preferences
+    const preferences = {
+      preferredStyles: prefs ? json<string[]>(prefs.preferredStyles, []) : [],
+      dislikedStyles: prefs ? json<string[]>(prefs.dislikedStyles, []) : [],
+      favoriteColors: prefs ? json<string[]>(prefs.favoriteColors, []) : [],
+      dislikedColors: prefs ? json<string[]>(prefs.dislikedColors, []) : [],
+      preferredFit: user?.profile?.preferredFit ?? null,
+    }
+    const cp = user?.profile?.colorProfile
+    const colorProfile = cp
+      ? {
+          season: cp.season,
+          undertone: cp.undertone,
+          contrastLevel: cp.contrastLevel,
+          recommendedColors: json<string[]>(cp.recommendedColors, []),
+          neutralColors: json<string[]>(cp.neutralColors, []),
+          cautionColors: json<string[]>(cp.cautionColors, []),
+        }
+      : null
+    // Only a complete snapshot counts; the app sends weather only while it is fresh.
+    const currentWeather = isCompleteWeather(weather) ? weather : undefined
+    const occasion = occasionFromEvent(event)
+
+    // ── 4. Deterministic outfit candidates (the engine picks; the model explains).
+    let candidates: OutfitCandidate[] = []
+    if (items.length > 0) {
+      try {
+        candidates = generateOutfits({
+          wardrobe: items,
+          weather: currentWeather,
+          occasion,
+          profile: { gender: user?.profile?.gender ?? null, ...preferences },
+          topN: 3,
+          seed: 1,
+        })
+      } catch (err) {
+        log.error('stylist: recommendation engine error', { err })
+      }
+    }
+
+    const context = buildStylistContext({ items, candidates, occasion, weather: currentWeather, preferences, colorProfile })
+    const contextSummary: ContextSummary = {
+      wardrobeItemCount: context.refs.length,
+      weatherProvided: !!currentWeather,
       eventProvided: !!event,
     }
+
+    // ── 5. The AI turn (quota, provider, grounding).
+    turn = await runStylistTurn({
+      userId,
+      message,
+      occasionText: event,
+      context,
+      history: history.reverse().map((m) => ({ role: m.role, content: m.content, metadata: json<unknown>(m.metadataJson, {}) })),
+    })
+    const answer = turn
+
+    // ── 6. Store the exchange atomically (and complete the key in the same transaction).
+    const userAt = new Date()
+    const assistantAt = new Date(userAt.getTime() + 1)
+    const saved = await db.$transaction(async (tx) => {
+      const conv =
+        conversation ??
+        (await tx.aiConversation.create({
+          data: { userId, title: message.slice(0, 60), contextJson: JSON.stringify({ weather: weather ?? null, event }) },
+          select: { id: true },
+        }))
+      await tx.aiMessage.create({
+        data: { conversationId: conv.id, role: 'user', content: message, createdAt: userAt, metadataJson: JSON.stringify({ weather: weather ?? null, event }) },
+      })
+      const assistant = await tx.aiMessage.create({
+        data: {
+          conversationId: conv.id,
+          role: 'assistant',
+          content: answer.text,
+          createdAt: assistantAt,
+          metadataJson: JSON.stringify({
+            ...contextSummary,
+            provider: answer.provider,
+            model: answer.model,
+            promptVersion: answer.promptVersion,
+            referencedItemIds: answer.referencedItemIds,
+            needsMoreInfo: answer.needsMoreInfo,
+          }),
+        },
+      })
+      await tx.aiConversation.update({ where: { id: conv.id }, data: { updatedAt: assistantAt } })
+      if (claim) await completeIdempotencyKey(tx, claim, assistant.id, 200)
+      return { conversationId: conv.id }
+    })
+
+    return NextResponse.json({ conversationId: saved.conversationId, assistantMessage: answer.text, contextSummary })
+  } catch (err) {
+    if (claim) await releaseIdempotencyKey(db, claim).catch(() => {})
+    // The provider answered but storing failed: give the call back.
+    if (turn?.chargedAt) await refundAiQuota(userId, 'stylist_chat', turn.chargedAt).catch(() => {})
+    if (err instanceof StylistError) {
+      if (err.failure.kind === 'quota_exceeded') {
+        throw new ApiError('AI_QUOTA_EXCEEDED', 'Bugungi AI stilist limiti tugadi. Limit Toshkent vaqti bilan yarim tunda yangilanadi.', undefined, {
+          'Retry-After': String(err.failure.retryAfterSeconds),
+        })
+      }
+      throw new ApiError('AI_UNAVAILABLE', 'AI stilist hozir javob bera olmadi. Xabaringiz saqlanmadi — birozdan so‘ng qayta yuboring.', undefined, {
+        'Retry-After': AI_UNAVAILABLE_RETRY_AFTER,
+      })
+    }
+    throw err
   }
-
-  // ── 6. Persist the assistant message ─────────────────────────────────────
-  await db.aiMessage.create({
-    data: {
-      conversationId: conversation.id,
-      role: 'assistant',
-      content: assistantText,
-      metadataJson: JSON.stringify({
-        ...contextSummary,
-        provider,
-        ...(fallback ? { fallback: true } : {}),
-      }),
-    },
-  })
-
-  // Update the conversation's updatedAt so it floats to the top
-  await db.aiConversation.update({
-    where: { id: conversation.id },
-    data: { updatedAt: new Date() },
-  })
-
-  return NextResponse.json({
-    conversationId: conversation.id,
-    assistantMessage: assistantText,
-    contextSummary,
-  })
 })

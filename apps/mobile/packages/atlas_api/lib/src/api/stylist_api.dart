@@ -175,11 +175,12 @@ class StylistApi {
     );
   }
 
-  /// Send a message to the AI stylist
+  /// Send a message to the AI stylist. The user message and the answer are stored together, only when the turn succeeds: any error (incl. 503 AI_UNAVAILABLE and 429 AI_QUOTA_EXCEEDED) stores nothing. An unknown or foreign conversationId is 404 (never a new conversation).
   ///
   ///
   /// Parameters:
   /// * [stylistChatRequest]
+  /// * [idempotencyKey] - Makes retries safe for 24 h: the same key and payload returns the original result (Idempotent-Replayed: true); a different payload → 409 IDEMPOTENCY_KEY_MISMATCH; still processing → 409 IDEMPOTENCY_IN_PROGRESS with Retry-After.
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -191,6 +192,7 @@ class StylistApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<StylistChatResponse>> stylistChat({
     required StylistChatRequest stylistChatRequest,
+    String? idempotencyKey,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -201,7 +203,7 @@ class StylistApi {
     final _path = r'/api/v1/stylist/chat';
     final _options = Options(
       method: r'POST',
-      headers: <String, dynamic>{...?headers},
+      headers: <String, dynamic>{if (idempotencyKey != null) r'Idempotency-Key': idempotencyKey, ...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {'type': 'apiKey', 'name': 'cookieAuth', 'keyName': 'atlas_at', 'where': ''},

@@ -206,9 +206,10 @@ export const OPERATIONS: Operation[] = [
   // ─── Stylist ──────────────────────────────────────────────────────────────
   {
     method: 'POST', path: '/api/v1/stylist/chat', route: 'api/v1/stylist/chat', operationId: 'stylistChat', tags: ['stylist'],
-    summary: 'Send a message to the AI stylist', auth: 'required', jsonBody: Req.StylistChatRequest,
-    success: [{ status: 200, description: 'Assistant reply', schema: Res.StylistChatResponse }],
-    errors: [],
+    summary: 'Send a message to the AI stylist. The user message and the answer are stored together, only when the turn succeeds: any error (incl. 503 AI_UNAVAILABLE and 429 AI_QUOTA_EXCEEDED) stores nothing. An unknown or foreign conversationId is 404 (never a new conversation).',
+    auth: 'required', idempotency: true, jsonBody: Req.StylistChatRequest,
+    success: [{ status: 200, description: 'Assistant reply (or the original reply, replayed for a repeated Idempotency-Key)', schema: Res.StylistChatResponse, headers: { 'Idempotent-Replayed': '"true" when this is the original response of an earlier request with the same Idempotency-Key' } }],
+    errors: ['NOT_FOUND', 'IDEMPOTENCY_KEY_MISMATCH', 'IDEMPOTENCY_IN_PROGRESS', 'AI_QUOTA_EXCEEDED', 'AI_UNAVAILABLE'],
   },
   {
     method: 'GET', path: '/api/v1/stylist/conversations', route: 'api/v1/stylist/conversations', operationId: 'listConversations', tags: ['stylist'],

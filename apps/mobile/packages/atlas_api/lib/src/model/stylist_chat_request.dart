@@ -14,7 +14,7 @@ part 'stylist_chat_request.g.dart';
 /// Properties:
 /// * [conversationId]
 /// * [event]
-/// * [message]
+/// * [message] - Trimmed; 1–2000 characters
 /// * [weather]
 @BuiltValue()
 abstract class StylistChatRequest implements Built<StylistChatRequest, StylistChatRequestBuilder> {
@@ -24,6 +24,7 @@ abstract class StylistChatRequest implements Built<StylistChatRequest, StylistCh
   @BuiltValueField(wireName: r'event')
   String? get event;
 
+  /// Trimmed; 1–2000 characters
   @BuiltValueField(wireName: r'message')
   String get message;
 

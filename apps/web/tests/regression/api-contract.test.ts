@@ -10,7 +10,8 @@ const db = vi.hoisted(() => ({
   outfit: { create: vi.fn(), findFirst: vi.fn() },
   user: { findUnique: vi.fn() },
   aiConversation: { findFirst: vi.fn(), create: vi.fn(), update: vi.fn() },
-  aiMessage: { create: vi.fn() },
+  aiMessage: { create: vi.fn(), findMany: vi.fn() },
+  $transaction: vi.fn(),
   aiMemory: { findMany: vi.fn(), findFirst: vi.fn(), create: vi.fn() },
   $queryRaw: vi.fn(),
 }))
@@ -71,7 +72,9 @@ beforeEach(() => {
   db.aiConversation.findFirst.mockResolvedValue(null)
   db.aiConversation.create.mockResolvedValue({ id: 'conv_1', messages: [] })
   db.aiConversation.update.mockResolvedValue({})
-  db.aiMessage.create.mockResolvedValue({})
+  db.aiMessage.create.mockResolvedValue({ id: 'msg_1' })
+  db.aiMessage.findMany.mockResolvedValue([])
+  db.$transaction.mockImplementation(async (fn: (tx: typeof db) => unknown) => fn(db))
   db.aiMemory.findMany.mockResolvedValue([])
   db.aiMemory.findFirst.mockResolvedValue(null)
   db.aiMemory.create.mockResolvedValue({})

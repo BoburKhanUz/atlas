@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/logging/app_log.dart';
 import '../../../core/network/api_error_code.dart';
 import '../../../core/network/api_failure.dart';
+import '../../wardrobe/data/upload_job.dart' show UploadJob;
 import '../../weather/providers.dart';
 import '../data/stylist_repository.dart';
 import '../providers.dart';
@@ -19,9 +20,11 @@ enum SendStatus {
   /// draft stays.
   failed,
 
-  /// The answer was lost (timeout, connection, 5xx): the server may have
-  /// stored the message (and answered). Never re-sent automatically; the
-  /// user refreshes from the server and may explicitly send again.
+  /// The answer was lost (timeout, connection, 5xx other than
+  /// AI_UNAVAILABLE): the server may have stored the message (and answered).
+  /// Never re-sent automatically; the user refreshes from the server and may
+  /// explicitly send again — the same text re-uses the same Idempotency-Key,
+  /// so the server returns the stored answer instead of a duplicate.
   unknown,
 }
 
@@ -62,8 +65,9 @@ class ChatState {
   /// (it may duplicate the message).
   final bool resendNeedsConfirmation;
 
-  /// The server answered with a different conversation id than the one sent
-  /// (an unknown or foreign id makes it start a new conversation).
+  /// The server answered with a different conversation id than the one sent.
+  /// The server now answers 404 for an unknown or foreign id instead, so this
+  /// is only a safeguard.
   final bool startedNewConversation;
 
   /// Confirmed sends (the composer clears its draft when this grows).
@@ -103,6 +107,10 @@ class ChatState {
 /// Outcome of [ChatController.send].
 enum SendResult { sent, invalid, blocked, needsConfirmation, failed, unknown }
 
+/// One send exactly as it went out, kept after an unknown outcome so that a
+/// confirmed re-send repeats it with the same Idempotency-Key.
+typedef _Outgoing = ({String key, String message, String? conversationId, String? event, StylistWeather? weather});
+
 /// One conversation. Sending is ONE POST per explicit action, never retried
 /// automatically; the draft stays in the composer until the server
 /// confirms. After a lost answer the app does not guess: it shows the
@@ -115,6 +123,9 @@ class ChatController extends Notifier<ChatState> {
   final String key;
 
   StylistRepository get _repo => ref.read(stylistRepositoryProvider);
+
+  /// The request whose outcome is unknown (never shown, never logged).
+  _Outgoing? _unknown;
 
   @override
   ChatState build() {
@@ -150,16 +161,34 @@ class ChatController extends Notifier<ChatState> {
     if (message == null) return SendResult.invalid;
     if (state.busy || state.status != ChatStatus.ready) return SendResult.blocked;
     if (state.resendNeedsConfirmation && !confirmResend) return SendResult.needsConfirmation;
-    final weather = ref.read(weatherControllerProvider.notifier).freshWeather;
-    final sentId = state.conversationId;
+    final sendEvent = event != null && event.length <= StylistLimits.maxEvent ? event : null;
+    final previous = _unknown;
+    // A confirmed re-send of the same text repeats the lost request exactly
+    // (same key, conversation, occasion and weather): the server then returns
+    // the stored answer if the first attempt had succeeded.
+    final out = previous != null && confirmResend && previous.message == message && previous.event == sendEvent
+        ? previous
+        : (
+            key: UploadJob.newIdempotencyKey(),
+            message: message,
+            conversationId: state.conversationId,
+            event: sendEvent,
+            weather: switch (ref.read(weatherControllerProvider.notifier).freshWeather) {
+              final w? => stylistWeatherOf(w),
+              null => null,
+            },
+          );
+    final sentId = out.conversationId;
     state = state.copyWith(send: SendStatus.sending, pending: () => message, failure: () => null);
     try {
       final r = await _repo.send(
-        message: message,
-        conversationId: sentId,
-        event: event != null && event.length <= StylistLimits.maxEvent ? event : null,
-        weather: weather == null ? null : stylistWeatherOf(weather),
+        message: out.message,
+        idempotencyKey: out.key,
+        conversationId: out.conversationId,
+        event: out.event,
+        weather: out.weather,
       );
+      _unknown = null;
       if (!ref.mounted) return SendResult.sent;
       final switched = sentId != null && r.conversationId != sentId;
       if (switched) AppLog.info('stylist: the server started a new conversation');
@@ -185,9 +214,16 @@ class ChatController extends Notifier<ChatState> {
       AppLog.info('stylist message: ${f.describe()}');
       if (!ref.mounted) return SendResult.failed;
       if (_definitelyNotStored(f)) {
-        state = state.copyWith(send: SendStatus.failed, pending: () => null, failure: () => f);
+        _unknown = null;
+        state = state.copyWith(
+          send: SendStatus.failed,
+          pending: () => null,
+          failure: () => f,
+          resendNeedsConfirmation: false,
+        );
         return SendResult.failed;
       }
+      _unknown = out;
       state = state.copyWith(send: SendStatus.unknown, failure: () => f, resendNeedsConfirmation: true);
       return SendResult.unknown;
     }
@@ -220,7 +256,12 @@ class ChatController extends Notifier<ChatState> {
   }
 
   /// The server answered and stored nothing (or the request never left).
+  /// AI_UNAVAILABLE (503) and AI_QUOTA_EXCEEDED (429) are definite: the
+  /// server stores a turn only when it succeeds. IDEMPOTENCY_IN_PROGRESS is
+  /// not: the first attempt is still running and may still be stored.
   static bool _definitelyNotStored(ApiFailure f) => switch (f) {
+    ApiHttpFailure(code: ApiErrorCode.idempotencyInProgress) => false,
+    ApiHttpFailure(code: ApiErrorCode.aiUnavailable) => true,
     ApiHttpFailure(:final statusCode) => statusCode < 500,
     SessionEndedFailure() || InsecureConnectionFailure() || SecureStorageFailure() => true,
     _ => false,

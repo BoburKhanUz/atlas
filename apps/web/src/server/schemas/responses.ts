@@ -292,8 +292,12 @@ export const ColorAnalysisResponse = z.strictObject({
 
 export const StylistChatResponse = z.strictObject({
   conversationId: z.string(),
-  assistantMessage: z.string(),
-  contextSummary: z.strictObject({ wardrobeItemCount: Int, weatherProvided: z.boolean(), eventProvided: z.boolean() }),
+  assistantMessage: z.string().describe('The stylist answer; wardrobe items are named in plain words (no internal references or ids)'),
+  contextSummary: z.strictObject({
+    wardrobeItemCount: Int.describe('Wardrobe items given to the stylist for this answer (at most 40)'),
+    weatherProvided: z.boolean(),
+    eventProvided: z.boolean(),
+  }),
 })
 
 export const ConversationListResponse = z.strictObject({

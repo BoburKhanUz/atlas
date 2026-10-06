@@ -148,10 +148,10 @@ export const ProfilePatchRequest = z.object({
 // ─── Stylist ────────────────────────────────────────────────────────────────
 
 export const StylistChatRequest = z.object({
-  message: z.string().min(1).max(2000),
+  message: z.string().trim().min(1, 'Xabar bo‘sh bo‘lmasligi kerak').max(2000).describe('Trimmed; 1–2000 characters'),
   conversationId: idSchema.nullable().optional(),
   weather: partialWeatherSchema.nullable().optional(),
-  event: z.string().trim().max(60).nullable().optional(),
+  event: z.string().trim().max(60).nullable().optional().describe('Occasion the user typed (free text, trimmed; an occasion id or label is also used by the outfit engine)'),
 })
 
 // ─── Weather ────────────────────────────────────────────────────────────────

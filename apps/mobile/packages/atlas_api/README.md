@@ -86,7 +86,7 @@ Class | Method | HTTP request | Description
 [*ServiceApi*](doc/ServiceApi.md) | [**getOpenApiDocument**](doc/ServiceApi.md#getopenapidocument) | **GET** /api/v1/openapi.json | This OpenAPI document
 [*StylistApi*](doc/StylistApi.md) | [**getConversation**](doc/StylistApi.md#getconversation) | **GET** /api/v1/stylist/conversations/{id} | A conversation with its messages
 [*StylistApi*](doc/StylistApi.md) | [**listConversations**](doc/StylistApi.md#listconversations) | **GET** /api/v1/stylist/conversations | Recent stylist conversations (50)
-[*StylistApi*](doc/StylistApi.md) | [**stylistChat**](doc/StylistApi.md#stylistchat) | **POST** /api/v1/stylist/chat | Send a message to the AI stylist
+[*StylistApi*](doc/StylistApi.md) | [**stylistChat**](doc/StylistApi.md#stylistchat) | **POST** /api/v1/stylist/chat | Send a message to the AI stylist. The user message and the answer are stored together, only when the turn succeeds: any error (incl. 503 AI_UNAVAILABLE and 429 AI_QUOTA_EXCEEDED) stores nothing. An unknown or foreign conversationId is 404 (never a new conversation).
 [*WardrobeApi*](doc/WardrobeApi.md) | [**createWardrobeItem**](doc/WardrobeApi.md#createwardrobeitem) | **POST** /api/v1/wardrobe/items | Upload a garment photo; returns the item with detected attributes
 [*WardrobeApi*](doc/WardrobeApi.md) | [**deleteWardrobeItem**](doc/WardrobeApi.md#deletewardrobeitem) | **DELETE** /api/v1/wardrobe/items/{id} | Delete an item and its images
 [*WardrobeApi*](doc/WardrobeApi.md) | [**getWardrobeItem**](doc/WardrobeApi.md#getwardrobeitem) | **GET** /api/v1/wardrobe/items/{id} | One wardrobe item
