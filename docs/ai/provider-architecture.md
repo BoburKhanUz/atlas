@@ -61,7 +61,7 @@ There is at most **one** retry, with a 400–800 ms jittered wait, or the Retry-
 |---|---|---|
 | Endpoint | `POST /v1beta/models/{model}:generateContent` | `POST /v1/chat/completions` |
 | Auth | `x-goog-api-key` header (never in the URL) | `Authorization: Bearer` |
-| System messages | `systemInstruction` (joined) | `system` messages |
+| System messages | leading ones → `systemInstruction` (joined); a later one (a correction after the model's answer) → a `user` turn in place, so `contents` ends with the latest request (Phase 4.5) | `system` messages, in place |
 | JSON output | `responseMimeType` + `responseJsonSchema` | `response_format` `json_schema`, `strict: true` |
 | Images | text first, then `inlineData` (base64); `mediaResolution` | `image_url` data URL with `detail` |
 | Notes | `thought` parts are dropped; `thinkingConfig.thinkingLevel` for vision; `thoughtsTokenCount` counts as output usage | `store: false`; temperature omitted for fixed-temperature families (gpt-5, gpt-6, o-series) |
@@ -123,3 +123,7 @@ The line never contains prompts, user messages, wardrobe data, images, provider 
 - Phase 4.3 replaced the colour analysis with `color-analysis-v2` (still deterministic and in-process; see [`color-profile.md`](color-profile.md)). With `AI_VISION_PROVIDER=mock`, clothing analysis is byte-for-byte the previous deterministic result and `detection.mock` is `true`.
 - The mock text says it is a demo ("Demo rejim: …").
 - Phase 4.0 left the OpenAPI contract unchanged. Phase 4.1 changed it: `Detection.mock` is a boolean (false for a real provider) and `createWardrobeItem` can answer `NOT_A_GARMENT` 422, `AI_QUOTA_EXCEEDED` 429 and `AI_UNAVAILABLE` 503.
+
+## Tests never call a real provider (Phase 4.5)
+
+`tests/setup.ts` (unit and regression, via `tests/ai-test-env.ts`) and `vitest.integration.config.ts` pin `AI_LLM_PROVIDER` and `AI_VISION_PROVIDER` to `mock` and remove `GEMINI_API_KEY`, `OPENAI_API_KEY` and the model variables, whatever the developer's shell holds. The unit/regression setup also wraps `fetch` so that requests to the provider hosts are refused, as a second line of defence. Before Phase 4.5 a shell with real provider variables made the test suites build real providers. Provider behaviour is tested with injected scripted providers and a scripted `fetch` (`tests/unit/ai/fake-fetch.ts`). `tests/unit/ai/test-isolation.test.ts` guards this.

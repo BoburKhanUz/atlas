@@ -68,6 +68,26 @@ describe('Gemini REST adapter', () => {
     expect(c.body.generationConfig).toEqual({ temperature: 0.7, maxOutputTokens: 600 })
   })
 
+  it('a system message after the conversation started (a correction) stays in place as a user turn, so the request ends with it', async () => {
+    const { p, calls } = make([geminiOk('ok')])
+    await p.generate({
+      ...req(),
+      messages: [
+        { role: 'system', content: 'S1' },
+        { role: 'user', content: 'U1' },
+        { role: 'assistant', content: 'A1' },
+        { role: 'system', content: 'FIX' },
+      ],
+    })
+    const c = calls[0]
+    expect(c.body.systemInstruction).toEqual({ parts: [{ text: 'S1' }] }) // the correction is not merged into the rules
+    expect(c.body.contents).toEqual([
+      { role: 'user', parts: [{ text: 'U1' }] },
+      { role: 'model', parts: [{ text: 'A1' }] },
+      { role: 'user', parts: [{ text: 'FIX' }] },
+    ])
+  })
+
   it('structured output: JSON schema in generationConfig; invalid JSON is malformed', async () => {
     const schema = { type: 'object', properties: { a: { type: 'string' } } }
     const { p, calls } = make([geminiOk('{"a":"x"}'), geminiOk('not json')])

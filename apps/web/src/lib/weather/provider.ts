@@ -67,13 +67,19 @@ function mapWmo(code: number): { id: string; label: string } {
   return WMO_MAP[code] ?? { id: 'cloudy', label: 'Bulutli' }
 }
 
+/** Coordinates as they may leave the server: 2 decimals (≈ 1.1 km). */
+export const roundCoordinate = (v: number): string => v.toFixed(2)
+
 // ─── Open-Meteo provider ─────────────────────────────────────────────────────
 class OpenMeteoProvider implements WeatherProvider {
   name = 'open-meteo'
 
   async getCurrent(lat: number, lon: number): Promise<CurrentWeather> {
+    // Privacy (Phase 4.5): the third party gets the location rounded to
+    // 2 decimals (≈ 1 km), like the mobile app sends it and the weather cache
+    // keys it; street-level precision is not needed for the weather.
     const url =
-      `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}` +
+      `https://api.open-meteo.com/v1/forecast?latitude=${roundCoordinate(lat)}&longitude=${roundCoordinate(lon)}` +
       '&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code,wind_speed_10m,uv_index,precipitation' +
       '&hourly=precipitation_probability' +
       '&forecast_days=1' +

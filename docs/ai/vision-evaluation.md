@@ -102,3 +102,7 @@ Scoring is unit-tested in `apps/web/tests/unit/ai/vision-eval.test.ts`.
 5. Configure `AI_VISION_PROVIDER`, `AI_VISION_MODEL` and the key in production, and remove `AI_ALLOW_MOCK_IN_PRODUCTION` once the LLM role is also real.
 
 Rolling back the provider choice needs no code change, only a restart with `AI_VISION_PROVIDER=mock` with `AI_ALLOW_MOCK_IN_PRODUCTION=1` (items keep their stored metadata).
+
+## Synthetic dataset (Phase 4.5)
+
+`scripts/ai-eval/synthetic-vision.ts --out=<dir>` writes 15 drawn garment images and a `labels.json` this harness reads. The cases are the main categories, an ambiguous shape, multiple garments, a non-garment and two poor-quality images. Use it to check the contract and the rejection policy; it does not replace the real-photo set above. Phase 4.5 status and the cross-provider rubric are in [`provider-evaluation.md`](provider-evaluation.md).

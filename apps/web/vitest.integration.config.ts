@@ -28,6 +28,14 @@ export default defineConfig({
       MEDIA_SIGNING_SECRET: random(48),
       SESSION_ENC_KEY: random(32),
       LOG_LEVEL: 'error',
+      // AI: never a real provider (scripted providers are injected where needed)
+      AI_LLM_PROVIDER: 'mock',
+      AI_VISION_PROVIDER: 'mock',
+      AI_LLM_MODEL: '',
+      AI_VISION_MODEL: '',
+      GEMINI_API_KEY: '',
+      OPENAI_API_KEY: '',
+      WEATHER_PROVIDER: 'mock',
     },
   },
 })

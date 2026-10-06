@@ -88,6 +88,21 @@ function finish(answer: StylistAnswer, ctx: BuiltContext, meta: { provider: stri
   }
 }
 
+/** The single correction after ungrounded references (also used by the evaluation harness). */
+export function stylistCorrectionMessages(messages: LLMMessage[], previous: string, invalidRefs: readonly string[], refs: readonly string[]): LLMMessage[] {
+  const allowed = refs.length > 0 ? `${refs[0]}–${refs[refs.length - 1]}` : 'none (the wardrobe list is empty)'
+  return [
+    ...messages,
+    { role: 'assistant', content: previous },
+    {
+      role: 'system',
+      content:
+        `Your previous answer used wardrobe references that do not exist in the context: ${invalidRefs.join(', ') || 'unknown'}. ` +
+        `Valid references: ${allowed}. Answer again using only valid references, without inventing items.`,
+    },
+  ]
+}
+
 export async function runStylistTurn(input: StylistTurnInput, deps: StylistDeps = {}): Promise<StylistTurnResult> {
   const now = deps.now ?? (() => new Date())
   const provider = getLLMProvider()
@@ -152,18 +167,7 @@ export async function runStylistTurn(input: StylistTurnInput, deps: StylistDeps 
     if (!(err instanceof InvalidStylistOutputError)) throw err
     // Malformed output is never retried; only ungrounded references get one correction.
     if (err.reason !== 'invalid_reference') return unavailable('malformed_output')
-    const allowed = input.context.refs.length > 0 ? `${input.context.refs[0]}–${input.context.refs[input.context.refs.length - 1]}` : 'none (the wardrobe list is empty)'
-    const correction: LLMMessage[] = [
-      ...messages,
-      { role: 'assistant', content: first },
-      {
-        role: 'system',
-        content:
-          `Your previous answer used wardrobe references that do not exist in the context: ${err.invalidRefs.join(', ') || 'unknown'}. ` +
-          `Valid references: ${allowed}. Answer again using only valid references, without inventing items.`,
-      },
-    ]
-    const second = await call(correction)
+    const second = await call(stylistCorrectionMessages(messages, first, err.invalidRefs, input.context.refs))
     try {
       answer = interpretStylistOutput(parseStylistText(second), input.context.refs)
     } catch (again) {

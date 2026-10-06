@@ -150,3 +150,10 @@ A composition the user rejected in the last 30 days goes below every other candi
 - The occasions stay the six existing ones (work, wedding, date, travel, casual, other).
 - Warmth and formality come from category/subcategory/material tables, not from the garment photo.
 - The AI explanation quality in Uzbek needs a live evaluation with a real provider (not run in CI; CI never uses paid keys).
+
+## Phase 4.5 changes
+
+- **Catalog-only context.** The outfit-AI context sends stored attributes only as catalog ids. A free-text value in a legacy or tampered row becomes `null` (or is dropped from the colours) and never reaches the prompt (`tests/regression/ai-prompt-injection.test.ts`).
+- **Uzbek occasion phrases.** The deterministic explanation names the occasion in Uzbek ("ishga", "to‘yga", "uchrashuvga", "sayohatga", "kundalik kiyinishga") instead of quoting the UI label (which is "Casual" for `casual`).
+- **Shared builders.** The request and correction messages are built by `outfitMessages` and `outfitCorrectionMessages`, which the evaluation harness (`scripts/ai-eval/outfit-eval.ts`) also uses.
+- **Live ranking quality:** NOT TESTED; see [`provider-evaluation.md`](provider-evaluation.md).

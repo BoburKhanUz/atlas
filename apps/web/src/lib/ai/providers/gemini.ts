@@ -42,10 +42,17 @@ export class GeminiProvider implements LLMProvider, VisionProvider {
   }
 
   async generate(req: LLMRequest): Promise<LLMResult> {
-    const system = req.messages.filter((m) => m.role === 'system').map((m) => m.content)
-    const contents: Content[] = req.messages
-      .filter((m) => m.role !== 'system')
-      .map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }))
+    // Leading system messages are the system instruction. Gemini has no system
+    // turn inside a conversation and `contents` must end with the latest
+    // request, so a later system message (e.g. a correction after the model's
+    // answer) is sent as a user turn in its place.
+    const firstTurn = req.messages.findIndex((m) => m.role !== 'system')
+    const leading = firstTurn === -1 ? req.messages : req.messages.slice(0, firstTurn)
+    const system = leading.map((m) => m.content)
+    const contents: Content[] = (firstTurn === -1 ? [] : req.messages.slice(firstTurn)).map((m) => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }],
+    }))
     if (contents.length === 0) throw new AiProviderError('invalid_request', this.name, { detail: 'no user message' })
     const text = await this.call({
       ...(system.length ? { systemInstruction: { parts: [{ text: system.join('\n\n') }] } } : {}),

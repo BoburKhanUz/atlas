@@ -79,3 +79,7 @@ Not done yet. Required:
 5. Then choose the provider and model and set `AI_LLM_PROVIDER`, `AI_LLM_MODEL` and the key in production.
 
 Rolling back the provider choice needs no code change, only a restart with `AI_LLM_PROVIDER=mock` and `AI_ALLOW_MOCK_IN_PRODUCTION=1`. No database migration was added in Phase 4.2.
+
+## Harness (Phase 4.5)
+
+`scripts/ai-eval/stylist-eval.ts` runs 15 synthetic cases through the production context, prompt, schema, validation and single correction (`stylistCorrectionMessages`), and scores them automatically. The scores cover grounding, hallucination, invalid references, Uzbek (automatic proxy), relevance and injection; see [`provider-evaluation.md`](provider-evaluation.md). Live results: NOT TESTED (no credentials in Phase 4.5). Prompt-injection behaviour of the request itself (no ids, catalog-only context, user text untrusted) is tested offline in `tests/regression/ai-prompt-injection.test.ts`.
