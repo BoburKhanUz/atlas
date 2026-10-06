@@ -429,7 +429,17 @@ Three distinct situations:
   - An Idempotency-Key on `POST /color-profile/analyze`.
   - Correct the analyse contract (the backend also accepts HEIC; a wrong type or a file over 8 MB returns 422 `INVALID_IMAGE`, while the contract lists 415/413).
   - Analysis history if needed.
-- **Mobile follow-up (3.4, not changed here):** onboarding lets the user pick more than 20 favourite or disliked colours (there are 23 options), while the contract allows 20.
+- **Mobile follow-up (3.4):** onboarding let the user pick more than 20 favourite or disliked colours (there are 23 options), while the contract allows 20. Fixed in 3.10.
+
+## Release readiness hardening (3.10, implemented)
+
+- **Release configuration fails closed:** a release build refuses `ATLAS_ENV=development` and any local or private host (loopback, RFC 1918, CGNAT, link-local, unspecified, IPv6 ULA/link-local/site-local, IPv4-mapped forms, non-canonical IPv4 literals such as `127.1`, trailing-dot names, `localhost`/`*.local`/single-label names) in every environment; production refuses them in debug builds too. Public hosts are not over-blocked. Development debug builds keep local http. Rules: `lib/core/config/host_policy.dart`; details in `apps/mobile/config/README.md`.
+- **Android release signing fails closed:** no `android/key.properties` → release builds fail. The only exception is an explicit command-line `-PallowDebugSigning=true` (not readable from `gradle.properties` or environment variables) for local, non-distributable builds. `tool/check_release_signing_guard.sh` verifies it in CI.
+- **Onboarding list limit:** each onboarding list holds at most `ProfileLimits.listMax` (20), the same limit as Profile editing. Unselected colour chips are disabled at the limit (selected ones stay removable); adding to a full list changes nothing, including the opposite list; the PATCH body never carries more than 20 values per list.
+- **Accessibility:** a `SignedImage` without a `semanticLabel` is decorative and excluded from semantics with its placeholders (wardrobe grid, outfit lists, outfit detail, candidate cards — each is next to its own text). Chat bubbles are one semantics node of at least 48 px. Widget tests check the Android/iOS tap-target, labelled-tap-target and (on text screens) text-contrast guidelines on the main screens.
+- **Weather lifecycle:** Home refreshes stale weather on app resume through the real `AppLifecycleListener`; fresh weather is not refetched; a failed refresh keeps the stale weather visible and marked. Covered by widget tests.
+- **CI:** the `mobile` job runs format, analyze, tests, a repository hygiene check, a debug APK build, the signing-guard check and the OpenAPI client drift check, with pinned Flutter 3.47.6 and JDK 17.
+- **Release documents:** `docs/release/mobile-release-readiness.md` (status and gates) and `docs/release/mobile-device-test-plan.md` (manual Android and iOS checklist).
 
 ## Offline behaviour
 
@@ -455,7 +465,8 @@ Every backend code from `ErrorResponse.code` maps to a typed kind and an Uzbek u
 
 | | development | staging | production |
 |---|---|---|---|
-| `ATLAS_API_BASE_URL` | http or https (local backend allowed) | **https required** | **https required**; local/private hosts rejected |
+| `ATLAS_API_BASE_URL` | http or https (local backend allowed) | **https required**; local/private hosts rejected in release builds | **https required**; local/private hosts rejected |
+| release build | **refused** (fails at startup) | allowed | allowed |
 | debug features | yes (debug builds only) | no | no |
 | log policy | verbose (`off` in release builds) | warnings | **off** |
 | timeouts and retry policy | defaults (see *Retry*) | same | same |
@@ -480,7 +491,7 @@ flutter build apk --release --dart-define=ATLAS_ENV=production --dart-define=ATL
   - minSdk 24, target and compile SDK 36. `INTERNET` permission in the main manifest.
   - Network security: release builds forbid cleartext. The debug variant allows cleartext only to `10.0.2.2`, `localhost` and `127.0.0.1` for the local backend.
   - `allowBackup="false"` and backup exclusion rules.
-  - Release signing (3.10) comes from `android/key.properties`, which is not committed. R8 shrinking is enabled for release.
+  - Release signing comes from `android/key.properties`, which is not committed; without it release builds fail (3.10; local opt-in `-PallowDebugSigning=true` only). R8 shrinking is enabled for release.
 - **iOS:**
   - The App Transport Security default applies, with only `NSAllowsLocalNetworking` for local development.
   - Usage descriptions for camera, photo library and location are added in the phases that use them.

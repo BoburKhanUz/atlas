@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import 'host_policy.dart';
+
 /// Build-time environment configuration, passed with
 /// `--dart-define-from-file=config/<env>.json` (see config/README.md) and
 /// validated at startup: an invalid configuration fails fast instead of
@@ -101,13 +103,19 @@ class AtlasEnvironmentConfig {
     this.retry = const RetryPolicy(),
   });
 
-  /// Validates raw values. Outside development the API must use https.
+  /// Validates raw values. Outside development the API must use https; a
+  /// release build refuses development and local/private hosts.
   factory AtlasEnvironmentConfig.fromValues({
     required String environment,
     required String apiBaseUrl,
     bool releaseBuild = kReleaseMode,
   }) {
     final env = AtlasEnvironment.parse(environment.trim());
+    // A release build never runs a development configuration (local http
+    // backend, verbose defaults): it fails closed instead.
+    if (releaseBuild && env == AtlasEnvironment.development) {
+      throw AtlasConfigError('release builds must use ATLAS_ENV=staging or production, not development');
+    }
     final raw = apiBaseUrl.trim();
     if (raw.isEmpty) throw AtlasConfigError('ATLAS_API_BASE_URL is not set');
     final uri = Uri.tryParse(raw);
@@ -120,8 +128,10 @@ class AtlasEnvironmentConfig {
     if (env != AtlasEnvironment.development && !uri.isScheme('https')) {
       throw AtlasConfigError('ATLAS_API_BASE_URL must use https outside development');
     }
-    if (env == AtlasEnvironment.production && _isLocalHost(uri.host)) {
-      throw AtlasConfigError('ATLAS_API_BASE_URL must not point at a local host in production');
+    // Production — and every release build — must not point at a loopback,
+    // private, link-local or local-only host.
+    if ((env == AtlasEnvironment.production || releaseBuild) && HostPolicy.isLocalOrPrivate(uri.host)) {
+      throw AtlasConfigError('ATLAS_API_BASE_URL must not point at a local or private host here');
     }
     final debug = env == AtlasEnvironment.development && !releaseBuild;
     return AtlasEnvironmentConfig(
@@ -142,14 +152,6 @@ class AtlasEnvironmentConfig {
     environment: const String.fromEnvironment('ATLAS_ENV', defaultValue: 'development'),
     apiBaseUrl: const String.fromEnvironment('ATLAS_API_BASE_URL'),
   );
-
-  static bool _isLocalHost(String host) =>
-      host == 'localhost' ||
-      host == '10.0.2.2' ||
-      host.startsWith('127.') ||
-      host.startsWith('192.168.') ||
-      host.startsWith('10.') ||
-      host.endsWith('.local');
 
   final AtlasEnvironment environment;
 

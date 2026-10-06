@@ -4,6 +4,67 @@ import 'dart:io';
 import 'package:atlas_mobile/core/config/environment_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// Every range the release guard must refuse (IPv6 literals in brackets).
+const localOrPrivate = [
+  'localhost',
+  'api.localhost',
+  'atlas.local',
+  'intranet',
+  '127.0.0.1',
+  '127.8.9.10',
+  '0.0.0.0',
+  '0.1.2.3',
+  '10.0.0.1',
+  '10.0.2.2',
+  '10.255.255.255',
+  '172.16.0.1',
+  '172.20.5.5',
+  '172.31.255.255',
+  '192.168.0.1',
+  '192.168.1.5',
+  '169.254.1.1',
+  '100.64.0.1',
+  '100.127.255.255',
+  '[::1]',
+  '[::]',
+  '[fc00::1]',
+  '[fd12:3456::1]',
+  '[fe80::1]',
+  '[febf::1]',
+  '[fec0::1]',
+  '[::ffff:192.168.1.1]',
+  '[::ffff:127.0.0.1]',
+  // Forms a resolver accepts although they are not canonical literals.
+  'localhost.',
+  '127.0.0.1.',
+  '127.1',
+  '0x7f.0.0.1',
+  '2130706433',
+  '017700000001',
+];
+
+/// Public hosts next to the private ranges must stay allowed.
+const publicHosts = [
+  'api.example.com',
+  'atlas.uz',
+  'staging-api.example.com',
+  'api.example.com.',
+  'api2.example.com',
+  '8.8.8.8',
+  '172.15.255.255',
+  '172.32.0.1',
+  '192.167.1.1',
+  '169.253.1.1',
+  '100.63.255.255',
+  '100.128.0.1',
+  '11.0.0.1',
+  '126.255.255.255',
+  '128.0.0.1',
+  '[2001:4860:4860::8888]',
+  '[2a00:1450::1]',
+  '[::ffff:8.8.8.8]',
+];
+
 void main() {
   AtlasEnvironmentConfig make(String env, String url, {bool release = false}) =>
       AtlasEnvironmentConfig.fromValues(environment: env, apiBaseUrl: url, releaseBuild: release);
@@ -19,13 +80,34 @@ void main() {
     test('debug flag and verbose logging only in a development debug build', () {
       expect(make('development', 'http://localhost:3000').debug, isTrue);
       expect(make('development', 'http://localhost:3000').logPolicy, LogPolicy.verbose);
-      final release = make('development', 'http://localhost:3000', release: true);
-      expect(release.debug, isFalse);
-      expect(release.logPolicy, LogPolicy.off);
+    });
+
+    test('a RELEASE build refuses development (fails closed), whatever the URL', () {
+      for (final url in ['http://localhost:3000', 'http://10.0.2.2:3000', 'https://api.example.com']) {
+        expect(() => make('development', url, release: true), throwsA(isA<AtlasConfigError>()), reason: url);
+      }
+    });
+
+    test('local http keeps working for development DEBUG builds', () {
+      for (final url in [
+        'http://localhost:3000',
+        'http://10.0.2.2:3000',
+        'http://127.0.0.1:3000',
+        'http://192.168.1.20:3000',
+      ]) {
+        expect(make('development', url).apiBaseUrl.scheme, 'http', reason: url);
+      }
     });
   });
 
   group('staging', () {
+    test('a release build refuses local/private hosts; a debug build may use them (internal testing)', () {
+      for (final host in localOrPrivate) {
+        expect(() => make('staging', 'https://$host', release: true), throwsA(isA<AtlasConfigError>()), reason: host);
+      }
+      expect(make('staging', 'https://192.168.1.20').environment, AtlasEnvironment.staging);
+    });
+
     test('requires https', () {
       expect(() => make('staging', 'http://staging.example.com'), throwsA(isA<AtlasConfigError>()));
     });
@@ -46,9 +128,22 @@ void main() {
       expect(c.debug, isFalse);
       expect(c.logPolicy, LogPolicy.off);
     });
-    test('rejects local/private hosts', () {
-      for (final host in ['localhost', '127.0.0.1', '10.0.2.2', '192.168.1.5', 'atlas.local']) {
-        expect(() => make('production', 'https://$host'), throwsA(isA<AtlasConfigError>()), reason: host);
+    test('rejects local/private hosts (debug and release builds)', () {
+      for (final host in localOrPrivate) {
+        for (final release in [false, true]) {
+          expect(
+            () => make('production', 'https://$host', release: release),
+            throwsA(isA<AtlasConfigError>()),
+            reason: '$host/$release',
+          );
+        }
+      }
+    });
+
+    test('accepts public hosts and public IP literals (no over-blocking)', () {
+      for (final host in publicHosts) {
+        expect(make('production', 'https://$host').apiBaseUrl.host, isNotEmpty, reason: host);
+        expect(make('production', 'https://$host', release: true).isProduction, isTrue, reason: host);
       }
     });
   });

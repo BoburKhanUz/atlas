@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../../app/router.dart';
 import '../../../core/design/tokens.dart';
 import '../../../core/widgets/atlas_button.dart';
+import '../../profile/data/profile_data.dart' show ProfileLimits;
 import '../data/options.dart';
 import '../onboarding_gate.dart';
 import '../providers.dart';
@@ -197,12 +198,17 @@ class _StepBody extends ConsumerWidget {
       OnboardingStep.colors => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          header('Ranglar', 'Sevimli ranglaringizni va kiymaydigan ranglaringizni belgilang.'),
+          header(
+            'Ranglar',
+            'Sevimli ranglaringizni va kiymaydigan ranglaringizni belgilang '
+                '(har biridan ko‘pi bilan ${ProfileLimits.listMax} ta).',
+          ),
           StepSection(
             title: 'Yoqadi',
             child: OptionChips<ColorOption>(
               keyPrefix: 'color.like',
               options: ColorOption.values,
+              maxSelected: ProfileLimits.listMax,
               label: (o) => o.label,
               swatch: (o) => o.swatch,
               isSelected: a.favoriteColors.contains,
@@ -215,6 +221,7 @@ class _StepBody extends ConsumerWidget {
             child: OptionChips<ColorOption>(
               keyPrefix: 'color.dislike',
               options: ColorOption.values,
+              maxSelected: ProfileLimits.listMax,
               label: (o) => o.label,
               swatch: (o) => o.swatch,
               isSelected: a.dislikedColors.contains,

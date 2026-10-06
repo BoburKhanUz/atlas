@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:atlas_mobile/app/app.dart';
 import 'package:atlas_mobile/app/router.dart';
 import 'package:atlas_mobile/features/onboarding/data/onboarding_marker_store.dart';
+import 'package:atlas_mobile/features/onboarding/data/options.dart';
 import 'package:atlas_mobile/features/onboarding/presentation/onboarding_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -76,6 +77,41 @@ void main() {
     expect(location(router), AtlasRoutes.home);
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(h.kv.values[OnboardingMarkerStore.keyFor('u1')], 'completed');
+  });
+
+  testWidgets('colours: 20 can be chosen, the 21st chip is disabled, PATCH carries exactly 20', (tester) async {
+    final (_, h) = await pumpOnboarding(tester);
+    await tapKey(tester, 'onboarding.next'); // → style
+    await tapKey(tester, 'onboarding.next'); // → profile
+    await tapKey(tester, 'onboarding.next'); // → colours
+    FilterChip chip(int i) => tester.widget<FilterChip>(find.byKey(Key('color.like.$i')));
+
+    for (var i = 0; i < 20; i++) {
+      await tapKey(tester, 'color.like.$i');
+    }
+    for (var i = 0; i < 20; i++) {
+      expect(chip(i).selected, isTrue, reason: '$i');
+      expect(chip(i).onSelected, isNotNull, reason: 'selected chips stay removable');
+    }
+    for (var i = 20; i < ColorOption.values.length; i++) {
+      expect(chip(i).onSelected, isNull, reason: 'chip $i must be disabled at the limit');
+    }
+    await tester.ensureVisible(find.byKey(const Key('color.like.21')));
+    await tester.tap(find.byKey(const Key('color.like.21')), warnIfMissed: false);
+    await tester.pumpAndSettle();
+    expect(chip(21).selected, isFalse);
+    // The dislike list is independent and not full.
+    expect(tester.widget<FilterChip>(find.byKey(const Key('color.dislike.21'))).onSelected, isNotNull);
+
+    // Removing one re-enables the rest.
+    await tapKey(tester, 'color.like.0');
+    expect(chip(21).onSelected, isNotNull);
+    await tapKey(tester, 'color.like.0');
+
+    await tapKey(tester, 'onboarding.next'); // → finish
+    await tapKey(tester, 'onboarding.finish');
+    final sent = (patches(h).single['preferences']! as Map)['favoriteColors']! as List;
+    expect(sent, [for (final c in ColorOption.values.take(20)) c.wire]);
   });
 
   testWidgets('Skip all leaves at once, sends nothing', (tester) async {

@@ -130,6 +130,9 @@ class SignedImageProvider extends ImageProvider<SignedImageKey> {
 /// Shows a signed image. When its URL has expired (60 s margin) or the
 /// server rejects it, [onExpired] asks the owner to reload the item for a
 /// fresh URL; an already decoded image (same id + variant) keeps showing.
+///
+/// Without a [semanticLabel] the image is decorative (a thumbnail next to
+/// its own text label): it and its placeholders are left out of semantics.
 class SignedImage extends ConsumerStatefulWidget {
   const SignedImage({super.key, required this.image, this.onExpired, this.fit = BoxFit.cover, this.semanticLabel});
 
@@ -161,6 +164,11 @@ class _SignedImageState extends ConsumerState<SignedImage> {
 
   @override
   Widget build(BuildContext context) {
+    final image = _image();
+    return widget.semanticLabel == null ? ExcludeSemantics(child: image) : image;
+  }
+
+  Widget _image() {
     final provider = SignedImageProvider(widget.image, ref.watch(mediaFetcherProvider));
     final cached = PaintingBinding.instance.imageCache.containsKey(provider.key);
     final expiresAt = widget.image.expiresAt;

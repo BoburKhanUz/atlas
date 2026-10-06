@@ -204,18 +204,27 @@ class _Bubble extends StatelessWidget {
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.82),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: AtlasSpacing.xs),
-          padding: const EdgeInsets.symmetric(horizontal: AtlasSpacing.sm, vertical: AtlasSpacing.xs),
-          decoration: BoxDecoration(
-            color: mine ? AtlasColors.accent.withValues(alpha: pending ? 0.55 : 1) : AtlasColors.surface,
-            borderRadius: AtlasRadii.field,
-            border: mine ? null : Border.all(color: AtlasColors.hairline),
-          ),
-          child: SelectableText(
-            message.content,
-            key: pending ? const Key('chat.pending') : null,
-            style: text.bodyMedium?.copyWith(color: mine ? AtlasColors.onAccent : AtlasColors.textPrimary),
+        // One semantics node per bubble, at least 48 px high: the text is
+        // selectable (long press), so the bubble is a touch target.
+        child: MergeSemantics(
+          child: Container(
+            margin: const EdgeInsets.only(bottom: AtlasSpacing.xs),
+            padding: const EdgeInsets.symmetric(horizontal: AtlasSpacing.sm, vertical: AtlasSpacing.xs),
+            constraints: const BoxConstraints(minHeight: 48),
+            decoration: BoxDecoration(
+              color: mine ? AtlasColors.accent.withValues(alpha: pending ? 0.55 : 1) : AtlasColors.surface,
+              borderRadius: AtlasRadii.field,
+              border: mine ? null : Border.all(color: AtlasColors.hairline),
+            ),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              widthFactor: 1,
+              child: SelectableText(
+                message.content,
+                key: pending ? const Key('chat.pending') : null,
+                style: text.bodyMedium?.copyWith(color: mine ? AtlasColors.onAccent : AtlasColors.textPrimary),
+              ),
+            ),
           ),
         ),
       ),

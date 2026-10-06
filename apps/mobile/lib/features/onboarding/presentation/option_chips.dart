@@ -14,6 +14,7 @@ class OptionChips<T> extends StatelessWidget {
     this.swatch,
     this.enabled = true,
     this.keyPrefix,
+    this.maxSelected,
   });
 
   final List<T> options;
@@ -26,8 +27,13 @@ class OptionChips<T> extends StatelessWidget {
   /// Test keys: `<keyPrefix>.<index>`.
   final String? keyPrefix;
 
+  /// When this many options are selected, the unselected ones are disabled
+  /// (selected ones stay tappable so they can be removed).
+  final int? maxSelected;
+
   @override
   Widget build(BuildContext context) {
+    final full = maxSelected != null && options.where(isSelected).length >= maxSelected!;
     return Wrap(
       spacing: AtlasSpacing.xs,
       runSpacing: AtlasSpacing.xs,
@@ -37,7 +43,7 @@ class OptionChips<T> extends StatelessWidget {
             key: keyPrefix == null ? null : Key('$keyPrefix.$i'),
             label: Text(label(o)),
             selected: isSelected(o),
-            onSelected: enabled ? (_) => onToggle(o) : null,
+            onSelected: enabled && (!full || isSelected(o)) ? (_) => onToggle(o) : null,
             avatar: swatch == null
                 ? null
                 : Container(

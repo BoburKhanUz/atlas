@@ -30,10 +30,20 @@ tool/openapi/generate_api.sh --check  # fail if the committed client is out of d
 ## Checks
 
 ```bash
+dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze
 flutter test
 flutter build apk --debug --dart-define-from-file=config/development.json
+tool/check_release_signing_guard.sh   # after a build: release signing fails closed
 ```
+
+CI runs the same steps (job `mobile` in `.github/workflows/ci.yml`) plus `tool/openapi/generate_api.sh --check`.
+
+## Release
+
+- Release builds need a staging or production config (never `development`) and `android/key.properties`; see `config/README.md`.
+- Release readiness and the remaining gates: [`docs/release/mobile-release-readiness.md`](../../docs/release/mobile-release-readiness.md).
+- Manual device checklist (Android and iOS): [`docs/release/mobile-device-test-plan.md`](../../docs/release/mobile-device-test-plan.md).
 
 Session integration tests against a **local, disposable** backend (skipped otherwise; see the header of `test/integration/backend_session_test.dart`; they cover sessions, onboarding, the wardrobe, attribute corrections, interrupted-upload recovery, weather, outfits, the AI stylist, profile, colour profile and account deletion; run the backend with `WEATHER_PROVIDER=mock`):
 

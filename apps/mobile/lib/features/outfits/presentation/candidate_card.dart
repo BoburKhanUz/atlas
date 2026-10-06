@@ -67,7 +67,8 @@ class _CandidateCardState extends ConsumerState<CandidateCard> {
                         borderRadius: AtlasRadii.field,
                         child: SizedBox.square(
                           dimension: 96,
-                          child: GeneratedItemImage(itemId: item.id, imageUrl: item.imageUrl.text, semanticLabel: name),
+                          // Decorative: the name is the text just below.
+                          child: GeneratedItemImage(itemId: item.id, imageUrl: item.imageUrl.text),
                         ),
                       ),
                       const SizedBox(height: AtlasSpacing.xxs),

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:atlas_api/atlas_api.dart';
 import 'package:atlas_mobile/features/onboarding/data/onboarding_answers.dart';
 import 'package:atlas_mobile/features/onboarding/data/options.dart';
+import 'package:atlas_mobile/features/profile/data/profile_data.dart' show ProfileLimits;
 import 'package:flutter_test/flutter_test.dart';
 
 Map<String, Object?> _patchSchema() {
@@ -123,6 +124,68 @@ void main() {
       expect(request.profile!.gender, ProfilePatchRequestProfileGenderEnum.other);
       // Serialised again it is the same JSON (nothing added, nothing lost).
       expect(standardSerializers.serializeWith(ProfilePatchRequest.serializer, request), json);
+    });
+  });
+
+  group('list limit (ProfileLimits.listMax = 20, shared with Profile)', () {
+    final colors = ColorOption.values;
+    OnboardingAnswers favourites(int n) {
+      var a = const OnboardingAnswers();
+      for (final c in colors.take(n)) {
+        a = a.toggleFavoriteColor(c);
+      }
+      return a;
+    }
+
+    test('there are more colour options than the limit (the limit is reachable)', () {
+      expect(ProfileLimits.listMax, 20);
+      expect(colors.length, greaterThan(ProfileLimits.listMax));
+    });
+
+    test('20 favourite colours are accepted; the 21st is ignored and nothing else changes', () {
+      final twenty = favourites(20);
+      expect(twenty.favoriteColors, colors.take(20).toSet());
+      final after = twenty.toggleFavoriteColor(colors[20]);
+      expect(after, twenty);
+      expect(after.favoriteColors, hasLength(20));
+    });
+
+    test('a full list never takes a colour away from the other list', () {
+      final a = favourites(20).toggleDislikedColor(colors.last);
+      expect(a.dislikedColors, {colors.last});
+      // colors.last is disliked; liking it would make favourites 21 → refused,
+      // and the dislike is preserved.
+      final b = a.toggleFavoriteColor(colors.last);
+      expect(b, a);
+      expect(b.dislikedColors, {colors.last});
+    });
+
+    test('disliked colours are capped the same way', () {
+      var a = const OnboardingAnswers();
+      for (final c in colors) {
+        a = a.toggleDislikedColor(c);
+      }
+      expect(a.dislikedColors, colors.take(20).toSet());
+    });
+
+    test('at the limit a selected colour can still be removed, then another added', () {
+      final a = favourites(20).toggleFavoriteColor(colors[0]).toggleFavoriteColor(colors[20]);
+      expect(a.favoriteColors, hasLength(20));
+      expect(a.favoriteColors, contains(colors[20]));
+      expect(a.favoriteColors, isNot(contains(colors[0])));
+    });
+
+    test('the PATCH body never carries more than 20 values per list, however the answers were built', () {
+      final all = OnboardingAnswers(
+        favoriteColors: colors.toSet(),
+        dislikedColors: colors.toSet(),
+        preferredStyles: StyleOption.values.toSet(),
+      );
+      final prefs = all.toPatchJson()!['preferences']! as Map<String, Object?>;
+      expect((prefs['favoriteColors']! as List), hasLength(20));
+      expect((prefs['dislikedColors']! as List), hasLength(20));
+      expect((prefs['favoriteColors']! as List), [for (final c in colors.take(20)) c.wire]);
+      expect((prefs['preferredStyles']! as List), hasLength(StyleOption.values.length));
     });
   });
 
