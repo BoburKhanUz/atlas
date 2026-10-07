@@ -107,9 +107,10 @@ export interface VisionSummary {
   failures: number
   timeouts: number
   groundingRate: null
-  latencyP50: number
-  latencyP95: number
-  latencyMax: number
+  /** Canonical accounting latency (latencyStats): null when the sample is too small for the percentile. */
+  latencyP50: number | null
+  latencyP95: number | null
+  latencyMax: number | null
   meanInputTokens: number | null
   meanOutputTokens: number | null
 }
@@ -265,6 +266,19 @@ export function visionSummary(summary: ConfigSummary, records: ItemRecord[], dat
     meanInputTokens: summary.meanInputTokens,
     meanOutputTokens: summary.meanOutputTokens,
   }
+}
+
+/**
+ * Every report section reads latency from the section's accounting
+ * (latencyStats), never from the per-feature scorers: their nearest-rank
+ * percentile has no sample-size threshold, so with few samples it reports the
+ * maximum as p95.
+ */
+export function withAccountedLatency(f: FeatureResult, accounting: SectionAccounting[]): FeatureResult {
+  const a = accounting.find((x) => x.feature === f.feature)
+  if (f.status !== 'TESTED' || !a) return f
+  const latency = { latencyP50: a.latencyMs.p50, latencyP95: a.latencyMs.p95 }
+  return f.feature === 'vision' ? { ...(f as VisionSummary), ...latency, latencyMax: a.latencyMs.max } : { ...(f as StylistSummary | OutfitSummary), ...latency }
 }
 
 interface VisionData {
@@ -430,7 +444,7 @@ async function liveRun(env: Env, vision: VisionData | null, opts: BakeoffOptions
       outfit = summarizeOutfit(await text('outfit', outfitCases(), runOutfitCase), 'TESTED')
     }
 
-    const features = [visionResult, stylist, outfit]
+    const features = [visionResult, stylist, outfit].map((f) => withAccountedLatency(f, accounting))
     const tested = features.filter((f) => f.status === 'TESTED').length
     const reasons = [...new Set([visionReason, textReason].filter((r): r is string => r !== null))]
     live.push({

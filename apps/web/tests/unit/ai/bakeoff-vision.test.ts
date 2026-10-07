@@ -7,7 +7,8 @@ import { promises as fs } from 'fs'
 import os from 'os'
 import path from 'path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { aggregateRuns, buildBakeoff, configuredVisionModel, MAX_RUNS, NO_SELECTION, recommend, type VisionSummary } from '../../../scripts/ai-eval/bakeoff'
+import { aggregateRuns, buildBakeoff, compare, configuredVisionModel, MAX_RUNS, NO_SELECTION, recommend, withAccountedLatency, type VisionSummary } from '../../../scripts/ai-eval/bakeoff'
+import { latencyStats, type SectionAccounting } from '../../../scripts/ai-eval/live-accounting'
 import { ScriptedOutfit } from '../../../scripts/ai-eval/outfit-eval'
 import { ScriptedStylist } from '../../../scripts/ai-eval/stylist-eval'
 import { renderSynthetic, syntheticVisionItems } from '../../../scripts/ai-eval/synthetic-vision'
@@ -102,8 +103,12 @@ describe('bake-off vision: live section (scripted provider, app pipeline)', () =
     expect([v.categoryAccuracy, v.primaryColorAccuracy]).toEqual([1, 1])
     expect([v.falseRejectionRate, v.falseAcceptanceRate]).toEqual([0, 0])
     expect(v.errorRate).toBeCloseTo(1 / 3, 3)
+    // Latency comes from the section accounting: 3 samples give a p50 but no p95 (needs 20).
+    const acct = r.live.find((l) => l.provider === 'gemini')!.accounting.find((a) => a.feature === 'vision')!
+    expect(v.latencyP50).toBe(acct.latencyMs.p50)
     expect(v.latencyP50).toBeGreaterThanOrEqual(0)
-    expect(v.latencyP95).toBeGreaterThanOrEqual(v.latencyP50)
+    expect(v.latencyP95).toBeNull()
+    expect(v.latencyMax).toBe(acct.latencyMs.max)
     expect(v.meanInputTokens).toBe(100)
     // Only vision measured for gemini: partially tested, so still no selection; openai has no key.
     const g = r.live.find((l) => l.provider === 'gemini')!
@@ -194,5 +199,50 @@ describe('bake-off --runs', () => {
     const live = [{ provider: 'gemini' as const, status: 'TESTED' as const, model: 'm', visionModel: null, reason: null, accounting: [], failures: [], features: [{ status: 'TESTED', feature: 'outfit', provider: 'gemini', model: 'm', latencyP50: 120, note: 'x' } as never] }]
     const a = aggregateRuns([{ run: 1, live }])
     expect(a.find((x) => x.provider === 'gemini' && x.feature === 'outfit')!.metrics).toEqual({ latencyP50: { n: 1, mean: 120, min: 120, max: 120, spread: 0 } })
+  })
+})
+
+describe('bake-off latency: one canonical source (accounting latencyStats)', () => {
+  // The 15 per-case latencies of the 2026-10-07 Gemini Vision smoke test.
+  const smoke = [11508, 5815, 3408, 5615, 5987, 5120, 7392, 4211, 7526, 4411, 4491, 6397, 6026, 4288, 3787]
+  const accounting = (latencies: number[]) => [{ feature: 'vision', successRate: 1, failureRate: 0, timeouts: 0, attempts: latencies.length, attemptErrors: {}, retries: 0, corrections: 0, circuitBreakCases: 0, tokens: { input: 0, output: 0, total: 0, attemptsReporting: 0 }, costUsd: 'COST_UNAVAILABLE', latenciesMs: latencies, latencyMs: latencyStats(latencies) } as unknown as SectionAccounting]
+  // What the vision scorer reports on its own: nearest-rank without a sample threshold, so p95 = max at n = 15.
+  const scored = { status: 'TESTED', provider: 'gemini', model: 'm', feature: 'vision', latencyP50: 5615, latencyP95: 11508, latencyMax: 11508 } as unknown as VisionSummary
+
+  it('n = 15: p50 stays, p95 and p99 are null, max stays 11508', () => {
+    expect(latencyStats(smoke)).toEqual({ n: 15, p50: 5615, p95: null, p99: null, max: 11508 })
+    const v = withAccountedLatency(scored, accounting(smoke)) as VisionSummary
+    expect([v.latencyP50, v.latencyP95, v.latencyMax]).toEqual([5615, null, 11508])
+  })
+
+  it('the comparison / markdown never shows the maximum as p95', () => {
+    const v = withAccountedLatency(scored, accounting(smoke))
+    const notTested = (feature: 'stylist' | 'outfit') => ({ status: 'NOT_TESTED', provider: 'gemini', model: null, feature, reason: 'x' }) as never
+    const live = [
+      { provider: 'gemini' as const, status: 'PARTIALLY_TESTED' as const, model: null, visionModel: 'm', reason: null, accounting: accounting(smoke), failures: [], features: [v, notTested('stylist'), notTested('outfit')] },
+      { provider: 'openai' as const, status: 'NOT_TESTED' as const, model: null, visionModel: null, reason: 'x', accounting: [], failures: [], features: [] as never[] },
+    ]
+    const openaiFeatures = (['vision', 'stylist', 'outfit'] as const).map((feature) => ({ status: 'NOT_TESTED', provider: 'openai', model: null, feature, reason: 'x' }) as never)
+    live[1].features = openaiFeatures
+    const rows = compare(live as never)
+    const p95 = rows.find((r) => r.dimension === 'Latency p95')!.gemini
+    expect(p95).not.toContain('11508')
+    expect(p95).toMatch(/^V N\/A/)
+    expect(rows.find((r) => r.dimension === 'Latency p50')!.gemini).toMatch(/^V 5615 ms/)
+  })
+
+  it('a large enough sample still yields the existing nearest-rank p95 / p99', () => {
+    const big = Array.from({ length: 100 }, (_, i) => (i + 1) * 10)
+    expect(latencyStats(big)).toEqual({ n: 100, p50: 500, p95: 950, p99: 990, max: 1000 })
+    const v = withAccountedLatency(scored, accounting(big)) as VisionSummary
+    expect([v.latencyP50, v.latencyP95, v.latencyMax]).toEqual([500, 950, 1000])
+    const twenty = Array.from({ length: 20 }, (_, i) => i + 1)
+    expect(latencyStats(twenty)).toMatchObject({ p95: 19, p99: null, max: 20 })
+  })
+
+  it('a NOT_TESTED feature or one without accounting is left as is', () => {
+    const nt = { status: 'NOT_TESTED', provider: 'gemini', model: null, feature: 'vision', reason: 'x', latencyP50: null, latencyP95: null } as never
+    expect(withAccountedLatency(nt, accounting(smoke))).toBe(nt)
+    expect(withAccountedLatency(scored, [])).toBe(scored)
   })
 })
