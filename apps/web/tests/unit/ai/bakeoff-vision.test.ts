@@ -7,7 +7,7 @@ import { promises as fs } from 'fs'
 import os from 'os'
 import path from 'path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { aggregateRuns, buildBakeoff, compare, configuredVisionModel, MAX_RUNS, NO_SELECTION, recommend, withAccountedLatency, type VisionSummary } from '../../../scripts/ai-eval/bakeoff'
+import { aggregateRuns, buildBakeoff, compare, configuredVisionModel, MAX_RUNS, NO_SELECTION, recommend, withAccountedLatency, type RawOutput, type VisionSummary } from '../../../scripts/ai-eval/bakeoff'
 import { latencyStats, type SectionAccounting } from '../../../scripts/ai-eval/live-accounting'
 import { ScriptedOutfit } from '../../../scripts/ai-eval/outfit-eval'
 import { ScriptedStylist } from '../../../scripts/ai-eval/stylist-eval'
@@ -133,7 +133,7 @@ describe('bake-off vision: live section (scripted provider, app pipeline)', () =
     expect(v.errorRate).toBeCloseTo(1 / 3, 3)
   })
 
-  it('a garment where the label says unclear is a false acceptance', async () => {
+  it('a garment where the label says it is not a garment is a false acceptance', async () => {
     const v = visionOf(await buildBakeoff(env, { visionDataset: dir, providers: { vision: () => scriptedVision('garment') } }), 'gemini') as VisionSummary
     expect(v.falseAcceptanceRate).toBe(0.5)
     expect(v.schemaValidity).toBe(1)
@@ -244,5 +244,51 @@ describe('bake-off latency: one canonical source (accounting latencyStats)', () 
     const nt = { status: 'NOT_TESTED', provider: 'gemini', model: null, feature: 'vision', reason: 'x', latencyP50: null, latencyP95: null } as never
     expect(withAccountedLatency(nt, accounting(smoke))).toBe(nt)
     expect(withAccountedLatency(scored, [])).toBe(scored)
+  })
+})
+
+describe('bake-off raw outputs (synthetic only, for failure analysis)', () => {
+  const full = { GEMINI_API_KEY: FAKE, AI_EVAL_GEMINI_MODEL: 'g', AI_EVAL_GEMINI_VISION_MODEL: 'gv' }
+
+  it('collects every scored case with its output and checks, outside the report', async () => {
+    const rawOutputs: RawOutput[] = []
+    const r = await buildBakeoff(full, { visionDataset: dir, rawOutputs, providers: { llm: scriptedLlm, vision: () => scriptedVision('garment') } })
+    const by = (f: string) => rawOutputs.filter((o) => o.feature === f)
+    expect([by('vision').length, by('stylist').length, by('outfit').length]).toEqual([3, 17, 11])
+    expect(rawOutputs.every((o) => o.run === 1 && o.provider === 'gemini' && o.datasetKind === 'synthetic')).toBe(true)
+    const blob = by('vision').find((o) => o.case === 'ambiguous_blob')!
+    expect(blob).toMatchObject({ model: 'gv', expected: { subject: 'no_garment' }, checks: { subjectCorrect: false } })
+    expect((blob.output as { kind: string }).kind).toBe('garment')
+    const stylist = by('stylist')[0]
+    expect(stylist.model).toBe('g')
+    expect(stylist.output).toMatchObject({ kind: 'answer', raw: expect.any(String), shown: expect.any(String) })
+    expect(stylist.checks).toHaveProperty('inventedGarments')
+    expect(stylist.checks).toHaveProperty('uzbek')
+    expect(by('outfit')[0].output).toMatchObject({ kind: 'ranked', explanation: expect.any(String) })
+    // Never in the report itself, and never a credential.
+    expect(JSON.stringify(r)).not.toContain('"raw"')
+    expect(JSON.stringify(rawOutputs)).not.toContain(FAKE)
+  })
+
+  it('with several runs, each case is kept per run', async () => {
+    const rawOutputs: RawOutput[] = []
+    await buildBakeoff({ GEMINI_API_KEY: FAKE, AI_EVAL_GEMINI_MODEL: 'g' }, { runs: 2, rawOutputs, providers: { llm: scriptedLlm } })
+    expect(rawOutputs.filter((o) => o.run === 1).length).toBe(28)
+    expect(rawOutputs.filter((o) => o.run === 2).length).toBe(28)
+  })
+
+  it('a real vision dataset is scored but its outputs are never collected', async () => {
+    const real = await fs.mkdtemp(path.join(os.tmpdir(), 'atlas-bakeoff-real-'))
+    try {
+      for (const f of await fs.readdir(dir)) if (f.endsWith('.png')) await fs.copyFile(path.join(dir, f), path.join(real, f))
+      const labels = JSON.parse(await fs.readFile(path.join(dir, 'labels.json'), 'utf8'))
+      await fs.writeFile(path.join(real, 'labels.json'), JSON.stringify({ ...labels, version: 'real-test-v1', kind: 'real' }))
+      const rawOutputs: RawOutput[] = []
+      const r = await buildBakeoff({ GEMINI_API_KEY: FAKE, AI_EVAL_GEMINI_VISION_MODEL: 'gv' }, { visionDataset: real, rawOutputs, providers: { vision: () => scriptedVision('garment') } })
+      expect(visionOf(r, 'gemini').status).toBe('TESTED')
+      expect(rawOutputs).toEqual([])
+    } finally {
+      await fs.rm(real, { recursive: true, force: true })
+    }
   })
 })

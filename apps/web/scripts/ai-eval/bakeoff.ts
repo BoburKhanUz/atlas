@@ -168,6 +168,30 @@ export interface BakeoffOptions {
     llm?: (provider: EvalProviderName, model: string, env: Env) => LLMProvider
     vision?: (provider: EvalProviderName, model: string, env: Env) => VisionProvider
   }
+  /**
+   * Collector for per-case model outputs (filled when given). Only synthetic
+   * cases are collected: a real dataset's outputs are never kept (governance).
+   */
+  rawOutputs?: RawOutput[]
+}
+
+/**
+ * One case's model output and the checks it was scored with, for failure
+ * analysis. Written next to the report (raw-outputs.json), never inside it.
+ * Synthetic data only; holds no credentials, prompts or request bodies.
+ */
+export interface RawOutput {
+  run: number
+  provider: EvalProviderName
+  model: string
+  feature: LiveFeature
+  datasetKind: 'synthetic'
+  case: string
+  /** Vision: the labels the case was scored against. */
+  expected?: unknown
+  /** The parsed outcome as scored (stylist: the model's answer and the text shown to the user). */
+  output: unknown
+  checks: unknown
 }
 
 export interface BakeoffReport {
@@ -373,7 +397,7 @@ async function readLabels(dir: string) {
   return JSON.parse(await fs.readFile(path.join(dir, 'labels.json'), 'utf8'))
 }
 
-async function liveRun(env: Env, vision: VisionData | null, opts: BakeoffOptions, budget: CallBudget, guard: IntegrityGuard): Promise<LiveProvider[]> {
+async function liveRun(env: Env, vision: VisionData | null, opts: BakeoffOptions, budget: CallBudget, guard: IntegrityGuard, run: number): Promise<LiveProvider[]> {
   const llm = opts.providers?.llm ?? ((provider, model, e) => llmProviderFromEnv(provider, model, e))
   const visionFactory = opts.providers?.vision ?? realVision
   const live: LiveProvider[] = []
@@ -404,6 +428,12 @@ async function liveRun(env: Env, vision: VisionData | null, opts: BakeoffOptions
           guard.readImage,
         )
         visionResult = visionSummary(summary, records, vision!.version)
+        if (opts.rawOutputs && vision!.identity.kind === 'synthetic') {
+          const expected = new Map(vision!.items.map((i) => [i.id, i.expected]))
+          for (const r of records) {
+            opts.rawOutputs.push({ run, provider, model: visionModel!, feature: 'vision', datasetKind: 'synthetic', case: r.item, expected: expected.get(r.item), output: r.outcome, checks: { subjectCorrect: r.subjectCorrect, fields: r.fields } })
+          }
+        }
         for (const r of records) {
           const failed = visionFailed(r, results.get(r.item)!)
           if (failed.length) failures.push({ feature: 'vision', case: r.item, failed, injection: false })
@@ -424,19 +454,21 @@ async function liveRun(env: Env, vision: VisionData | null, opts: BakeoffOptions
     } else {
       const base = llm(provider, model!, env)
       const price = configuredPrice(provider, 'llm', env)
-      const text = async <R extends StylistRecord | OutfitRecord>(feature: 'stylist' | 'outfit', cases: Array<{ id: string }>, run: (p: LLMProvider, c: never) => Promise<R>) => {
+      const text = async <R extends StylistRecord | OutfitRecord>(feature: 'stylist' | 'outfit', cases: Array<{ id: string }>, runCase: (p: LLMProvider, c: never) => Promise<R>) => {
         const ledger = new CallLedger(budget, price)
         const p = countedLLM(base, ledger)
         const records: R[] = []
         const results: CaseResult[] = []
         for (const c of cases) {
-          const r = await run(p, c as never)
+          const r = await runCase(p, c as never)
           records.push(r)
           results.push(caseResult(r.latencyMs, r.requests, r.outcome, ledger.endCase()))
         }
         accounting.push(accountSection(feature, ledger, results, price, price ? priceSource('llm') : null))
         records.forEach((r, i) => {
           if (!r.pass) failures.push({ feature, case: r.case, failed: textFailed(r, results[i]), injection: r.tags.includes('injection') })
+          // The stylist and outfit case sets are synthetic by construction.
+          opts.rawOutputs?.push({ run, provider, model: model!, feature, datasetKind: 'synthetic', case: r.case, output: r.outcome, checks: r.checks })
         })
         return records
       }
@@ -598,7 +630,7 @@ export async function buildBakeoff(env: Env, opts: BakeoffOptions = {}): Promise
     // A changed dataset stops the remaining runs (its sections read DATASET_INTEGRITY_FAILURE).
     if (run > 1 && !guard.ok) break
     const startedAt = stamp()
-    runs.push({ run, live: await liveRun(env, visionData, opts, budget, guard) })
+    runs.push({ run, live: await liveRun(env, visionData, opts, budget, guard, run) })
     runTimes.push({ run, startedAt, finishedAt: stamp() })
   }
   if (plan.upperBoundCalls > 0) await guard.check() // a change during the last section is still reported
@@ -701,13 +733,18 @@ async function main() {
   const maxCalls = parseMaxCalls(arg('max-calls') ?? process.env.AI_EVAL_MAX_CALLS)
   const maxCostUsd = parseMaxCost(arg('max-cost-usd') ?? process.env.AI_EVAL_MAX_COST_USD)
   const runs = runsArg === undefined ? defaultRuns(process.env) : Number(runsArg)
-  const opts: BakeoffOptions = { visionDataset: visionDataset ? path.resolve(visionDataset) : undefined, runs, maxCalls, maxCostUsd, now: () => new Date() }
+  const rawOutputs: RawOutput[] = []
+  const opts: BakeoffOptions = { visionDataset: visionDataset ? path.resolve(visionDataset) : undefined, runs, maxCalls, maxCostUsd, now: () => new Date(), rawOutputs }
   // The CLI never makes a live call without an explicit call cap (checked before any provider is built).
   assertCapForLive(await planOnly(process.env, opts))
   const report = await buildBakeoff(process.env, opts)
   await fs.mkdir(outDir, { recursive: true })
   await fs.writeFile(path.join(outDir, 'bakeoff.json'), JSON.stringify(report, null, 2) + '\n')
   await fs.writeFile(path.join(outDir, 'bakeoff.md'), bakeoffMarkdown(report))
+  if (rawOutputs.length) {
+    const raw = { providerDecision: report.providerDecision, generatedAt: report.execution.generatedAt, providerSource: report.execution.providerSource, datasets: report.datasets, cases: rawOutputs }
+    await fs.writeFile(path.join(outDir, 'raw-outputs.json'), JSON.stringify(raw, null, 2) + '\n')
+  }
   console.log(JSON.stringify({ runs: report.execution.plan.runs, upperBoundCalls: report.execution.plan.upperBoundCalls, maxCalls: report.execution.plan.maxCalls, attemptsUsed: report.execution.budget.attemptsUsed, integrity: report.execution.integrity.status, live: report.live.map((l) => ({ provider: l.provider, status: l.status, reason: l.reason })), providerDecision: report.providerDecision }))
 }
 

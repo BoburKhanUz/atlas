@@ -14,7 +14,7 @@ import { runStylistCase, ScriptedStylist } from '../../../scripts/ai-eval/stylis
 import { outfitCases } from '../../../scripts/ai-eval/outfit-cases'
 import { scoreOutfit } from '../../../scripts/ai-eval/outfit-scoring'
 import { fallbackExplanations, runOutfitCase, ScriptedOutfit } from '../../../scripts/ai-eval/outfit-eval'
-import { renderSynthetic, syntheticVisionItems } from '../../../scripts/ai-eval/synthetic-vision'
+import { renderSynthetic, SYNTHETIC_VISION_VERSION, syntheticVisionItems } from '../../../scripts/ai-eval/synthetic-vision'
 import { Dataset } from '../../../scripts/ai-eval/vision-scoring'
 import { COLORS, SUBCATEGORIES } from '@/lib/ai/catalog'
 import { CONFIDENCE_KEYS, presentConfidences, UNCALIBRATED_MAX_CONFIDENCE } from '@/lib/ai/garment-analysis'
@@ -64,6 +64,29 @@ describe('common scoring helpers', () => {
     expect(inventedGarments('Oq futbolka va ko‘k jins kiying.', owned)).toEqual([])
     expect(inventedGarments('Qora kurtka va galstuk qo‘shing.', owned)).toEqual(['kurtka', 'galstuk'])
     expect(inventedGarments('Garderobingizda kostyum yo‘q.', owned, ['kostyum'])).toEqual([])
+  })
+
+  it('invented garments: a natural Uzbek name for an owned item is grounded; the same word without the item is not', () => {
+    // sviter = the catalog's knit
+    expect(inventedGarments('Bej sviteringizni kiying.', new Set(['knit']))).toEqual([])
+    expect(inventedGarments('Bej sviteringizni kiying.', new Set(['tshirt']))).toEqual(['sviter'])
+    // kostyum = blazer + trousers, both required
+    expect(inventedGarments('To‘q ko‘k kostyum mos.', new Set(['blazer', 'trousers']))).toEqual([])
+    expect(inventedGarments('To‘q ko‘k kostyum mos.', new Set(['blazer']))).toEqual(['kostyum'])
+    expect(inventedGarments('To‘q ko‘k kostyum mos.', new Set(['trousers']))).toEqual(['kostyum'])
+    // kurtka = a jacket or a windbreaker, nothing else
+    expect(inventedGarments('Zaytun kurtkangizni oling.', new Set(['windbreaker']))).toEqual([])
+    expect(inventedGarments('Qora kurtka.', new Set(['jacket']))).toEqual([])
+    expect(inventedGarments('Kurtka kiying.', new Set(['blazer', 'coat']))).toEqual(['kurtka'])
+    // Items the catalog does not have stay invented whatever is owned.
+    expect(inventedGarments('Galstuk va kepka taqing.', new Set(['blazer', 'trousers', 'knit', 'jacket']))).toEqual(['galstuk', 'kepka'])
+  })
+
+  it('invented garments: the stylist eval wardrobe grounds sviter and kostyum but still flags kurtka and galstuk', () => {
+    const owned = new Set(stylistCases()[0].wardrobe.map((w) => w.subcategory).filter((s): s is string => !!s))
+    expect(inventedGarments('Sviter, kostyum va vetrovka.', owned)).toEqual([])
+    // The stylist wardrobe has a windbreaker, so "kurtka" is grounded there; a tie never is.
+    expect(inventedGarments('Kurtka va galstuk.', owned)).toEqual(['galstuk'])
   })
 
   it('private identifiers and prompt fragments are detected', () => {
@@ -192,6 +215,10 @@ describe('synthetic vision dataset', () => {
     for (const c of ['shirt', 'outerwear', 'pants', 'dress', 'shoes', 'accessory']) expect(cats).toContain(c)
     const subjects = new Set(ds.items.map((i) => i.expected.subject))
     for (const s of ['single_garment', 'multiple_garments', 'no_garment', 'unclear']) expect(subjects).toContain(s)
+    // v2: a sharp image of non-clothing shapes is no_garment ("unclear" is for dark, blurred or cropped photos).
+    expect(SYNTHETIC_VISION_VERSION).toBe('synthetic-v2')
+    expect(ds.items.find((i) => i.id === 'ambiguous_blob')!.expected.subject).toBe('no_garment')
+    expect(ds.items.filter((i) => i.expected.subject === 'unclear').map((i) => i.id).sort()).toEqual(['poor_quality_blur', 'poor_quality_tiny'])
     for (const sub of ['tshirt', 'coat', 'jeans']) expect(ds.items.map((i) => i.expected.subcategory)).toContain(sub)
   })
 

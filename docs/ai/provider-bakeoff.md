@@ -22,7 +22,7 @@ Related:
 | Runs | 3 (`--runs=3`) |
 | Provider calls made | **0** (upper bound 0: nothing could run live; budget used 0; dataset integrity OK) |
 | CLI exit | 0: a controlled `NOT_TESTED`, not a crash. With a key and model but no `--max-calls`, the CLI exits 1 before any call. |
-| Result location | outside the repository: the run's scratch directory (`bakeoff.json`, `bakeoff.md`); nothing is committed |
+| Result location | outside the repository: the run's scratch directory (`bakeoff.json`, `bakeoff.md`, and `raw-outputs.json` for synthetic cases); nothing is committed |
 
 No live result exists, and none was estimated or substituted with the mock. The offline checks ran:
 - adversarial robustness suite: 13/13 scenarios as specified;
@@ -64,10 +64,11 @@ Credential variables (names only; never written to files, logs or reports):
 
 | Capability | Dataset | Version | sha256 | Cases | Kind |
 |---|---|---|---|---|---|
-| Vision | `synthetic-vision.ts` output (`labels.json` + PNGs) | `synthetic-v1` | `e82f761be10ec9cea7aec68099af3d31274c9307279c47a67e0025bcf6fdf2b4` | 15: 10 garments, multiple garments, no garment, 3 unclear | **synthetic** |
+| Vision | `synthetic-vision.ts` output (`labels.json` + PNGs) | `synthetic-v2` | `9e023ad226c05db4e0e9c27d21d8f8b6861e00f7ae9798f5dd768d3ded922e73` | 15: 10 garments, multiple garments, 2 no garment, 2 unclear | **synthetic** |
 | Stylist | `stylist-cases.ts` | `synthetic-v1` | `8733e67cf7fdbde2109006f3e476a792c115364bd0fc798220253dba83416c54` | 17 (occasion, weather, grounding, limited wardrobe, 5 prompt-injection) | **synthetic** |
 | Outfit | `outfit-cases.ts` | `synthetic-v1` | `7a16530b7e1adccd8fc9f8280a84ef0cc11ee9342b704aec20b546bf76e27076` | 11 (weather, colour profile, wardrobe size) | **synthetic** |
 
+- Vision `synthetic-v2` (2026-10-07) relabels `ambiguous_blob` from `unclear` to `no_garment`: the vision prompt keeps `unclear` for dark, blurred or cropped photos, and a sharp image of non-clothing shapes is `no_garment`. The images are unchanged; v1 (`e82f761b…`) results are not comparable on that case.
 - The hash covers the frozen content. For vision that is `labels.json` plus every image's bytes; for text it is the case definitions. `bakeoff.json` → `datasets` records the path, version, sha256, case count and kind.
 - **Integrity:**
   - Every image is re-hashed right before it is sent.
@@ -97,6 +98,7 @@ AI_EVAL_GEMINI_MODEL=… AI_EVAL_OPENAI_MODEL=… AI_EVAL_GEMINI_VISION_MODEL=�
 ```
 
 - The output directory must be outside the repository; the script refuses a path inside it.
+- `raw-outputs.json` (written next to the report when a live section ran) keeps, per run and case, the parsed model output and the checks it was scored with: vision outcome and labels, stylist answer and the text shown to the user, outfit ranking and explanation. It exists for failure analysis. Only synthetic cases are kept; a real dataset's outputs are never collected. It holds no keys, prompts or request bodies.
 - When anything can run live, the CLI refuses to start without `--max-calls`. This is checked before any provider is built.
 - Without credentials the CLI exits 0 and reports `NOT_TESTED` with the reason. This is a controlled result, not a crash.
 - `--runs` defaults to 3 when a live text section can run, otherwise 1.

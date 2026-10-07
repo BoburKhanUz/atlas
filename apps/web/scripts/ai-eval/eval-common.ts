@@ -72,12 +72,22 @@ export function uzbekCheck(text: string): UzbekCheck {
 // ─── Garment mentions (grounding of free text) ──────────────────────────────
 
 /**
- * Distinctive Uzbek garment words → catalog subcategory (or null for items the
- * app's catalog does not have at all). Ambiguous words ("ko‘ylak", "shim") are
- * left out on purpose: they would make the check noisy.
+ * Which owned subcategories a garment word may stand for: one subcategory, any
+ * of several (a generic word), all of several (a word for a combination), or
+ * null for items the app's catalog does not have at all.
  */
-export const GARMENT_WORDS: ReadonlyArray<[RegExp, string | null]> = [
-  [/\bkurtka/iu, 'jacket'],
+export type GarmentOwner = string | null | { any: readonly string[] } | { all: readonly string[] }
+
+/**
+ * Distinctive Uzbek garment words → what the user must own for the word to be
+ * grounded. Ambiguous words ("ko‘ylak", "shim") are left out on purpose: they
+ * would make the check noisy. Generic words map to every catalog item they
+ * name in everyday Uzbek, so a natural name for an owned item is not counted
+ * as invented (smoke-test analysis, 2026-10-07).
+ */
+export const GARMENT_WORDS: ReadonlyArray<[RegExp, GarmentOwner]> = [
+  // A windbreaker (vetrovka) is a kind of kurtka.
+  [/\bkurtka/iu, { any: ['jacket', 'windbreaker'] }],
   [/\bbleyzer/iu, 'blazer'],
   [/\bpalto/iu, 'coat'],
   [/\bvetrovka/iu, 'windbreaker'],
@@ -94,11 +104,19 @@ export const GARMENT_WORDS: ReadonlyArray<[RegExp, string | null]> = [
   [/\bryukzak/iu, 'backpack'],
   [/\bsharf/iu, 'scarf'],
   [/\bshlyapa/iu, 'hat'],
-  [/\bkostyum/iu, null],
+  // A suit is a blazer worn with trousers: grounded only when both are owned.
+  [/\bkostyum/iu, { all: ['blazer', 'trousers'] }],
   [/\bgalstuk/iu, null],
   [/\bkepka/iu, null],
-  [/\bsviter/iu, null],
+  // The catalog's knit (label "Nitki") is what Uzbek speakers call a sviter.
+  [/\bsviter/iu, 'knit'],
 ]
+
+function owns(owner: GarmentOwner, available: ReadonlySet<string>): boolean {
+  if (owner === null) return false
+  if (typeof owner === 'string') return available.has(owner)
+  return 'any' in owner ? owner.any.some((s) => available.has(s)) : owner.all.every((s) => available.has(s))
+}
 
 /**
  * Garments named in `text` that are not among `available` subcategories
@@ -106,12 +124,12 @@ export const GARMENT_WORDS: ReadonlyArray<[RegExp, string | null]> = [
  */
 export function inventedGarments(text: string, available: ReadonlySet<string>, allowed: readonly string[] = []): string[] {
   const out: string[] = []
-  for (const [re, sub] of GARMENT_WORDS) {
+  for (const [re, owner] of GARMENT_WORDS) {
     const m = text.match(re)
     if (!m) continue
     const word = m[0].toLowerCase()
     if (allowed.some((a) => word.startsWith(a.toLowerCase()))) continue
-    if (sub === null || !available.has(sub)) out.push(word)
+    if (!owns(owner, available)) out.push(word)
   }
   return out
 }

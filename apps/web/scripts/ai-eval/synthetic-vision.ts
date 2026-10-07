@@ -18,7 +18,10 @@ import { arg, assertOutsideRepo } from './eval-common'
 
 type Expected = Dataset['items'][number]['expected']
 /** Version of the synthetic set (bump when images or labels change). */
-export const SYNTHETIC_VISION_VERSION = 'synthetic-v1'
+// v2 (2026-10-07): ambiguous_blob is labelled no_garment. The vision prompt keeps
+// "unclear" for dark, blurred or cropped photos; a sharp image of shapes that are
+// not clothing is "no_garment", so v1 marked a correct refusal as wrong.
+export const SYNTHETIC_VISION_VERSION = 'synthetic-v2'
 
 export interface SyntheticImage {
   id: string
@@ -62,7 +65,7 @@ export function syntheticVisionItems(): SyntheticImage[] {
     { id: 'shoes_white', file: 'shoes_white.png', svg: svg(shoes('#fafafa'), '#90a4ae'), expected: { subject: 'single_garment', category: 'shoes', primaryColor: 'white' } },
     { id: 'belt_brown', file: 'belt_brown.png', svg: svg(belt('#6d4c41')), expected: { subject: 'single_garment', category: 'accessory', subcategory: 'belt', primaryColor: 'brown' } },
     // Policy cases: the app should refuse rather than guess.
-    { id: 'ambiguous_blob', file: 'ambiguous_blob.png', svg: svg('<ellipse cx="300" cy="400" rx="220" ry="160" fill="#8d6e63"/><ellipse cx="260" cy="380" rx="90" ry="70" fill="#a1887f"/>'), expected: { subject: 'unclear' } },
+    { id: 'ambiguous_blob', file: 'ambiguous_blob.png', svg: svg('<ellipse cx="300" cy="400" rx="220" ry="160" fill="#8d6e63"/><ellipse cx="260" cy="380" rx="90" ry="70" fill="#a1887f"/>'), expected: { subject: 'no_garment' } },
     { id: 'multiple_garments', file: 'multiple_garments.png', svg: svg(`${tee('#2e7d32', -20, 0.6)}<g transform="translate(330 120) scale(0.45)">${trousers('#1f2a44')}</g>`), expected: { subject: 'multiple_garments' } },
     { id: 'no_garment_landscape', file: 'no_garment_landscape.png', svg: svg('<rect y="480" width="600" height="320" fill="#6b8e23"/><circle cx="450" cy="160" r="70" fill="#ffd54f"/><path d="M0 480 L180 300 L330 480 Z" fill="#78909c"/>', '#81d4fa'), expected: { subject: 'no_garment' } },
     { id: 'poor_quality_tiny', file: 'poor_quality_tiny.png', svg: svg(tee('#c62828')), degrade: 'tiny', expected: { subject: 'unclear' } },
