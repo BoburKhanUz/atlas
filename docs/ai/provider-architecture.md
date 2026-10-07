@@ -96,9 +96,9 @@ Configuration is read and validated at startup by `assertServerConfig`. All vari
 
 Every AI call writes one structured `ai.call` log line. The level is `info` on success and `warn` on failure. The fields are:
 
-`feature`, `provider`, `model`, `outcome` (`ok`, an error kind, or `error`), `latencyMs`, `attempts`, `retried`, `usageInput`, `usageOutput`, `usageTotal`, `costUsd`.
+`feature`, `provider`, `model`, `outcome` (`ok`, an error kind, or `error`), `latencyMs`, `attempts`, `retried`, `usageInput`, `usageOutput`, `usageTotal`, `costUsd`, and since monitoring schema 2: `success`, `errorCode`, `httpStatus`, `retry` (`none`, `succeeded` or `failed`), `environment`, `schemaVersion`.
 
-The line never contains prompts, user messages, wardrobe data, images, provider responses, user or conversation ids, keys or tokens.
+The line never contains prompts, user messages, wardrobe data, images, provider responses, user or conversation ids, keys or tokens. Feature outcomes (`ai.request`), quota decisions (`ai.quota`), the dashboard and the alert rules are described in [`monitoring.md`](monitoring.md).
 
 ## Quota foundation
 

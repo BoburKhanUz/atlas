@@ -16,7 +16,9 @@ import { getAiConfig } from './config'
 import { isAiProviderError } from './providers/errors'
 import { getLLMProvider } from './providers'
 import type { LLMMessage } from './providers/types'
-import { consumeAiQuota, refundAiQuota, secondsUntilNextQuotaDay } from './quota'
+import { recordAiRequest } from './monitoring'
+import { secondsUntilNextQuotaDay } from './quota'
+import { chargeQuota, refundQuota } from './quota-monitoring'
 import {
   InvalidStylistOutputError,
   STYLIST_LIMITS,
@@ -111,17 +113,26 @@ export async function runStylistTurn(input: StylistTurnInput, deps: StylistDeps 
     const started = performance.now()
     const answer = interpretStylistOutput(mockStylistOutput(input.context), input.context.refs)
     recordAiCall({ feature: 'stylist_chat', provider: 'mock', model: provider.model, outcome: 'ok', latencyMs: performance.now() - started, attempts: 1 })
+    recordAiRequest({ feature: 'stylist_chat', provider: 'mock', model: provider.model, outcome: 'ok', billable: false, latencyMs: performance.now() - started })
     return finish(answer, input.context, { provider: 'mock', model: provider.model, chargedAt: null })
   }
 
   // Quota, immediately before the provider call; refunds target the charged day.
+  const started = performance.now()
+  let corrected = false
+  const request = (r: { outcome: 'ok' | 'ai_unavailable' | 'quota_exceeded' | 'internal_error'; reason?: string; billable: boolean }) =>
+    recordAiRequest({ feature: 'stylist_chat', provider: provider.name, model: provider.model, corrected, latencyMs: performance.now() - started, ...r })
   const chargedAt = now()
-  const quota = await consumeAiQuota(input.userId, 'stylist_chat', chargedAt)
-  if (!quota.allowed) throw new StylistError({ kind: 'quota_exceeded', retryAfterSeconds: secondsUntilNextQuotaDay(chargedAt) })
-  const refund = () => refundAiQuota(input.userId, 'stylist_chat', chargedAt).catch((err) => log.error('ai quota refund failed', { err }))
+  const quota = await chargeQuota(input.userId, 'stylist_chat', provider.name, chargedAt)
+  if (!quota.allowed) {
+    request({ outcome: 'quota_exceeded', billable: false })
+    throw new StylistError({ kind: 'quota_exceeded', retryAfterSeconds: secondsUntilNextQuotaDay(chargedAt) })
+  }
+  const refund = (reason: string) => refundQuota(input.userId, 'stylist_chat', provider.name, chargedAt, reason)
   const unavailable = async (reason: string): Promise<never> => {
-    await refund()
+    await refund(reason)
     log.warn('ai.stylist.failed', { provider: provider.name, model: provider.model, version: STYLIST_PROMPT_VERSION, reason })
+    request({ outcome: 'ai_unavailable', reason, billable: false })
     throw new StylistError({ kind: 'ai_unavailable' })
   }
 
@@ -146,7 +157,8 @@ export async function runStylistTurn(input: StylistTurnInput, deps: StylistDeps 
       return r.text
     } catch (err) {
       if (isAiProviderError(err)) return unavailable(`provider_${err.kind}`)
-      await refund()
+      await refund('internal_error')
+      request({ outcome: 'internal_error', reason: 'internal_error', billable: false })
       throw err
     }
   }
@@ -167,6 +179,7 @@ export async function runStylistTurn(input: StylistTurnInput, deps: StylistDeps 
     if (!(err instanceof InvalidStylistOutputError)) throw err
     // Malformed output is never retried; only ungrounded references get one correction.
     if (err.reason !== 'invalid_reference') return unavailable('malformed_output')
+    corrected = true
     const second = await call(stylistCorrectionMessages(messages, first, err.invalidRefs, input.context.refs))
     try {
       answer = interpretStylistOutput(parseStylistText(second), input.context.refs)
@@ -175,5 +188,6 @@ export async function runStylistTurn(input: StylistTurnInput, deps: StylistDeps 
       return unavailable(again.reason === 'invalid_reference' ? 'ungrounded_after_correction' : 'malformed_output')
     }
   }
+  request({ outcome: 'ok', billable: true })
   return finish(answer, input.context, { provider: provider.name, model: provider.model, chargedAt })
 }

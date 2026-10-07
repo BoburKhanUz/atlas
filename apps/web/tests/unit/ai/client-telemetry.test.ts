@@ -153,8 +153,13 @@ describe('analyzeImage', () => {
 describe('telemetry fields', () => {
   it('names avoid the logger’s sensitive-key redaction and contain no identifiers', () => {
     const f = aiCallFields({ feature: 'stylist_chat', provider: 'p', model: 'm', outcome: 'ok', latencyMs: 12.6, attempts: 1, usage: { inputTokens: 1, outputTokens: 2, totalTokens: 3 } })
-    expect(Object.keys(f).sort()).toEqual(['attempts', 'feature', 'latencyMs', 'model', 'outcome', 'provider', 'retried', 'usageInput', 'usageOutput', 'usageTotal'])
+    expect(Object.keys(f).sort()).toEqual(['attempts', 'feature', 'latencyMs', 'model', 'outcome', 'provider', 'retried', 'retry', 'success', 'usageInput', 'usageOutput', 'usageTotal'])
     expect(f.latencyMs).toBe(13)
+    expect([f.success, f.retry, f.errorCode]).toEqual([true, 'none', undefined])
+    // A failure carries its typed code and HTTP status; retry outcome is explicit.
+    const failed = aiCallFields({ feature: 'stylist_chat', provider: 'p', model: 'm', outcome: 'unavailable', latencyMs: 5, attempts: 2, httpStatus: 503 })
+    expect([failed.success, failed.errorCode, failed.httpStatus, failed.retry]).toEqual([false, 'unavailable', 503, 'failed'])
+    expect(aiCallFields({ feature: 'stylist_chat', provider: 'p', model: 'm', outcome: 'ok', latencyMs: 5, attempts: 2 }).retry).toBe('succeeded')
   })
 
   it('cost needs both a price and both token counts', () => {

@@ -16,7 +16,9 @@ import {
 import { generateOutfits, isCompleteWeather, type OutfitCandidate } from '@/lib/ai/recommendation'
 import { buildStylistContext, type WardrobeRow } from '@/lib/ai/stylist-context'
 import { runStylistTurn, StylistError, type StylistTurnResult } from '@/lib/ai/stylist-service'
-import { refundAiQuota } from '@/lib/ai/quota'
+import { recordAiRequest } from '@/lib/ai/monitoring'
+import { getLLMProvider } from '@/lib/ai/providers'
+import { refundQuota } from '@/lib/ai/quota-monitoring'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -99,7 +101,10 @@ export const POST = withApi(async (req) => {
       key: idempotencyKey,
       requestHash: jsonRequestHash({ message, conversationId: conversationId ?? null, weather: weather ?? null, event }),
     })
-    if (result.kind === 'replay') return replay(userId, result.resourceId)
+    if (result.kind === 'replay') {
+      recordAiRequest({ feature: 'stylist_chat', provider: getLLMProvider().name, outcome: 'replay', billable: false })
+      return replay(userId, result.resourceId)
+    }
     claim = result
   }
 
@@ -222,7 +227,7 @@ export const POST = withApi(async (req) => {
   } catch (err) {
     if (claim) await releaseIdempotencyKey(db, claim).catch(() => {})
     // The provider answered but storing failed: give the call back.
-    if (turn?.chargedAt) await refundAiQuota(userId, 'stylist_chat', turn.chargedAt).catch(() => {})
+    if (turn?.chargedAt) await refundQuota(userId, 'stylist_chat', turn.provider, turn.chargedAt, 'storage_failed')
     if (err instanceof StylistError) {
       if (err.failure.kind === 'quota_exceeded') {
         throw new ApiError('AI_QUOTA_EXCEEDED', 'Bugungi AI stilist limiti tugadi. Limit Toshkent vaqti bilan yarim tunda yangilanadi.', undefined, {

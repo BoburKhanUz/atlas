@@ -7,8 +7,8 @@
  * Field names avoid the logger's sensitive-key pattern (e.g. "token"), which
  * would otherwise redact the usage numbers.
  */
-import { log } from '@/server/log'
 import type { AiPrice } from './config'
+import { emitAiEvent } from './monitoring'
 import type { AiErrorKind } from './providers/errors'
 import type { AiFeature, ProviderUsage } from './providers/types'
 
@@ -23,7 +23,12 @@ export interface AiCallRecord {
   attempts: number
   usage?: ProviderUsage
   price?: AiPrice | null
+  /** HTTP status of the provider's final failure, when there was one. */
+  httpStatus?: number
 }
+
+/** none: one attempt · succeeded: retried, then ok · failed: retried, still failed. */
+export type AiRetryResult = 'none' | 'succeeded' | 'failed'
 
 export interface AiCallFields {
   feature: AiFeature
@@ -33,6 +38,11 @@ export interface AiCallFields {
   latencyMs: number
   attempts: number
   retried: boolean
+  retry: AiRetryResult
+  success: boolean
+  /** The typed error kind of a failed call (same as outcome). */
+  errorCode?: AiOutcome
+  httpStatus?: number
   usageInput?: number
   usageOutput?: number
   usageTotal?: number
@@ -55,7 +65,11 @@ export function aiCallFields(r: AiCallRecord): AiCallFields {
     latencyMs: Math.max(0, Math.round(r.latencyMs)),
     attempts: r.attempts,
     retried: r.attempts > 1,
+    retry: r.attempts <= 1 ? 'none' : r.outcome === 'ok' ? 'succeeded' : 'failed',
+    success: r.outcome === 'ok',
   }
+  if (r.outcome !== 'ok') fields.errorCode = r.outcome
+  if (r.httpStatus !== undefined) fields.httpStatus = r.httpStatus
   if (r.usage?.inputTokens !== undefined) fields.usageInput = r.usage.inputTokens
   if (r.usage?.outputTokens !== undefined) fields.usageOutput = r.usage.outputTokens
   if (r.usage?.totalTokens !== undefined) fields.usageTotal = r.usage.totalTokens
@@ -64,8 +78,7 @@ export function aiCallFields(r: AiCallRecord): AiCallFields {
   return fields
 }
 
+/** One `ai.call` event (info when ok, warn otherwise), through the monitoring sinks. */
 export function recordAiCall(r: AiCallRecord): void {
-  const fields = aiCallFields(r)
-  if (r.outcome === 'ok') log.info('ai.call', { ...fields })
-  else log.warn('ai.call', { ...fields })
+  emitAiEvent({ event: 'ai.call', ...aiCallFields(r) })
 }

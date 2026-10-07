@@ -36,7 +36,7 @@ Legend:
 | Quota configurability | NEEDS REVIEW | code constants (`quota.ts`); changing them needs a release |
 | Cost validation | NOT TESTED | request sizes measured; tokens and current pricing REQUIRE CURRENT PROVIDER PRICING CHECK |
 | Latency validation | NOT TESTED (live) / PASS (local) | local steps ≤ 73 ms p95 (`timings.ts`); provider latency needs live calls |
-| Monitoring | NEEDS REVIEW | `ai.call` telemetry exists; dashboards and alerts not built |
+| Monitoring | PASS (offline) / NOT TESTED (live) | `ai.call` / `ai.request` / `ai.quota` events behind a whitelist sanitizer; log-based dashboard and provisional alerts (`scripts/ai-monitor.ts`, [`monitoring.md`](monitoring.md)); `monitoring.test.ts`, `ai-monitoring.test.ts`. A production log collector or metrics backend and live threshold calibration are still needed. |
 
 ## Failure matrix
 

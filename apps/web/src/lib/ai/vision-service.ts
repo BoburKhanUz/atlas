@@ -29,7 +29,9 @@ import { analyzeClothing, type ClothingDetection as MockDetection } from './mock
 import { getVisionProvider } from './providers'
 import { isAiProviderError } from './providers/errors'
 import { prepareVisionImage } from './providers/vision-input'
-import { consumeAiQuota, refundAiQuota, secondsUntilNextQuotaDay } from './quota'
+import { recordAiRequest } from './monitoring'
+import { secondsUntilNextQuotaDay } from './quota'
+import { chargeQuota, refundQuota } from './quota-monitoring'
 import { recordAiCall } from './telemetry'
 
 /** The detection returned by the API: `mock` is false for real providers. */
@@ -90,33 +92,43 @@ async function analyzeWithMock(input: GarmentInput, now: () => Date): Promise<Ga
   try {
     const detection = await analyzeClothing({ buffer: input.buffer, filename: input.filename })
     recordAiCall({ feature: 'clothing_analysis', provider: 'mock', model: MOCK_MODEL, outcome: 'ok', latencyMs: performance.now() - started, attempts: 1 })
+    recordAiRequest({ feature: 'clothing_analysis', provider: 'mock', model: MOCK_MODEL, outcome: 'ok', billable: false, latencyMs: performance.now() - started })
     return {
       detection,
       metadata: { provider: 'mock', model: MOCK_MODEL, version: MOCK_ANALYSIS_VERSION, analyzedAt: now(), rawConfidences: null },
     }
   } catch (err) {
     recordAiCall({ feature: 'clothing_analysis', provider: 'mock', model: MOCK_MODEL, outcome: 'error', latencyMs: performance.now() - started, attempts: 1 })
+    recordAiRequest({ feature: 'clothing_analysis', provider: 'mock', model: MOCK_MODEL, outcome: 'internal_error', reason: 'mock_error', billable: false, latencyMs: performance.now() - started })
     throw err
   }
 }
 
 async function analyzeWithProvider(input: GarmentInput, now: () => Date): Promise<GarmentAnalysis> {
   const config = getAiConfig().vision
+  const started = performance.now()
+  const name = provider()
+  const request = (r: Omit<Parameters<typeof recordAiRequest>[0], 'feature' | 'provider' | 'latencyMs'>) =>
+    recordAiRequest({ feature: 'clothing_analysis', provider: name, model: config.model, latencyMs: performance.now() - started, ...r })
 
   // 1. Only prepared bytes may leave the server (rotated, flattened, no metadata, bounded).
   let prepared: Awaited<ReturnType<typeof prepareVisionImage>>
   try {
     prepared = await prepareVisionImage(input.buffer, config.maxSide)
   } catch {
+    request({ outcome: 'image_rejected', reason: 'unprocessable_image', billable: false })
     throw new GarmentAnalysisError({ kind: 'image_rejected' })
   }
 
   // 2. Quota, immediately before the provider call (atomic; never for the mock).
   // The refund targets the day that was charged, even if the call crosses midnight.
   const chargedAt = now()
-  const quota = await consumeAiQuota(input.userId, 'clothing_analysis', chargedAt)
-  if (!quota.allowed) throw new GarmentAnalysisError({ kind: 'quota_exceeded', retryAfterSeconds: secondsUntilNextQuotaDay(chargedAt) })
-  const refund = () => refundAiQuota(input.userId, 'clothing_analysis', chargedAt).catch((err) => log.error('ai quota refund failed', { err }))
+  const quota = await chargeQuota(input.userId, 'clothing_analysis', name, chargedAt)
+  if (!quota.allowed) {
+    request({ outcome: 'quota_exceeded', billable: false })
+    throw new GarmentAnalysisError({ kind: 'quota_exceeded', retryAfterSeconds: secondsUntilNextQuotaDay(chargedAt) })
+  }
+  const refund = (reason: string) => refundQuota(input.userId, 'clothing_analysis', name, chargedAt, reason)
 
   // 3. Provider call (timeout and the single safe retry live in client.ts).
   let output: unknown
@@ -140,9 +152,12 @@ async function analyzeWithProvider(input: GarmentInput, now: () => Date): Promis
   } catch (err) {
     if (isAiProviderError(err) && err.kind === 'content_filtered') {
       // The provider looked at the photo and refused it: charged, like a rejection.
+      request({ outcome: 'image_rejected', reason: 'content_filtered', billable: true })
       throw new GarmentAnalysisError({ kind: 'image_rejected' })
     }
-    await refund()
+    const reason = isAiProviderError(err) ? `provider_${err.kind}` : 'internal_error'
+    await refund(reason)
+    request({ outcome: isAiProviderError(err) ? 'ai_unavailable' : 'internal_error', reason, billable: false })
     if (isAiProviderError(err)) throw new GarmentAnalysisError({ kind: 'ai_unavailable' })
     throw err
   }
@@ -153,11 +168,15 @@ async function analyzeWithProvider(input: GarmentInput, now: () => Date): Promis
     interpretation = interpretGarmentOutput(output)
   } catch (err) {
     if (!(err instanceof InvalidGarmentOutputError)) throw err
-    await refund()
+    await refund('invalid_output')
+    request({ outcome: 'ai_unavailable', reason: 'invalid_output', billable: false })
     log.warn('ai.vision.invalid_output', { provider: provider(), model, version: VISION_ANALYSIS_VERSION, reason: err.message })
     throw new GarmentAnalysisError({ kind: 'ai_unavailable' })
   }
-  if (interpretation.kind === 'rejected') throw new GarmentAnalysisError({ kind: 'not_a_garment', subject: interpretation.subject })
+  if (interpretation.kind === 'rejected') {
+    request({ outcome: 'not_a_garment', reason: interpretation.subject, billable: true })
+    throw new GarmentAnalysisError({ kind: 'not_a_garment', subject: interpretation.subject })
+  }
 
   // 5. Colour cross-check: pixels may only lower the colour confidence.
   const { attributes, rawConfidence } = interpretation
@@ -168,6 +187,7 @@ async function analyzeWithProvider(input: GarmentInput, now: () => Date): Promis
     color = { verdict: 'weak', support: 0, confidenceCap: WEAK_SUPPORT_MAX_CONFIDENCE }
   }
   log.info('ai.vision.result', { provider: provider(), model, version: VISION_ANALYSIS_VERSION, colorVerdict: color.verdict })
+  request({ outcome: 'ok', billable: true })
 
   return {
     detection: { ...attributes, confidence: presentConfidences(rawConfidence, color.confidenceCap), mock: false },

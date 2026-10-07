@@ -43,6 +43,7 @@ async function run<T extends { metadata: { usage: LLMResult['metadata']['usage']
       outcome: isAiProviderError(cause) ? cause.kind : 'error',
       latencyMs: now() - started,
       attempts,
+      httpStatus: isAiProviderError(cause) ? cause.status : undefined,
     })
     throw cause
   }

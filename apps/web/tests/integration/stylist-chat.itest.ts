@@ -10,6 +10,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { POST as chat } from '@/app/api/v1/stylist/chat/route'
 import { signAccessToken } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { setAiMonitoringSinks, type AiMonitoringEvent } from '@/lib/ai/monitoring'
 import { setLLMProviderForTesting } from '@/lib/ai/providers'
 import { AiProviderError } from '@/lib/ai/providers/errors'
 import type { LLMProvider, LLMRequest } from '@/lib/ai/providers/types'
@@ -76,6 +77,9 @@ describe.skipIf(!enabled)('STY: stylist chat (real PostgreSQL + quota)', () => {
     expect(meta.referencedItemIds.every((id: string) => id.startsWith(u.id))).toBe(true)
     expect(await usage(u.id)).toBe(1)
 
+    // Monitoring: the replay is visible as such (no provider call, no charge).
+    const seen: AiMonitoringEvent[] = []
+    setAiMonitoringSinks([{ emit: (e) => seen.push(e) }])
     const replay = await post({ message: 'Bugun nima kiyay?' }, key)
     expect(replay.status).toBe(200)
     expect(replay.headers.get('idempotent-replayed')).toBe('true')
@@ -83,6 +87,8 @@ describe.skipIf(!enabled)('STY: stylist chat (real PostgreSQL + quota)', () => {
     expect(p.calls).toBe(1)
     expect(await usage(u.id)).toBe(1)
     expect(await messages(u.id)).toHaveLength(2)
+    setAiMonitoringSinks(null)
+    expect(seen.map((e) => `${e.event}:${e.feature}:${e.outcome}:${e.billable}`)).toEqual(['ai.request:stylist_chat:replay:false'])
   })
 
   it('STY-02: AI_UNAVAILABLE → nothing stored (no conversation, no user message), refunded, key released (the same key works later)', async () => {

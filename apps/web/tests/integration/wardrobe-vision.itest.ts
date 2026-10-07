@@ -14,6 +14,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { POST as upload } from '@/app/api/v1/wardrobe/items/route'
 import { signAccessToken } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { setAiMonitoringSinks, type AiMonitoringEvent } from '@/lib/ai/monitoring'
 import { CONFIDENCE_KEYS } from '@/lib/ai/garment-analysis'
 import { setVisionProviderForTesting } from '@/lib/ai/providers'
 import { AiProviderError } from '@/lib/ai/providers/errors'
@@ -100,12 +101,17 @@ describe.skipIf(!enabled)('VIS: real-provider clothing analysis (real PostgreSQL
     expect(JSON.parse(row.confidences).category).toBeLessThan(0.7) // presented: uncalibrated cap
     expect(await usage(u.id)).toBe(1)
 
+    // Monitoring: the replay is visible as such (no provider call, no charge).
+    const seen: AiMonitoringEvent[] = []
+    setAiMonitoringSinks([{ emit: (e) => seen.push(e) }])
     const replay = await post(await jpeg(), key)
     expect(replay.status).toBe(201)
     expect(replay.headers.get('idempotent-replayed')).toBe('true')
     expect((await replay.json()).detection).toEqual(a.detection) // mock=false from the stored provider
     expect(p.calls).toBe(1)
     expect(await usage(u.id)).toBe(1)
+    setAiMonitoringSinks(null)
+    expect(seen.map((e) => `${e.event}:${e.feature}:${e.outcome}:${e.billable}`)).toEqual(['ai.request:clothing_analysis:replay:false'])
   })
 
   it('VIS-02: AI_UNAVAILABLE → 503, quota refunded, files removed, key released (the same key works later)', async () => {

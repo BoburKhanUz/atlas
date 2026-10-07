@@ -14,6 +14,8 @@ import {
 } from '@/lib/storage/provider'
 import { serializeWardrobeItem } from '@/lib/wardrobe/serialize'
 import { analyzeGarment, GarmentAnalysisError, isMockAnalysis, type ClothingDetection } from '@/lib/ai/vision-service'
+import { recordAiRequest } from '@/lib/ai/monitoring'
+import { getVisionProvider } from '@/lib/ai/providers'
 import {
   claimIdempotencyKey,
   completeIdempotencyKey,
@@ -128,6 +130,7 @@ export const POST = withApi(async (req) => {
         ? await db.wardrobeItem.findFirst({ where: { id: result.resourceId, userId: authUser.sub }, include: { images: true } })
         : null
       if (!original) throw new ApiError('NOT_FOUND', 'Bu so‘rov bilan yaratilgan buyum o‘chirilgan')
+      recordAiRequest({ feature: 'clothing_analysis', provider: getVisionProvider().name, outcome: 'replay', billable: false })
       return itemResponse(original, detectionFromItem(original), true)
     }
     claim = result

@@ -16,7 +16,8 @@ import { getAiConfig } from './config'
 import { isAiProviderError } from './providers/errors'
 import { getLLMProvider } from './providers'
 import type { LLMMessage } from './providers/types'
-import { consumeAiQuota, refundAiQuota } from './quota'
+import { recordAiRequest } from './monitoring'
+import { chargeQuota, refundQuota } from './quota-monitoring'
 import { itemDisplayName } from './stylist'
 import { CATEGORIES, COLORS, FORMALITIES, MATERIALS, PATTERNS, SLEEVE_LENGTHS, STYLES, SUBCATEGORIES, type CatalogEntry } from './catalog'
 import { SEASONAL_PALETTES } from './color-analysis'
@@ -221,20 +222,30 @@ export async function rerankAndExplain(input: RerankInput, deps: { now?: () => D
   if (input.candidates.length === 0) return { outfits: [], fallback: true }
 
   const provider = getLLMProvider()
-  if (provider.name === 'mock') return deterministic()
+  const started = performance.now()
+  let corrected = false
+  const request = (r: { outcome: 'ok' | 'fallback'; reason?: string; billable: boolean }) =>
+    recordAiRequest({ feature: 'outfit_explanation', provider: provider.name, model: provider.model, corrected, latencyMs: performance.now() - started, ...r })
+  if (provider.name === 'mock') {
+    request({ outcome: 'fallback', reason: 'mock_provider', billable: false })
+    return deterministic()
+  }
 
   const chargedAt = now()
-  const quota = await consumeAiQuota(input.userId, 'outfit_explanation', chargedAt).catch((err) => {
+  const quota = await chargeQuota(input.userId, 'outfit_explanation', provider.name, chargedAt).catch((err) => {
     log.error('outfit quota check failed', { err })
     return null
   })
   if (!quota?.allowed) {
-    log.info('ai.outfit.fallback', { reason: quota ? 'quota_exceeded' : 'quota_error' })
+    const reason = quota ? 'quota_exceeded' : 'quota_error'
+    log.info('ai.outfit.fallback', { reason })
+    request({ outcome: 'fallback', reason, billable: false })
     return deterministic()
   }
   const fail = async (reason: string): Promise<RerankResult> => {
-    await refundAiQuota(input.userId, 'outfit_explanation', chargedAt).catch((err) => log.error('ai quota refund failed', { err }))
+    await refundQuota(input.userId, 'outfit_explanation', provider.name, chargedAt, reason)
     log.warn('ai.outfit.fallback', { reason, provider: provider.name, model: provider.model, version: OUTFIT_PROMPT_VERSION })
+    request({ outcome: 'fallback', reason, billable: false })
     return deterministic()
   }
 
@@ -272,6 +283,7 @@ export async function rerankAndExplain(input: RerankInput, deps: { now?: () => D
   } catch (err) {
     if (!(err instanceof InvalidOutfitOutputError)) throw err
     // One correction attempt with the same provider.
+    corrected = true
     let second: string | null
     try {
       second = await call(outfitCorrectionMessages(messages, text, err.reason, refs))
@@ -287,6 +299,7 @@ export async function rerankAndExplain(input: RerankInput, deps: { now?: () => D
     }
   }
   const byRef = new Map(refs.map((r, i) => [r, input.candidates[i]]))
+  request({ outcome: 'ok', billable: true })
   return {
     outfits: result.ranking.map((ref, i) => {
       const candidate = byRef.get(ref)!

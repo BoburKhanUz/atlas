@@ -222,4 +222,4 @@ Suggested gates (team to confirm):
 3. **Colour-profile real-world validation** not done (consented, diverse selfie set): REQUIRED BEFORE PRODUCTION LAUNCH.
 4. **Legal review** of provider terms not done: paid Gemini tier or OpenAI controls, DPA, retention, region, user notice ([`privacy.md`](privacy.md)).
 5. **Current pricing** for the chosen model not confirmed; no cost estimate.
-6. **Monitoring:** `ai.call` telemetry exists, but dashboards and alerts (error kinds, p95, cost) are not built.
+6. **Monitoring in production:** the events, the log-based dashboard and the provisional alerts exist ([`monitoring.md`](monitoring.md)). A log collector or metrics backend must still be wired up in production, and the thresholds must be calibrated after the live bake-off.

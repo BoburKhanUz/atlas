@@ -49,7 +49,7 @@ The weather service (Open-Meteo) receives coordinates **rounded to 2 decimals (â
 
 ## Retention inside ATLAS
 
-- **Telemetry** (`ai.call`, `ai.*.failed`, `ai.outfit.fallback`) holds provider, model, feature, outcome or error kind, latency, attempts, token counts and estimated cost. It never holds prompts, answers, wardrobe data, images, ids or keys. Tests: `client-telemetry.test.ts`, `ai-prompt-injection.test.ts`, `outfit-generate.test.ts`, `wardrobe-vision.test.ts`.
+- **Telemetry** (`ai.call`, `ai.request`, `ai.quota`, `ai.*.failed`, `ai.outfit.fallback`) holds provider, model, feature, outcome or error code, HTTP status, latency, retries, quota actions, token counts and estimated cost. It never holds prompts, answers, wardrobe data, images, ids or keys. The `ai.call`, `ai.request` and `ai.quota` events also pass a field whitelist ([`monitoring.md`](monitoring.md)). Tests: `client-telemetry.test.ts`, `ai-prompt-injection.test.ts`, `outfit-generate.test.ts`, `wardrobe-vision.test.ts`.
 - **Stylist conversations** are stored in `AiMessage` (user text, the resolved answer, and metadata without prompts). Deleting the account cascades.
 - **Clothing analysis** stores the validated attributes and analysis metadata (provider, model, version, raw confidences). It never stores the provider payload.
 - **Outfit AI** output is not stored, except the explanation when the user saves an outfit.
