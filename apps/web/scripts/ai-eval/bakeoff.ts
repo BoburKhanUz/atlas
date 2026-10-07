@@ -1,9 +1,10 @@
 /**
- * Provider bake-off (Phase 4.5, vision and repeated runs Phase 5.0): one
- * deterministic, machine-readable report.
+ * Provider bake-off (Phase 4.5; vision and repeated runs Phase 5.0; live
+ * accounting, call budget and comparison Phase 5.1): one machine-readable
+ * report plus a neutral markdown comparison. See docs/ai/provider-bakeoff.md.
  *
  *   bun scripts/ai-eval/bakeoff.ts --out=<dir outside the repo> \
- *     [--vision-dataset=<dir with labels.json and the photos>] [--runs=N]
+ *     [--vision-dataset=<dir with labels.json and the photos>] [--runs=N] [--max-calls=N]
  *
  * - Live text sections (stylist, outfit): for each provider whose key AND
  *   configured model are in the environment (AI_EVAL_GEMINI_MODEL /
@@ -23,6 +24,14 @@
  * - Offline sections: the scripted self-tests, the adversarial robustness
  *   suite and the synthetic vision dataset check (no latency: not meaningful).
  *   They are deterministic and computed once.
+ * - Phase 5.1: every live section is accounted (attempts, retries, timeouts,
+ *   error kinds, latency p50/p95/p99, tokens, cost when a price is configured);
+ *   a circuit breaker stops a provider that keeps failing; the upper bound of
+ *   provider calls is computed first and refused above --max-calls
+ *   (AI_EVAL_MAX_CALLS). Failed cases are listed one by one, never only
+ *   averaged. The CLI defaults to 3 runs when a live section can run.
+ * - The report never selects a provider: providerDecision is always
+ *   NO FINAL PROVIDER SELECTED.
  *
  * Keys are read from the environment only and never written anywhere.
  */
@@ -40,10 +49,18 @@ import { stylistCases } from './stylist-cases'
 import { runStylistCase, ScriptedStylist } from './stylist-eval'
 import { summarizeStylist, type StylistRecord, type StylistSummary } from './stylist-scoring'
 import { syntheticVisionItems } from './synthetic-vision'
+import { accountSection, assertCapForLive, DatasetIntegrityError, sha256Hex, assertWithinCap, CallBudget, CallLedger, caseResult, caseSetIdentity, configuredPrice, COST_UNAVAILABLE, countedLLM, latencyStats, parseMaxCalls, parseMaxCost, planCalls, priceSource, retryingVision, visionDatasetIdentity, type CallPlan, type CaseResult, type DatasetIdentity, type LatencyStats, type LiveFeature, type SectionAccounting } from './live-accounting'
 import { evaluateVisionConfig } from './vision-eval'
 import { Dataset, type ConfigSummary, type EvalConfig, type ItemRecord } from './vision-scoring'
 
 export const NO_SELECTION = 'NO FINAL PROVIDER SELECTED — LIVE BAKE-OFF REQUIRED'
+/** Phase 5.1: the bake-off collects evidence; the provider decision is a separate, approval-gated step. */
+export const PROVIDER_DECISION = 'NO FINAL PROVIDER SELECTED'
+export const DATASET_INTEGRITY_FAILURE = 'DATASET_INTEGRITY_FAILURE'
+/** Shown instead of a live result when the providers were injected (tests): never a provider result. */
+export const TEST_ONLY = 'TEST_ONLY'
+export const STYLIST_CASES_VERSION = 'synthetic-v1'
+export const OUTFIT_CASES_VERSION = 'synthetic-v1'
 
 type Env = Record<string, string | undefined>
 const KEY: Record<EvalProviderName, string> = { gemini: 'GEMINI_API_KEY', openai: 'OPENAI_API_KEY' }
@@ -107,6 +124,19 @@ export interface LiveProvider {
   /** Null when TESTED; otherwise every section's reason, joined. */
   reason: string | null
   features: FeatureResult[]
+  /** Phase 5.1: one entry per TESTED feature (content-free). */
+  accounting: SectionAccounting[]
+  /** Phase 5.1: every failed case, by synthetic case id and failed check names. */
+  failures: CaseFailure[]
+}
+
+export interface CaseFailure {
+  feature: LiveFeature
+  case: string
+  /** Names of the failed checks (or the error kind); never content. */
+  failed: string[]
+  /** The case is a prompt-injection case: any failure here is a safety failure. */
+  injection: boolean
 }
 
 export interface MetricAggregate {
@@ -124,6 +154,14 @@ export interface BakeoffOptions {
   visionDataset?: string
   /** Repeat the live sections (1..MAX_RUNS, default 1). */
   runs?: number
+  /** Upper bound of provider calls over all runs (--max-calls / AI_EVAL_MAX_CALLS); null = no cap. */
+  maxCalls?: number | null
+  /** Estimated-cost cap in USD (--max-cost-usd / AI_EVAL_MAX_COST_USD); needs configured prices. */
+  maxCostUsd?: number | null
+  /** Clock for the run timestamps; without it the report has none (deterministic). */
+  now?: () => Date
+  /** Retry wait (tests pass a no-op). */
+  sleep?: (ms: number) => Promise<void>
   /** Provider factories (tests inject scripted providers; the default builds the real ones). */
   providers?: {
     llm?: (provider: EvalProviderName, model: string, env: Env) => LLMProvider
@@ -132,13 +170,31 @@ export interface BakeoffOptions {
 }
 
 export interface BakeoffReport {
-  harnessVersion: 1
+  harnessVersion: 2
+  /** Always NO FINAL PROVIDER SELECTED. */
+  providerDecision: typeof PROVIDER_DECISION
+  /** Phase 5.1: call budget, its use, dataset integrity and timestamps (null without a clock). */
+  execution: {
+    generatedAt: string | null
+    /** "real" (the CLI's providers ran), TEST_ONLY (injected scripted providers: never a provider result), or "none" (nothing ran live). */
+    providerSource: 'real' | typeof TEST_ONLY | 'none'
+    plan: CallPlan
+    budget: { attemptsUsed: number; costSpentUsd: number | typeof COST_UNAVAILABLE; exhausted: 'max_calls' | 'max_cost' | null }
+    integrity: { status: 'OK' | typeof DATASET_INTEGRITY_FAILURE; checks: number }
+    runTimes: Array<{ run: number; startedAt: string | null; finishedAt: string | null }>
+  }
+  /** Phase 5.1: identity of every frozen dataset used. */
+  datasets: { vision: DatasetIdentity | null; stylist: DatasetIdentity; outfit: DatasetIdentity }
+  /** Phase 5.1: what synthetic data cannot show. */
+  realWorld: { clothingDataset: string; selfieDataset: string; uzbekHumanRating: string; legalReview: string; pricing: string }
+  /** Phase 5.1: neutral comparison; NOT_TESTED / N/A where there is no evidence. */
+  comparison: Array<{ dimension: string; gemini: string; openai: string }>
   /** Run 1 (the only run by default). */
   live: LiveProvider[]
   /** Present when runs > 1: every run, unhidden, identified by its number. */
   runs?: Array<{ run: number; live: LiveProvider[] }>
   /** Present when runs > 1: per provider, feature and numeric metric, over the TESTED runs. */
-  aggregate?: Array<{ provider: EvalProviderName; feature: FeatureResult['feature']; testedRuns: number; metrics: Record<string, MetricAggregate> }>
+  aggregate?: Array<{ provider: EvalProviderName; feature: FeatureResult['feature']; testedRuns: number; metrics: Record<string, MetricAggregate>; pooledLatencyMs: LatencyStats }>
   offline: {
     stylist: StylistSummary
     outfit: OutfitSummary
@@ -215,43 +271,163 @@ interface VisionData {
   dir: string
   version: string | null
   items: Dataset['items']
+  identity: DatasetIdentity
 }
 
 async function loadVisionDataset(dir: string): Promise<VisionData> {
   const labels = Dataset.parse(JSON.parse(await fs.readFile(path.join(dir, 'labels.json'), 'utf8')))
-  return { dir, version: labels.version ?? null, items: labels.items }
+  return { dir, version: labels.version ?? null, items: labels.items, identity: await visionDatasetIdentity(dir, labels) }
 }
 
-async function liveRun(env: Env, vision: VisionData | null, opts: BakeoffOptions): Promise<LiveProvider[]> {
-  const llm = opts.providers?.llm ?? ((provider, model, e) => llmProviderFromEnv(provider, model, e))
-  const visionFactory = opts.providers?.vision ?? realVision
-  const live: LiveProvider[] = []
-  for (const provider of ['gemini', 'openai'] as const) {
+interface Eligibility {
+  provider: EvalProviderName
+  model: string | null
+  visionModel: string | null
+  visionReason: string | null
+  textReason: string | null
+}
+
+/** Which live sections can run, decided before any call (credentials, models and dataset only). */
+function eligibility(env: Env, vision: VisionData | null): Eligibility[] {
+  return (['gemini', 'openai'] as const).map((provider) => {
     const model = configuredModel(provider, env)
     const visionModel = configuredVisionModel(provider, env)
     const noKey = !env[KEY[provider]]?.trim() ? `no ${KEY[provider]} in the environment` : null
-    const textReason = noKey ?? (!model ? `no configured model (${MODEL[provider]} or AI_LLM_MODEL)` : null)
-    const visionReason =
-      noKey ?? (!visionModel ? `no configured vision model (${VISION_MODEL[provider]} or AI_VISION_MODEL)` : !vision ? 'no labelled vision dataset (--vision-dataset)' : null)
+    return {
+      provider,
+      model,
+      visionModel,
+      textReason: noKey ?? (!model ? `no configured model (${MODEL[provider]} or AI_LLM_MODEL)` : null),
+      visionReason: noKey ?? (!visionModel ? `no configured vision model (${VISION_MODEL[provider]} or AI_VISION_MODEL)` : !vision ? 'no labelled vision dataset (--vision-dataset)' : null),
+    }
+  })
+}
+
+/** CIRCUIT_BREAK / BUDGET_STOP for cases refused locally, else the provider error kind. */
+const errorLabel = (c: CaseResult, kind: string | undefined) =>
+  c.status === 'circuit_break' ? 'CIRCUIT_BREAK' : c.status === 'budget_stop' ? 'BUDGET_STOP' : `error:${c.errorKind ?? kind ?? 'unexpected'}`
+
+const visionFailed = (r: ItemRecord, c: CaseResult): string[] => {
+  if (r.outcome.kind === 'error') return [errorLabel(c, r.outcome.error)]
+  if (r.outcome.kind === 'invalid') return ['schema']
+  return [...(r.subjectCorrect ? [] : ['subject']), ...Object.entries(r.fields).filter(([, ok]) => !ok).map(([f]) => f)]
+}
+
+const textFailed = (r: StylistRecord | OutfitRecord, c: CaseResult): string[] => {
+  if (r.outcome.kind === 'error') return [errorLabel(c, r.outcome.error)]
+  const failed = Object.entries(r.checks).filter(([k, v]) => v === false && k !== 'topAgreement').map(([k]) => k)
+  const uzbek = (r.checks as { uzbek?: { pass: boolean } | null }).uzbek
+  if (uzbek && !uzbek.pass) failed.push('uzbek_proxy')
+  if (r.outcome.kind === 'invalid') failed.unshift('final_validity')
+  return failed.length ? failed : ['case']
+}
+
+/** Re-hashes the frozen datasets before every live section; a change stops every later provider call. */
+class IntegrityGuard {
+  ok = true
+  checks = 0
+  /** Reads one vision image and checks it against its frozen hash first: a changed image is never sent. */
+  readImage = async (file: string): Promise<Uint8Array> => {
+    const bytes = new Uint8Array(await fs.readFile(file))
+    const v = this.expected.vision
+    if (!this.ok || !v || v.identity.files?.[path.relative(v.dir, file)] !== sha256Hex(bytes)) {
+      this.ok = false
+      throw new DatasetIntegrityError()
+    }
+    return bytes
+  }
+  constructor(private readonly expected: { vision: VisionData | null; stylist: string; outfit: string }) {}
+  async check(): Promise<boolean> {
+    if (!this.ok) return false
+    this.checks++
+    const v = this.expected.vision
+    let visionNow: string | null = null
+    if (v) {
+      try {
+        visionNow = (await visionDatasetIdentity(v.dir, await readLabels(v.dir))).sha256
+      } catch {
+        visionNow = 'unreadable'
+      }
+    }
+    const same = (!v || visionNow === v.identity.sha256) && caseHash(stylistCases()) === this.expected.stylist && caseHash(outfitCases()) === this.expected.outfit
+    if (!same) this.ok = false
+    return this.ok
+  }
+}
+
+async function readLabels(dir: string) {
+  return JSON.parse(await fs.readFile(path.join(dir, 'labels.json'), 'utf8'))
+}
+
+async function liveRun(env: Env, vision: VisionData | null, opts: BakeoffOptions, budget: CallBudget, guard: IntegrityGuard): Promise<LiveProvider[]> {
+  const llm = opts.providers?.llm ?? ((provider, model, e) => llmProviderFromEnv(provider, model, e))
+  const visionFactory = opts.providers?.vision ?? realVision
+  const live: LiveProvider[] = []
+  for (const elig of eligibility(env, vision)) {
+    const { provider, model, visionModel } = elig
+    // A changed dataset stops every later section: no provider call on data that is no longer the frozen set.
+    const visionReason = elig.visionReason ?? ((await guard.check()) ? null : DATASET_INTEGRITY_FAILURE)
+    let textReason = elig.textReason
+    const accounting: SectionAccounting[] = []
+    const failures: CaseFailure[] = []
 
     let visionResult: FeatureResult
     if (visionReason) visionResult = notTested(provider, visionModel, 'vision', visionReason)
     else {
-      const { records, summary } = await evaluateVisionConfig(visionFactory(provider, visionModel!, env), bakeoffVisionConfig(provider, visionModel!), vision!.dir, vision!.items)
-      visionResult = visionSummary(summary, records, vision!.version)
+      const price = configuredPrice(provider, 'vision', env)
+      const ledger = new CallLedger(budget, price)
+      const p = retryingVision(visionFactory(provider, visionModel!, env), ledger, opts.sleep)
+      const results = new Map<string, CaseResult>()
+      try {
+        const { records, summary } = await evaluateVisionConfig(
+          p,
+          bakeoffVisionConfig(provider, visionModel!),
+          vision!.dir,
+          vision!.items,
+          (r) => {
+            results.set(r.item, caseResult(r.latencyMs, 1, r.outcome, ledger.endCase()))
+          },
+          guard.readImage,
+        )
+        visionResult = visionSummary(summary, records, vision!.version)
+        for (const r of records) {
+          const failed = visionFailed(r, results.get(r.item)!)
+          if (failed.length) failures.push({ feature: 'vision', case: r.item, failed, injection: false })
+        }
+      } catch (err) {
+        if (!(err instanceof DatasetIntegrityError)) throw err
+        // Stopped mid-section: no quality numbers from a changed dataset; what was spent stays visible.
+        visionResult = notTested(provider, visionModel, 'vision', DATASET_INTEGRITY_FAILURE)
+      }
+      accounting.push(accountSection('vision', ledger, [...results.values()], price, price ? priceSource('vision') : null))
     }
+    if (!textReason && !(await guard.check())) textReason = DATASET_INTEGRITY_FAILURE
 
     let stylist: FeatureResult, outfit: FeatureResult
     if (textReason) {
       stylist = notTested(provider, model, 'stylist', textReason)
       outfit = notTested(provider, model, 'outfit', textReason)
     } else {
-      const p = llm(provider, model!, env)
-      const s: StylistRecord[] = [], o: OutfitRecord[] = []
-      for (const c of stylistCases()) s.push(await runStylistCase(p, c))
-      for (const c of outfitCases()) o.push(await runOutfitCase(p, c))
-      stylist = summarizeStylist(s, 'TESTED')
-      outfit = summarizeOutfit(o, 'TESTED')
+      const base = llm(provider, model!, env)
+      const price = configuredPrice(provider, 'llm', env)
+      const text = async <R extends StylistRecord | OutfitRecord>(feature: 'stylist' | 'outfit', cases: Array<{ id: string }>, run: (p: LLMProvider, c: never) => Promise<R>) => {
+        const ledger = new CallLedger(budget, price)
+        const p = countedLLM(base, ledger)
+        const records: R[] = []
+        const results: CaseResult[] = []
+        for (const c of cases) {
+          const r = await run(p, c as never)
+          records.push(r)
+          results.push(caseResult(r.latencyMs, r.requests, r.outcome, ledger.endCase()))
+        }
+        accounting.push(accountSection(feature, ledger, results, price, price ? priceSource('llm') : null))
+        records.forEach((r, i) => {
+          if (!r.pass) failures.push({ feature, case: r.case, failed: textFailed(r, results[i]), injection: r.tags.includes('injection') })
+        })
+        return records
+      }
+      stylist = summarizeStylist(await text('stylist', stylistCases(), runStylistCase), 'TESTED')
+      outfit = summarizeOutfit(await text('outfit', outfitCases(), runOutfitCase), 'TESTED')
     }
 
     const features = [visionResult, stylist, outfit]
@@ -264,6 +440,8 @@ async function liveRun(env: Env, vision: VisionData | null, opts: BakeoffOptions
       visionModel,
       reason: reasons.length ? reasons.join('; ') : null,
       features,
+      accounting,
+      failures,
     })
   }
   return live
@@ -287,30 +465,166 @@ export function aggregateRuns(runs: Array<{ run: number; live: LiveProvider[] }>
         const min = Math.min(...values), max = Math.max(...values)
         metrics[key] = { n: values.length, mean: round4(values.reduce((a, b) => a + b, 0) / values.length), min, max, spread: round4(max - min) }
       }
-      out.push({ provider, feature, testedRuns: sections.length, metrics })
+      const latencies = runs.flatMap((r) => r.live.find((l) => l.provider === provider)?.accounting.find((a) => a.feature === feature)?.latenciesMs ?? [])
+      out.push({ provider, feature, testedRuns: sections.length, metrics, pooledLatencyMs: latencyStats(latencies) })
     }
   }
   return out
+}
+
+const pct = (v: unknown) => (typeof v === 'number' ? `${(v * 100).toFixed(1)} %` : 'N/A')
+const ms = (v: unknown) => (typeof v === 'number' ? `${Math.round(v)} ms` : 'N/A')
+
+/**
+ * Neutral comparison rows. Values are run 1, or the mean over the TESTED runs
+ * when there are several. A provider or feature without evidence reads
+ * NOT_TESTED; a dimension the harness does not measure reads N/A.
+ */
+export function compare(live: LiveProvider[], aggregate?: BakeoffReport['aggregate'], testOnly = false): BakeoffReport['comparison'] {
+  const cell = (provider: EvalProviderName, feature: LiveFeature, key: string, fmt: (v: unknown) => string) => {
+    const l = live.find((x) => x.provider === provider)!
+    const f = l.features.find((x) => x.feature === feature)!
+    if (f.status !== 'TESTED') return 'NOT_TESTED'
+    const agg = aggregate?.find((a) => a.provider === provider && a.feature === feature)?.metrics[key]
+    const runs = aggregate?.find((a) => a.provider === provider && a.feature === feature)?.testedRuns ?? 1
+    return agg && runs > 1 ? `${fmt(agg.mean)} (mean of ${runs} runs, spread ${fmt(agg.spread)})` : fmt((f as unknown as Record<string, unknown>)[key])
+  }
+  const acct = (provider: EvalProviderName, f: (a: SectionAccounting[]) => string) => {
+    const a = live.find((x) => x.provider === provider)!.accounting
+    return a.length ? f(a) : 'NOT_TESTED'
+  }
+  // Injected scripted providers: every measured cell is marked, so it can never be read as a provider result.
+  const mark = (v: string) => (testOnly && /\d/.test(v) ? `${TEST_ONLY} ${v}` : v)
+  const row = (dimension: string, value: (p: EvalProviderName) => string) => ({ dimension, gemini: mark(value('gemini')), openai: mark(value('openai')) })
+  const join = (p: EvalProviderName, parts: Array<[string, LiveFeature, string, (v: unknown) => string]>) => parts.map(([label, f, k, fmt]) => `${label} ${cell(p, f, k, fmt)}`).join(' · ')
+  return [
+    row('Vision quality (category / subject accuracy)', (p) => join(p, [['category', 'vision', 'categoryAccuracy', pct], ['subject', 'vision', 'subjectAccuracy', pct]])),
+    row('Vision false acceptance / rejection', (p) => join(p, [['FA', 'vision', 'falseAcceptanceRate', pct], ['FR', 'vision', 'falseRejectionRate', pct]])),
+    row('Vision schema validity', (p) => cell(p, 'vision', 'schemaValidity', pct)),
+    row('Stylist validity (final)', (p) => cell(p, 'stylist', 'finalValidity', pct)),
+    row('Uzbek quality (native raters)', () => 'NOT_EVALUATED'),
+    row('Uzbek proxy (automatic)', (p) => join(p, [['stylist', 'stylist', 'uzbekRate', pct], ['outfit', 'outfit', 'uzbekRate', pct]])),
+    row('Grounding', (p) => join(p, [['stylist', 'stylist', 'groundingRate', pct], ['outfit', 'outfit', 'groundingRate', pct]])),
+    row('Hallucinated items (stylist)', (p) => cell(p, 'stylist', 'hallucinationRate', pct)),
+    row('Injection robustness (stylist)', (p) => cell(p, 'stylist', 'injectionResistance', pct)),
+    row('Outfit fallback rate', (p) => cell(p, 'outfit', 'fallbackRate', pct)),
+    row('Latency p50', (p) => join(p, [['V', 'vision', 'latencyP50', ms], ['S', 'stylist', 'latencyP50', ms], ['O', 'outfit', 'latencyP50', ms]])),
+    row('Latency p95', (p) => join(p, [['V', 'vision', 'latencyP95', ms], ['S', 'stylist', 'latencyP95', ms], ['O', 'outfit', 'latencyP95', ms]])),
+    row('Success / failure rate of attempted cases (run 1)', (p) => acct(p, (a) => a.map((x) => `${x.feature} ${pct(x.successRate)} / ${pct(x.failureRate)}`).join(' · '))),
+    row('Timeouts / failed attempts / attempts (run 1)', (p) => acct(p, (a) => a.map((x) => `${x.feature} ${x.timeouts}/${Object.values(x.attemptErrors).reduce((n, v) => n + v, 0)}/${x.attempts}`).join(' · '))),
+    row('Retries / corrections / circuit-broken cases (run 1)', (p) => acct(p, (a) => a.map((x) => `${x.feature} ${x.retries}/${x.corrections}/${x.circuitBreakCases}`).join(' · '))),
+    row('Token usage (run 1, in/out)', (p) => acct(p, (a) => a.map((x) => (x.tokens.attemptsReporting ? `${x.feature} ${x.tokens.input}/${x.tokens.output}` : `${x.feature} N/A`)).join(' · '))),
+    row('Estimated cost (run 1)', (p) => acct(p, (a) => a.map((x) => `${x.feature} ${x.costUsd === COST_UNAVAILABLE ? COST_UNAVAILABLE : `$${x.costUsd}`}`).join(' · '))),
+    row('Operational complexity', () => 'N/A — not measured (see docs/ai/provider-bakeoff.md)'),
+    row('Privacy / data controls', () => 'N/A — documented terms only; legal review PENDING'),
+  ]
+}
+
+/** The neutral markdown summary written next to bakeoff.json. */
+export function bakeoffMarkdown(r: BakeoffReport): string {
+  const status = (p: EvalProviderName) => {
+    const l = r.live.find((x) => x.provider === p)!
+    return `${l.status}${l.reason ? ` — ${l.reason}` : ''}`
+  }
+  const failures = r.live.flatMap((l) => l.failures.map((f) => `| ${l.provider} | ${f.feature} | ${f.case} | ${f.injection ? '**yes**' : 'no'} | ${f.failed.join(', ')} |`))
+  return [
+    '# ATLAS provider bake-off',
+    '',
+    r.recommendation.startsWith(r.providerDecision) ? `**${r.recommendation}**` : `**${r.providerDecision}.** ${r.recommendation}`,
+    '',
+    ...(r.execution.providerSource === TEST_ONLY ? ['', `> **${TEST_ONLY}:** injected scripted providers. Nothing below is a provider result.`] : []),
+    '',
+    `Generated: ${r.execution.generatedAt ?? '—'} · runs: ${r.execution.plan.runs} · call upper bound: ${r.execution.plan.upperBoundCalls} · cap: ${r.execution.plan.maxCalls ?? 'NONE CONFIGURED'} · cost cap: ${r.execution.plan.maxCostUsd ?? 'NONE CONFIGURED'}`,
+    `Budget used: ${r.execution.budget.attemptsUsed} attempts · cost ${r.execution.budget.costSpentUsd} · exhausted: ${r.execution.budget.exhausted ?? 'no'} · dataset integrity: ${r.execution.integrity.status}`,
+    '',
+    `- Gemini: ${status('gemini')}`,
+    `- OpenAI: ${status('openai')}`,
+    '',
+    '## Datasets',
+    '',
+    '| dataset | version | kind | cases | sha256 |',
+    '|---|---|---|---|---|',
+    ...[r.datasets.vision, r.datasets.stylist, r.datasets.outfit].map((d) => (d ? `| ${d.name} | ${d.version ?? '—'} | ${d.kind} | ${d.cases} | ${d.sha256} |` : '| vision | — | — | 0 | NOT_TESTED (no --vision-dataset) |')),
+    '',
+    ...Object.entries(r.realWorld).map(([k, v]) => `- ${k}: ${v}`),
+    '',
+    '## Comparison',
+    '',
+    '| Dimension | Gemini | OpenAI |',
+    '|---|---|---|',
+    ...r.comparison.map((c) => `| ${c.dimension} | ${c.gemini} | ${c.openai} |`),
+    '',
+    '## Failed cases (run 1)',
+    '',
+    ...(failures.length ? ['| provider | feature | case | injection | failed |', '|---|---|---|---|---|', ...failures] : ['None recorded (or nothing was tested live).']),
+    '',
+  ].join('\n') + '\n'
 }
 
 export async function buildBakeoff(env: Env, opts: BakeoffOptions = {}): Promise<BakeoffReport> {
   const runCount = opts.runs ?? 1
   if (!Number.isInteger(runCount) || runCount < 1 || runCount > MAX_RUNS) throw new Error(`runs must be a whole number between 1 and ${MAX_RUNS}`)
   const visionData = opts.visionDataset ? await loadVisionDataset(opts.visionDataset) : null
+  const stylistSet = stylistCases(), outfitSet = outfitCases()
+  // The call budget is checked before any provider call.
+  const plan = planFor(env, visionData, runCount, opts)
+  assertWithinCap(plan)
+  // A cost cap is only enforceable with a configured price for every live section.
+  if (plan.maxCostUsd !== null) {
+    const unpriced = plan.sections.filter((x) => !configuredPrice(x.provider, x.feature === 'vision' ? 'vision' : 'llm', env))
+    if (unpriced.length) throw new Error(`--max-cost-usd needs a configured price for every live section; missing for ${unpriced.map((x) => `${x.provider}/${x.feature}`).join(', ')}`)
+  }
+  const budget = new CallBudget(plan.maxCalls, plan.maxCostUsd)
+  const guard = new IntegrityGuard({ vision: visionData, stylist: caseHash(stylistSet), outfit: caseHash(outfitSet) })
+  const stamp = () => (opts.now ? opts.now().toISOString() : null)
+  const generatedAt = stamp()
   const runs: Array<{ run: number; live: LiveProvider[] }> = []
-  for (let run = 1; run <= runCount; run++) runs.push({ run, live: await liveRun(env, visionData, opts) })
+  const runTimes: BakeoffReport['execution']['runTimes'] = []
+  for (let run = 1; run <= runCount; run++) {
+    // A changed dataset stops the remaining runs (its sections read DATASET_INTEGRITY_FAILURE).
+    if (run > 1 && !guard.ok) break
+    const startedAt = stamp()
+    runs.push({ run, live: await liveRun(env, visionData, opts, budget, guard) })
+    runTimes.push({ run, startedAt, finishedAt: stamp() })
+  }
+  if (plan.upperBoundCalls > 0) await guard.check() // a change during the last section is still reported
   const live = runs[0].live
+  const aggregate = runs.length > 1 ? aggregateRuns(runs) : undefined
+  // Injected (scripted) providers: whatever ran is TEST_ONLY, never a provider result.
+  const testOnly = !!(opts.providers?.llm || opts.providers?.vision)
 
   const s: StylistRecord[] = [], o: OutfitRecord[] = []
   for (const c of stylistCases()) s.push(await runStylistCase(new ScriptedStylist(), c))
   for (const c of outfitCases()) o.push(await runOutfitCase(new ScriptedOutfit(), c))
   const robustness = await runRobustness()
   const vision = Dataset.parse({ items: syntheticVisionItems().map(({ id, file, expected }) => ({ id, file, expected })) })
-  const allTested = live.every((l) => l.status === 'TESTED')
   return {
-    harnessVersion: 1,
+    harnessVersion: 2,
+    providerDecision: PROVIDER_DECISION,
+    execution: {
+      generatedAt,
+      providerSource: plan.upperBoundCalls === 0 ? 'none' : testOnly ? TEST_ONLY : 'real',
+      plan,
+      // Spent cost is known only when every attempt that reported tokens had a configured price.
+      budget: { attemptsUsed: budget.attemptsUsed, costSpentUsd: budget.attemptsUsed === 0 || budget.unpricedAttempts > 0 || !anyPrice(plan, env) ? COST_UNAVAILABLE : budget.costSpentUsd, exhausted: budget.exhausted },
+      integrity: { status: guard.ok ? 'OK' : DATASET_INTEGRITY_FAILURE, checks: guard.checks },
+      runTimes,
+    },
+    datasets: {
+      vision: visionData?.identity ?? null,
+      stylist: caseSetIdentity('stylist-cases', 'apps/web/scripts/ai-eval/stylist-cases.ts', STYLIST_CASES_VERSION, stylistSet),
+      outfit: caseSetIdentity('outfit-cases', 'apps/web/scripts/ai-eval/outfit-cases.ts', OUTFIT_CASES_VERSION, outfitSet),
+    },
+    realWorld: {
+      clothingDataset: visionData?.identity.kind === 'real' ? 'REAL DATASET USED (see datasets.vision)' : 'BLOCKED — dataset unavailable (no real labelled clothing photos; synthetic results are not real-world quality)',
+      selfieDataset: 'BLOCKED — dataset unavailable (consented selfie set)',
+      uzbekHumanRating: 'NOT_EVALUATED (no native Uzbek raters; uzbekRate is an automatic proxy)',
+      legalReview: 'PENDING',
+      pricing: 'NOT VERIFIED (cost uses AI_LLM_PRICE_* / AI_VISION_PRICE_* only when configured)',
+    },
+    comparison: compare(live, aggregate, testOnly),
     live,
-    ...(runCount > 1 ? { runs, aggregate: aggregateRuns(runs) } : {}),
+    ...(aggregate ? { runs, aggregate } : {}),
     offline: {
       stylist: summarizeStylist(s, 'OFFLINE_SELF_TEST'),
       outfit: summarizeOutfit(o, 'OFFLINE_SELF_TEST'),
@@ -323,8 +637,44 @@ export async function buildBakeoff(env: Env, opts: BakeoffOptions = {}): Promise
       },
     },
     // A selection needs both providers measured live on every feature AND a human decision on the documented gates.
-    recommendation: allTested ? 'LIVE RESULTS AVAILABLE — APPLY THE GATES IN docs/ai/provider-evaluation.md' : NO_SELECTION,
+    recommendation: recommend(live, testOnly),
   }
+}
+
+function planFor(env: Env, visionData: VisionData | null, runCount: number, opts: BakeoffOptions): CallPlan {
+  const stylistN = stylistCases().length, outfitN = outfitCases().length
+  return planCalls(
+    eligibility(env, visionData).flatMap((e) => [
+      ...(e.visionReason ? [] : [{ provider: e.provider, feature: 'vision' as const, cases: visionData!.items.length }]),
+      ...(e.textReason ? [] : [{ provider: e.provider, feature: 'stylist' as const, cases: stylistN }, { provider: e.provider, feature: 'outfit' as const, cases: outfitN }]),
+    ]),
+    runCount,
+    opts.maxCalls ?? null,
+    opts.maxCostUsd ?? null,
+  )
+}
+
+/** The call plan alone (no provider is built): what the CLI checks before running. */
+export async function planOnly(env: Env, opts: BakeoffOptions = {}): Promise<CallPlan> {
+  return planFor(env, opts.visionDataset ? await loadVisionDataset(opts.visionDataset) : null, opts.runs ?? 1, opts)
+}
+
+/**
+ * The recommendation line. It never names a provider: a selection needs both
+ * providers measured live on every feature AND a human decision on the gates.
+ */
+export function recommend(live: LiveProvider[], testOnly: boolean): string {
+  if (testOnly && live.some((l) => l.status !== 'NOT_TESTED')) return `${PROVIDER_DECISION} — ${TEST_ONLY} RUN (injected scripted providers): NOT A PROVIDER RESULT`
+  if (live.length > 0 && live.every((l) => l.status === 'TESTED')) return `${PROVIDER_DECISION} — LIVE RESULTS AVAILABLE; APPLY THE GATES IN docs/ai/provider-bakeoff.md (human decision)`
+  return NO_SELECTION
+}
+
+const caseHash = (cases: readonly unknown[]) => caseSetIdentity('', '', '', cases).sha256
+const anyPrice = (plan: CallPlan, env: Env) => plan.sections.some((x) => configuredPrice(x.provider, x.feature === 'vision' ? 'vision' : 'llm', env) !== null)
+
+/** CLI default: 3 runs when any live text section can run (key and model set), else 1 (offline only). */
+export function defaultRuns(env: Env): number {
+  return eligibility(env, null).some((e) => !e.textReason || !e.visionReason) ? 3 : 1
 }
 
 async function main() {
@@ -334,10 +684,17 @@ async function main() {
   const runsArg = arg('runs')
   if (runsArg !== undefined && !/^\d{1,2}$/.test(runsArg)) throw new Error(`--runs must be a whole number between 1 and ${MAX_RUNS}`)
   const visionDataset = arg('vision-dataset')
-  const report = await buildBakeoff(process.env, { visionDataset: visionDataset ? path.resolve(visionDataset) : undefined, runs: runsArg === undefined ? 1 : Number(runsArg) })
+  const maxCalls = parseMaxCalls(arg('max-calls') ?? process.env.AI_EVAL_MAX_CALLS)
+  const maxCostUsd = parseMaxCost(arg('max-cost-usd') ?? process.env.AI_EVAL_MAX_COST_USD)
+  const runs = runsArg === undefined ? defaultRuns(process.env) : Number(runsArg)
+  const opts: BakeoffOptions = { visionDataset: visionDataset ? path.resolve(visionDataset) : undefined, runs, maxCalls, maxCostUsd, now: () => new Date() }
+  // The CLI never makes a live call without an explicit call cap (checked before any provider is built).
+  assertCapForLive(await planOnly(process.env, opts))
+  const report = await buildBakeoff(process.env, opts)
   await fs.mkdir(outDir, { recursive: true })
   await fs.writeFile(path.join(outDir, 'bakeoff.json'), JSON.stringify(report, null, 2) + '\n')
-  console.log(JSON.stringify({ runs: report.runs?.length ?? 1, live: report.live.map((l) => ({ provider: l.provider, status: l.status, reason: l.reason })), recommendation: report.recommendation }))
+  await fs.writeFile(path.join(outDir, 'bakeoff.md'), bakeoffMarkdown(report))
+  console.log(JSON.stringify({ runs: report.execution.plan.runs, upperBoundCalls: report.execution.plan.upperBoundCalls, maxCalls: report.execution.plan.maxCalls, attemptsUsed: report.execution.budget.attemptsUsed, integrity: report.execution.integrity.status, live: report.live.map((l) => ({ provider: l.provider, status: l.status, reason: l.reason })), providerDecision: report.providerDecision }))
 }
 
 if (require.main === module) {

@@ -15,11 +15,12 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import { generateOutfits } from '../../src/lib/ai/outfit-engine'
 import { isAiProviderError } from '../../src/lib/ai/providers/errors'
-import { withRetry } from '../../src/lib/ai/providers/retry'
+import { RetriedError, withRetry } from '../../src/lib/ai/providers/retry'
 import type { LLMMessage, LLMProvider, LLMRequest } from '../../src/lib/ai/providers/types'
 import { InvalidStylistOutputError, interpretStylistOutput, parseStylistText, resolveReferences, STYLIST_LIMITS, STYLIST_SYSTEM_PROMPT, stylistJsonSchema } from '../../src/lib/ai/stylist'
 import { buildStylistContext, stylistMessages } from '../../src/lib/ai/stylist-context'
 import { stylistCorrectionMessages } from '../../src/lib/ai/stylist-service'
+import { LocalRefusalError } from './live-accounting'
 import { arg, assertOutsideRepo, llmProviderFromEnv } from './eval-common'
 import { stylistCases, type StylistCase } from './stylist-cases'
 import { requestIsClean, scoreStylist, summarizeStylist, type StylistOutcome, type StylistRecord, type StylistSummary } from './stylist-scoring'
@@ -45,10 +46,20 @@ export async function runStylistCase(p: LLMProvider, c: StylistCase): Promise<St
   const context = buildStylistContext({ items: c.wardrobe, candidates, occasion: c.occasion, weather: c.weather, preferences: c.preferences, colorProfile: c.colorProfile })
   const messages = stylistMessages({ system: STYLIST_SYSTEM_PROMPT, context: context.data, history: [], message: c.message, occasionText: c.occasionText ?? null })
   const schema = { name: 'stylist_answer', schema: stylistJsonSchema(context.refs) }
-  let calls = 0, inputTokens: number | undefined, outputTokens: number | undefined
+  // calls = provider attempts (retries included, failed ones too); requests = logical requests (first + correction).
+  let calls = 0, requests = 0, inputTokens: number | undefined, outputTokens: number | undefined
   const add = (a: number | undefined, b: number | undefined) => (a === undefined && b === undefined ? undefined : (a ?? 0) + (b ?? 0))
   const call = async (msgs: LLMMessage[]) => {
-    const { value, attempts } = await withRetry(() => p.generate({ messages: msgs, temperature: 0.7, maxOutputTokens: STYLIST_LIMITS.maxOutputTokens, jsonSchema: schema, timeoutMs: TIMEOUT_MS }))
+    requests++
+    let result
+    try {
+      result = await withRetry(() => p.generate({ messages: msgs, temperature: 0.7, maxOutputTokens: STYLIST_LIMITS.maxOutputTokens, jsonSchema: schema, timeoutMs: TIMEOUT_MS }))
+    } catch (err) {
+      // A locally refused attempt (bake-off circuit breaker or budget) never reached the provider.
+      if (err instanceof RetriedError) calls += err.attempts - (err.lastError instanceof LocalRefusalError ? 1 : 0)
+      throw err
+    }
+    const { value, attempts } = result
     calls += attempts
     inputTokens = add(inputTokens, value.metadata.usage.inputTokens)
     outputTokens = add(outputTokens, value.metadata.usage.outputTokens)
@@ -76,7 +87,7 @@ export async function runStylistCase(p: LLMProvider, c: StylistCase): Promise<St
   }
   const owned = new Set(c.wardrobe.map((w) => w.subcategory).filter((s): s is string => !!s))
   const { checks, pass } = scoreStylist(c.expect, outcome, owned, requestIsClean(messages, c.expect.injectMarker))
-  return { case: c.id, tags: c.tags, provider: p.name, model: p.model, latencyMs: Math.round(performance.now() - started), calls, inputTokens, outputTokens, outcome, checks, pass }
+  return { case: c.id, tags: c.tags, provider: p.name, model: p.model, latencyMs: Math.round(performance.now() - started), calls, requests, inputTokens, outputTokens, outcome, checks, pass }
 }
 
 const pct = (n: number | null) => (n === null ? '—' : `${(n * 100).toFixed(1)}%`)

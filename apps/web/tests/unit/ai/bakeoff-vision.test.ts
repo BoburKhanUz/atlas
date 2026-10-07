@@ -7,7 +7,7 @@ import { promises as fs } from 'fs'
 import os from 'os'
 import path from 'path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { aggregateRuns, buildBakeoff, configuredVisionModel, MAX_RUNS, NO_SELECTION, type VisionSummary } from '../../../scripts/ai-eval/bakeoff'
+import { aggregateRuns, buildBakeoff, configuredVisionModel, MAX_RUNS, NO_SELECTION, recommend, type VisionSummary } from '../../../scripts/ai-eval/bakeoff'
 import { ScriptedOutfit } from '../../../scripts/ai-eval/outfit-eval'
 import { ScriptedStylist } from '../../../scripts/ai-eval/stylist-eval'
 import { renderSynthetic, syntheticVisionItems } from '../../../scripts/ai-eval/synthetic-vision'
@@ -21,7 +21,11 @@ const empty = { category: null, subcategory: null, colors: [], pattern: null, ma
 const JEANS = { subject: 'single_garment', category: 'pants', subcategory: 'jeans', colors: ['blue'], pattern: 'solid', material: 'denim', sleeveLength: null, fit: 'regular', style: 'casual', season: ['spring'], gender: 'unisex', formality: 'casual', confidence: conf }
 const LANDSCAPE = { subject: 'no_garment', ...empty, confidence: Object.fromEntries(CONFIDENCE_KEYS.map((k) => [k, 0])) }
 
-/** Answers the dataset in order: jeans right, landscape right, then the scripted third outcome. */
+/**
+ * Answers the dataset in order: jeans right, landscape right, then the scripted
+ * third outcome. A scripted error persists on the retry (the bake-off applies
+ * the app's single retry, Phase 5.1).
+ */
 function scriptedVision(third: 'timeout' | 'unavailable' | 'invalid' | 'garment', latencyMs = 0): VisionProvider & { calls: number } {
   return {
     name: 'scripted-vision',
@@ -30,7 +34,7 @@ function scriptedVision(third: 'timeout' | 'unavailable' | 'invalid' | 'garment'
     async analyzeImage(_req: VisionRequest) {
       const i = this.calls++
       if (latencyMs) await new Promise((r) => setTimeout(r, latencyMs))
-      if (i === 2 && (third === 'timeout' || third === 'unavailable')) throw new AiProviderError(third, 'scripted-vision')
+      if (i >= 2 && (third === 'timeout' || third === 'unavailable')) throw new AiProviderError(third, 'scripted-vision')
       const output = i === 0 ? JEANS : i === 1 ? LANDSCAPE : third === 'invalid' ? { subject: 'single_garment' } : JEANS
       return { output, metadata: { provider: 'scripted-vision', model: 'scripted', usage: { inputTokens: 100, outputTokens: 20 } } }
     },
@@ -106,7 +110,9 @@ describe('bake-off vision: live section (scripted provider, app pipeline)', () =
     expect(g.status).toBe('PARTIALLY_TESTED')
     expect(g.reason).toMatch(/no configured model/)
     expect(r.live.find((l) => l.provider === 'openai')!.status).toBe('NOT_TESTED')
-    expect(r.recommendation).toBe(NO_SELECTION)
+    // Phase 5.1: a scripted provider is never a provider result.
+    expect(r.execution.providerSource).toBe('TEST_ONLY')
+    expect(r.recommendation).toMatch(/^NO FINAL PROVIDER SELECTED — TEST_ONLY RUN/)
   })
 
   it('an output breaking the contract counts against schema validity (not as a timeout)', async () => {
@@ -132,13 +138,21 @@ describe('bake-off vision: live section (scripted provider, app pipeline)', () =
     const full = { GEMINI_API_KEY: FAKE, OPENAI_API_KEY: FAKE, AI_EVAL_GEMINI_MODEL: 'g', AI_EVAL_OPENAI_MODEL: 'o', AI_EVAL_GEMINI_VISION_MODEL: 'gv', AI_EVAL_OPENAI_VISION_MODEL: 'ov' }
     const r = await buildBakeoff(full, { visionDataset: dir, providers: { llm: scriptedLlm, vision: () => scriptedVision('garment') } })
     expect(r.live.map((l) => [l.provider, l.status, l.reason])).toEqual([['gemini', 'TESTED', null], ['openai', 'TESTED', null]])
-    expect(r.recommendation).not.toBe(NO_SELECTION)
-    expect(r.recommendation).toMatch(/APPLY THE GATES/)
+    // Phase 5.1: injected scripted providers → TEST_ONLY, never "results available"; still no selection.
+    expect(r.recommendation).toMatch(/^NO FINAL PROVIDER SELECTED — TEST_ONLY RUN/)
+    expect(r.recommendation).not.toMatch(/APPLY THE GATES/)
     expect(JSON.stringify(r)).not.toContain(FAKE)
     // One provider fully measured is not enough for the gates.
     const oneSide = await buildBakeoff({ ...full, OPENAI_API_KEY: '' }, { visionDataset: dir, providers: { llm: scriptedLlm, vision: () => scriptedVision('garment') } })
     expect(oneSide.live.map((l) => l.status)).toEqual(['TESTED', 'NOT_TESTED'])
-    expect(oneSide.recommendation).toBe(NO_SELECTION)
+    expect(oneSide.recommendation).not.toMatch(/APPLY THE GATES/)
+    // The rule itself (real providers): only both fully TESTED points to the gates — and never names a provider.
+    const l = (status: 'TESTED' | 'NOT_TESTED' | 'PARTIALLY_TESTED') => ({ status }) as never
+    expect(recommend([l('TESTED'), l('TESTED')], false)).toMatch(/^NO FINAL PROVIDER SELECTED — LIVE RESULTS AVAILABLE; APPLY THE GATES/)
+    expect(recommend([l('TESTED'), l('PARTIALLY_TESTED')], false)).toBe(NO_SELECTION)
+    expect(recommend([l('TESTED'), l('NOT_TESTED')], false)).toBe(NO_SELECTION)
+    expect(recommend([l('NOT_TESTED'), l('NOT_TESTED')], true)).toBe(NO_SELECTION)
+    expect(recommend([l('TESTED'), l('TESTED')], false)).not.toMatch(/gemini|openai/i)
   })
 })
 
@@ -149,7 +163,9 @@ describe('bake-off --runs', () => {
     const r = await buildBakeoff({})
     expect(r.runs).toBeUndefined()
     expect(r.aggregate).toBeUndefined()
-    expect(Object.keys(r)).toEqual(['harnessVersion', 'live', 'offline', 'recommendation'])
+    // Phase 5.0 keys are all kept; Phase 5.1 only adds sections.
+    expect(Object.keys(r)).toEqual(expect.arrayContaining(['harnessVersion', 'live', 'offline', 'recommendation']))
+    expect(r.providerDecision).toBe('NO FINAL PROVIDER SELECTED')
   })
 
   it('3 runs: every run kept and numbered, live = run 1, aggregate mean/min/max/spread over TESTED runs only', async () => {
@@ -166,7 +182,7 @@ describe('bake-off --runs', () => {
     expect(g.metrics.schemaValidity.min).toBeCloseTo(2 / 3, 3)
     expect(g.metrics.schemaValidity.max).toBe(1)
     // NOT_TESTED sections are not averaged into anything.
-    expect(r.aggregate!.find((a) => a.provider === 'openai' && a.feature === 'vision')).toEqual({ provider: 'openai', feature: 'vision', testedRuns: 0, metrics: {} })
+    expect(r.aggregate!.find((a) => a.provider === 'openai' && a.feature === 'vision')).toEqual({ provider: 'openai', feature: 'vision', testedRuns: 0, metrics: {}, pooledLatencyMs: { n: 0, p50: null, p95: null, p99: null, max: null } })
     expect(r.aggregate!.find((a) => a.provider === 'gemini' && a.feature === 'stylist')!.testedRuns).toBe(0)
   })
 
@@ -175,7 +191,7 @@ describe('bake-off --runs', () => {
   })
 
   it('aggregateRuns: single value has zero spread; non-numeric fields are ignored', () => {
-    const live = [{ provider: 'gemini' as const, status: 'TESTED' as const, model: 'm', visionModel: null, reason: null, features: [{ status: 'TESTED', feature: 'outfit', provider: 'gemini', model: 'm', latencyP50: 120, note: 'x' } as never] }]
+    const live = [{ provider: 'gemini' as const, status: 'TESTED' as const, model: 'm', visionModel: null, reason: null, accounting: [], failures: [], features: [{ status: 'TESTED', feature: 'outfit', provider: 'gemini', model: 'm', latencyP50: 120, note: 'x' } as never] }]
     const a = aggregateRuns([{ run: 1, live }])
     expect(a.find((x) => x.provider === 'gemini' && x.feature === 'outfit')!.metrics).toEqual({ latencyP50: { n: 1, mean: 120, min: 120, max: 120, spread: 0 } })
   })

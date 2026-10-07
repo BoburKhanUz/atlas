@@ -88,7 +88,7 @@ async function main() {
   const items = syntheticVisionItems()
   await fs.mkdir(outDir, { recursive: true })
   for (const item of items) await fs.writeFile(path.join(outDir, item.file), await renderSynthetic(item))
-  const labels = Dataset.parse({ version: SYNTHETIC_VISION_VERSION, items: items.map(({ id, file, expected }) => ({ id, file, expected })) })
+  const labels = Dataset.parse({ version: SYNTHETIC_VISION_VERSION, kind: 'synthetic', items: items.map(({ id, file, expected }) => ({ id, file, expected })) })
   await fs.writeFile(path.join(outDir, 'labels.json'), JSON.stringify(labels, null, 2) + '\n')
   console.log(`wrote ${items.length} synthetic images and labels.json to ${outDir}`)
 }

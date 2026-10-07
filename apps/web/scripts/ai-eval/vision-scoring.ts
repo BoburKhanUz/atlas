@@ -40,6 +40,8 @@ const Expected = z.strictObject({
 export const Dataset = z.strictObject({
   /** Optional dataset version, recorded in bake-off results (e.g. "synthetic-v1", "real-2026-10"). */
   version: z.string().regex(SAFE_ID).optional(),
+  /** Optional provenance (Phase 5.1): only a "real" set can support real-world quality claims. */
+  kind: z.enum(['synthetic', 'real']).optional(),
   items: z
     .array(
       z.strictObject({

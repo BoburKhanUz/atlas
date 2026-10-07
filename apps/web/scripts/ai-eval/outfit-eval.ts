@@ -16,9 +16,10 @@ import { deterministicExplanation, interpretOutfitOutput, InvalidOutfitOutputErr
 import { OUTFIT_AI_TIMEOUT_MS } from '../../src/lib/ai/outfit-config'
 import { generateOutfitResult, profileContext } from '../../src/lib/ai/outfit-engine'
 import { isAiProviderError } from '../../src/lib/ai/providers/errors'
-import { withRetry } from '../../src/lib/ai/providers/retry'
+import { RetriedError, withRetry } from '../../src/lib/ai/providers/retry'
 import type { LLMMessage, LLMProvider, LLMRequest } from '../../src/lib/ai/providers/types'
 import { arg, assertOutsideRepo, llmProviderFromEnv } from './eval-common'
+import { LocalRefusalError } from './live-accounting'
 import { outfitCases, type OutfitCase } from './outfit-cases'
 import { scoreOutfit, summarizeOutfit, type OutfitOutcome, type OutfitRecord, type OutfitSummary } from './outfit-scoring'
 
@@ -39,10 +40,20 @@ export async function runOutfitCase(p: LLMProvider, c: OutfitCase): Promise<Outf
   const refs = candidates.map((_, i) => `O${i + 1}`)
   const messages = outfitMessages({ candidates, occasion: c.occasion, weather: result.weather, colorProfile: c.colorProfile ?? null })
   const schema = { name: 'outfit_ranking', schema: outfitJsonSchema(refs) }
-  let calls = 0, inputTokens: number | undefined, outputTokens: number | undefined
+  // calls = provider attempts (retries included, failed ones too); requests = logical requests (first + correction).
+  let calls = 0, requests = 0, inputTokens: number | undefined, outputTokens: number | undefined
   const add = (a: number | undefined, b: number | undefined) => (a === undefined && b === undefined ? undefined : (a ?? 0) + (b ?? 0))
   const call = async (msgs: LLMMessage[]) => {
-    const { value, attempts } = await withRetry(() => p.generate({ messages: msgs, temperature: 0.3, maxOutputTokens: 400, jsonSchema: schema, timeoutMs: OUTFIT_AI_TIMEOUT_MS }))
+    requests++
+    let result
+    try {
+      result = await withRetry(() => p.generate({ messages: msgs, temperature: 0.3, maxOutputTokens: 400, jsonSchema: schema, timeoutMs: OUTFIT_AI_TIMEOUT_MS }))
+    } catch (err) {
+      // A locally refused attempt (bake-off circuit breaker or budget) never reached the provider.
+      if (err instanceof RetriedError) calls += err.attempts - (err.lastError instanceof LocalRefusalError ? 1 : 0)
+      throw err
+    }
+    const { value, attempts } = result
     calls += attempts
     inputTokens = add(inputTokens, value.metadata.usage.inputTokens)
     outputTokens = add(outputTokens, value.metadata.usage.outputTokens)
@@ -72,7 +83,7 @@ export async function runOutfitCase(p: LLMProvider, c: OutfitCase): Promise<Outf
   const cp = profileContext(c.colorProfile)
   const sent = !!c.colorProfile && (c.colorProfile.confidence ?? 0) >= 0.3 && !!c.colorProfile.season
   const { checks, pass } = scoreOutfit({ candidates, weatherProvided: !!result.weather, profileSent: sent, profileStrong: !!cp && cp.strength >= 0.6 }, outcome)
-  return { case: c.id, tags: c.tags, provider: p.name, model: p.model, candidates: candidates.length, latencyMs: Math.round(performance.now() - started), calls, inputTokens, outputTokens, outcome, checks, pass }
+  return { case: c.id, tags: c.tags, provider: p.name, model: p.model, candidates: candidates.length, latencyMs: Math.round(performance.now() - started), calls, requests, inputTokens, outputTokens, outcome, checks, pass }
 }
 
 /** The deterministic explanation of each case's best outfit (what the fallback shows), for review. */

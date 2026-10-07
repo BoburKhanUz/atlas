@@ -36,7 +36,10 @@ export interface OutfitRecord {
   model: string
   candidates: number
   latencyMs: number
+  /** Provider attempts, retries and failed attempts included. */
   calls: number
+  /** Logical requests: the first, plus the correction when there was one. */
+  requests: number
   inputTokens?: number
   outputTokens?: number
   outcome: OutfitOutcome

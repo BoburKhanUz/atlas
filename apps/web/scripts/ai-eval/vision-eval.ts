@@ -99,10 +99,12 @@ export async function evaluateVisionConfig(
   datasetDir: string,
   items: Dataset['items'],
   onRecord?: (record: ItemRecord) => Promise<void> | void,
+  /** Reads one image (bakeoff.ts verifies each image against its frozen hash here). */
+  readImage: (file: string) => Promise<Uint8Array> = async (file) => new Uint8Array(await fs.readFile(file)),
 ): Promise<{ records: ItemRecord[]; summary: ConfigSummary }> {
   const records: ItemRecord[] = []
   for (const item of items) {
-    const bytes = new Uint8Array(await fs.readFile(path.join(datasetDir, item.file)))
+    const bytes = await readImage(path.join(datasetDir, item.file))
     const { outcome, usage, latencyMs } = await runOne(p, config, bytes)
     const record: ItemRecord = {
       config: config.label,
