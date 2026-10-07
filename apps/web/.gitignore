@@ -54,4 +54,5 @@ server.log
 /skills/
 # playwright
 playwright-report/
+playwright-report-staging/
 test-results/

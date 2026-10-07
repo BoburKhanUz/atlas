@@ -17,6 +17,7 @@ import { isAiProviderError } from './providers/errors'
 import { getLLMProvider } from './providers'
 import type { LLMMessage } from './providers/types'
 import { recordAiRequest } from './monitoring'
+import { decideAiEligibility } from './rollout'
 import { chargeQuota, refundQuota } from './quota-monitoring'
 import { itemDisplayName } from './stylist'
 import { CATEGORIES, COLORS, FORMALITIES, MATERIALS, PATTERNS, SLEEVE_LENGTHS, STYLES, SUBCATEGORIES, type CatalogEntry } from './catalog'
@@ -224,8 +225,14 @@ export async function rerankAndExplain(input: RerankInput, deps: { now?: () => D
   const provider = getLLMProvider()
   const started = performance.now()
   let corrected = false
-  const request = (r: { outcome: 'ok' | 'fallback'; reason?: string; billable: boolean }) =>
+  const request = (r: { outcome: 'ok' | 'fallback' | 'disabled'; reason?: string; billable: boolean }) =>
     recordAiRequest({ feature: 'outfit_explanation', provider: provider.name, model: provider.model, corrected, latencyMs: performance.now() - started, ...r })
+  // Phase 5.0 rollout: not eligible → the deterministic engine stays authoritative; no provider call.
+  const eligibility = decideAiEligibility('outfit_explanation', input.userId)
+  if (!eligibility.eligible) {
+    request({ outcome: 'disabled', reason: eligibility.reason, billable: false })
+    return deterministic()
+  }
   if (provider.name === 'mock') {
     request({ outcome: 'fallback', reason: 'mock_provider', billable: false })
     return deterministic()

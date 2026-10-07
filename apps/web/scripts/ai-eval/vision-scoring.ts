@@ -38,6 +38,8 @@ const Expected = z.strictObject({
 }) as z.ZodType<{ subject: (typeof SUBJECTS)[number] } & Partial<Record<ScoredField, string | null>>>
 
 export const Dataset = z.strictObject({
+  /** Optional dataset version, recorded in bake-off results (e.g. "synthetic-v1", "real-2026-10"). */
+  version: z.string().regex(SAFE_ID).optional(),
   items: z
     .array(
       z.strictObject({

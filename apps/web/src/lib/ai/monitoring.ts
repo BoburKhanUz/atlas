@@ -101,7 +101,7 @@ export interface AiMonitoringSink {
 export const logSink: AiMonitoringSink = {
   emit(e) {
     const { event, ...fields } = e
-    const failed = (event === 'ai.call' && e.success === false) || (event === 'ai.request' && e.outcome !== 'ok' && e.outcome !== 'replay')
+    const failed = (event === 'ai.call' && e.success === false) || (event === 'ai.request' && e.outcome !== 'ok' && e.outcome !== 'replay' && e.outcome !== 'disabled')
     if (failed) log.warn(event, fields)
     else log.info(event, fields)
   },
@@ -146,6 +146,7 @@ export type AiRequestOutcome =
   | 'image_rejected' // vision: undecodable image or provider safety refusal
   | 'replay' // idempotent replay: no provider call, no charge
   | 'internal_error' // an unexpected application error (a bug), not a provider failure
+  | 'disabled' // Phase 5.0 rollout: switch off or user not in the rollout; reason = feature_disabled | rollout_not_selected
 
 export function recordAiRequest(r: {
   feature: AiRequestFeature

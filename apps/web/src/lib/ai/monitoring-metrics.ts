@@ -299,9 +299,10 @@ export function evaluateAlerts(
   }
   for (const r of dashboard.requests) {
     if (r.feature !== 'outfit_explanation' || !REAL(r.provider)) continue
-    // Fallbacks the system chose on purpose (quota) are not provider problems.
+    // Fallbacks the system chose on purpose (quota) are not provider problems, and
+    // requests the rollout kept off AI (Phase 5.0 `disabled`) never reached the provider.
     const fallbacks = (r.outcomes.fallback ?? 0) - (r.reasons.quota_exceeded ?? 0)
-    const relevant = r.requests - (r.reasons.quota_exceeded ?? 0)
+    const relevant = r.requests - (r.reasons.quota_exceeded ?? 0) - (r.outcomes.disabled ?? 0)
     if (relevant >= t.minSample && fallbacks / relevant > t.outfitFallbackRate) {
       add({ name: 'ai_outfit_fallback_rate', severity: 'warning', feature: r.feature, provider: r.provider, value: fallbacks / relevant, threshold: t.outfitFallbackRate })
     }

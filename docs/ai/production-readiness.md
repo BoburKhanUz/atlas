@@ -1,4 +1,4 @@
-# AI production-readiness checklist (Phase 4.5)
+# AI production-readiness checklist (Phase 4.5; rollout rows PHASE 5.0)
 
 Legend:
 - **PASS:** verified in this phase, with evidence.
@@ -36,6 +36,9 @@ Legend:
 | Quota configurability | NEEDS REVIEW | code constants (`quota.ts`); changing them needs a release |
 | Cost validation | NOT TESTED | request sizes measured; tokens and current pricing REQUIRE CURRENT PROVIDER PRICING CHECK |
 | Latency validation | NOT TESTED (live) / PASS (local) | local steps ≤ 73 ms p95 (`timings.ts`); provider latency needs live calls |
+| Rollout controls (PHASE 5.0) | PASS (offline) | per-feature switches (production default off, malformed refuses), stable percentage, digest allowlist that bypasses no other control; [`rollout.md`](rollout.md). `rollout.test.ts`, `ai-rollout.test.ts` (regression), `ai-rollout.itest.ts`, mutation-tested |
+| Bake-off vision and repeated runs (PHASE 5.0) | PASS (harness) / NOT TESTED (live) | vision section, `NOT_TESTED` reasons, `--runs` aggregate; `bakeoff-vision.test.ts`. No live run: no credentials |
+| Staging smoke (PHASE 5.0) | PASS (mock, local) / NOT TESTED (staging) | `e2e/smoke/staging-smoke.spec.ts` in the e2e suite; real provider opt-in only, never in CI; [`staging.md`](staging.md). STAGING INFRASTRUCTURE REQUIRED |
 | Monitoring | PASS (offline) / NOT TESTED (live) | `ai.call` / `ai.request` / `ai.quota` events behind a whitelist sanitizer; log-based dashboard and provisional alerts (`scripts/ai-monitor.ts`, [`monitoring.md`](monitoring.md)); `monitoring.test.ts`, `ai-monitoring.test.ts`. A production log collector or metrics backend and live threshold calibration are still needed. |
 
 ## Failure matrix

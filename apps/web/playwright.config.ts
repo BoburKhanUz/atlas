@@ -45,6 +45,11 @@ const baseEnv = {
   // Deterministic mock vision: the e2e flows rely on its file-name hints.
   AI_VISION_PROVIDER: 'mock',
   AI_ALLOW_MOCK_IN_PRODUCTION: '1',
+  // Phase 5.0: production defaults every AI feature OFF; e2e turns them on explicitly (mock providers).
+  AI_STYLIST_ENABLED: 'true',
+  AI_VISION_ENABLED: 'true',
+  AI_OUTFIT_AI_ENABLED: 'true',
+  AI_ROLLOUT_PERCENT: '100',
   NODE_ENV: 'production',
   COOKIE_SECURE: '0', // plain http
   NEXT_TELEMETRY_DISABLED: '1',

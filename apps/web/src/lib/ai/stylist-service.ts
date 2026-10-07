@@ -17,6 +17,7 @@ import { isAiProviderError } from './providers/errors'
 import { getLLMProvider } from './providers'
 import type { LLMMessage } from './providers/types'
 import { recordAiRequest } from './monitoring'
+import { decideAiEligibility } from './rollout'
 import { secondsUntilNextQuotaDay } from './quota'
 import { chargeQuota, refundQuota } from './quota-monitoring'
 import {
@@ -108,6 +109,13 @@ export function stylistCorrectionMessages(messages: LLMMessage[], previous: stri
 export async function runStylistTurn(input: StylistTurnInput, deps: StylistDeps = {}): Promise<StylistTurnResult> {
   const now = deps.now ?? (() => new Date())
   const provider = getLLMProvider()
+
+  // Phase 5.0 rollout: no provider (and no mock substitute) unless eligible.
+  const eligibility = decideAiEligibility('stylist_chat', input.userId)
+  if (!eligibility.eligible) {
+    recordAiRequest({ feature: 'stylist_chat', provider: provider.name, model: provider.model, outcome: 'disabled', reason: eligibility.reason, billable: false })
+    throw new StylistError({ kind: 'ai_unavailable' })
+  }
 
   if (provider.name === 'mock') {
     const started = performance.now()

@@ -57,7 +57,7 @@ All events carry `environment` (`production`, `development`, `test` or `unknown`
 | Field | Type | Meaning |
 |---|---|---|
 | `feature`, `provider`, `model` | code | as above (the model is the configured one) |
-| `outcome` | code | `ok`, `fallback` (outfit: deterministic order), `ai_unavailable`, `quota_exceeded`, `not_a_garment`, `image_rejected`, `replay` (idempotent replay: no call, no charge), `internal_error` |
+| `outcome` | code | `ok`, `fallback` (outfit: deterministic order), `ai_unavailable`, `quota_exceeded`, `not_a_garment`, `image_rejected`, `replay` (idempotent replay: no call, no charge), `disabled` (PHASE 5.0 rollout: switch off or user outside the rollout; reason `feature_disabled` or `rollout_not_selected`; no call, no charge; info level, not a failure), `internal_error` |
 | `reason` | code | why: `provider_<errorCode>`, `malformed_output`, `ungrounded_after_correction`, `invalid_output`, `invalid_after_correction_<reason>`, `deadline`, `quota_exceeded`, `quota_error`, `mock_provider`, `content_filtered`, `unprocessable_image`, a vision subject (`multiple_garments`, …), `internal_error` |
 | `corrected` | boolean | the single correction ran (stylist: ungrounded references; outfit: any invalid answer) |
 | `billable` | boolean | the request consumed **and kept** a quota unit |
@@ -153,7 +153,7 @@ Defined in `INITIAL_ALERT_THRESHOLDS` (`src/lib/ai/monitoring-metrics.ts`). Rate
 | `ai_provider_availability` | ≥ 5 consecutive failed calls of one provider (any feature) | critical |
 | `ai_provider_auth_or_config` | any `auth` or `config` error (wrong or missing key) | critical |
 | `ai_quota_rejection_rate` | rejected / (charged + rejected) > 10 % per feature/provider | warning |
-| `ai_outfit_fallback_rate` | outfit fallbacks (excluding quota fallbacks) > 10 % | warning |
+| `ai_outfit_fallback_rate` | outfit fallbacks (excluding quota fallbacks) > 10 %; `disabled` requests are not in the denominator (PHASE 5.0) | warning |
 | `ai_usage_anomaly` | tokens (else calls) > 2× or < 0.5× a baseline window with ≥ 50 calls | warning |
 
 Suggested windows: 15 minutes for error, timeout and availability; 1 hour for p95 latency; 1 day for quota and usage. Recalibrate every threshold from the live bake-off and the first production week.

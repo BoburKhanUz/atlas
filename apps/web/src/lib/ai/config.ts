@@ -23,6 +23,15 @@
  *   AI_VISION_PRICE_INPUT_USD_PER_MTOK / AI_VISION_PRICE_OUTPUT_USD_PER_MTOK
  *                          optional, for cost estimates in telemetry
  *   AI_ALLOW_MOCK_IN_PRODUCTION  1 to start a production build with a mock provider
+ *
+ * Rollout (Phase 5.0; see docs/ai/rollout.md). Eligibility only: they never
+ * select a provider and never relax the checks above.
+ *   AI_STYLIST_ENABLED / AI_VISION_ENABLED / AI_OUTFIT_AI_ENABLED
+ *                          true|false|1|0. Missing: false in production (fail
+ *                          closed), true elsewhere (Phase 4 behaviour)
+ *   AI_ROLLOUT_PERCENT     0..100, whole number. Missing: 0 in production, 100 elsewhere
+ *   AI_ROLLOUT_ALLOWLIST   comma-separated allowlist digests (64 hex characters,
+ *                          `bun scripts/ai-rollout-digest.ts <userId>`), never raw ids
  */
 import { ConfigError } from '@/lib/config'
 
@@ -58,7 +67,29 @@ export interface AiConfig {
   }
   /** True when a production build runs with an acknowledged mock provider. */
   mockInProduction: boolean
+  rollout: AiRolloutConfig
 }
+
+/** The AI features that can be switched and rolled out. */
+export type AiRolloutFeature = 'stylist_chat' | 'clothing_analysis' | 'outfit_explanation'
+
+export interface AiRolloutConfig {
+  /** Per-feature switches. A disabled feature never calls an AI provider. */
+  features: Record<AiRolloutFeature, boolean>
+  /** Share of users (by stable bucket) who get the enabled AI features, 0..100. */
+  percent: number
+  /** Allowlist digests (see rollout.ts); never raw user ids. */
+  allowlist: ReadonlySet<string>
+}
+
+/** Feature switch variable per feature. */
+export const FEATURE_SWITCH_VAR: Record<AiRolloutFeature, string> = {
+  stylist_chat: 'AI_STYLIST_ENABLED',
+  clothing_analysis: 'AI_VISION_ENABLED',
+  outfit_explanation: 'AI_OUTFIT_AI_ENABLED',
+}
+const MAX_ALLOWLIST = 1000
+const DIGEST = /^[0-9a-f]{64}$/
 
 type Env = Record<string, string | undefined>
 
@@ -120,6 +151,33 @@ function maxSide(env: Env): number {
     throw new ConfigError(`AI_VISION_MAX_SIDE must be a whole number of pixels between ${MIN_VISION_SIDE} and ${MAX_VISION_SIDE}`)
   }
   return n
+}
+
+/** A boolean switch: true|false|1|0 (case-insensitive); missing → `fallback`; anything else is an error. */
+function flag(env: Env, name: string, fallback: boolean): boolean {
+  const raw = value(env, name)?.toLowerCase()
+  if (raw === undefined) return fallback
+  if (raw === 'true' || raw === '1') return true
+  if (raw === 'false' || raw === '0') return false
+  throw new ConfigError(`${name} must be true, false, 1 or 0`)
+}
+
+function rollout(env: Env, production: boolean): AiRolloutConfig {
+  // Fail closed in production: a missing switch or percentage enables nothing.
+  const features = Object.fromEntries(
+    (Object.keys(FEATURE_SWITCH_VAR) as AiRolloutFeature[]).map((f) => [f, flag(env, FEATURE_SWITCH_VAR[f], !production)]),
+  ) as Record<AiRolloutFeature, boolean>
+  const rawPercent = value(env, 'AI_ROLLOUT_PERCENT')
+  let percent = production ? 0 : 100
+  if (rawPercent !== undefined) {
+    if (!/^\d{1,3}$/.test(rawPercent) || Number(rawPercent) > 100) throw new ConfigError('AI_ROLLOUT_PERCENT must be a whole number between 0 and 100')
+    percent = Number(rawPercent)
+  }
+  const entries = (value(env, 'AI_ROLLOUT_ALLOWLIST') ?? '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean)
+  // The message never echoes an entry.
+  if (entries.some((e) => !DIGEST.test(e))) throw new ConfigError('AI_ROLLOUT_ALLOWLIST entries must be allowlist digests (64 hex characters), not raw ids')
+  if (entries.length > MAX_ALLOWLIST) throw new ConfigError(`AI_ROLLOUT_ALLOWLIST may hold at most ${MAX_ALLOWLIST} entries`)
+  return { features, percent, allowlist: new Set(entries) }
 }
 
 /** The key and model of a real provider, or a ConfigError naming what is missing. */
@@ -189,6 +247,7 @@ export function parseAiConfig(env: Env = process.env): AiConfig {
       price: price(env, 'AI_VISION'),
     },
     mockInProduction: production && usesMock,
+    rollout: rollout(env, production),
   }
 }
 

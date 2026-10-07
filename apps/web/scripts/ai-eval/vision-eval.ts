@@ -54,7 +54,7 @@ function provider(config: EvalConfig): VisionProvider {
   return config.provider === 'gemini' ? new GeminiProvider({ apiKey, model: config.model }) : new OpenAIProvider({ apiKey, model: config.model })
 }
 
-async function runOne(p: VisionProvider, config: EvalConfig, bytes: Uint8Array) {
+export async function runOne(p: VisionProvider, config: EvalConfig, bytes: Uint8Array) {
   const prepared = await prepareVisionImage(bytes, config.maxSide)
   const started = performance.now()
   let outcome: ItemOutcome
@@ -87,6 +87,40 @@ async function runOne(p: VisionProvider, config: EvalConfig, bytes: Uint8Array) 
     else outcome = { kind: 'error', error: 'unexpected' }
   }
   return { outcome, usage, latencyMs: Math.round(performance.now() - started) }
+}
+
+/**
+ * Runs one configuration over dataset items (the path both this script and
+ * bakeoff.ts use). `onRecord` sees each record as it is produced.
+ */
+export async function evaluateVisionConfig(
+  p: VisionProvider,
+  config: EvalConfig,
+  datasetDir: string,
+  items: Dataset['items'],
+  onRecord?: (record: ItemRecord) => Promise<void> | void,
+): Promise<{ records: ItemRecord[]; summary: ConfigSummary }> {
+  const records: ItemRecord[] = []
+  for (const item of items) {
+    const bytes = new Uint8Array(await fs.readFile(path.join(datasetDir, item.file)))
+    const { outcome, usage, latencyMs } = await runOne(p, config, bytes)
+    const record: ItemRecord = {
+      config: config.label,
+      provider: config.provider,
+      model: config.model,
+      maxSide: config.maxSide,
+      item: item.id,
+      latencyMs,
+      inputTokens: usage.inputTokens,
+      outputTokens: usage.outputTokens,
+      costUsd: estimateCostUsd(usage, config.price ?? null),
+      outcome,
+      ...scoreItem(item.expected, outcome),
+    }
+    records.push(record)
+    await onRecord?.(record)
+  }
+  return { records, summary: summarize(records, new Map(items.map((i) => [i.id, i.expected]))) }
 }
 
 const pct = (n: number | null) => (n === null ? '—' : `${(n * 100).toFixed(1)}%`)
@@ -125,7 +159,6 @@ async function main() {
   const configs = Matrix.parse(await readJson(matrixFile)).configs.filter((c) => !only || only.includes(c.label))
   const limit = Number(arg('limit') ?? dataset.items.length)
   const items = dataset.items.slice(0, limit)
-  const expected = new Map(items.map((i) => [i.id, i.expected]))
 
   if (process.argv.includes('--dry-run')) {
     for (const i of items) await fs.access(path.join(datasetDir, i.file))
@@ -140,36 +173,20 @@ async function main() {
   await fs.writeFile(resultsFile, '')
   const summaries: ConfigSummary[] = []
   for (const config of configs) {
-    const p = providers.get(config.label)!
-    const records: ItemRecord[] = []
-    for (const item of items) {
-      const bytes = new Uint8Array(await fs.readFile(path.join(datasetDir, item.file)))
-      const { outcome, usage, latencyMs } = await runOne(p, config, bytes)
-      const record: ItemRecord = {
-        config: config.label,
-        provider: config.provider,
-        model: config.model,
-        maxSide: config.maxSide,
-        item: item.id,
-        latencyMs,
-        inputTokens: usage.inputTokens,
-        outputTokens: usage.outputTokens,
-        costUsd: estimateCostUsd(usage, config.price ?? null),
-        outcome,
-        ...scoreItem(item.expected, outcome),
-      }
-      records.push(record)
+    const { summary } = await evaluateVisionConfig(providers.get(config.label)!, config, datasetDir, items, async (record) => {
       await fs.appendFile(resultsFile, JSON.stringify({ ...record, settings: { ...config, price: undefined } }) + '\n')
-      process.stdout.write(`${config.label} ${item.id} ${outcome.kind}\n`)
-    }
-    summaries.push(summarize(records, expected))
+      process.stdout.write(`${config.label} ${record.item} ${record.outcome.kind}\n`)
+    })
+    summaries.push(summary)
   }
   await fs.writeFile(path.join(outDir, 'summary.json'), JSON.stringify(summaries, null, 2) + '\n')
   await fs.writeFile(path.join(outDir, 'summary.md'), markdown(summaries))
   console.log(`done: ${path.join(outDir, 'summary.md')}`)
 }
 
-main().catch((err) => {
-  console.error(err instanceof Error ? err.message : err)
-  process.exit(1)
-})
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err instanceof Error ? err.message : err)
+    process.exit(1)
+  })
+}

@@ -61,6 +61,10 @@ describe('sanitizer (privacy whitelist)', () => {
     emitAiEvent({ event: 'ai.request', feature: 'stylist_chat', provider: 'gemini', outcome: 'ai_unavailable', billable: false })
     expect(JSON.parse(out[0])).toMatchObject({ level: 'info', msg: 'ai.call', success: true })
     expect(JSON.parse(err[0])).toMatchObject({ level: 'warn', msg: 'ai.request', outcome: 'ai_unavailable' })
+    // Phase 5.0: a request the rollout kept off AI is not a failure.
+    emitAiEvent({ event: 'ai.request', feature: 'stylist_chat', provider: 'gemini', outcome: 'disabled', reason: 'rollout_not_selected', billable: false })
+    expect(err).toHaveLength(1)
+    expect(JSON.parse(out[1])).toMatchObject({ level: 'info', msg: 'ai.request', outcome: 'disabled', reason: 'rollout_not_selected' })
   })
 })
 
@@ -152,6 +156,17 @@ describe('alerts (provisional thresholds)', () => {
     // Only quota fallbacks (the system's own choice): no outfit alert.
     const quotaOnly: AiLogEvent[] = [...many(25, () => r('ok')), ...many(30, () => r('fallback', 'quota_exceeded'))]
     expect(evaluateAlerts(aggregateAiEvents(quotaOnly), quotaOnly).map((a) => a.name)).toEqual([])
+  })
+
+  it('Phase 5.0: requests kept off AI by the rollout (disabled) do not dilute the outfit fallback rate', () => {
+    const r = (outcome: string, reason?: string) => ({ msg: 'ai.request', feature: 'outfit_explanation', provider: 'gemini', outcome, reason })
+    const events: AiLogEvent[] = [...many(18, () => r('ok')), ...many(3, () => r('fallback', 'provider_timeout')), ...many(200, () => r('disabled', 'rollout_not_selected'))]
+    const alerts = evaluateAlerts(aggregateAiEvents(events), events)
+    expect(alerts.map((a) => a.name)).toEqual(['ai_outfit_fallback_rate'])
+    expect(alerts[0].value).toBeCloseTo(3 / 21, 3)
+    // Disabled alone is neither a sample nor a failure.
+    const off: AiLogEvent[] = many(200, () => r('disabled', 'feature_disabled'))
+    expect(evaluateAlerts(aggregateAiEvents(off), off)).toEqual([])
   })
 
   it('usage anomaly against a baseline (tokens when available), only with a large enough baseline', () => {

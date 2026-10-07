@@ -29,6 +29,9 @@ openssl rand -base64 32
 # AI: for local use without a paid provider set AI_LLM_PROVIDER=mock,
 # AI_VISION_PROVIDER=mock and AI_ALLOW_MOCK_IN_PRODUCTION=1 (the container runs a production build, which
 # otherwise refuses mock AI). See docs/ai/provider-architecture.md.
+# Phase 5.0: a production build also keeps every AI feature OFF unless switched on, so for
+# local mock use set AI_STYLIST_ENABLED=true, AI_VISION_ENABLED=true, AI_OUTFIT_AI_ENABLED=true
+# and AI_ROLLOUT_PERCENT=100 (otherwise the stylist answers 503). See docs/ai/rollout.md.
 docker compose up --build
 ```
 

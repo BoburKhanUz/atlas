@@ -88,6 +88,9 @@ Configuration is read and validated at startup by `assertServerConfig`. All vari
 | `AI_VISION_DETAIL` | OpenAI image `detail`: `low`, `high` (default), `auto` |
 | `AI_VISION_PRICE_INPUT_USD_PER_MTOK`, `AI_VISION_PRICE_OUTPUT_USD_PER_MTOK` | Optional, as for the LLM |
 | `AI_ALLOW_MOCK_IN_PRODUCTION` | `1` acknowledges mock AI (either role) in a production build |
+| `AI_STYLIST_ENABLED`, `AI_VISION_ENABLED`, `AI_OUTFIT_AI_ENABLED` | PHASE 5.0 feature switches: `true`/`false`/`1`/`0`. Production default **off**, development/test on. Malformed → refuses to start. See [`rollout.md`](rollout.md). |
+| `AI_ROLLOUT_PERCENT` | PHASE 5.0: 0–100, stable per-user bucket. Production default 0, development/test 100. |
+| `AI_ROLLOUT_ALLOWLIST` | PHASE 5.0: comma-separated allowlist digests (`scripts/ai-rollout-digest.ts`), never raw ids; skips only the percentage |
 | `LLM_PROVIDER` | Removed. Setting it fails at startup instead of being silently ignored. |
 
 **Production fails closed.** For each role (LLM and vision) it refuses a missing provider, the mock, or a real provider without its key or model. With real providers for both roles, a production build starts without any flag. `AI_ALLOW_MOCK_IN_PRODUCTION=1` is only for local Docker and the e2e suite, which run production builds with the mock; a real deployment must not set it.

@@ -13,7 +13,7 @@ import { OpenAIProvider } from '../../src/lib/ai/providers/openai'
 import type { LLMProvider } from '../../src/lib/ai/providers/types'
 
 /** Evaluation status written into every machine-readable summary. */
-export type EvalStatus = 'TESTED' | 'NOT_TESTED' | 'OFFLINE_SELF_TEST'
+export type EvalStatus = 'TESTED' | 'PARTIALLY_TESTED' | 'NOT_TESTED' | 'OFFLINE_SELF_TEST'
 
 // ─── Statistics ─────────────────────────────────────────────────────────────
 

@@ -1,4 +1,4 @@
-# AI provider evaluation and bake-off (Phase 4.5)
+# AI provider evaluation and bake-off (Phase 4.5; vision live section and repeated runs PHASE 5.0)
 
 > **NO FINAL PROVIDER SELECTED — LIVE BAKE-OFF REQUIRED.**
 > No Gemini or OpenAI credentials were available, so no live provider was called and **no live result in this document is measured.** No provider, model or production default was changed.
@@ -29,13 +29,13 @@ Principles:
   The retry policy is the same; quota and database are left out.
 - **Configured models only:** `--provider`/`--model`, `AI_EVAL_GEMINI_MODEL`/`AI_EVAL_OPENAI_MODEL`, or `AI_LLM_PROVIDER`/`AI_LLM_MODEL`. There is no built-in model.
 - **Synthetic data only;** results are written outside the repository (the scripts refuse a path inside it).
-- **Machine-readable output** with a `status` field: `TESTED`, `NOT_TESTED` or `OFFLINE_SELF_TEST`. Offline runs report no latency.
+- **Machine-readable output** with a `status` field: `TESTED`, `PARTIALLY_TESTED` (provider level, PHASE 5.0), `NOT_TESTED` or `OFFLINE_SELF_TEST`. Offline runs report no latency.
 
 ### Harness (`apps/web/scripts/ai-eval/`)
 
 | File | Purpose |
 |---|---|
-| `bakeoff.ts` | One deterministic `bakeoff.json`: live sections (or `NOT_TESTED` with the reason and null metrics), offline self-tests, robustness, vision dataset, recommendation |
+| `bakeoff.ts` | One deterministic `bakeoff.json`: live vision, stylist and outfit sections per provider (or `NOT_TESTED` with the reason and null metrics), optional repeated runs, offline self-tests, robustness, vision dataset, recommendation |
 | `stylist-eval.ts` / `stylist-cases.ts` / `stylist-scoring.ts` | 17 stylist cases and their scoring |
 | `outfit-eval.ts` / `outfit-cases.ts` / `outfit-scoring.ts` | 11 outfit cases and their scoring |
 | `robustness.ts` | 13 adversarial scenarios with expected outcomes |
@@ -47,11 +47,48 @@ Principles:
 cd apps/web
 bun scripts/ai-eval/bakeoff.ts --out=/tmp/atlas-eval            # offline now; live sections run when keys + models are set
 bun scripts/ai-eval/synthetic-vision.ts --out=/tmp/atlas-eval/vision-ds
+bun scripts/ai-eval/bakeoff.ts --out=/tmp/atlas-eval --vision-dataset=/tmp/atlas-eval/vision-ds --runs=3   # PHASE 5.0
 GEMINI_API_KEY=… OPENAI_API_KEY=… bun scripts/ai-eval/vision-eval.ts --dataset=/tmp/atlas-eval/vision-ds --matrix=<matrix with the configured models> --out=/tmp/atlas-eval/vision
 bun scripts/ai-eval/timings.ts --n=30
 ```
 
 With credentials, run each live text evaluation three times (product temperatures 0.7 and 0.3) and report the spread.
+
+### Bake-off vision and repeated runs (PHASE 5.0)
+
+Live vision section, one per provider. It runs the app's vision pipeline (`evaluateVisionConfig` from `vision-eval.ts`) with the app's default image settings: 1024 px; Gemini `high` resolution and `low` thinking; OpenAI `high` detail. It needs all three of:
+
+| Needs | Variable / option | Missing → `NOT_TESTED` reason |
+|---|---|---|
+| key | `GEMINI_API_KEY` / `OPENAI_API_KEY` | `no <KEY> in the environment` |
+| vision model (no default) | `AI_EVAL_GEMINI_VISION_MODEL` / `AI_EVAL_OPENAI_VISION_MODEL`, else `AI_VISION_MODEL` when `AI_VISION_PROVIDER` names that provider | `no configured vision model (…)` |
+| labelled dataset | `--vision-dataset=<dir>` (`labels.json` + photos; optional `version`, e.g. `synthetic-v1`) | `no labelled vision dataset (--vision-dataset)` |
+
+Fields of a `TESTED` vision section:
+- `model`, `datasetVersion`, `cases`;
+- `passed` / `failed` (subject correct);
+- `schemaValidity` (1 − invalid − provider errors);
+- `subjectAccuracy`, `falseRejectionRate`, `falseAcceptanceRate`, `categoryAccuracy`, `primaryColorAccuracy`;
+- `invalidRate`, `errorRate`, `failures`, `timeouts`;
+- `latencyP50` / `latencyP95` / `latencyMax`;
+- mean tokens.
+
+A `NOT_TESTED` section keeps every metric `null`: **nothing is estimated**.
+
+Provider status:
+- `TESTED` only when vision, stylist and outfit were all measured.
+- `PARTIALLY_TESTED` when some were; `reason` lists what is missing.
+- `NOT_TESTED` when none were.
+
+The recommendation stays `NO FINAL PROVIDER SELECTED` unless both providers are `TESTED`. Even then it only points to the gates below; it never selects a provider.
+
+`--runs=N` (1–10, default 1):
+- Repeats the live sections. `runs[]` keeps every run, numbered `run: 1..N`; no run is hidden.
+- `aggregate[]` gives, per provider, feature and numeric metric, `n`, `mean`, `min`, `max` and `spread` (max − min) over the runs where that section was `TESTED`. `NOT_TESTED` runs are never averaged in.
+- The top-level `live` is run 1, so the default output (`--runs` absent) has the same shape as before.
+- Offline sections are deterministic and computed once.
+
+Tests (no credentials; scripted providers and a fake key value): `tests/unit/ai/bakeoff-vision.test.ts`.
 
 ### Dataset
 
@@ -77,8 +114,8 @@ The drawn garment images test the contract and the rejection policy. They are **
 
 | Provider | Vision | Stylist | Outfit AI | Reason |
 |---|---|---|---|---|
-| Gemini | NOT TESTED | NOT TESTED | NOT TESTED | no credentials (`GEMINI_API_KEY` absent) |
-| OpenAI | NOT TESTED | NOT TESTED | NOT TESTED | no credentials (`OPENAI_API_KEY` absent) |
+| Gemini | NOT TESTED | NOT TESTED | NOT TESTED | no credentials (`GEMINI_API_KEY` absent); PHASE 5.0: still none |
+| OpenAI | NOT TESTED | NOT TESTED | NOT TESTED | no credentials (`OPENAI_API_KEY` absent); PHASE 5.0: still none |
 
 `bakeoff.json` records both providers as `"status": "NOT_TESTED"` with every metric `null`.
 
@@ -202,7 +239,7 @@ Only verified information:
 
 Next steps:
 1. Set keys and models in a non-production environment.
-2. Run `bakeoff.ts` (three runs) and `vision-eval.ts` on a labelled real-photo set.
+2. Run `bakeoff.ts --runs=3 --vision-dataset=<real labelled photos>` (PHASE 5.0), and `vision-eval.ts` for a setting sweep.
 3. Add native-speaker Uzbek scores.
 4. Choose the provider that meets every gate with the best Uzbek score; use cost and latency only as tie-breakers.
 

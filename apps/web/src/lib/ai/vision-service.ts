@@ -30,6 +30,7 @@ import { getVisionProvider } from './providers'
 import { isAiProviderError } from './providers/errors'
 import { prepareVisionImage } from './providers/vision-input'
 import { recordAiRequest } from './monitoring'
+import { decideAiEligibility, type AiEligibilityReason } from './rollout'
 import { secondsUntilNextQuotaDay } from './quota'
 import { chargeQuota, refundQuota } from './quota-monitoring'
 import { recordAiCall } from './telemetry'
@@ -83,16 +84,20 @@ export interface GarmentInput {
 
 export async function analyzeGarment(input: GarmentInput, now: () => Date = () => new Date()): Promise<GarmentAnalysis> {
   const provider = getVisionProvider()
+  // Phase 5.0 rollout: not eligible → the existing deterministic analysis
+  // (detection.mock = true, stored as provider "mock"); no provider call.
+  const eligibility = decideAiEligibility('clothing_analysis', input.userId)
+  if (!eligibility.eligible) return analyzeWithMock(input, now, eligibility.reason)
   if (provider.name === 'mock') return analyzeWithMock(input, now)
   return analyzeWithProvider(input, now)
 }
 
-async function analyzeWithMock(input: GarmentInput, now: () => Date): Promise<GarmentAnalysis> {
+async function analyzeWithMock(input: GarmentInput, now: () => Date, disabled?: AiEligibilityReason): Promise<GarmentAnalysis> {
   const started = performance.now()
   try {
     const detection = await analyzeClothing({ buffer: input.buffer, filename: input.filename })
     recordAiCall({ feature: 'clothing_analysis', provider: 'mock', model: MOCK_MODEL, outcome: 'ok', latencyMs: performance.now() - started, attempts: 1 })
-    recordAiRequest({ feature: 'clothing_analysis', provider: 'mock', model: MOCK_MODEL, outcome: 'ok', billable: false, latencyMs: performance.now() - started })
+    recordAiRequest({ feature: 'clothing_analysis', provider: 'mock', model: MOCK_MODEL, outcome: disabled ? 'disabled' : 'ok', reason: disabled, billable: false, latencyMs: performance.now() - started })
     return {
       detection,
       metadata: { provider: 'mock', model: MOCK_MODEL, version: MOCK_ANALYSIS_VERSION, analyzedAt: now(), rawConfidences: null },
