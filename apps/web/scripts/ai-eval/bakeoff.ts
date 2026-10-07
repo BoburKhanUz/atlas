@@ -224,7 +224,7 @@ const notTested = (provider: string, model: string | null, feature: NotTested['f
 
 const count = (values: string[]) => Object.fromEntries([...new Set(values)].sort().map((v) => [v, values.filter((x) => x === v).length]))
 
-function realVision(provider: EvalProviderName, model: string, env: Env): VisionProvider {
+export function realVision(provider: EvalProviderName, model: string, env: Env): VisionProvider {
   const apiKey = env[KEY[provider]]!.trim()
   return provider === 'gemini' ? new GeminiProvider({ apiKey, model }) : new OpenAIProvider({ apiKey, model })
 }
