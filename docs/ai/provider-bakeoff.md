@@ -55,6 +55,7 @@ Credential variables (names only; never written to files, logs or reports):
 | Prices (optional, for cost) | `AI_LLM_PRICE_INPUT_USD_PER_MTOK` / `AI_LLM_PRICE_OUTPUT_USD_PER_MTOK` and `AI_VISION_PRICE_*`. These are the app's own variables and apply only to the provider that `AI_LLM_PROVIDER` / `AI_VISION_PROVIDER` names. |
 | Call cap (**required for any live call**) | `--max-calls=N` or `AI_EVAL_MAX_CALLS` |
 | Cost cap (optional) | `--max-cost-usd=X` or `AI_EVAL_MAX_COST_USD`; needs a configured price for every live section |
+| Sections (optional) | `--section=vision`, `stylist` or `outfit`, or a comma-separated combination; default: all three |
 
 - There is no built-in model.
 - A section without a key, a model or a dataset is `NOT_TESTED`, with the reason and `null` metrics.
@@ -102,6 +103,13 @@ AI_EVAL_GEMINI_MODEL=… AI_EVAL_OPENAI_MODEL=… AI_EVAL_GEMINI_VISION_MODEL=�
 - When anything can run live, the CLI refuses to start without `--max-calls`. This is checked before any provider is built.
 - Without credentials the CLI exits 0 and reports `NOT_TESTED` with the reason. This is a controlled result, not a crash.
 - `--runs` defaults to 3 when a live text section can run, otherwise 1.
+- `--section` limits the live sections, for example a stylist-only smoke run with the smallest allowed cap (17 cases × 4 calls):
+
+  ```bash
+  bun scripts/ai-eval/bakeoff.ts --out=$OUT --section=stylist --runs=1 --max-calls=68
+  ```
+
+  Unselected sections are planned at zero calls and reported `NOT_TESTED (not selected (--section))`; `--vision-dataset` does not start vision unless `vision` is selected. Every other control is unchanged: the call cap is checked against the selected sections, and the shared budget, circuit breaker, dataset integrity and accounting work as before. `execution.sections` records the selection. An unknown, empty or repeated value is refused before any provider is built.
 - The harness is never run with real keys in CI. The unit tests use scripted providers and a fake key value.
 
 ## Methodology

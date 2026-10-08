@@ -9,7 +9,7 @@ import { promises as fs } from 'fs'
 import os from 'os'
 import path from 'path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { bakeoffMarkdown, buildBakeoff, defaultRuns, NO_SELECTION, PROVIDER_DECISION } from '../../../scripts/ai-eval/bakeoff'
+import { ALL_SECTIONS, bakeoffMarkdown, buildBakeoff, defaultRuns, NO_SELECTION, NOT_SELECTED, parseSections, planOnly, PROVIDER_DECISION } from '../../../scripts/ai-eval/bakeoff'
 import { CallLedger, CIRCUIT_MAX_CONSECUTIVE, CIRCUIT_MAX_FATAL, configuredPrice, latencyPercentile, MAX_CALLS_PER_CASE, parseMaxCalls, planCalls, retryingVision, visionDatasetIdentity } from '../../../scripts/ai-eval/live-accounting'
 import { outfitCases } from '../../../scripts/ai-eval/outfit-cases'
 import { ScriptedOutfit } from '../../../scripts/ai-eval/outfit-eval'
@@ -292,5 +292,102 @@ describe('no provider selection, no secret leakage', () => {
     }
     expect(JSON.stringify(env)).toBe(before) // the harness never changes the configuration
     expect(env).not.toHaveProperty('AI_LLM_PROVIDER')
+  })
+})
+
+describe('--section selector', () => {
+  const geminiText = { GEMINI_API_KEY: FAKE, AI_EVAL_GEMINI_MODEL: 'g-text' }
+  /** Counts calls per feature (by the request's JSON schema name). */
+  const counting = () => {
+    const calls = { stylist: 0, outfit: 0 }
+    const base = scriptedLlm()
+    const p: LLMProvider = { name: base.name, model: base.model, generate: (req) => (calls[req.jsonSchema?.name === 'outfit_ranking' ? 'outfit' : 'stylist']++, base.generate(req)) }
+    return { p, calls }
+  }
+
+  it('without --section: every section, the same plan and report as before', async () => {
+    expect(parseSections(undefined)).toBeUndefined()
+    const env = textEnv({ AI_EVAL_GEMINI_VISION_MODEL: 'gv' })
+    const plan = await planOnly(env, { visionDataset: dir, runs: 1 })
+    expect(plan.sections.map((x) => `${x.provider}/${x.feature}`)).toEqual(['gemini/vision', 'gemini/stylist', 'gemini/outfit', 'openai/stylist', 'openai/outfit'])
+    const all = await planOnly(env, { visionDataset: dir, runs: 1, sections: [...ALL_SECTIONS] })
+    expect(all).toEqual(plan)
+    const r = await buildBakeoff(textEnv(), { providers: { llm: () => scriptedLlm() } })
+    expect(r.execution.sections).toEqual(['vision', 'stylist', 'outfit'])
+    expect(r.live.map((l) => l.features.map((f) => f.status))).toEqual([['NOT_TESTED', 'TESTED', 'TESTED'], ['NOT_TESTED', 'TESTED', 'TESTED']])
+    expect(JSON.stringify(r)).not.toContain(NOT_SELECTED)
+    expect(defaultRuns(textEnv())).toBe(3)
+  })
+
+  it('--section=stylist: a stylist-only plan; 67 calls are refused before any provider is built, 68 accepted', async () => {
+    const sections = parseSections('stylist')!
+    expect(sections).toEqual(['stylist'])
+    const plan = await planOnly(geminiText, { runs: 1, sections })
+    expect(plan.sections).toEqual([{ provider: 'gemini', feature: 'stylist', cases: 17, upperBoundCalls: 68 }])
+    expect(plan.upperBoundCalls).toBe(17 * MAX_CALLS_PER_CASE.stylist)
+    let built = 0
+    const providers = { llm: () => (built++, scriptedLlm()) }
+    await expect(buildBakeoff(geminiText, { runs: 1, sections, maxCalls: 67, providers })).rejects.toThrow(/up to 68 provider calls, above the cap of 67/)
+    expect(built).toBe(0)
+    const ok = await buildBakeoff(geminiText, { runs: 1, sections, maxCalls: 68, providers })
+    expect(ok.execution.plan).toMatchObject({ upperBoundCalls: 68, maxCalls: 68 })
+    expect(ok.execution.budget.attemptsUsed).toBe(17)
+  })
+
+  it('stylist only: zero outfit and zero vision calls; unselected sections are NOT_TESTED (not selected)', async () => {
+    const { p, calls } = counting()
+    const vision = visionAlways()
+    const rawOutputs: import('../../../scripts/ai-eval/bakeoff').RawOutput[] = []
+    const r = await buildBakeoff({ ...geminiText, AI_EVAL_GEMINI_VISION_MODEL: 'gv' }, { visionDataset: dir, runs: 1, sections: ['stylist'], maxCalls: 68, rawOutputs, providers: { llm: () => p, vision: () => vision } })
+    expect(calls).toEqual({ stylist: 17, outfit: 0 })
+    expect(vision.calls).toBe(0) // --vision-dataset does not activate vision when it is not selected
+    expect(r.execution.sections).toEqual(['stylist'])
+    const g = r.live[0]
+    expect(g.features.map((f) => [f.feature, f.status, (f as { reason?: string }).reason ?? null])).toEqual([['vision', 'NOT_TESTED', NOT_SELECTED], ['stylist', 'TESTED', null], ['outfit', 'NOT_TESTED', NOT_SELECTED]])
+    expect(g).toMatchObject({ status: 'PARTIALLY_TESTED', reason: NOT_SELECTED })
+    expect(g.accounting.map((a) => a.feature)).toEqual(['stylist'])
+    expect(rawOutputs.map((o) => o.feature)).toEqual(Array(17).fill('stylist'))
+    expect(r.recommendation).not.toMatch(/APPLY THE GATES/) // partial: never a selection
+    expect(bakeoffMarkdown(r)).toContain('sections: stylist')
+  })
+
+  it('stylist only: the circuit breaker still stops a failing provider', async () => {
+    const bad = scriptedLlm(() => new AiProviderError('auth', 'scripted', { status: 401 }))
+    const r = await buildBakeoff(geminiText, { runs: 1, sections: ['stylist'], maxCalls: 68, providers: { llm: () => bad } })
+    const st = r.live[0].accounting.find((a) => a.feature === 'stylist')!
+    expect(st.circuitOpen).toBe('auth')
+    expect(st.attempts).toBe(CIRCUIT_MAX_FATAL)
+    expect(st.skippedAttempts.circuit_break).toBe(S - CIRCUIT_MAX_FATAL)
+    expect(bad.calls).toBe(CIRCUIT_MAX_FATAL) // no outfit section to call
+  })
+
+  it('stylist only: the shared budget still stops (--max-cost-usd with a configured price)', async () => {
+    const { p, calls } = counting()
+    const env = { ...geminiText, AI_LLM_PROVIDER: 'gemini', AI_LLM_PRICE_INPUT_USD_PER_MTOK: '1', AI_LLM_PRICE_OUTPUT_USD_PER_MTOK: '1' }
+    // Each scripted attempt costs (1000 + 100) / 1e6 = $0.0011; the cap is reached after two.
+    const r = await buildBakeoff(env, { runs: 1, sections: ['stylist'], maxCalls: 68, maxCostUsd: 0.002, providers: { llm: () => p } })
+    expect(r.execution.budget.exhausted).toBe('max_cost')
+    const st = r.live[0].accounting.find((a) => a.feature === 'stylist')!
+    expect(st.attempts).toBe(2)
+    expect(st.skippedAttempts.budget_stop).toBe(S - 2)
+    expect(calls).toEqual({ stylist: 2, outfit: 0 })
+  })
+
+  it('invalid, empty or repeated values are refused before any provider is built', async () => {
+    for (const raw of ['', ' ', 'styllist', 'stylist,', ',stylist', 'stylist,stylist', 'vision,text']) expect(() => parseSections(raw)).toThrow(/--section/)
+    expect(parseSections('outfit, stylist')).toEqual(['stylist', 'outfit'])
+    expect(parseSections('vision')).toEqual(['vision'])
+    let built = 0
+    const providers = { llm: () => (built++, scriptedLlm()) }
+    await expect(buildBakeoff(geminiText, { sections: [], providers })).rejects.toThrow(/--section/)
+    await expect(buildBakeoff(geminiText, { sections: ['stylist', 'stylist'], providers })).rejects.toThrow(/twice/)
+    await expect(buildBakeoff(geminiText, { sections: ['nope' as never], providers })).rejects.toThrow(/unknown section/)
+    await expect(planOnly(geminiText, { sections: [] })).rejects.toThrow(/--section/)
+    expect(built).toBe(0)
+  })
+
+  it('the CLI default run count follows the selected sections', () => {
+    expect(defaultRuns(geminiText, ['stylist'])).toBe(3)
+    expect(defaultRuns(geminiText, ['vision'])).toBe(1) // no vision model or dataset: nothing live
   })
 })
