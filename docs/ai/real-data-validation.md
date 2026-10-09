@@ -114,6 +114,8 @@ bun scripts/ai-eval/real-data/validate.ts --root=/secure/real-validation --out=/
   [--purpose=evaluation|final_evaluation|prompt_development] [--max-calls=N] [--max-cost-usd=X] [--transmit-constructed]
 ```
 
+`--max-cost-usd` uses the bake-off's cost reservation (see [provider-bakeoff.md, Cost reservation](provider-bakeoff.md#cost-reservation)): every attempt is reserved before dispatch, failures keep their reservation, prices must match the provider and exact model, and a provider without an estimable request type is refused before any call. It is not a guaranteed maximum charge: the text-input estimate is a heuristic.
+
 | Capability | What runs |
 |---|---|
 | Vision | the app's pipeline (`prepareVisionImage` → schema → `interpretGarmentOutput` → colour cross-check), with the app's single retry and the Phase 5.1 ledger, budget and circuit breaker. Every provider gets the same images, preprocessing (`vision-prep-v1`), prompt and schema version, in the same order. There is no provider-specific tuning. |

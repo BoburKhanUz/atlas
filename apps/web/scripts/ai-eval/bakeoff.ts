@@ -50,7 +50,8 @@ import { stylistCases } from './stylist-cases'
 import { runStylistCase, ScriptedStylist } from './stylist-eval'
 import { summarizeStylist, type StylistRecord, type StylistSummary } from './stylist-scoring'
 import { syntheticVisionItems } from './synthetic-vision'
-import { accountSection, assertCapForLive, DatasetIntegrityError, sha256Hex, assertWithinCap, CallBudget, CallLedger, caseResult, caseSetIdentity, configuredPrice, COST_UNAVAILABLE, countedLLM, latencyStats, parseMaxCalls, parseMaxCost, planCalls, priceSource, retryingVision, visionDatasetIdentity, type CallPlan, type CaseResult, type DatasetIdentity, type LatencyStats, type LiveFeature, type SectionAccounting } from './live-accounting'
+import { isBudgetablePrice, isOpenAIPatchModel } from './cost-bounds'
+import { accountSection, assertCapForLive, DatasetIntegrityError, sha256Hex, assertWithinCap, CallBudget, CallLedger, caseResult, caseSetIdentity, configuredPrice, COST_UNAVAILABLE, costAccounting, type BudgetStopReason, type CostAccounting, countedLLM, latencyStats, parseMaxCalls, parseMaxCost, planCalls, priceSource, retryingVision, visionDatasetIdentity, type CallPlan, type CaseResult, type DatasetIdentity, type LatencyStats, type LiveFeature, type SectionAccounting } from './live-accounting'
 import { evaluateVisionConfig } from './vision-eval'
 import { Dataset, type ConfigSummary, type EvalConfig, type ItemRecord } from './vision-scoring'
 
@@ -233,7 +234,16 @@ export interface BakeoffReport {
     plan: CallPlan
     /** The live sections selected (--section); every section by default. */
     sections: LiveFeature[]
-    budget: { attemptsUsed: number; costSpentUsd: number | typeof COST_UNAVAILABLE; exhausted: 'max_calls' | 'max_cost' | null }
+    budget: {
+      attemptsUsed: number
+      /** Provider-reported cost (configured price × reported tokens), as before the reservations. */
+      costSpentUsd: number | typeof COST_UNAVAILABLE
+      exhausted: BudgetStopReason | null
+      /** Why the budget stopped (no content); null while it has not. */
+      stopDetail: string | null
+      /** Pre-request reservations vs provider-reported cost; the estimates are not a guaranteed maximum charge. */
+      costAccounting: CostAccounting
+    }
     integrity: { status: 'OK' | typeof DATASET_INTEGRITY_FAILURE; checks: number }
     runTimes: Array<{ run: number; startedAt: string | null; finishedAt: string | null }>
   }
@@ -443,7 +453,7 @@ async function liveRun(env: Env, vision: VisionData | null, opts: BakeoffOptions
     let visionResult: FeatureResult
     if (visionReason) visionResult = notTested(provider, visionModel, 'vision', visionReason)
     else {
-      const price = configuredPrice(provider, 'vision', env)
+      const price = configuredPrice(provider, visionModel, 'vision', env)
       const ledger = new CallLedger(budget, price)
       const p = retryingVision(visionFactory(provider, visionModel!, env), ledger, opts.sleep)
       const results = new Map<string, CaseResult>()
@@ -484,7 +494,7 @@ async function liveRun(env: Env, vision: VisionData | null, opts: BakeoffOptions
       outfit = notTested(provider, model, 'outfit', sections.includes('outfit') ? textReason! : NOT_SELECTED)
     } else {
       const base = llm(provider, model!, env)
-      const price = configuredPrice(provider, 'llm', env)
+      const price = configuredPrice(provider, model, 'llm', env)
       const text = async <R extends StylistRecord | OutfitRecord>(feature: 'stylist' | 'outfit', cases: Array<{ id: string }>, runCase: (p: LLMProvider, c: never) => Promise<R>) => {
         const ledger = new CallLedger(budget, price)
         const p = countedLLM(base, ledger)
@@ -614,7 +624,8 @@ export function bakeoffMarkdown(r: BakeoffReport): string {
     ...(r.execution.providerSource === TEST_ONLY ? ['', `> **${TEST_ONLY}:** injected scripted providers. Nothing below is a provider result.`] : []),
     '',
     `Generated: ${r.execution.generatedAt ?? '—'} · runs: ${r.execution.plan.runs} · sections: ${r.execution.sections.join(', ')} · call upper bound: ${r.execution.plan.upperBoundCalls} · cap: ${r.execution.plan.maxCalls ?? 'NONE CONFIGURED'} · cost cap: ${r.execution.plan.maxCostUsd ?? 'NONE CONFIGURED'}`,
-    `Budget used: ${r.execution.budget.attemptsUsed} attempts · cost ${r.execution.budget.costSpentUsd} · exhausted: ${r.execution.budget.exhausted ?? 'no'} · dataset integrity: ${r.execution.integrity.status}`,
+    `Budget used: ${r.execution.budget.attemptsUsed} attempts · cost ${r.execution.budget.costSpentUsd} · exhausted: ${r.execution.budget.exhausted ?? 'no'}${r.execution.budget.stopDetail ? ` (${r.execution.budget.stopDetail})` : ''} · dataset integrity: ${r.execution.integrity.status}`,
+    costLine(r.execution.budget.costAccounting),
     '',
     `- Gemini: ${status('gemini')}`,
     `- OpenAI: ${status('openai')}`,
@@ -640,6 +651,13 @@ export function bakeoffMarkdown(r: BakeoffReport): string {
   ].join('\n') + '\n'
 }
 
+const usd = (v: number | string) => (typeof v === 'number' ? `$${v}` : v)
+
+/** The cost accounting in one line: estimates (heuristic input) apart from provider-reported cost. */
+function costLine(c: CostAccounting): string {
+  return `Cost accounting (input estimate ${c.inputEstimateStatus}): reserved ${usd(c.reservedCostUsd)} (text input est. ${usd(c.estimatedInputCostUsd)} · image est. ${usd(c.estimatedImageCostUsd)} · bounded output ${usd(c.boundedOutputCostUsd)}) · provider-reported ${usd(c.providerReportedCostUsd)} over ${c.providerReportedAttempts} attempts · retained reservations ${usd(c.retainedReservationUsd)} over ${c.retainedReservationAttempts} attempts · conservative total ${usd(c.conservativeCostUsd)} · unknown-cost attempts ${c.unpricedOrUnknownCostAttempts} · estimate exceeded ${c.estimateExceededAttempts}. ${c.note}`
+}
+
 export async function buildBakeoff(env: Env, opts: BakeoffOptions = {}): Promise<BakeoffReport> {
   const runCount = opts.runs ?? 1
   if (!Number.isInteger(runCount) || runCount < 1 || runCount > MAX_RUNS) throw new Error(`runs must be a whole number between 1 and ${MAX_RUNS}`)
@@ -648,11 +666,8 @@ export async function buildBakeoff(env: Env, opts: BakeoffOptions = {}): Promise
   // The call budget is checked before any provider call.
   const plan = planFor(env, visionData, runCount, opts)
   assertWithinCap(plan)
-  // A cost cap is only enforceable with a configured price for every live section.
-  if (plan.maxCostUsd !== null) {
-    const unpriced = plan.sections.filter((x) => !configuredPrice(x.provider, x.feature === 'vision' ? 'vision' : 'llm', env))
-    if (unpriced.length) throw new Error(`--max-cost-usd needs a configured price for every live section; missing for ${unpriced.map((x) => `${x.provider}/${x.feature}`).join(', ')}`)
-  }
+  // A dollar budget needs, for every live section, an exact-model price and a request type with an estimate.
+  if (plan.maxCostUsd !== null) assertCostBudgetable(plan, env)
   const budget = new CallBudget(plan.maxCalls, plan.maxCostUsd)
   const guard = new IntegrityGuard({ vision: visionData, stylist: caseHash(stylistSet), outfit: caseHash(outfitSet) })
   const stamp = () => (opts.now ? opts.now().toISOString() : null)
@@ -686,7 +701,7 @@ export async function buildBakeoff(env: Env, opts: BakeoffOptions = {}): Promise
       plan,
       sections: [...sectionsOf(opts)],
       // Spent cost is known only when every attempt that reported tokens had a configured price.
-      budget: { attemptsUsed: budget.attemptsUsed, costSpentUsd: budget.attemptsUsed === 0 || budget.unpricedAttempts > 0 || !anyPrice(plan, env) ? COST_UNAVAILABLE : budget.costSpentUsd, exhausted: budget.exhausted },
+      budget: { attemptsUsed: budget.attemptsUsed, costSpentUsd: budget.attemptsUsed === 0 || budget.unpricedAttempts > 0 || !anyPrice(plan, env) ? COST_UNAVAILABLE : budget.costSpentUsd, exhausted: budget.exhausted, stopDetail: budget.stopDetail, costAccounting: costAccounting(budget.cost) },
       integrity: { status: guard.ok ? 'OK' : DATASET_INTEGRITY_FAILURE, checks: guard.checks },
       runTimes,
     },
@@ -752,7 +767,32 @@ export function recommend(live: LiveProvider[], testOnly: boolean): string {
 }
 
 const caseHash = (cases: readonly unknown[]) => caseSetIdentity('', '', '', cases).sha256
-const anyPrice = (plan: CallPlan, env: Env) => plan.sections.some((x) => configuredPrice(x.provider, x.feature === 'vision' ? 'vision' : 'llm', env) !== null)
+const sectionPrice = (x: CallPlan['sections'][number], env: Env) =>
+  x.feature === 'vision' ? configuredPrice(x.provider, configuredVisionModel(x.provider, env), 'vision', env) : configuredPrice(x.provider, configuredModel(x.provider, env), 'llm', env)
+const anyPrice = (plan: CallPlan, env: Env) => plan.sections.some((x) => sectionPrice(x, env) !== null)
+
+/**
+ * --max-cost-usd, checked before any provider call: every live section needs a
+ * price for its provider and exact model, and a request type with an estimate
+ * (text: both providers; vision: the documented OpenAI image settings only).
+ * Each attempt is checked again when it is made (CallLedger), so nothing is
+ * sent without a reservation either way.
+ */
+export function assertCostBudgetable(plan: CallPlan, env: Env): void {
+  const problems: string[] = []
+  for (const x of plan.sections) {
+    const label = `${x.provider}/${x.feature}`
+    if (!isBudgetablePrice(sectionPrice(x, env))) problems.push(`${label}: no price above zero for this provider and exact model (${x.feature === 'vision' ? 'AI_VISION_PROVIDER + AI_VISION_MODEL' : 'AI_LLM_PROVIDER + AI_LLM_MODEL'} + *_PRICE_*_USD_PER_MTOK)`)
+    if (x.feature === 'vision') {
+      const model = configuredVisionModel(x.provider, env)
+      const config = bakeoffVisionConfig(x.provider, model ?? '')
+      if (x.provider !== 'openai' || !model || !isOpenAIPatchModel(model) || (config.openaiDetail !== 'high' && config.openaiDetail !== 'auto')) {
+        problems.push(`${label}: no documented image-token bound for this provider, model or image setting`)
+      }
+    }
+  }
+  if (problems.length) throw new Error(`--max-cost-usd cannot be enforced: ${problems.join('; ')}`)
+}
 
 /** CLI default: 3 runs when any live text section can run (key and model set), else 1 (offline only). */
 export function defaultRuns(env: Env, sections: readonly LiveFeature[] = ALL_SECTIONS): number {

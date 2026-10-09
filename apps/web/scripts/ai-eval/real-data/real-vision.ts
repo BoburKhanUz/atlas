@@ -23,6 +23,7 @@ import sharp from 'sharp'
 import { prepareVisionImage } from '../../../src/lib/ai/providers/vision-input'
 import type { VisionProvider } from '../../../src/lib/ai/providers/types'
 import { bakeoffVisionConfig, configuredVisionModel, realVision } from '../bakeoff'
+import { isBudgetablePrice, isOpenAIPatchModel } from '../cost-bounds'
 import type { EvalProviderName } from '../eval-common'
 import { accountSection, CallBudget, CallLedger, caseResult, configuredPrice, DatasetIntegrityError, retryingVision, sha256Hex, type CaseResult, type SectionAccounting } from '../live-accounting'
 import { evaluateVisionConfig } from '../vision-eval'
@@ -210,6 +211,12 @@ export interface RealVisionReport {
   providers: VisionProviderResult[]
 }
 
+/** A dollar budget can estimate this provider's vision attempts: an exact-model price and the documented OpenAI image settings. */
+function costBudgetable(provider: EvalProviderName, model: string, env: Record<string, string | undefined>): boolean {
+  const detail = bakeoffVisionConfig(provider, model).openaiDetail
+  return isBudgetablePrice(configuredPrice(provider, model, 'vision', env)) && provider === 'openai' && isOpenAIPatchModel(model) && (detail === 'high' || detail === 'auto')
+}
+
 export async function runRealVision(ds: LoadedDataset, env: Env, opts: RealVisionOptions): Promise<RealVisionReport> {
   const m = ds.manifest
   const use = opts.purpose === 'prompt_development' ? 'prompt_development' : 'local_evaluation'
@@ -253,9 +260,14 @@ export async function runRealVision(ds: LoadedDataset, env: Env, opts: RealVisio
     else if (!env[key]?.trim()) reason = `no ${key} in the environment`
     else if (!model) reason = 'no configured vision model'
     else if (opts.budget.maxCalls === null) { status = 'BLOCKED'; reason = 'no call cap (--max-calls)' }
+    else if (opts.budget.maxCostUsd !== null && !costBudgetable(provider, model!, env)) {
+      // Refused before any call, so the shared budget is not stopped by a request type it cannot estimate.
+      status = 'BLOCKED'
+      reason = '--max-cost-usd: no exact-model price above zero (AI_VISION_PROVIDER + AI_VISION_MODEL + AI_VISION_PRICE_*) or no documented image-token bound for this provider, model or setting'
+    }
     if (reason) { report.providers.push({ provider, status, reason, model, scores: null, accounting: null }); continue }
 
-    const price = configuredPrice(provider, 'vision', env)
+    const price = configuredPrice(provider, model!, 'vision', env)
     const ledger = new CallLedger(opts.budget, price)
     const factory = opts.providers?.vision ?? realVision
     const p = retryingVision(factory(provider, model!, env), ledger, opts.sleep)

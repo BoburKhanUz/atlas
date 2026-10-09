@@ -335,16 +335,15 @@ describe('call budget and cost cap (enforced before and during execution)', () =
     expect(accountSection('stylist', ledger, results, null)).toMatchObject({ attempts: 3, budgetStopCases: 2, attemptedCases: 3, skippedAttempts: { circuit_break: 0, budget_stop: 2 } })
   })
 
-  it('the cost cap stops later attempts once the estimated spend reaches it', () => {
-    const budget = new CallBudget(null, 0.002)
+  it('the cost cap refuses, before it is sent, an attempt whose reservation would not fit', () => {
+    const budget = new CallBudget(null, 0.003)
     const ledger = new CallLedger(budget, { inputUsdPerMTok: 1, outputUsdPerMTok: 2 })
-    ledger.before('p')
-    ledger.ok({ inputTokens: 1000, outputTokens: 100 }) // $0.0012
-    ledger.before('p')
-    ledger.ok({ inputTokens: 1000, outputTokens: 100 }) // $0.0024 ≥ cap
-    expect(budget.exhausted).toBe('max_cost')
-    expect(() => ledger.before('p')).toThrow(AiProviderError)
-    expect(ledger.endCase().skip).toBe('budget_stop')
+    const est = { ok: true as const, tokens: { textInputTokens: 1000, imageInputTokens: 0, outputTokens: 100 } } // reserves $0.0012
+    ledger.ok({ inputTokens: 1000, outputTokens: 100 }, ledger.before('p', est)) // reported $0.0012
+    ledger.ok({ inputTokens: 1000, outputTokens: 100 }, ledger.before('p', est)) // charged $0.0024
+    expect(budget.exhausted).toBeNull()
+    expect(() => ledger.before('p', est)).toThrow(AiProviderError) // 0.0024 + 0.0012 > 0.003
+    expect([budget.exhausted, ledger.endCase().skip, budget.attemptsUsed]).toEqual(['max_cost', 'budget_stop', 2])
     expect(budget.costSpentUsd).toBe(0.0024)
   })
 
@@ -360,7 +359,7 @@ describe('call budget and cost cap (enforced before and during execution)', () =
   it('--max-cost-usd needs a configured price for every live section, checked before any provider is built', async () => {
     let built = 0
     const env = { GEMINI_API_KEY: FAKE, AI_EVAL_GEMINI_MODEL: 'g' }
-    await expect(buildBakeoff(env, { maxCostUsd: 1, providers: { llm: () => (built++, llm(['ok'])) } })).rejects.toThrow(/needs a configured price.*gemini\/stylist/)
+    await expect(buildBakeoff(env, { maxCostUsd: 1, providers: { llm: () => (built++, llm(['ok'])) } })).rejects.toThrow(/cannot be enforced: gemini\/stylist: no price above zero for this provider and exact model/)
     expect(built).toBe(0)
     expect(parseMaxCost('2.50')).toBe(2.5)
     for (const bad of ['0', '-1', 'abc', '1e3']) expect(() => parseMaxCost(bad)).toThrow(/positive amount/)
@@ -381,14 +380,19 @@ describe('call budget and cost cap (enforced before and during execution)', () =
 
 describe('cost cap end to end', () => {
   it('the runtime cost cap stops later attempts across the bake-off (BUDGET_STOP), never more spend than one attempt past the cap', async () => {
-    const env = { GEMINI_API_KEY: FAKE, AI_EVAL_GEMINI_MODEL: 'g', AI_LLM_PROVIDER: 'gemini', AI_LLM_PRICE_INPUT_USD_PER_MTOK: '1', AI_LLM_PRICE_OUTPUT_USD_PER_MTOK: '2' }
-    // $0.0012 per attempt; cap $0.005 → the 5th attempt reaches it, everything after is refused locally.
+    const env = { GEMINI_API_KEY: FAKE, AI_EVAL_GEMINI_MODEL: 'g', AI_LLM_PROVIDER: 'gemini', AI_LLM_MODEL: 'g', AI_LLM_PRICE_INPUT_USD_PER_MTOK: '1', AI_LLM_PRICE_OUTPUT_USD_PER_MTOK: '2' }
+    // Reported $0.0012 per attempt; every attempt first reserves its (larger) estimate, so the run stops before the cap.
+    const cap = 0.02
     const inner = llm(['ok'])
-    const r = await buildBakeoff(env, { maxCostUsd: 0.005, providers: { llm: () => inner } })
-    expect(r.execution.budget).toMatchObject({ exhausted: 'max_cost', attemptsUsed: 5, costSpentUsd: 0.006 })
-    expect(inner.calls).toBe(5)
+    const r = await buildBakeoff(env, { maxCostUsd: cap, providers: { llm: () => inner } })
+    const b = r.execution.budget
+    expect(b.exhausted).toBe('max_cost')
+    expect(inner.calls).toBe(b.attemptsUsed)
+    expect(b.costSpentUsd).toBeCloseTo(0.0012 * b.attemptsUsed, 6)
+    expect(b.costAccounting).toMatchObject({ inputEstimateStatus: 'HEURISTIC_NOT_GUARANTEE', providerReportedAttempts: b.attemptsUsed, retainedReservationAttempts: 0, unpricedOrUnknownCostAttempts: 0 })
+    expect(b.costAccounting.conservativeCostUsd).toBeLessThanOrEqual(cap)
     const st = r.live[0].accounting.find((a) => a.feature === 'stylist')!
-    expect(st.budgetStopCases).toBe(stylistCases().length - 5)
+    expect(st.budgetStopCases).toBe(stylistCases().length - b.attemptsUsed)
     expect(r.live[0].failures.some((f) => f.failed[0] === 'BUDGET_STOP')).toBe(true)
   })
 })

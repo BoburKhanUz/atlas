@@ -52,9 +52,9 @@ Credential variables (names only; never written to files, logs or reports):
 | Keys | `GEMINI_API_KEY`, `OPENAI_API_KEY` |
 | Text model per provider | `AI_EVAL_GEMINI_MODEL`, `AI_EVAL_OPENAI_MODEL`; else `AI_LLM_MODEL` when `AI_LLM_PROVIDER` names that provider |
 | Vision model per provider | `AI_EVAL_GEMINI_VISION_MODEL`, `AI_EVAL_OPENAI_VISION_MODEL`; else `AI_VISION_MODEL` when `AI_VISION_PROVIDER` names that provider |
-| Prices (optional, for cost) | `AI_LLM_PRICE_INPUT_USD_PER_MTOK` / `AI_LLM_PRICE_OUTPUT_USD_PER_MTOK` and `AI_VISION_PRICE_*`. These are the app's own variables and apply only to the provider that `AI_LLM_PROVIDER` / `AI_VISION_PROVIDER` names. |
+| Prices (optional, for cost) | `AI_LLM_PRICE_INPUT_USD_PER_MTOK` / `AI_LLM_PRICE_OUTPUT_USD_PER_MTOK` and `AI_VISION_PRICE_*`. These are the app's own variables. They apply only to the provider that `AI_LLM_PROVIDER` / `AI_VISION_PROVIDER` names **and** the exact model that `AI_LLM_MODEL` / `AI_VISION_MODEL` names; a price is never reused for another model of the same provider. |
 | Call cap (**required for any live call**) | `--max-calls=N` or `AI_EVAL_MAX_CALLS` |
-| Cost cap (optional) | `--max-cost-usd=X` or `AI_EVAL_MAX_COST_USD`; needs a configured price for every live section |
+| Cost cap (optional) | `--max-cost-usd=X` or `AI_EVAL_MAX_COST_USD`; needs an exact-model price and an estimable request type for every live section (see [Cost reservation](#cost-reservation)). It limits spending risk; it is **not** a guaranteed maximum charge. |
 | Sections (optional) | `--section=vision`, `stylist` or `outfit`, or a comma-separated combination; default: all three |
 
 - There is no built-in model.
@@ -195,10 +195,36 @@ For the frozen sets, one provider and one run is 15·2 + 17·4 + 11·4 = **142 c
 Controls:
 - `--max-calls` refuses a plan above the cap before any provider is built. The CLI requires it for any live call.
 - Each section is limited to 500 cases, and `--runs` to 10.
-- At run time, a shared budget refuses attempts beyond `--max-calls`, and attempts after the estimated spend reaches `--max-cost-usd`. Such cases are reported as `BUDGET_STOP`.
-- `execution.budget` reports attempts used, cost spent (or `COST_UNAVAILABLE`) and whether a limit was reached.
+- At run time, a shared budget refuses attempts beyond `--max-calls` (a hard limit, independent of any dollar budget) and, with `--max-cost-usd`, any attempt whose reservation does not fit (see below). Such cases are reported as `BUDGET_STOP`.
+- `execution.budget` reports attempts used, provider-reported cost (or `COST_UNAVAILABLE`), the stop reason (`max_calls`, `max_cost`, `unpriced`, `unbounded`, `estimate_exceeded`) and `costAccounting`.
 - **Circuit breaker:** a section stops calling its provider after 2 auth, config or invalid-request failures, or after 5 failed attempts in a row. The remaining cases fail locally as `cancelled`. A failing provider is never retried continuously, and retries stay at one per request.
 - **Cost** is computed only from configured prices and reported token usage. Current pricing is **NOT VERIFIED**; without a price, cost is `N/A`.
+
+### Cost reservation
+
+The harnesses (`bakeoff.ts` and `real-data/validate.ts`) share one accounting path (`scripts/ai-eval/live-accounting.ts`, estimates in `scripts/ai-eval/cost-bounds.ts`). Every outbound attempt — first request, retry and correction alike — is estimated and **reserved before it is dispatched**, and counts as one call against `--max-calls`.
+
+**Estimate per attempt** (price = the exact model's configured input / output USD per million tokens, each part rounded up to the micro-dollar):
+
+| Part | Status | Formula |
+|---|---|---|
+| Output | **Documented bound** | The request's own output limit, which the adapters send (OpenAI `max_completion_tokens`, Gemini `maxOutputTokens`). Both providers document that it includes reasoning / thinking tokens. Stylist 600, outfit 400, vision 1024 tokens. |
+| Image input | **Documented formula** (OpenAI `gpt-5.4`, `gpt-5.4-mini`, `gpt-5.4-nano` only; exact ids) | `ceil(1.2 × ceil(w/32) × ceil(h/32)) + 1`, from the dimensions of the bytes actually sent, with `detail` `high` or `auto` and both sides ≤ 2048 px. OpenAI calls its counts estimates (±1 for rounding), hence the +1. |
+| Text input | **HEURISTIC — NOT A GUARANTEE** (`HEURISTIC_NOT_GUARANTEE`) | UTF-8 bytes of the message text × 1, plus the schema (name + JSON) bytes × 2, plus 16 tokens per message, plus 256 tokens per request. |
+
+Why the text-input part is only a heuristic: OpenAI documents that request structure (roles, message boundaries), tools and schemas add tokens that cannot be counted exactly locally, and it does not document how a Structured Outputs schema is encoded; Gemini's tokenizer differs again. Byte-level tokenizers produce at most one *content* token per byte, and typical text is about 3–4 bytes per token, but the framing and schema overhead have no documented bound. The factors above are chosen conservative allowances, **not** proven upper bounds.
+
+**Admission** (one synchronous step, so two attempts in flight can never reserve the same budget; the harnesses are sequential in any case): with `--max-cost-usd`, an attempt is refused locally, before dispatch, when its provider and exact model have no price with both rates above zero (`unpriced`), when it has no estimate — no output limit, or an image setting outside the table above, including every Gemini vision request (Gemini documents its per-image counts as approximate) — (`unbounded`), or when *charged + reservations in flight + its estimate* exceeds the budget (`max_cost`). The bake-off and the validator also check prices and request types for every live section before any provider is built.
+
+**Settlement:**
+- Complete provider usage (input and output tokens): the provider-reported cost at the exact model's price replaces the reservation.
+- A failed attempt (timeout, network error, HTTP error, malformed or filtered response) or missing / partial usage: the **whole reservation is kept**. Provider-reported usage is unavailable for failed attempts, and some of them are billed.
+- Without a price (and without a dollar budget): the attempt's cost is unknown and reported as such, never `$0`.
+- Reported cost above the attempt's reservation, or reported output tokens above its output limit: counted as `estimate_exceeded` and, with `--max-cost-usd`, every later attempt is refused immediately.
+
+**Report** (`execution.budget.costAccounting`, and `costAccounting` per section): `reservedCostUsd` = `estimatedInputCostUsd` (heuristic) + `estimatedImageCostUsd` + `boundedOutputCostUsd`; `providerReportedCostUsd` and its attempts; `retainedReservationUsd` and its attempts; `conservativeCostUsd` (reported + retained; `COST_UNAVAILABLE` when any attempt's cost is unknown); `unpricedOrUnknownCostAttempts`; `estimateExceededAttempts`; `inputEstimateStatus: HEURISTIC_NOT_GUARANTEE`. The Markdown report prints the same in one line.
+
+**What `--max-cost-usd` does and does not do.** It stops the run before an attempt whose estimate does not fit, and it charges failures and unknowns at their full estimate, so it materially reduces the risk of uncontrolled spending. It is **not a hard financial cap**: the text-input estimate is a heuristic; provider billing of failed or timed-out attempts is not observable; the documented image formula is itself an estimate; and the configured price is entered by hand and not verified against the provider. The provider's own billing remains the source of truth. Without `--max-cost-usd`, nothing is refused for cost: reservations are reported only when a price is configured.
 
 ## Privacy
 

@@ -31,8 +31,9 @@ import { OUTFIT_PROMPT_VERSION } from '../../../src/lib/ai/outfit-intelligence'
 import type { LLMProvider, VisionProvider } from '../../../src/lib/ai/providers/types'
 import { STYLIST_PROMPT_VERSION } from '../../../src/lib/ai/stylist'
 import { configuredModel, PROVIDER_DECISION } from '../bakeoff'
+import { isBudgetablePrice } from '../cost-bounds'
 import { arg, assertOutsideRepo, llmProviderFromEnv, type EvalProviderName } from '../eval-common'
-import { accountSection, assertCapForLive, CallBudget, CallLedger, caseResult, caseSetIdentity, configuredPrice, countedLLM, parseMaxCalls, parseMaxCost, planCalls, type CaseResult, type SectionAccounting } from '../live-accounting'
+import { accountSection, assertCapForLive, CallBudget, CallLedger, caseResult, caseSetIdentity, configuredPrice, costAccounting, countedLLM, parseMaxCalls, parseMaxCost, planCalls, type CaseResult, type CostAccounting, type SectionAccounting } from '../live-accounting'
 import { runStylistCase } from '../stylist-eval'
 import { summarizeStylist, type StylistRecord, type StylistSummary } from '../stylist-scoring'
 import { runColorValidation, type ColorReport } from './color-validation'
@@ -68,7 +69,7 @@ export interface ValidationReport {
     purpose: Purpose
     versions: { visionPrompt: string; stylistPrompt: string; outfitPrompt: string; outfitEngine: string; colorAnalysis: string; preprocessing: string }
   }
-  budget: { maxCalls: number | null; maxCostUsd: number | null; attemptsUsed: number; exhausted: string | null }
+  budget: { maxCalls: number | null; maxCostUsd: number | null; attemptsUsed: number; exhausted: string | null; stopDetail: string | null; costAccounting: CostAccounting }
   vision: RealVisionReport[]
   colorProfile: ColorReport[]
   stylist: {
@@ -139,6 +140,11 @@ export async function runValidation(env: Env, opts: ValidateOptions): Promise<Va
   const textEligible = (['gemini', 'openai'] as const).filter((p) => opts.transmitConstructed && !!env[p === 'gemini' ? 'GEMINI_API_KEY' : 'OPENAI_API_KEY']?.trim() && !!configuredModel(p, env))
   const plan = planCalls(textEligible.map((provider) => ({ provider, feature: 'stylist' as const, cases: corpus.length })), 1, opts.maxCalls, opts.maxCostUsd)
   assertCapForLive(plan)
+  // A dollar budget needs an exact-model price for every provider that will be called (each attempt is checked again).
+  if (opts.maxCostUsd !== null) {
+    const unpriced = textEligible.filter((p) => !isBudgetablePrice(configuredPrice(p, configuredModel(p, env), 'llm', env)))
+    if (unpriced.length) throw new Error(`--max-cost-usd needs a price above zero for the exact model (AI_LLM_PROVIDER + AI_LLM_MODEL + AI_LLM_PRICE_*); missing for ${unpriced.join(', ')}`)
+  }
 
   const vision: RealVisionReport[] = []
   const colorProfile: ColorReport[] = []
@@ -177,7 +183,7 @@ export async function runValidation(env: Env, opts: ValidateOptions): Promise<Va
       live.push({ provider, status: opts.transmitConstructed ? 'NOT_TESTED' : 'BLOCKED', reason, model, summary: null, accounting: null, failures: [] })
       continue
     }
-    const price = configuredPrice(provider, 'llm', env)
+    const price = configuredPrice(provider, model!, 'llm', env)
     const ledger = new CallLedger(budget, price)
     const base = (opts.providers?.llm ?? ((p, m, e) => llmProviderFromEnv(p, m, e)))(provider, model!, env)
     const p = countedLLM(base, ledger)
@@ -225,7 +231,7 @@ export async function runValidation(env: Env, opts: ValidateOptions): Promise<Va
       purpose: opts.purpose,
       versions: { visionPrompt: VISION_ANALYSIS_VERSION, stylistPrompt: STYLIST_PROMPT_VERSION, outfitPrompt: OUTFIT_PROMPT_VERSION, outfitEngine: OUTFIT_ENGINE_VERSION, colorAnalysis: COLOR_ANALYSIS_VERSION, preprocessing: PREPROCESSING_VERSION },
     },
-    budget: { maxCalls: opts.maxCalls, maxCostUsd: opts.maxCostUsd, attemptsUsed: budget.attemptsUsed, exhausted: budget.exhausted },
+    budget: { maxCalls: opts.maxCalls, maxCostUsd: opts.maxCostUsd, attemptsUsed: budget.attemptsUsed, exhausted: budget.exhausted, stopDetail: budget.stopDetail, costAccounting: costAccounting(budget.cost) },
     vision,
     colorProfile,
     stylist: {

@@ -105,7 +105,7 @@ describe('NOT_TESTED gating (no credentials needed)', () => {
 
 describe('live classification and accounting (scripted)', () => {
   it('a healthy provider: TESTED, one attempt per request, no retries, tokens counted, cost only with a configured price', async () => {
-    const env = textEnv({ AI_LLM_PROVIDER: 'gemini', AI_LLM_PRICE_INPUT_USD_PER_MTOK: '1', AI_LLM_PRICE_OUTPUT_USD_PER_MTOK: '2' })
+    const env = textEnv({ AI_LLM_PROVIDER: 'gemini', AI_LLM_MODEL: 'g-text', AI_LLM_PRICE_INPUT_USD_PER_MTOK: '1', AI_LLM_PRICE_OUTPUT_USD_PER_MTOK: '2' })
     const r = await buildBakeoff(env, { providers: { llm: () => scriptedLlm() }, sleep: noSleep })
     const g = r.live[0]
     expect(g.status).toBe('PARTIALLY_TESTED') // no vision model / dataset
@@ -232,11 +232,11 @@ describe('call budget', () => {
     expect(defaultRuns(textEnv())).toBe(3)
   })
 
-  it('prices come only from the existing variables, for the provider they name', () => {
-    expect(configuredPrice('gemini', 'llm', {})).toBeNull()
-    expect(configuredPrice('openai', 'llm', { AI_LLM_PROVIDER: 'gemini', AI_LLM_PRICE_INPUT_USD_PER_MTOK: '1', AI_LLM_PRICE_OUTPUT_USD_PER_MTOK: '2' })).toBeNull()
-    expect(configuredPrice('gemini', 'vision', { AI_VISION_PROVIDER: 'Gemini', AI_VISION_PRICE_INPUT_USD_PER_MTOK: '0.5', AI_VISION_PRICE_OUTPUT_USD_PER_MTOK: '1.5' })).toEqual({ inputUsdPerMTok: 0.5, outputUsdPerMTok: 1.5 })
-    expect(() => configuredPrice('gemini', 'llm', { AI_LLM_PROVIDER: 'gemini', AI_LLM_PRICE_INPUT_USD_PER_MTOK: '1' })).toThrow(/both/)
+  it('prices come only from the existing variables, for the provider AND exact model they name', () => {
+    expect(configuredPrice('gemini', 'm', 'llm', {})).toBeNull()
+    expect(configuredPrice('openai', 'm', 'llm', { AI_LLM_PROVIDER: 'gemini', AI_LLM_MODEL: 'm', AI_LLM_PRICE_INPUT_USD_PER_MTOK: '1', AI_LLM_PRICE_OUTPUT_USD_PER_MTOK: '2' })).toBeNull()
+    expect(configuredPrice('gemini', 'm', 'vision', { AI_VISION_PROVIDER: 'Gemini', AI_VISION_MODEL: 'm', AI_VISION_PRICE_INPUT_USD_PER_MTOK: '0.5', AI_VISION_PRICE_OUTPUT_USD_PER_MTOK: '1.5' })).toEqual({ inputUsdPerMTok: 0.5, outputUsdPerMTok: 1.5 })
+    expect(() => configuredPrice('gemini', 'm', 'llm', { AI_LLM_PROVIDER: 'gemini', AI_LLM_MODEL: 'm', AI_LLM_PRICE_INPUT_USD_PER_MTOK: '1' })).toThrow(/both/)
   })
 })
 
@@ -363,14 +363,17 @@ describe('--section selector', () => {
 
   it('stylist only: the shared budget still stops (--max-cost-usd with a configured price)', async () => {
     const { p, calls } = counting()
-    const env = { ...geminiText, AI_LLM_PROVIDER: 'gemini', AI_LLM_PRICE_INPUT_USD_PER_MTOK: '1', AI_LLM_PRICE_OUTPUT_USD_PER_MTOK: '1' }
-    // Each scripted attempt costs (1000 + 100) / 1e6 = $0.0011; the cap is reached after two.
-    const r = await buildBakeoff(env, { runs: 1, sections: ['stylist'], maxCalls: 68, maxCostUsd: 0.002, providers: { llm: () => p } })
+    const env = { ...geminiText, AI_LLM_PROVIDER: 'gemini', AI_LLM_MODEL: geminiText.AI_EVAL_GEMINI_MODEL, AI_LLM_PRICE_INPUT_USD_PER_MTOK: '1', AI_LLM_PRICE_OUTPUT_USD_PER_MTOK: '1' }
+    // Each attempt reserves its estimate before it is sent; the cap stops the run part-way through the stylist cases.
+    const cap = 0.012
+    const r = await buildBakeoff(env, { runs: 1, sections: ['stylist'], maxCalls: 68, maxCostUsd: cap, providers: { llm: () => p } })
     expect(r.execution.budget.exhausted).toBe('max_cost')
     const st = r.live[0].accounting.find((a) => a.feature === 'stylist')!
-    expect(st.attempts).toBe(2)
-    expect(st.skippedAttempts.budget_stop).toBe(S - 2)
-    expect(calls).toEqual({ stylist: 2, outfit: 0 })
+    expect(st.attempts).toBeGreaterThan(0)
+    expect(st.attempts).toBeLessThan(S)
+    expect(st.skippedAttempts.budget_stop).toBe(S - st.attempts)
+    expect(calls).toEqual({ stylist: st.attempts, outfit: 0 })
+    expect(r.execution.budget.costAccounting.conservativeCostUsd).toBeLessThanOrEqual(cap)
   })
 
   it('invalid, empty or repeated values are refused before any provider is built', async () => {
