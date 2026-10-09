@@ -24,6 +24,18 @@
  *                          optional, for cost estimates in telemetry
  *   AI_ALLOW_MOCK_IN_PRODUCTION  1 to start a production build with a mock provider
  *
+ * Per-feature text routes (multi-provider P1; optional, see docs/ai/provider-architecture.md):
+ *   AI_STYLIST_PROVIDER + AI_STYLIST_MODEL   stylist chat; both or neither
+ *   AI_OUTFIT_PROVIDER + AI_OUTFIT_MODEL     outfit explanation; both or neither
+ *                          Unset: the feature uses AI_LLM_PROVIDER / AI_LLM_MODEL.
+ *                          Timeouts stay AI_LLM_TIMEOUT_MS. AI_LLM_PRICE_* applies
+ *                          to a route only on the legacy provider and model;
+ *                          otherwise its cost is unavailable (never guessed).
+ *   AI_APPROVED_PROVIDERS  comma-separated real providers allowed for any role, in
+ *                          every environment. Unset: gemini, openai (the legacy
+ *                          set); a newly registered provider is never approved
+ *                          automatically. The mock stays governed by the rules above.
+ *
  * Rollout (Phase 5.0; see docs/ai/rollout.md). Eligibility only: they never
  * select a provider and never relax the checks above.
  *   AI_STYLIST_ENABLED / AI_VISION_ENABLED / AI_OUTFIT_AI_ENABLED
@@ -34,9 +46,11 @@
  *                          `bun scripts/ai-rollout-digest.ts <userId>`), never raw ids
  */
 import { ConfigError } from '@/lib/config'
+import { describeIds, getProviderDescriptor, normalizeProviderId, PROVIDER_IDS, supportsCapability, type ProviderId } from './providers/registry'
 
-export type LlmProviderName = 'mock' | 'gemini' | 'openai'
-export type VisionProviderName = 'mock' | 'gemini' | 'openai'
+/** Provider ids come from the registry (providers/registry.ts). */
+export type LlmProviderName = ProviderId
+export type VisionProviderName = ProviderId
 export type GeminiMediaResolution = 'low' | 'medium' | 'high' | 'ultra_high'
 export type GeminiThinkingLevel = 'none' | 'minimal' | 'low' | 'medium' | 'high'
 export type OpenAIImageDetail = 'low' | 'high' | 'auto'
@@ -46,7 +60,27 @@ export interface AiPrice {
   outputUsdPerMTok: number
 }
 
+/** The text features, each with its own provider route. */
+export type AiTextFeature = 'stylist_chat' | 'outfit_explanation'
+
+/** Where a text route's provider and model come from. */
+export type TextRouteSource = 'AI_LLM' | 'AI_STYLIST' | 'AI_OUTFIT'
+
+export interface TextRouteConfig {
+  provider: LlmProviderName
+  model: string
+  apiKey: string | null
+  timeoutMs: number
+  /** AI_LLM_PRICE_* only on the legacy provider and model; null otherwise (cost unavailable). */
+  price: AiPrice | null
+  source: TextRouteSource
+}
+
+/** Real providers approved when AI_APPROVED_PROVIDERS is unset. New providers are never added here implicitly. */
+export const LEGACY_APPROVED_PROVIDERS: readonly ProviderId[] = ['gemini', 'openai']
+
 export interface AiConfig {
+  /** The legacy text configuration (AI_LLM_*). Features read their route in `text`. */
   llm: {
     provider: LlmProviderName
     model: string
@@ -65,6 +99,10 @@ export interface AiConfig {
     openaiDetail: OpenAIImageDetail
     price: AiPrice | null
   }
+  /** Provider route per text feature: an override (AI_STYLIST_* / AI_OUTFIT_*) or the legacy AI_LLM_* one. */
+  text: Record<AiTextFeature, TextRouteConfig>
+  /** Real providers allowed for any role (AI_APPROVED_PROVIDERS). */
+  approvedProviders: ReadonlySet<string>
   /** True when a production build runs with an acknowledged mock provider. */
   mockInProduction: boolean
   rollout: AiRolloutConfig
@@ -103,8 +141,8 @@ const MIN_TIMEOUT_MS = 1_000
 /** Below the routes' 60 s maxDuration, so two attempts and a short wait still fit in most cases. */
 const MAX_TIMEOUT_MS = 55_000
 const MODEL_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,99}$/
-const LLM_PROVIDERS: readonly LlmProviderName[] = ['mock', 'gemini', 'openai']
-const KEY_VAR: Record<Exclude<LlmProviderName, 'mock'>, string> = { gemini: 'GEMINI_API_KEY', openai: 'OPENAI_API_KEY' }
+const PROVIDERS = describeIds(PROVIDER_IDS)
+const REAL_PROVIDERS = describeIds(PROVIDER_IDS.filter((id) => getProviderDescriptor(id).keyEnv !== null))
 
 const value = (env: Env, name: string) => {
   const v = env[name]?.trim()
@@ -181,8 +219,8 @@ function rollout(env: Env, production: boolean): AiRolloutConfig {
 }
 
 /** The key and model of a real provider, or a ConfigError naming what is missing. */
-function credentials(env: Env, provider: Exclude<LlmProviderName, 'mock'>, role: 'AI_LLM' | 'AI_VISION') {
-  const keyVar = KEY_VAR[provider]
+function credentials(env: Env, provider: Exclude<LlmProviderName, 'mock'>, role: 'AI_LLM' | 'AI_VISION' | 'AI_STYLIST' | 'AI_OUTFIT') {
+  const keyVar = getProviderDescriptor(provider).keyEnv!
   const apiKey = value(env, keyVar)
   if (!apiKey) throw new ConfigError(`${keyVar} must be set when ${role}_PROVIDER=${provider}`)
   if (/\s/.test(apiKey)) throw new ConfigError(`${keyVar} must not contain whitespace`)
@@ -192,25 +230,66 @@ function credentials(env: Env, provider: Exclude<LlmProviderName, 'mock'>, role:
   return { apiKey, model }
 }
 
+/** A per-feature text route (AI_STYLIST_* / AI_OUTFIT_*): both variables or neither. */
+function routeOverride(env: Env, prefix: 'AI_STYLIST' | 'AI_OUTFIT'): { provider: LlmProviderName; model: string; apiKey: string | null } | null {
+  const rawProvider = value(env, `${prefix}_PROVIDER`)
+  const rawModel = value(env, `${prefix}_MODEL`)
+  if (rawProvider === undefined && rawModel === undefined) return null
+  if (rawProvider === undefined || rawModel === undefined) {
+    throw new ConfigError(`${prefix}_PROVIDER and ${prefix}_MODEL must be set together (or both left unset to use AI_LLM_PROVIDER)`)
+  }
+  const provider = normalizeProviderId(rawProvider) as LlmProviderName
+  if (!PROVIDER_IDS.includes(provider)) throw new ConfigError(`${prefix}_PROVIDER must be ${PROVIDERS}`)
+  if (!supportsCapability(getProviderDescriptor(provider), 'text')) throw new ConfigError(`${prefix}_PROVIDER=${provider} does not support text`)
+  if (!MODEL_ID.test(rawModel)) throw new ConfigError(`${prefix}_MODEL is not a valid model id`)
+  if (provider === 'mock') return { provider, model: 'mock', apiKey: null }
+  return { provider, ...credentials(env, provider, prefix) }
+}
+
+/** AI_APPROVED_PROVIDERS, validated; the legacy set when unset. The message never echoes an entry. */
+function approvedProviders(env: Env): ReadonlySet<string> {
+  const raw = value(env, 'AI_APPROVED_PROVIDERS')
+  if (raw === undefined) return new Set(LEGACY_APPROVED_PROVIDERS)
+  const ids = raw.split(',').map(normalizeProviderId).filter(Boolean)
+  if (ids.length === 0) throw new ConfigError('AI_APPROVED_PROVIDERS must list at least one provider (leave it unset for the default: gemini, openai)')
+  if (ids.includes('mock')) throw new ConfigError('AI_APPROVED_PROVIDERS lists real providers only; the mock is governed by AI_ALLOW_MOCK_IN_PRODUCTION')
+  if (ids.some((id) => !(PROVIDER_IDS as readonly string[]).includes(id))) {
+    throw new ConfigError(`AI_APPROVED_PROVIDERS contains an unknown provider (registered: ${describeIds(PROVIDER_IDS.filter((id) => id !== 'mock'))})`)
+  }
+  return new Set(ids)
+}
+
+function assertApproved(approved: ReadonlySet<string>, provider: LlmProviderName, variable: string): void {
+  if (provider !== 'mock' && !approved.has(provider)) throw new ConfigError(`${variable}=${provider} is not an approved provider (AI_APPROVED_PROVIDERS)`)
+}
+
 export function parseAiConfig(env: Env = process.env): AiConfig {
   const production = env.NODE_ENV === 'production'
   if (value(env, 'LLM_PROVIDER')) {
     throw new ConfigError('LLM_PROVIDER was removed (the Z.ai provider is gone); use AI_LLM_PROVIDER=mock|gemini|openai')
   }
 
+  const approved = approvedProviders(env)
+  const stylistRoute = routeOverride(env, 'AI_STYLIST')
+  const outfitRoute = routeOverride(env, 'AI_OUTFIT')
+  // AI_LLM_* serves every text feature without its own route.
+  const legacyNeeded = !stylistRoute || !outfitRoute
+
   const rawLlm = value(env, 'AI_LLM_PROVIDER')?.toLowerCase()
-  if (rawLlm === undefined && production) {
-    throw new ConfigError('AI_LLM_PROVIDER must be set in production (gemini or openai)')
+  if (rawLlm === undefined && production && legacyNeeded) {
+    throw new ConfigError(`AI_LLM_PROVIDER must be set in production (${REAL_PROVIDERS})`)
   }
   const llmProvider = (rawLlm ?? 'mock') as LlmProviderName
-  if (!LLM_PROVIDERS.includes(llmProvider)) throw new ConfigError('AI_LLM_PROVIDER must be mock, gemini or openai')
+  if (!PROVIDER_IDS.includes(llmProvider)) throw new ConfigError(`AI_LLM_PROVIDER must be ${PROVIDERS}`)
+  if (!supportsCapability(getProviderDescriptor(llmProvider), 'text')) throw new ConfigError(`AI_LLM_PROVIDER=${llmProvider} does not support text`)
 
   const rawVision = value(env, 'AI_VISION_PROVIDER')?.toLowerCase()
   if (rawVision === undefined && production) {
-    throw new ConfigError('AI_VISION_PROVIDER must be set in production (gemini or openai)')
+    throw new ConfigError(`AI_VISION_PROVIDER must be set in production (${REAL_PROVIDERS})`)
   }
   const visionProvider = (rawVision ?? 'mock') as VisionProviderName
-  if (!LLM_PROVIDERS.includes(visionProvider)) throw new ConfigError('AI_VISION_PROVIDER must be mock, gemini or openai')
+  if (!PROVIDER_IDS.includes(visionProvider)) throw new ConfigError(`AI_VISION_PROVIDER must be ${PROVIDERS}`)
+  if (!supportsCapability(getProviderDescriptor(visionProvider), 'vision')) throw new ConfigError(`AI_VISION_PROVIDER=${visionProvider} does not support vision`)
 
   let model = 'mock'
   let apiKey: string | null = null
@@ -219,7 +298,29 @@ export function parseAiConfig(env: Env = process.env): AiConfig {
   let visionKey: string | null = null
   if (visionProvider !== 'mock') ({ apiKey: visionKey, model: visionModel } = credentials(env, visionProvider, 'AI_VISION'))
 
-  const usesMock = llmProvider === 'mock' || visionProvider === 'mock'
+  if (rawLlm !== undefined) assertApproved(approved, llmProvider, 'AI_LLM_PROVIDER')
+  if (stylistRoute) assertApproved(approved, stylistRoute.provider, 'AI_STYLIST_PROVIDER')
+  if (outfitRoute) assertApproved(approved, outfitRoute.provider, 'AI_OUTFIT_PROVIDER')
+  assertApproved(approved, visionProvider, 'AI_VISION_PROVIDER')
+
+  const llmTimeout = timeout(env, 'AI_LLM_TIMEOUT_MS', DEFAULT_LLM_TIMEOUT_MS)
+  const llmPrice = price(env, 'AI_LLM')
+  const route = (override: ReturnType<typeof routeOverride>, source: TextRouteSource): TextRouteConfig =>
+    override
+      ? {
+          ...override,
+          timeoutMs: llmTimeout,
+          // The legacy price belongs to the legacy provider and model only: never misattributed.
+          price: rawLlm !== undefined && override.provider === llmProvider && override.model === model ? llmPrice : null,
+          source,
+        }
+      : { provider: llmProvider, model, apiKey, timeoutMs: llmTimeout, price: llmPrice, source: 'AI_LLM' }
+  const text: Record<AiTextFeature, TextRouteConfig> = {
+    stylist_chat: route(stylistRoute, 'AI_STYLIST'),
+    outfit_explanation: route(outfitRoute, 'AI_OUTFIT'),
+  }
+
+  const usesMock = text.stylist_chat.provider === 'mock' || text.outfit_explanation.provider === 'mock' || visionProvider === 'mock'
   const allowMock = value(env, 'AI_ALLOW_MOCK_IN_PRODUCTION') === '1'
   if (production && usesMock && !allowMock) {
     throw new ConfigError(
@@ -232,8 +333,8 @@ export function parseAiConfig(env: Env = process.env): AiConfig {
       provider: llmProvider,
       model,
       apiKey,
-      timeoutMs: timeout(env, 'AI_LLM_TIMEOUT_MS', DEFAULT_LLM_TIMEOUT_MS),
-      price: price(env, 'AI_LLM'),
+      timeoutMs: llmTimeout,
+      price: llmPrice,
     },
     vision: {
       provider: visionProvider,
@@ -246,6 +347,8 @@ export function parseAiConfig(env: Env = process.env): AiConfig {
       openaiDetail: oneOf(env, 'AI_VISION_DETAIL', ['low', 'high', 'auto'] as const, 'high'),
       price: price(env, 'AI_VISION'),
     },
+    text,
+    approvedProviders: approved,
     mockInProduction: production && usesMock,
     rollout: rollout(env, production),
   }

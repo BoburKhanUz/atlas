@@ -14,7 +14,7 @@ import { log } from '@/server/log'
 import { generateText } from './client'
 import { getAiConfig } from './config'
 import { isAiProviderError } from './providers/errors'
-import { getLLMProvider } from './providers'
+import { getTextProvider } from './providers'
 import type { LLMMessage } from './providers/types'
 import { recordAiRequest } from './monitoring'
 import { decideAiEligibility } from './rollout'
@@ -222,7 +222,7 @@ export async function rerankAndExplain(input: RerankInput, deps: { now?: () => D
   })
   if (input.candidates.length === 0) return { outfits: [], fallback: true }
 
-  const provider = getLLMProvider()
+  const provider = getTextProvider('outfit_explanation')
   const started = performance.now()
   let corrected = false
   const request = (r: { outcome: 'ok' | 'fallback' | 'disabled'; reason?: string; billable: boolean }) =>
@@ -261,7 +261,7 @@ export async function rerankAndExplain(input: RerankInput, deps: { now?: () => D
   const clock = deps.clock ?? (() => performance.now())
   const deadline = clock() + OUTFIT_AI_BUDGET_MS
   const signal = AbortSignal.timeout(OUTFIT_AI_BUDGET_MS)
-  const timeoutMs = Math.min(OUTFIT_AI_TIMEOUT_MS, getAiConfig().llm.timeoutMs)
+  const timeoutMs = Math.min(OUTFIT_AI_TIMEOUT_MS, getAiConfig().text.outfit_explanation.timeoutMs)
   const messages = outfitMessages(input)
   const call = async (msgs: LLMMessage[]): Promise<string | null> => {
     const remaining = Math.floor(deadline - clock())

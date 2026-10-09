@@ -9,7 +9,18 @@
  *
  * Provider behaviour is tested with scripted providers or a scripted fetch.
  */
-export const PROVIDER_ENV = ['AI_LLM_MODEL', 'AI_VISION_MODEL', 'GEMINI_API_KEY', 'OPENAI_API_KEY'] as const
+export const PROVIDER_ENV = [
+  'AI_LLM_MODEL',
+  'AI_VISION_MODEL',
+  'GEMINI_API_KEY',
+  'OPENAI_API_KEY',
+  // Per-feature routes and the allowlist (multi-provider P1): a shell value must not route a test to a real provider.
+  'AI_STYLIST_PROVIDER',
+  'AI_STYLIST_MODEL',
+  'AI_OUTFIT_PROVIDER',
+  'AI_OUTFIT_MODEL',
+  'AI_APPROVED_PROVIDERS',
+] as const
 export const PROVIDER_HOSTS = ['generativelanguage.googleapis.com', 'api.openai.com'] as const
 
 export function pinMockAi(env: Record<string, string | undefined>): void {

@@ -14,7 +14,7 @@
 import { generateText } from './client'
 import { getAiConfig } from './config'
 import { isAiProviderError } from './providers/errors'
-import { getLLMProvider } from './providers'
+import { getTextProvider } from './providers'
 import type { LLMMessage } from './providers/types'
 import { recordAiRequest } from './monitoring'
 import { decideAiEligibility } from './rollout'
@@ -108,7 +108,7 @@ export function stylistCorrectionMessages(messages: LLMMessage[], previous: stri
 
 export async function runStylistTurn(input: StylistTurnInput, deps: StylistDeps = {}): Promise<StylistTurnResult> {
   const now = deps.now ?? (() => new Date())
-  const provider = getLLMProvider()
+  const provider = getTextProvider('stylist_chat')
 
   // Phase 5.0 rollout: no provider (and no mock substitute) unless eligible.
   const eligibility = decideAiEligibility('stylist_chat', input.userId)
@@ -147,7 +147,7 @@ export async function runStylistTurn(input: StylistTurnInput, deps: StylistDeps 
   const clock = deps.clock ?? (() => performance.now())
   const deadline = clock() + STYLIST_DEADLINE_MS
   const deadlineSignal = AbortSignal.timeout(STYLIST_DEADLINE_MS)
-  const llmTimeout = getAiConfig().llm.timeoutMs
+  const llmTimeout = getAiConfig().text.stylist_chat.timeoutMs
   const schema = { name: 'stylist_answer', schema: stylistJsonSchema(input.context.refs) }
 
   const call = async (messages: LLMMessage[]): Promise<string> => {

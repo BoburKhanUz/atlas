@@ -16,9 +16,16 @@ export interface PostJsonOptions {
   timeoutMs: number
   signal?: AbortSignal
   fetch: FetchLike
+  /**
+   * Provider-specific statuses that also mean a transient overload (e.g. a
+   * future adapter whose API answers 529 when overloaded). They classify as
+   * `unavailable` (retryable). Empty by default: no existing adapter sets it.
+   */
+  transientStatuses?: ReadonlySet<number>
 }
 
 const TRANSIENT_5XX = new Set([500, 502, 503, 504])
+const NO_EXTRA: ReadonlySet<number> = new Set()
 /** Retry-After values above this are not worth waiting for in a request. */
 const MAX_RETRY_AFTER_MS = 60_000
 
@@ -31,7 +38,8 @@ export function parseRetryAfterMs(value: string | null, now = Date.now()): numbe
   return Math.min(Math.max(0, at - now), MAX_RETRY_AFTER_MS)
 }
 
-export function errorForStatus(provider: string, status: number, retryAfter: string | null): AiProviderError {
+export function errorForStatus(provider: string, status: number, retryAfter: string | null, transientStatuses: ReadonlySet<number> = NO_EXTRA): AiProviderError {
+  if (transientStatuses.has(status)) return new AiProviderError('unavailable', provider, { status })
   if (status === 429) return new AiProviderError('rate_limited', provider, { status, retryAfterMs: parseRetryAfterMs(retryAfter) })
   if (status === 401 || status === 403) return new AiProviderError('auth', provider, { status })
   if (TRANSIENT_5XX.has(status)) return new AiProviderError('unavailable', provider, { status })
@@ -40,7 +48,7 @@ export function errorForStatus(provider: string, status: number, retryAfter: str
 }
 
 /** POSTs `body` as JSON and returns the parsed JSON response of a 2xx. */
-export async function postJson({ provider, url, headers, body, timeoutMs, signal, fetch }: PostJsonOptions): Promise<unknown> {
+export async function postJson({ provider, url, headers, body, timeoutMs, signal, fetch, transientStatuses }: PostJsonOptions): Promise<unknown> {
   if (signal?.aborted) throw new AiProviderError('cancelled', provider)
   const timeout = new AbortController()
   const timer = setTimeout(() => timeout.abort(), timeoutMs)
@@ -65,7 +73,7 @@ export async function postJson({ provider, url, headers, body, timeoutMs, signal
     if (!response.ok) {
       // Drain without reading the content into anything that could be logged.
       await response.body?.cancel().catch(() => undefined)
-      throw errorForStatus(provider, response.status, response.headers.get('retry-after'))
+      throw errorForStatus(provider, response.status, response.headers.get('retry-after'), transientStatuses)
     }
     try {
       return await response.json()

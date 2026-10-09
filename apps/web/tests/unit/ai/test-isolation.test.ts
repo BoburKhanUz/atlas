@@ -19,6 +19,10 @@ const HOSTILE = {
   AI_VISION_PROVIDER: 'openai',
   AI_VISION_MODEL: 'live-vision-model',
   OPENAI_API_KEY: 'sk-real-looking-key-0123456789',
+  AI_STYLIST_PROVIDER: 'openai',
+  AI_STYLIST_MODEL: 'live-stylist-model',
+  AI_OUTFIT_PROVIDER: 'gemini',
+  AI_OUTFIT_MODEL: 'live-outfit-model',
 }
 
 describe('AI test isolation', () => {
@@ -27,7 +31,10 @@ describe('AI test isolation', () => {
     expect(getVisionProvider().name).toBe('mock')
     expect(getAiConfig().llm.apiKey).toBeNull()
     expect(getAiConfig().vision.apiKey).toBeNull()
-    for (const name of ['GEMINI_API_KEY', 'OPENAI_API_KEY', 'AI_LLM_MODEL', 'AI_VISION_MODEL']) expect(process.env[name]).toBeUndefined()
+    for (const name of ['GEMINI_API_KEY', 'OPENAI_API_KEY', 'AI_LLM_MODEL', 'AI_VISION_MODEL', 'AI_STYLIST_PROVIDER', 'AI_STYLIST_MODEL', 'AI_OUTFIT_PROVIDER', 'AI_OUTFIT_MODEL', 'AI_APPROVED_PROVIDERS']) {
+      expect(process.env[name]).toBeUndefined()
+    }
+    expect([getAiConfig().text.stylist_chat.provider, getAiConfig().text.outfit_explanation.provider]).toEqual(['mock', 'mock'])
   })
 
   it('a hostile shell environment (real provider names, models and keys) is neutralised by the test setup', () => {
@@ -39,6 +46,9 @@ describe('AI test isolation', () => {
     pinMockAi(env)
     const pinned = parseAiConfig(env)
     expect([pinned.llm.provider, pinned.vision.provider, pinned.llm.apiKey, pinned.vision.apiKey]).toEqual(['mock', 'mock', null, null])
+    // Per-feature routes (P1) are neutralised too.
+    expect([live.text.stylist_chat.provider, live.text.outfit_explanation.provider]).toEqual(['openai', 'gemini'])
+    expect([pinned.text.stylist_chat.provider, pinned.text.outfit_explanation.provider, pinned.text.stylist_chat.apiKey]).toEqual(['mock', 'mock', null])
     expect(Object.keys(env).filter((k) => /KEY|MODEL/.test(k))).toEqual([])
   })
 

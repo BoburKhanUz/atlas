@@ -60,6 +60,12 @@ services:
       AI_VISION_GEMINI_THINKING_LEVEL: ${AI_VISION_GEMINI_THINKING_LEVEL:-}
       AI_VISION_DETAIL: ${AI_VISION_DETAIL:-}
       AI_ALLOW_MOCK_IN_PRODUCTION: ${AI_ALLOW_MOCK_IN_PRODUCTION:-}
+      # Optional per-feature text routes and provider allowlist (empty = unset).
+      AI_STYLIST_PROVIDER: ${AI_STYLIST_PROVIDER:-}
+      AI_STYLIST_MODEL: ${AI_STYLIST_MODEL:-}
+      AI_OUTFIT_PROVIDER: ${AI_OUTFIT_PROVIDER:-}
+      AI_OUTFIT_MODEL: ${AI_OUTFIT_MODEL:-}
+      AI_APPROVED_PROVIDERS: ${AI_APPROVED_PROVIDERS:-}
       # Phase 5.0 rollout: empty = off in production (fail closed).
       AI_STYLIST_ENABLED: ${AI_STYLIST_ENABLED:-}
       AI_VISION_ENABLED: ${AI_VISION_ENABLED:-}

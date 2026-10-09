@@ -45,6 +45,16 @@ const baseEnv = {
   // Deterministic mock vision: the e2e flows rely on its file-name hints.
   AI_VISION_PROVIDER: 'mock',
   AI_ALLOW_MOCK_IN_PRODUCTION: '1',
+  // Playwright starts the server with the shell environment merged in, so the
+  // per-feature routes, the provider allowlist and the provider keys are pinned
+  // empty (= unset) as well: no shell value can route an e2e run to a real provider.
+  AI_STYLIST_PROVIDER: '',
+  AI_STYLIST_MODEL: '',
+  AI_OUTFIT_PROVIDER: '',
+  AI_OUTFIT_MODEL: '',
+  AI_APPROVED_PROVIDERS: '',
+  GEMINI_API_KEY: '',
+  OPENAI_API_KEY: '',
   // Phase 5.0: production defaults every AI feature OFF; e2e turns them on explicitly (mock providers).
   AI_STYLIST_ENABLED: 'true',
   AI_VISION_ENABLED: 'true',

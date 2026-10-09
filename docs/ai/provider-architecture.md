@@ -27,7 +27,15 @@ Flutter / web ─▶ ATLAS API (route handlers)
         └─ mock.ts     deterministic, development and tests
 ```
 
-The application layer never imports an adapter. It calls `generateText` or `analyzeImage` in `client.ts` with a feature name, and the registry (`providers/index.ts`) picks the configured provider.
+The application layer never imports an adapter. It calls `generateText` or `analyzeImage` in `client.ts` with a feature name; `providers/index.ts` builds the configured provider for that feature through the provider registry.
+
+## Provider registry and routes (multi-provider P0, P1)
+
+- **Registry** (`providers/registry.ts`): one descriptor per provider (`mock`, `gemini`, `openai`) with its key variable and a factory per capability (`text`, `vision`). Adding a provider means one adapter and one descriptor; the services, quotas, rollout, database, OpenAPI contract and mobile app do not change.
+- **Resolver**: builds the adapter a configuration names for a capability. An unknown provider or an unsupported capability is a configuration error. It never substitutes another provider.
+- **Text routes**: each text feature has its own route in `AiConfig.text` (`stylist_chat`, `outfit_explanation`), built from `AI_STYLIST_*` / `AI_OUTFIT_*` when set, otherwise from `AI_LLM_*`. `getTextProvider(feature)` and `generateText(feature, …)` use only that route. A failing route fails; it never falls back to another route or provider.
+- **Allowlist**: `AI_APPROVED_PROVIDERS` limits which real providers any role may use, in every environment. Unset, it is the legacy set (`gemini`, `openai`); a newly registered provider is never approved automatically.
+- **Transient statuses**: `postJson` accepts provider-specific overload statuses (e.g. 529) that classify as `unavailable`. None of the current adapters declares any, so their error classification is unchanged.
 
 ## Contracts (`providers/types.ts`)
 
@@ -74,7 +82,7 @@ Configuration is read and validated at startup by `assertServerConfig`. All vari
 
 | Variable | Rule |
 |---|---|
-| `AI_LLM_PROVIDER` | `mock`, `gemini` or `openai`. Development defaults to `mock`. Production must set it. |
+| `AI_LLM_PROVIDER` | `mock`, `gemini` or `openai`. Development defaults to `mock`. Production must set it, unless both the stylist and the outfit routes are configured with their own `AI_STYLIST_PROVIDER` + `AI_STYLIST_MODEL` and `AI_OUTFIT_PROVIDER` + `AI_OUTFIT_MODEL` pairs. A set value is always validated. |
 | `AI_LLM_MODEL` | Required for `gemini` and `openai` |
 | `GEMINI_API_KEY` / `OPENAI_API_KEY` | Required for the selected provider |
 | `AI_LLM_TIMEOUT_MS` | 1000–55000 ms, default 25000. The outfit explanation uses 15000. |
@@ -87,13 +95,16 @@ Configuration is read and validated at startup by `assertServerConfig`. All vari
 | `AI_VISION_GEMINI_THINKING_LEVEL` | `none`, `minimal`, `low` (default), `medium`, `high`; `none` sends no thinking config |
 | `AI_VISION_DETAIL` | OpenAI image `detail`: `low`, `high` (default), `auto` |
 | `AI_VISION_PRICE_INPUT_USD_PER_MTOK`, `AI_VISION_PRICE_OUTPUT_USD_PER_MTOK` | Optional, as for the LLM |
-| `AI_ALLOW_MOCK_IN_PRODUCTION` | `1` acknowledges mock AI (either role) in a production build |
+| `AI_ALLOW_MOCK_IN_PRODUCTION` | `1` acknowledges mock AI (any role) in a production build |
+| `AI_STYLIST_PROVIDER` + `AI_STYLIST_MODEL` | Optional route for stylist chat. Both or neither (a lone one refuses to start). Unset: `AI_LLM_*`. Uses `AI_LLM_TIMEOUT_MS`. |
+| `AI_OUTFIT_PROVIDER` + `AI_OUTFIT_MODEL` | Optional route for the outfit explanation, same rules |
+| `AI_APPROVED_PROVIDERS` | Optional comma-separated real providers allowed for any role, in every environment. Unset: `gemini, openai`. Unknown or `mock` entries refuse to start. |
 | `AI_STYLIST_ENABLED`, `AI_VISION_ENABLED`, `AI_OUTFIT_AI_ENABLED` | PHASE 5.0 feature switches: `true`/`false`/`1`/`0`. Production default **off**, development/test on. Malformed → refuses to start. See [`rollout.md`](rollout.md). |
 | `AI_ROLLOUT_PERCENT` | PHASE 5.0: 0–100, stable per-user bucket. Production default 0, development/test 100. |
 | `AI_ROLLOUT_ALLOWLIST` | PHASE 5.0: comma-separated allowlist digests (`scripts/ai-rollout-digest.ts`), never raw ids; skips only the percentage |
 | `LLM_PROVIDER` | Removed. Setting it fails at startup instead of being silently ignored. |
 
-**Production fails closed.** For each role (LLM and vision) it refuses a missing provider, the mock, or a real provider without its key or model. With real providers for both roles, a production build starts without any flag. `AI_ALLOW_MOCK_IN_PRODUCTION=1` is only for local Docker and the e2e suite, which run production builds with the mock; a real deployment must not set it.
+**Production fails closed.** For each role (stylist, outfit, vision) it refuses a missing provider, the mock, or a real provider without its key or model, or not in `AI_APPROVED_PROVIDERS`. `AI_LLM_PROVIDER` is required unless both the stylist and the outfit routes are set; a set `AI_LLM_PROVIDER` is always validated. `AI_LLM_PRICE_*` prices a route only on the legacy provider and model; a route on another provider or model has no cost estimate (`costUsd` absent) rather than a wrong one. With real providers for both roles, a production build starts without any flag. `AI_ALLOW_MOCK_IN_PRODUCTION=1` is only for local Docker and the e2e suite, which run production builds with the mock; a real deployment must not set it.
 
 ## Telemetry
 

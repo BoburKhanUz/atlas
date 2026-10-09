@@ -4,9 +4,9 @@
  * one `ai.call` telemetry line per call. Errors reach the caller as
  * `AiProviderError` (safe to log: no content).
  */
-import { getAiConfig, type AiPrice } from './config'
+import { getAiConfig, type AiPrice, type AiTextFeature } from './config'
 import { AiProviderError, isAiProviderError } from './providers/errors'
-import { getLLMProvider, getVisionProvider } from './providers'
+import { getTextProvider, getVisionProvider } from './providers'
 import { RetriedError, withRetry, type RetryOptions } from './providers/retry'
 import type { AiFeature, LLMRequest, LLMResult, VisionRequest, VisionResult } from './providers/types'
 import { recordAiCall } from './telemetry'
@@ -49,10 +49,10 @@ async function run<T extends { metadata: { usage: LLMResult['metadata']['usage']
   }
 }
 
-/** Text (or JSON, with `jsonSchema`) generation for `feature`. */
-export async function generateText(feature: AiFeature, request: TextRequest, opts: CallOptions = {}): Promise<LLMResult> {
-  const provider = getLLMProvider()
-  const { timeoutMs: defaultTimeout, price } = getAiConfig().llm
+/** Text (or JSON, with `jsonSchema`) generation for `feature`, on that feature's provider route. */
+export async function generateText(feature: AiTextFeature, request: TextRequest, opts: CallOptions = {}): Promise<LLMResult> {
+  const provider = getTextProvider(feature)
+  const { timeoutMs: defaultTimeout, price } = getAiConfig().text[feature]
   const timeoutMs = request.timeoutMs ?? defaultTimeout
   return run(feature, provider, () => provider.generate({ ...request, timeoutMs }), request.signal, price, opts)
 }
