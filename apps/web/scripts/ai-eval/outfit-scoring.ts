@@ -47,8 +47,8 @@ export interface OutfitRecord {
   pass: boolean
 }
 
-const PROFILE_CLAIM = /(rang profil|kuz mavsumi|bahor mavsumi|yoz mavsumi|qish mavsumi|teri ohangi|undertone)/iu
-const WEATHER_CLAIM = /(ob-havo|harorat|°|daraja|yomg[‘'ʻ’]ir|qor|shamol|issiq kun|sovuq kun|quyoshli)/iu
+export const PROFILE_CLAIM = /(rang profil|kuz mavsumi|bahor mavsumi|yoz mavsumi|qish mavsumi|teri ohangi|undertone)/iu
+export const WEATHER_CLAIM = /(ob-havo|harorat|°|daraja|yomg[‘'ʻ’]ir|qor|shamol|issiq kun|sovuq kun|quyoshli)/iu
 
 export interface OutfitCaseContext {
   candidates: OutfitCandidate[]

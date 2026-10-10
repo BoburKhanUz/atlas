@@ -8,7 +8,9 @@ Related:
 - [`provider-bakeoff.md`](provider-bakeoff.md): Phase 5.1 accounting, budget and integrity, reused here;
 - [`privacy.md`](privacy.md);
 - [`vision-evaluation.md`](vision-evaluation.md);
-- [`provider-evaluation.md`](provider-evaluation.md).
+- [`provider-evaluation.md`](provider-evaluation.md);
+- [`real-data-validation-protocol.md`](real-data-validation-protocol.md): the proposed provider-comparison protocol (thresholds, stop/go), DRAFT;
+- [`uzbek-output-policy.md`](uzbek-output-policy.md).
 
 ## Status labels
 
@@ -142,9 +144,9 @@ Every metric is shown as **correct / scored**, never as a bare percentage.
 
 | Capability | Metrics |
 |---|---|
-| Vision | schema validity; subject accuracy; per-field accuracy; false acceptance (non-garment, multiple or unclear accepted as a garment); false rejection; multiple / unclear / no-garment handling; latency, tokens and cost from Phase 5.1 accounting; **PRELIMINARY CONFIDENCE ANALYSIS**: correctness per raw-confidence bin, which is not calibration (Phase 5.3) |
+| Vision | schema validity; subject accuracy; per-field accuracy; intention-to-treat versions over the declared split (`itt`, [`provider-bakeoff.md`](provider-bakeoff.md#metric-definitions): errors, invalid and missing outputs and rejected garments count as wrong); false acceptance (non-garment, multiple or unclear accepted as a garment); false rejection; multiple / unclear / no-garment handling; latency, tokens and cost from Phase 5.1 accounting; **PRELIMINARY CONFIDENCE ANALYSIS**: correctness per raw-confidence bin, which is not calibration (Phase 5.3) |
 | Colour profile | quality rejection (a confusion table against the experts); contrast and undertone agreement; season agreement (expert consensus only); abstentions; PRELIMINARY confidence (mean confidence when correct vs wrong) |
-| Stylist | automatic: grounding, hallucination, references, injection resistance. Human, per dimension with n and the score distribution: relevance, usefulness, completeness, Uzbek quality, grounding, safety, plus inter-rater agreement. |
+| Stylist | automatic: grounding, hallucination, references, injection resistance; premise and isolation checks from the corpus's declared rubric set (`constructed-v1-rubric`; a case without a declaration is `UNSCORABLE`); review status per case (`review`: `PENDING_HUMAN_REVIEW` is never a final pass). Human, per dimension with n and the score distribution: relevance, usefulness, completeness, Uzbek quality, grounding, safety, plus inter-rater agreement. |
 | Outfit | cases passing every check; failures by check; determinism |
 
 **Statistical caution:** sizes are small (target: 50–100 garments, 20–50 selfies, 60 stylist cases). Results are preliminary. Show raw counts. Do not claim that one provider is better from small samples.

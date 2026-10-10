@@ -50,8 +50,8 @@ describe('vision evaluation: scoring', () => {
   })
 
   it('a rejection or failure scores the subject only', () => {
-    expect(scoreItem({ subject: 'no_garment' }, { kind: 'rejected', subject: 'no_garment' })).toEqual({ fields: {}, subjectCorrect: true })
-    expect(scoreItem({ subject: 'single_garment', category: 'pants' }, { kind: 'rejected', subject: 'unclear' })).toEqual({ fields: {}, subjectCorrect: false })
+    expect(scoreItem({ subject: 'no_garment' }, { kind: 'rejected', subject: 'no_garment' })).toEqual({ fields: {}, subjectCorrect: true, subjectAcceptable: true, subjectOutcome: 'correct' })
+    expect(scoreItem({ subject: 'single_garment', category: 'pants' }, { kind: 'rejected', subject: 'unclear' })).toEqual({ fields: {}, subjectCorrect: false, subjectAcceptable: false, subjectOutcome: 'incorrect' })
     expect(scoreItem({ subject: 'single_garment' }, { kind: 'invalid' }).subjectCorrect).toBe(false)
     expect(scoreItem({ subject: 'no_garment' }, garment()).fields).toEqual({}) // accepted a non-garment: no attribute scoring
   })
@@ -98,7 +98,7 @@ describe('vision evaluation: scoring', () => {
 
   it('reports no total cost when any call lacks a price or usage', () => {
     const expected = new Map<string, any>([['a', { subject: 'single_garment' }]])
-    const s = summarize([{ config: 'x', provider: 'openai', model: 'm', maxSide: 1024, item: 'a', latencyMs: 1, outcome: { kind: 'error', error: 'timeout' }, fields: {}, subjectCorrect: false }], expected)
+    const s = summarize([{ config: 'x', provider: 'openai', model: 'm', maxSide: 1024, item: 'a', latencyMs: 1, outcome: { kind: 'error', error: 'timeout' }, fields: {}, subjectCorrect: false, subjectAcceptable: false, subjectOutcome: 'incorrect' }], expected)
     expect(s.totalCostUsd).toBeNull()
     expect(s.errorRate).toBe(1)
   })

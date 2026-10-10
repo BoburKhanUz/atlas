@@ -96,6 +96,9 @@ const autumnProfile: ColorProfileRow = {
   cautionColors: ['black', 'white'],
 }
 
+/** Version of this case set, recorded in reports (the content hash is computed separately). */
+export const STYLIST_CASES_VERSION = 'synthetic-v1'
+
 export function stylistCases(): StylistCase[] {
   seq = 0
   return [

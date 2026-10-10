@@ -34,7 +34,9 @@ import { OpenAIProvider } from '../../src/lib/ai/providers/openai'
 import type { VisionProvider } from '../../src/lib/ai/providers/types'
 import { prepareVisionImage } from '../../src/lib/ai/providers/vision-input'
 import { estimateCostUsd } from '../../src/lib/ai/telemetry'
-import { Dataset, Matrix, scoreItem, summarize, type ConfigSummary, type EvalConfig, type ItemOutcome, type ItemRecord } from './vision-scoring'
+import { applyVisionRubric } from './eval-rubric'
+import { visionDatasetIdentity } from './live-accounting'
+import { Dataset, Matrix, scoreItem, summarize, validateExpected, type ConfigSummary, type EvalConfig, type ItemOutcome, type ItemRecord } from './vision-scoring'
 
 const KEY_VAR = { gemini: 'GEMINI_API_KEY', openai: 'OPENAI_API_KEY' } as const
 const DEFAULT_TIMEOUT_MS = 30_000
@@ -156,7 +158,9 @@ async function main() {
   const repoRoot = path.resolve(__dirname, '../../../..')
   if (!path.relative(repoRoot, path.resolve(outDir)).startsWith('..')) throw new Error('--out must be outside the repository (results are not committed)')
 
-  const dataset = Dataset.parse(await readJson(path.join(datasetDir, 'labels.json')))
+  const parsed = Dataset.parse(await readJson(path.join(datasetDir, 'labels.json')))
+  // Same evaluator rubric as the bake-off, pinned to the dataset's verified identity (eval-rubric.ts).
+  const dataset = { ...parsed, items: applyVisionRubric(await visionDatasetIdentity(datasetDir, parsed), parsed.items, validateExpected) }
   const only = arg('only')?.split(',')
   const configs = Matrix.parse(await readJson(matrixFile)).configs.filter((c) => !only || only.includes(c.label))
   const limit = Number(arg('limit') ?? dataset.items.length)

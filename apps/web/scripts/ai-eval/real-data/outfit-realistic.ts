@@ -18,6 +18,7 @@
 import { generateOutfitResult, type GenerateInput, type GenerateProblem, type OutfitCandidate, type UserProfileSummary, type WardrobeItemSummary, type WeatherSnapshot } from '../../../src/lib/ai/outfit-engine'
 import type { Occasion } from '../../../src/lib/ai/color-theory'
 import type { Count } from './real-vision'
+import { outfitRuleViolations, type RuleContext } from '../outfit-rules'
 
 export const OUTFIT_REALISTIC_VERSION = 'constructed-v1'
 
@@ -106,41 +107,25 @@ export function outfitRealisticCases(): RealisticOutfitCase[] {
   ]
 }
 
-const sub = (o: OutfitCandidate) => o.items.map((i) => i.item.subcategory ?? '')
-const cat = (o: OutfitCandidate) => o.items.map((i) => i.item.category)
-
 /** Independent checks of one case's result; each returns the failed check names. */
 export function checkOutfits(c: RealisticOutfitCase, outfits: OutfitCandidate[], problem: GenerateProblem | null): string[] {
-  const failed: string[] = []
-  if (c.expect.problem) {
-    if (problem !== c.expect.problem || outfits.length) failed.push(`expected_problem:${c.expect.problem}`)
-    return failed
-  }
+  if (c.expect.problem) return problem !== c.expect.problem || outfits.length ? [`expected_problem:${c.expect.problem}`] : []
   if (!outfits.length) return [`no_outfit:${problem ?? 'none'}`]
-  const ids = new Set(c.wardrobe.map((i) => i.id))
-  const feels = c.weather?.feelsLike
-  const hasOuter = c.wardrobe.some((i) => i.category === 'outerwear')
   const disliked = new Set(c.profile?.dislikedColors ?? [])
-  const avoidable = disliked.size > 0
-  for (const [n, o] of outfits.entries()) {
-    const cats = cat(o), subs = sub(o)
-    const tag = (s: string) => failed.push(`O${n + 1}:${s}`)
-    if (!cats.includes('shoes')) tag('validity_no_footwear')
-    if (!(cats.includes('dress') || (cats.includes('shirt') && cats.includes('pants')))) tag('validity_no_main_pieces')
-    if (new Set(o.items.map((i) => i.item.id)).size !== o.items.length) tag('validity_duplicate_item')
-    if (o.items.some((i) => !ids.has(i.item.id))) tag('validity_foreign_item')
-    if (cats.filter((x) => x === 'outerwear').length > 1) tag('layering_two_outer_layers')
-    if (cats.includes('dress') && cats.includes('pants')) tag('layering_dress_with_bottoms')
-    if (feels !== undefined && feels <= 5) {
-      if (hasOuter && !cats.includes('outerwear')) tag('weather_cold_without_outer_layer')
-      if (subs.includes('shorts') || subs.includes('sandals')) tag('weather_cold_shorts_or_sandals')
-    }
-    if (feels !== undefined && feels >= 30 && (subs.includes('coat') || o.items.some((i) => i.item.subcategory === 'knit' && i.item.material === 'wool'))) tag('weather_heat_heavy_layer')
-    if (c.weather && (c.weather.condition === 'rain' || c.weather.condition === 'snow') && subs.includes('sandals')) tag('weather_wet_sandals')
-    if (c.expect.formal && (subs.includes('shorts') || subs.includes('tshirt') || subs.includes('sneakers'))) tag('occasion_formal_casual_piece')
-    if (avoidable && n === 0 && o.items.some((i) => i.item.colors.some((col) => disliked.has(col)))) tag('preference_disliked_color_in_top_outfit')
+  const ctx: RuleContext = {
+    wardrobeIds: new Set(c.wardrobe.map((i) => i.id)),
+    feelsLike: c.weather?.feelsLike,
+    condition: c.weather?.condition,
+    hasOuter: c.wardrobe.some((i) => i.category === 'outerwear'),
+    formal: c.expect.formal,
+    dislikedColors: disliked,
   }
-  return failed
+  return outfits.flatMap((o, n) =>
+    outfitRuleViolations(
+      o.items.map(({ item }) => ({ id: item.id, category: item.category, subcategory: item.subcategory ?? null, colors: item.colors, material: item.material ?? null })),
+      { ...ctx, checkPreference: n === 0 },
+    ).map((t) => `O${n + 1}:${t}`),
+  )
 }
 
 export interface OutfitValidationReport {

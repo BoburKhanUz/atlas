@@ -34,6 +34,8 @@ import { configuredModel, PROVIDER_DECISION } from '../bakeoff'
 import { isBudgetablePrice } from '../cost-bounds'
 import { arg, assertOutsideRepo, llmProviderFromEnv, type EvalProviderName } from '../eval-common'
 import { accountSection, assertCapForLive, CallBudget, CallLedger, caseResult, caseSetIdentity, configuredPrice, costAccounting, countedLLM, parseMaxCalls, parseMaxCost, planCalls, type CaseResult, type CostAccounting, type SectionAccounting } from '../live-accounting'
+import { ISOLATION_CHECK_KIND, precheckRubricSet, realisticStylistRubricSet, type RubricSet } from '../case-rubric'
+import { reviewCase, summarizeReview, type ReviewSummary } from '../review'
 import { runStylistCase } from '../stylist-eval'
 import { summarizeStylist, type StylistRecord, type StylistSummary } from '../stylist-scoring'
 import { runColorValidation, type ColorReport } from './color-validation'
@@ -56,6 +58,12 @@ export interface StylistLive {
   accounting: SectionAccounting | null
   /** Failed automatic checks, by case id (injection cases flagged). */
   failures: Array<{ case: string; failed: string[]; injection: boolean }>
+  /**
+   * Automatic verdicts next to human-review status (review.ts): flagged cases
+   * are PENDING_HUMAN_REVIEW, never a final pass; unscorable cases (missing
+   * rubric metadata) are counted apart. Null when the provider did not run.
+   */
+  review: ReviewSummary | null
 }
 
 export interface ValidationReport {
@@ -73,7 +81,7 @@ export interface ValidationReport {
   vision: RealVisionReport[]
   colorProfile: ColorReport[]
   stylist: {
-    corpus: { id: string; version: string; sha256: string; cases: number; uzbekLatin: number; uzbekCyrillic: number; kind: 'constructed' }
+    corpus: { id: string; version: string; sha256: string; cases: number; uzbekLatin: number; uzbekCyrillic: number; kind: 'constructed'; rubricSet: string; isolationCheck: string }
     live: StylistLive[]
     humanRatings: RatingSummary
   }
@@ -92,6 +100,8 @@ export interface ValidateOptions {
   runId?: string
   appCommit?: { sha: string | null; clean: boolean | null }
   providers?: { llm?: (provider: EvalProviderName, model: string, env: Env) => LLMProvider; vision?: (provider: EvalProviderName, model: string, env: Env) => VisionProvider }
+  /** The stylist corpus's rubric set (default: the built-in constructed-v1 set); tests inject another. */
+  stylistRubricSet?: RubricSet
   sleep?: (ms: number) => Promise<void>
 }
 
@@ -137,9 +147,14 @@ export async function runValidation(env: Env, opts: ValidateOptions): Promise<Va
 
   // Stylist corpus plan first: the call cap is checked before anything is built.
   const corpus = stylistRealisticCases()
+  const corpusId = caseSetIdentity('stylist-realistic', 'apps/web/scripts/ai-eval/real-data/stylist-realistic-cases.ts', STYLIST_REALISTIC_VERSION, corpus)
+  // Every corpus case is scored with its declared rubric (premise / isolation) or reported UNSCORABLE; never a silent keyword fallback.
+  const rubrics = { set: opts.stylistRubricSet ?? realisticStylistRubricSet(), dataset: { version: STYLIST_REALISTIC_VERSION, sha256: corpusId.sha256 } }
   const textEligible = (['gemini', 'openai'] as const).filter((p) => opts.transmitConstructed && !!env[p === 'gemini' ? 'GEMINI_API_KEY' : 'OPENAI_API_KEY']?.trim() && !!configuredModel(p, env))
   const plan = planCalls(textEligible.map((provider) => ({ provider, feature: 'stylist' as const, cases: corpus.length })), 1, opts.maxCalls, opts.maxCostUsd)
   assertCapForLive(plan)
+  // The rubric set must belong to this corpus before any provider is built (RubricIdentityError otherwise).
+  if (textEligible.length) precheckRubricSet(rubrics.set, rubrics.dataset, corpus.map((c) => c.id))
   // A dollar budget needs an exact-model price for every provider that will be called (each attempt is checked again).
   if (opts.maxCostUsd !== null) {
     const unpriced = textEligible.filter((p) => !isBudgetablePrice(configuredPrice(p, configuredModel(p, env), 'llm', env)))
@@ -180,7 +195,7 @@ export async function runValidation(env: Env, opts: ValidateOptions): Promise<Va
           ? 'no configured model'
           : null
     if (reason) {
-      live.push({ provider, status: opts.transmitConstructed ? 'NOT_TESTED' : 'BLOCKED', reason, model, summary: null, accounting: null, failures: [] })
+      live.push({ provider, status: opts.transmitConstructed ? 'NOT_TESTED' : 'BLOCKED', reason, model, summary: null, accounting: null, failures: [], review: null })
       continue
     }
     const price = configuredPrice(provider, model!, 'llm', env)
@@ -189,7 +204,7 @@ export async function runValidation(env: Env, opts: ValidateOptions): Promise<Va
     const p = countedLLM(base, ledger)
     const records: StylistRecord[] = [], results: CaseResult[] = []
     for (const c of corpus) {
-      const r = await runStylistCase(p, c)
+      const r = await runStylistCase(p, c, rubrics)
       records.push(r)
       results.push(caseResult(r.latencyMs, r.requests, r.outcome, ledger.endCase()))
     }
@@ -201,9 +216,14 @@ export async function runValidation(env: Env, opts: ValidateOptions): Promise<Va
       summary: summarizeStylist(records, 'TESTED'),
       accounting: accountSection('stylist', ledger, results, price),
       failures: records.filter((r) => !r.pass).map((r) => ({ case: r.case, failed: Object.entries(r.checks).filter(([, v]) => v === false).map(([k]) => k), injection: r.tags.includes('injection') })),
+      review: summarizeReview(records.map((r) => reviewCase(r.case, r.pass, r.checks as unknown as Record<string, unknown>, r.unscorable))),
     })
   }
   for (const l of live) if (l.status === 'BLOCKED' || l.status === 'NOT_TESTED') blockers.push(`stylist ${l.provider}: ${l.status} — ${l.reason}`)
+  for (const l of live) {
+    if (l.review?.pendingHumanReview.total) blockers.push(`stylist ${l.provider}: ${l.review.pendingHumanReview.total} case(s) PENDING HUMAN REVIEW — their automatic verdicts are not final`)
+    if (l.review?.unscorable) blockers.push(`stylist ${l.provider}: ${l.review.unscorable} case(s) UNSCORABLE — required rubric metadata is missing`)
+  }
 
   let humanRatings = summarizeRatings(null, null)
   if (opts.root) {
@@ -219,7 +239,6 @@ export async function runValidation(env: Env, opts: ValidateOptions): Promise<Va
 
   const outfit = runOutfitRealistic()
   const commit = opts.appCommit ?? gitCommit()
-  const corpusId = caseSetIdentity('stylist-realistic', 'apps/web/scripts/ai-eval/real-data/stylist-realistic-cases.ts', STYLIST_REALISTIC_VERSION, corpus)
   return {
     evaluationVersion: EVALUATION_VERSION,
     providerDecision: PROVIDER_DECISION,
@@ -235,7 +254,7 @@ export async function runValidation(env: Env, opts: ValidateOptions): Promise<Va
     vision,
     colorProfile,
     stylist: {
-      corpus: { id: corpusId.name, version: STYLIST_REALISTIC_VERSION, sha256: corpusId.sha256, cases: corpus.length, uzbekLatin: corpus.filter((c) => !CYRILLIC.test(c.message)).length, uzbekCyrillic: corpus.filter((c) => CYRILLIC.test(c.message)).length, kind: 'constructed' },
+      corpus: { id: corpusId.name, version: STYLIST_REALISTIC_VERSION, sha256: corpusId.sha256, cases: corpus.length, uzbekLatin: corpus.filter((c) => !CYRILLIC.test(c.message)).length, uzbekCyrillic: corpus.filter((c) => CYRILLIC.test(c.message)).length, kind: 'constructed', rubricSet: rubrics.set.name, isolationCheck: ISOLATION_CHECK_KIND },
       live,
       humanRatings,
     },
@@ -265,7 +284,16 @@ export function validationMarkdown(r: ValidationReport): string {
     '## Stylist (constructed realistic corpus)',
     '',
     `- corpus ${r.stylist.corpus.version}: ${r.stylist.corpus.cases} Uzbek cases (${r.stylist.corpus.uzbekLatin} Latin, ${r.stylist.corpus.uzbekCyrillic} Cyrillic input), sha256 ${r.stylist.corpus.sha256}`,
-    ...r.stylist.live.map((l) => `- ${l.provider}: ${l.status}${l.reason ? ` — ${l.reason}` : ''}${l.summary ? ` · grounding ${l.summary.groundingRate ?? 'N/A'} · hallucination ${l.summary.hallucinationRate ?? 'N/A'}` : ''}`),
+    `- rubric set ${r.stylist.corpus.rubricSet} (premise / isolation per case); isolation check: ${r.stylist.corpus.isolationCheck}`,
+    ...r.stylist.live.flatMap((l) => [
+      `- ${l.provider}: ${l.status}${l.reason ? ` — ${l.reason}` : ''}${l.summary ? ` · grounding ${l.summary.groundingRate ?? 'N/A'} · hallucination ${l.summary.hallucinationRate ?? 'N/A'}` : ''}`,
+      ...(l.review
+        ? [
+            `  - automatic: ${l.review.automaticPass} pass · ${l.review.automaticFail} fail · ${l.review.unscorable} unscorable — final (no review pending): ${l.review.finalPass} pass · ${l.review.finalFail} fail · **${l.review.pendingHumanReview.total} PENDING HUMAN REVIEW** (automatic pass ${l.review.pendingHumanReview.automaticPass}, fail ${l.review.pendingHumanReview.automaticFail})`,
+            ...l.review.flagged.map((f) => `    - \`${f.case}\` ${f.finalStatus} (automatic ${f.automaticVerdict}): ${f.unscorableReason ?? f.reviewReasons.join('; ')}`),
+          ]
+        : []),
+    ]),
     `- human ratings: ${r.stylist.humanRatings.status}`,
     '',
     '## Outfit (constructed realistic contexts, deterministic engine)',

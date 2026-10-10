@@ -46,14 +46,17 @@ import { outfitCases } from './outfit-cases'
 import { runOutfitCase, ScriptedOutfit } from './outfit-eval'
 import { summarizeOutfit, type OutfitRecord, type OutfitSummary } from './outfit-scoring'
 import { runRobustness, type RobustnessResult } from './robustness'
-import { stylistCases } from './stylist-cases'
-import { runStylistCase, ScriptedStylist } from './stylist-eval'
+import { STYLIST_CASES_VERSION, stylistCases } from './stylist-cases'
+import { runStylistCase, ScriptedStylist, syntheticRubricContext } from './stylist-eval'
+import { precheckRubricSet } from './case-rubric'
 import { summarizeStylist, type StylistRecord, type StylistSummary } from './stylist-scoring'
 import { syntheticVisionItems } from './synthetic-vision'
 import { isBudgetablePrice, isOpenAIPatchModel } from './cost-bounds'
+import { applyVisionRubric } from './eval-rubric'
 import { accountSection, assertCapForLive, DatasetIntegrityError, sha256Hex, assertWithinCap, CallBudget, CallLedger, caseResult, caseSetIdentity, configuredPrice, COST_UNAVAILABLE, costAccounting, type BudgetStopReason, type CostAccounting, countedLLM, latencyStats, parseMaxCalls, parseMaxCost, planCalls, priceSource, retryingVision, visionDatasetIdentity, type CallPlan, type CaseResult, type DatasetIdentity, type LatencyStats, type LiveFeature, type SectionAccounting } from './live-accounting'
 import { evaluateVisionConfig } from './vision-eval'
-import { Dataset, type ConfigSummary, type EvalConfig, type ItemRecord } from './vision-scoring'
+import { Dataset, validateExpected, type ConfigSummary, type EvalConfig, type ItemRecord } from './vision-scoring'
+import type { VisionItt } from './vision-itt'
 
 export const NO_SELECTION = 'NO FINAL PROVIDER SELECTED — LIVE BAKE-OFF REQUIRED'
 /** Phase 5.1: the bake-off collects evidence; the provider decision is a separate, approval-gated step. */
@@ -61,7 +64,7 @@ export const PROVIDER_DECISION = 'NO FINAL PROVIDER SELECTED'
 export const DATASET_INTEGRITY_FAILURE = 'DATASET_INTEGRITY_FAILURE'
 /** Shown instead of a live result when the providers were injected (tests): never a provider result. */
 export const TEST_ONLY = 'TEST_ONLY'
-export const STYLIST_CASES_VERSION = 'synthetic-v1'
+export { STYLIST_CASES_VERSION }
 export const OUTFIT_CASES_VERSION = 'synthetic-v1'
 
 type Env = Record<string, string | undefined>
@@ -98,7 +101,14 @@ export interface VisionSummary {
   failed: number
   /** Answers that met the output contract (1 − invalid − provider errors). */
   schemaValidity: number
+  /** Strict: predicted subject equals the label. */
   subjectAccuracy: number
+  /** Evaluator rubric v2: correct or an acceptable abstention (the basis of passed). */
+  subjectAcceptance: number
+  acceptableAbstentions: number
+  /** Subject acceptable AND every labelled field right; reported because passed (subject only) can hide field errors. */
+  fullyCorrect: number
+  subcategoryAccuracy: number | null
   falseRejectionRate: number | null
   falseAcceptanceRate: number | null
   categoryAccuracy: number | null
@@ -115,6 +125,8 @@ export interface VisionSummary {
   latencyMax: number | null
   meanInputTokens: number | null
   meanOutputTokens: number | null
+  /** Intention-to-treat metrics (vision-itt-v1); the rates above keep their original definitions. */
+  itt: VisionItt
 }
 
 export type FeatureResult = StylistSummary | OutfitSummary | VisionSummary | NotTested
@@ -301,7 +313,8 @@ export function bakeoffVisionConfig(provider: EvalProviderName, model: string): 
 }
 
 export function visionSummary(summary: ConfigSummary, records: ItemRecord[], datasetVersion: string | null): VisionSummary {
-  const passed = records.filter((r) => r.subjectCorrect).length
+  // Rubric v2: an acceptable abstention passes; strict subject accuracy is reported alongside.
+  const passed = records.filter((r) => r.subjectAcceptable).length
   const failures = records.filter((r) => r.outcome.kind === 'invalid' || r.outcome.kind === 'error').length
   return {
     status: 'TESTED',
@@ -314,6 +327,10 @@ export function visionSummary(summary: ConfigSummary, records: ItemRecord[], dat
     failed: summary.items - passed,
     schemaValidity: Math.round((1 - summary.invalidRate - summary.errorRate) * 10_000) / 10_000,
     subjectAccuracy: summary.subjectAccuracy,
+    subjectAcceptance: summary.subjectAcceptance,
+    acceptableAbstentions: summary.acceptableAbstentions,
+    fullyCorrect: summary.fullyCorrect,
+    subcategoryAccuracy: summary.fieldAccuracy.subcategory?.accuracy ?? null,
     falseRejectionRate: summary.falseRejectionRate,
     falseAcceptanceRate: summary.falseAcceptanceRate,
     categoryAccuracy: summary.fieldAccuracy.category?.accuracy ?? null,
@@ -328,6 +345,7 @@ export function visionSummary(summary: ConfigSummary, records: ItemRecord[], dat
     latencyMax: summary.latencyMs.max,
     meanInputTokens: summary.meanInputTokens,
     meanOutputTokens: summary.meanOutputTokens,
+    itt: summary.itt,
   }
 }
 
@@ -353,7 +371,10 @@ interface VisionData {
 
 async function loadVisionDataset(dir: string): Promise<VisionData> {
   const labels = Dataset.parse(JSON.parse(await fs.readFile(path.join(dir, 'labels.json'), 'utf8')))
-  return { dir, version: labels.version ?? null, items: labels.items, identity: await visionDatasetIdentity(dir, labels) }
+  // The identity hashes the files as they are; the evaluator rubric (eval-rubric.ts), pinned to that identity,
+  // is added to the in-memory items only and re-validated against the dataset schema.
+  const identity = await visionDatasetIdentity(dir, labels)
+  return { dir, version: labels.version ?? null, items: applyVisionRubric(identity, labels.items, validateExpected), identity }
 }
 
 interface Eligibility {
@@ -387,7 +408,7 @@ const errorLabel = (c: CaseResult, kind: string | undefined) =>
 const visionFailed = (r: ItemRecord, c: CaseResult): string[] => {
   if (r.outcome.kind === 'error') return [errorLabel(c, r.outcome.error)]
   if (r.outcome.kind === 'invalid') return ['schema']
-  return [...(r.subjectCorrect ? [] : ['subject']), ...Object.entries(r.fields).filter(([, ok]) => !ok).map(([f]) => f)]
+  return [...(r.subjectAcceptable ? [] : ['subject']), ...Object.entries(r.fields).filter(([, ok]) => !ok).map(([f]) => f)]
 }
 
 const textFailed = (r: StylistRecord | OutfitRecord, c: CaseResult): string[] => {
@@ -472,7 +493,7 @@ async function liveRun(env: Env, vision: VisionData | null, opts: BakeoffOptions
         if (opts.rawOutputs && vision!.identity.kind === 'synthetic') {
           const expected = new Map(vision!.items.map((i) => [i.id, i.expected]))
           for (const r of records) {
-            opts.rawOutputs.push({ run, provider, model: visionModel!, feature: 'vision', datasetKind: 'synthetic', case: r.item, expected: expected.get(r.item), output: r.outcome, checks: { subjectCorrect: r.subjectCorrect, fields: r.fields } })
+            opts.rawOutputs.push({ run, provider, model: visionModel!, feature: 'vision', datasetKind: 'synthetic', case: r.item, expected: expected.get(r.item), output: r.outcome, checks: { subjectCorrect: r.subjectCorrect, subjectOutcome: r.subjectOutcome, fields: r.fields } })
           }
         }
         for (const r of records) {
@@ -587,7 +608,7 @@ export function compare(live: LiveProvider[], aggregate?: BakeoffReport['aggrega
   const row = (dimension: string, value: (p: EvalProviderName) => string) => ({ dimension, gemini: mark(value('gemini')), openai: mark(value('openai')) })
   const join = (p: EvalProviderName, parts: Array<[string, LiveFeature, string, (v: unknown) => string]>) => parts.map(([label, f, k, fmt]) => `${label} ${cell(p, f, k, fmt)}`).join(' · ')
   return [
-    row('Vision quality (category / subject accuracy)', (p) => join(p, [['category', 'vision', 'categoryAccuracy', pct], ['subject', 'vision', 'subjectAccuracy', pct]])),
+    row('Vision quality (category / subject accuracy strict / subject incl. acceptable abstention)', (p) => join(p, [['category', 'vision', 'categoryAccuracy', pct], ['subject', 'vision', 'subjectAccuracy', pct], ['subject (rubric v2)', 'vision', 'subjectAcceptance', pct]])),
     row('Vision false acceptance / rejection', (p) => join(p, [['FA', 'vision', 'falseAcceptanceRate', pct], ['FR', 'vision', 'falseRejectionRate', pct]])),
     row('Vision schema validity', (p) => cell(p, 'vision', 'schemaValidity', pct)),
     row('Stylist validity (final)', (p) => cell(p, 'stylist', 'finalValidity', pct)),
@@ -668,6 +689,11 @@ export async function buildBakeoff(env: Env, opts: BakeoffOptions = {}): Promise
   assertWithinCap(plan)
   // A dollar budget needs, for every live section, an exact-model price and a request type with an estimate.
   if (plan.maxCostUsd !== null) assertCostBudgetable(plan, env)
+  // The stylist rubric must belong to the current case set before any provider call (RubricIdentityError otherwise).
+  if (sectionsOf(opts).includes('stylist')) {
+    const rubrics = syntheticRubricContext()
+    precheckRubricSet(rubrics.set, rubrics.dataset, stylistSet.map((c) => c.id))
+  }
   const budget = new CallBudget(plan.maxCalls, plan.maxCostUsd)
   const guard = new IntegrityGuard({ vision: visionData, stylist: caseHash(stylistSet), outfit: caseHash(outfitSet) })
   const stamp = () => (opts.now ? opts.now().toISOString() : null)

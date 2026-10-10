@@ -20,9 +20,11 @@ import type { LLMMessage, LLMProvider, LLMRequest } from '../../src/lib/ai/provi
 import { InvalidStylistOutputError, interpretStylistOutput, parseStylistText, resolveReferences, STYLIST_LIMITS, STYLIST_SYSTEM_PROMPT, stylistJsonSchema } from '../../src/lib/ai/stylist'
 import { buildStylistContext, stylistMessages } from '../../src/lib/ai/stylist-context'
 import { stylistCorrectionMessages } from '../../src/lib/ai/stylist-service'
-import { LocalRefusalError } from './live-accounting'
+import { caseSetIdentity, LocalRefusalError } from './live-accounting'
 import { arg, assertOutsideRepo, llmProviderFromEnv } from './eval-common'
-import { stylistCases, type StylistCase } from './stylist-cases'
+import { STYLIST_CASES_VERSION, stylistCases, type StylistCase } from './stylist-cases'
+import { resolveCaseRubric, syntheticStylistRubricSet, type RubricResolution, type RubricSet } from './case-rubric'
+import type { DatasetIdentityRef } from './eval-rubric'
 import { requestIsClean, scoreStylist, summarizeStylist, type StylistOutcome, type StylistRecord, type StylistSummary } from './stylist-scoring'
 
 const TIMEOUT_MS = Number(process.env.AI_LLM_TIMEOUT_MS ?? 25_000)
@@ -41,11 +43,64 @@ export class ScriptedStylist implements LLMProvider {
   }
 }
 
-export async function runStylistCase(p: LLMProvider, c: StylistCase): Promise<StylistRecord> {
+/** The deterministic part of a case (engine, context, messages, schema): what a live run sends, and what a replay re-scores against. */
+export function stylistCaseSetup(c: StylistCase) {
   const candidates = generateOutfits({ wardrobe: c.wardrobe, occasion: c.occasion, weather: c.weather, topN: STYLIST_LIMITS.outfitCandidates })
   const context = buildStylistContext({ items: c.wardrobe, candidates, occasion: c.occasion, weather: c.weather, preferences: c.preferences, colorProfile: c.colorProfile })
   const messages = stylistMessages({ system: STYLIST_SYSTEM_PROMPT, context: context.data, history: [], message: c.message, occasionText: c.occasionText ?? null })
   const schema = { name: 'stylist_answer', schema: stylistJsonSchema(context.refs) }
+  const owned = new Set(c.wardrobe.map((w) => w.subcategory).filter((s): s is string => !!s))
+  return { context, messages, schema, owned }
+}
+
+/** The identity of the current case set (version + SHA-256 of its JSON, as the bake-off records it). */
+export function stylistCaseSetIdentity() {
+  return { version: STYLIST_CASES_VERSION, sha256: caseSetIdentity('', '', STYLIST_CASES_VERSION, stylistCases()).sha256 }
+}
+
+/** Which rubric set scores a case, and the verified identity of the case set the case belongs to. */
+export interface StylistRubricContext {
+  set: RubricSet
+  dataset: DatasetIdentityRef
+}
+
+let syntheticContext: StylistRubricContext | null = null
+/** Default: the synthetic bake-off cases (synthetic-v1), every case declared. */
+export function syntheticRubricContext(): StylistRubricContext {
+  syntheticContext ??= { set: syntheticStylistRubricSet(), dataset: stylistCaseSetIdentity() }
+  return syntheticContext
+}
+
+/**
+ * The rubric of case `c` from its declared metadata: throws RubricIdentityError
+ * when the rubric set belongs to another case set; UNSCORABLE when the case
+ * has no declaration or lacks metadata a required check needs. For the
+ * synthetic set, a case object that differs from the pinned case of the same
+ * id is refused.
+ */
+function rubricFor(c: StylistCase, ctx: StylistRubricContext): RubricResolution {
+  const r = resolveCaseRubric(ctx.set, ctx.dataset, c.id)
+  if (ctx.set === syntheticStylistRubricSet() && r.status === 'SCORABLE' && r.rubric) {
+    const pinned = stylistCases().find((x) => x.id === c.id)
+    if (!pinned || JSON.stringify(pinned) !== JSON.stringify(c)) throw new Error(`case ${c.id} differs from the pinned case set: its evaluator rubric does not apply`)
+  }
+  return r
+}
+
+/**
+ * Scores an outcome of case `c` with the current evaluator (live runs and
+ * offline replays share this). An UNSCORABLE case fails closed (pass false)
+ * and carries the reason: it is neither a pass nor a model failure.
+ */
+export function scoreStylistCase(c: StylistCase, outcome: StylistOutcome, ctx: StylistRubricContext = syntheticRubricContext()) {
+  const { context, messages, owned } = stylistCaseSetup(c)
+  const r = rubricFor(c, ctx)
+  const scored = scoreStylist(c.expect, outcome, owned, requestIsClean(messages, c.expect.injectMarker), { rubric: r.status === 'SCORABLE' ? r.rubric : null, contextRefs: context.refs })
+  return r.status === 'UNSCORABLE' ? { checks: scored.checks, pass: false, unscorable: r.reason } : { ...scored, unscorable: undefined }
+}
+
+export async function runStylistCase(p: LLMProvider, c: StylistCase, ctx: StylistRubricContext = syntheticRubricContext()): Promise<StylistRecord> {
+  const { context, messages, schema } = stylistCaseSetup(c)
   // calls = provider attempts (retries included, failed ones too); requests = logical requests (first + correction).
   let calls = 0, requests = 0, inputTokens: number | undefined, outputTokens: number | undefined
   const add = (a: number | undefined, b: number | undefined) => (a === undefined && b === undefined ? undefined : (a ?? 0) + (b ?? 0))
@@ -85,9 +140,8 @@ export async function runStylistCase(p: LLMProvider, c: StylistCase): Promise<St
     if (cause instanceof InvalidStylistOutputError) outcome = { kind: 'invalid', firstError: cause.reason }
     else outcome = { kind: 'error', error: isAiProviderError(cause) ? cause.kind : 'unexpected' }
   }
-  const owned = new Set(c.wardrobe.map((w) => w.subcategory).filter((s): s is string => !!s))
-  const { checks, pass } = scoreStylist(c.expect, outcome, owned, requestIsClean(messages, c.expect.injectMarker))
-  return { case: c.id, tags: c.tags, provider: p.name, model: p.model, latencyMs: Math.round(performance.now() - started), calls, requests, inputTokens, outputTokens, outcome, checks, pass }
+  const { checks, pass, unscorable } = scoreStylistCase(c, outcome, ctx)
+  return { case: c.id, tags: c.tags, provider: p.name, model: p.model, latencyMs: Math.round(performance.now() - started), calls, requests, inputTokens, outputTokens, outcome, checks, pass, ...(unscorable ? { unscorable } : {}) }
 }
 
 const pct = (n: number | null) => (n === null ? '—' : `${(n * 100).toFixed(1)}%`)

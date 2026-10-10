@@ -6,6 +6,7 @@
 import { z } from 'zod'
 import { CONFIDENCE_KEYS, SUBJECTS, type GarmentAttributes, type GarmentConfidences } from '../../src/lib/ai/garment-analysis'
 import type { ColorVerdict } from '../../src/lib/ai/color-check'
+import { visionItt, type VisionItt } from './vision-itt'
 
 // ─── Dataset ────────────────────────────────────────────────────────────────
 
@@ -31,11 +32,31 @@ const CONFIDENCE_OF: Record<ScoredField, (typeof CONFIDENCE_KEYS)[number]> = {
 const SAFE_ID = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/
 const SAFE_FILE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}\.(jpe?g|png|webp)$/i
 
-const Expected = z.strictObject({
-  subject: z.enum(SUBJECTS),
-  // Every attribute is optional: an unlabelled field is not scored. null means "should be null".
-  ...Object.fromEntries(SCORED_FIELDS.map((f) => [f, z.string().min(1).nullable().optional()])),
-}) as z.ZodType<{ subject: (typeof SUBJECTS)[number] } & Partial<Record<ScoredField, string | null>>>
+type Subject = (typeof SUBJECTS)[number]
+export type RejectionSubject = Exclude<Subject, 'single_garment'>
+const REJECTION_SUBJECTS = SUBJECTS.filter((s): s is RejectionSubject => s !== 'single_garment') as [RejectionSubject, ...RejectionSubject[]]
+
+const Expected = z
+  .strictObject({
+    subject: z.enum(SUBJECTS),
+    /**
+     * Rubric (evaluator v2): rejection subjects that are an acceptable, safe
+     * abstention for this case although they are not its label. Only for a
+     * case that is not a single garment, and never the label itself.
+     */
+    acceptableAbstentions: z.array(z.enum(REJECTION_SUBJECTS)).min(1).optional(),
+    // Every attribute is optional: an unlabelled field is not scored. null means "should be null".
+    ...Object.fromEntries(SCORED_FIELDS.map((f) => [f, z.string().min(1).nullable().optional()])),
+  })
+  .refine((e) => !e.acceptableAbstentions || (e.subject !== 'single_garment' && !e.acceptableAbstentions.includes(e.subject as RejectionSubject)), {
+    message: 'acceptableAbstentions is only for a non-garment label and must not repeat it',
+  }) as unknown as z.ZodType<{ subject: Subject; acceptableAbstentions?: RejectionSubject[] } & Partial<Record<ScoredField, string | null>>>
+
+/** Throws unless `expected` is a valid expectation (used on the effective expectation after rubric overlays). */
+export function validateExpected(expected: unknown): void {
+  const r = Expected.safeParse(expected)
+  if (!r.success) throw new Error(`invalid vision expectation after rubric overlay: ${r.error.issues.map((i) => i.message).join('; ')}`)
+}
 
 export const Dataset = z.strictObject({
   /** Optional dataset version, recorded in bake-off results (e.g. "synthetic-v1", "real-2026-10"). */
@@ -103,8 +124,15 @@ export interface ItemRecord {
   outcome: ItemOutcome
   /** Per labelled field: correct or not. Only for garment outcomes on single_garment items. */
   fields: Partial<Record<ScoredField, boolean>>
+  /** Strict: the predicted subject equals the label. */
   subjectCorrect: boolean
+  /** Rubric v2: correct, or a rejection the case's rubric lists as an acceptable abstention. */
+  subjectAcceptable: boolean
+  subjectOutcome: SubjectOutcome
 }
+
+/** correct = the label; acceptable_abstention = a rejection the rubric allows; incorrect = anything else (acceptance as a garment included). */
+export type SubjectOutcome = 'correct' | 'acceptable_abstention' | 'incorrect'
 
 function predicted(attributes: GarmentAttributes, field: ScoredField): string | null {
   if (field === 'primaryColor') return attributes.colors[0] ?? null
@@ -118,8 +146,10 @@ export function predictedSubject(outcome: ItemOutcome): string | null {
 }
 
 /** Scores one outcome against its labels. */
-export function scoreItem(expected: DatasetItem['expected'], outcome: ItemOutcome): Pick<ItemRecord, 'fields' | 'subjectCorrect'> {
+export function scoreItem(expected: DatasetItem['expected'], outcome: ItemOutcome): Pick<ItemRecord, 'fields' | 'subjectCorrect' | 'subjectAcceptable' | 'subjectOutcome'> {
   const subjectCorrect = predictedSubject(outcome) === expected.subject
+  const abstention = outcome.kind === 'rejected' && (expected.acceptableAbstentions ?? []).includes(outcome.subject)
+  const subjectOutcome: SubjectOutcome = subjectCorrect ? 'correct' : abstention ? 'acceptable_abstention' : 'incorrect'
   const fields: Partial<Record<ScoredField, boolean>> = {}
   if (outcome.kind === 'garment' && expected.subject === 'single_garment') {
     for (const f of SCORED_FIELDS) {
@@ -128,7 +158,7 @@ export function scoreItem(expected: DatasetItem['expected'], outcome: ItemOutcom
       fields[f] = predicted(outcome.attributes, f) === want
     }
   }
-  return { fields, subjectCorrect }
+  return { fields, subjectCorrect, subjectAcceptable: subjectOutcome !== 'incorrect', subjectOutcome }
 }
 
 // ─── Summary ────────────────────────────────────────────────────────────────
@@ -148,7 +178,17 @@ export interface ConfigSummary {
   model: string
   maxSide: number
   items: number
+  /** Strict: predicted subject equals the label. */
   subjectAccuracy: number
+  /** Rubric v2: correct or an acceptable abstention. */
+  subjectAcceptance: number
+  /** Items answered with an abstention the rubric accepts (counted in subjectAcceptance, not in subjectAccuracy). */
+  acceptableAbstentions: number
+  /**
+   * Items whose subject is acceptable AND every labelled field is right: what
+   * "passed" (subject only) can hide. A garment with a wrong category is not fully correct.
+   */
+  fullyCorrect: number
   /** Share of single_garment items wrongly rejected (user-facing false NOT_A_GARMENT). */
   falseRejectionRate: number | null
   /** Share of non-garment items that were accepted as a garment. */
@@ -163,6 +203,12 @@ export interface ConfigSummary {
   totalCostUsd: number | null
   costPer1000Usd: number | null
   calibration: CalibrationBin[]
+  /**
+   * Intention-to-treat metrics (vision-itt-v1): every item of the dataset in
+   * the denominator; errors, invalid and missing outputs and rejected garments
+   * count as wrong. The fields above keep their original definitions.
+   */
+  itt: VisionItt
 }
 
 export function percentile(values: number[], p: number): number {
@@ -208,6 +254,9 @@ export function summarize(records: ItemRecord[], expectedById: Map<string, Datas
     maxSide: first.maxSide,
     items: records.length,
     subjectAccuracy: round(records.filter((r) => r.subjectCorrect).length / records.length),
+    subjectAcceptance: round(records.filter((r) => r.subjectAcceptable).length / records.length),
+    acceptableAbstentions: records.filter((r) => r.subjectOutcome === 'acceptable_abstention').length,
+    fullyCorrect: records.filter((r) => r.subjectAcceptable && Object.values(r.fields).every(Boolean)).length,
     falseRejectionRate: rate(garments.filter((r) => r.outcome.kind === 'rejected').length, garments.length),
     falseAcceptanceRate: rate(others.filter((r) => r.outcome.kind === 'garment').length, others.length),
     invalidRate: round(records.filter((r) => r.outcome.kind === 'invalid').length / records.length),
@@ -220,5 +269,27 @@ export function summarize(records: ItemRecord[], expectedById: Map<string, Datas
     totalCostUsd: totalCost,
     costPer1000Usd: totalCost === null ? null : round((totalCost / records.length) * 1000, 4),
     calibration,
+    itt: ittOf(records, expectedById),
   }
+}
+
+/** ITT over the declared dataset (every expectation in `expectedById`), with this configuration's outputs. */
+export function ittOf(records: readonly Pick<ItemRecord, 'item' | 'outcome'>[], expectedById: Map<string, DatasetItem['expected']>): VisionItt {
+  const byItem = new Map<string, ItemOutcome>()
+  for (const r of records) {
+    if (byItem.has(r.item)) throw new Error(`duplicate output for item ${r.item} (each case is counted once)`)
+    if (!expectedById.has(r.item)) throw new Error(`output for item ${r.item}, which is not in the declared dataset`)
+    byItem.set(r.item, r.outcome)
+  }
+  return visionItt(
+    [...expectedById].map(([id, e]) => ({
+      id,
+      subject: e.subject,
+      acceptableAbstentions: e.acceptableAbstentions,
+      labels: Object.fromEntries(SCORED_FIELDS.filter((f) => e[f] !== undefined).map((f) => [f, e[f] ?? null])),
+      outcome: byItem.get(id),
+    })),
+    SCORED_FIELDS,
+    (o, f) => predicted(o.attributes, f as ScoredField),
+  )
 }

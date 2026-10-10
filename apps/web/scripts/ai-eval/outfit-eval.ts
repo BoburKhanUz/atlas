@@ -21,7 +21,7 @@ import type { LLMMessage, LLMProvider, LLMRequest } from '../../src/lib/ai/provi
 import { arg, assertOutsideRepo, llmProviderFromEnv } from './eval-common'
 import { LocalRefusalError } from './live-accounting'
 import { outfitCases, type OutfitCase } from './outfit-cases'
-import { scoreOutfit, summarizeOutfit, type OutfitOutcome, type OutfitRecord, type OutfitSummary } from './outfit-scoring'
+import { scoreOutfit, summarizeOutfit, type OutfitCaseContext, type OutfitOutcome, type OutfitRecord, type OutfitSummary } from './outfit-scoring'
 
 /** Offline stand-in: keeps the engine order, explains with a fixed Uzbek sentence. Exercises the harness only. */
 export class ScriptedOutfit implements LLMProvider {
@@ -32,6 +32,14 @@ export class ScriptedOutfit implements LLMProvider {
     const text = JSON.stringify({ selectedCandidate: refs[0], ranking: refs, explanation: 'Bu obraz kiyimlari bir-biriga mos va qulay.', needsMoreInfo: false })
     return { text, metadata: { provider: this.name, model: this.model, usage: {} } }
   }
+}
+
+/** The scoring context of case `c` (deterministic engine only): live runs and offline replays share it. */
+export function outfitCaseContext(c: OutfitCase): OutfitCaseContext {
+  const result = generateOutfitResult({ wardrobe: c.wardrobe, occasion: c.occasion, weather: c.weather, colorProfile: c.colorProfile, topN: c.topN })
+  const cp = profileContext(c.colorProfile)
+  const sent = !!c.colorProfile && (c.colorProfile.confidence ?? 0) >= 0.3 && !!c.colorProfile.season
+  return { candidates: result.outfits, weatherProvided: !!result.weather, profileSent: sent, profileStrong: !!cp && cp.strength >= 0.6 }
 }
 
 export async function runOutfitCase(p: LLMProvider, c: OutfitCase): Promise<OutfitRecord> {
@@ -80,9 +88,7 @@ export async function runOutfitCase(p: LLMProvider, c: OutfitCase): Promise<Outf
     const cause = (err as { lastError?: unknown }).lastError ?? err
     outcome = { kind: 'error', error: isAiProviderError(cause) ? cause.kind : 'unexpected' }
   }
-  const cp = profileContext(c.colorProfile)
-  const sent = !!c.colorProfile && (c.colorProfile.confidence ?? 0) >= 0.3 && !!c.colorProfile.season
-  const { checks, pass } = scoreOutfit({ candidates, weatherProvided: !!result.weather, profileSent: sent, profileStrong: !!cp && cp.strength >= 0.6 }, outcome)
+  const { checks, pass } = scoreOutfit(outfitCaseContext(c), outcome)
   return { case: c.id, tags: c.tags, provider: p.name, model: p.model, candidates: candidates.length, latencyMs: Math.round(performance.now() - started), calls, requests, inputTokens, outputTokens, outcome, checks, pass }
 }
 

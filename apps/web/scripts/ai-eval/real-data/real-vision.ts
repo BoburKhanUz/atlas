@@ -28,6 +28,7 @@ import type { EvalProviderName } from '../eval-common'
 import { accountSection, CallBudget, CallLedger, caseResult, configuredPrice, DatasetIntegrityError, retryingVision, sha256Hex, type CaseResult, type SectionAccounting } from '../live-accounting'
 import { evaluateVisionConfig } from '../vision-eval'
 import type { ItemOutcome, ItemRecord } from '../vision-scoring'
+import { visionItt, type IttCase, type VisionItt } from '../vision-itt'
 import { agreement, annotationLimitations, fieldTruth, type AgreementStats, type FieldTruth } from './annotations'
 import { casesFor, type LoadedDataset, type Purpose } from './dataset'
 import { governanceGate, providerTransmissionGate } from './governance'
@@ -124,10 +125,23 @@ export interface VisionScores {
   /** Cases a field could not be scored for (no or unresolved ground truth). */
   unscoredFields: Record<RealVisionField, number>
   confidence: { label: 'PRELIMINARY CONFIDENCE ANALYSIS'; bins: Array<{ range: string; correct: number; scored: number }> }
+  /**
+   * Intention-to-treat (vision-itt-v1) over the declared sample: every case
+   * with a resolved ground-truth subject stays in the denominator; errors,
+   * invalid and missing outputs, and rejected garments count as wrong. The
+   * counts above keep their original definitions (answered cases; accepted
+   * garments). Real annotations list no acceptable abstentions: the subject is strict.
+   */
+  itt: VisionItt
 }
 
-/** Scores provider records against the final ground truth; only fields with ground truth are scored. */
-export function scoreVision(records: Array<Pick<ItemRecord, 'item' | 'outcome'>>, truth: (caseId: string, field: string) => FieldTruth): VisionScores {
+/**
+ * Scores provider records against the final ground truth; only fields with
+ * ground truth are scored. `sample` is the declared evaluation sample (the
+ * case ids of the split): a declared case without an output counts as missing
+ * in the ITT metrics. Without it, the sample is the records' cases.
+ */
+export function scoreVision(records: Array<Pick<ItemRecord, 'item' | 'outcome'>>, truth: (caseId: string, field: string) => FieldTruth, sample?: readonly string[]): VisionScores {
   const fieldC: Record<string, [number, number]> = Object.fromEntries(REAL_VISION_FIELDS.map((f) => [f, [0, 0]]))
   const unscored: Record<string, number> = Object.fromEntries(REAL_VISION_FIELDS.map((f) => [f, 0]))
   let answered = 0, invalid = 0, errors = 0, subjOk = 0, subjN = 0
@@ -180,7 +194,31 @@ export function scoreVision(records: Array<Pick<ItemRecord, 'item' | 'outcome'>>
     },
     unscoredFields: unscored as Record<RealVisionField, number>,
     confidence: { label: 'PRELIMINARY CONFIDENCE ANALYSIS', bins },
+    itt: realItt(records, truth, sample),
   }
+}
+
+function realItt(records: Array<Pick<ItemRecord, 'item' | 'outcome'>>, truth: (caseId: string, field: string) => FieldTruth, sample?: readonly string[]): VisionItt {
+  const declared = sample ?? records.map((r) => r.item)
+  const byItem = new Map<string, ItemOutcome>()
+  for (const r of records) {
+    if (byItem.has(r.item)) throw new Error(`duplicate output for case ${r.item} (each case is counted once)`)
+    if (sample && !sample.includes(r.item)) throw new Error(`output for case ${r.item}, which is not in the declared sample`)
+    byItem.set(r.item, r.outcome)
+  }
+  return visionItt(
+    declared.map((id) => {
+      const subj = truth(id, 'subject')
+      const labels: Record<string, string | string[] | null> = {}
+      for (const f of REAL_VISION_FIELDS) {
+        const t = truth(id, f)
+        if ('value' in t) labels[f] = t.value as string | string[]
+      }
+      return { id, subject: 'value' in subj ? (subj.value as IttCase['subject']) : null, labels, outcome: byItem.get(id) }
+    }),
+    REAL_VISION_FIELDS,
+    (o, f) => predicted(o, f as RealVisionField),
+  )
 }
 
 // ─── Running a provider ─────────────────────────────────────────────────────
@@ -276,7 +314,7 @@ export async function runRealVision(ds: LoadedDataset, env: Env, opts: RealVisio
       const { records } = await evaluateVisionConfig(p, bakeoffVisionConfig(provider, model!), path.join(ds.dir, 'files'), items, (r) => {
         results.push(caseResult(r.latencyMs, 1, r.outcome, ledger.endCase()))
       }, readImage)
-      report.providers.push({ provider, status: opts.providers?.vision ? 'TEST_ONLY' : 'TESTED', reason: null, model, scores: scoreVision(records, truth), accounting: accountSection('vision', ledger, results, price) })
+      report.providers.push({ provider, status: opts.providers?.vision ? 'TEST_ONLY' : 'TESTED', reason: null, model, scores: scoreVision(records, truth, items.map((i) => i.id)), accounting: accountSection('vision', ledger, results, price) })
     } catch (err) {
       if (!(err instanceof DatasetIntegrityError)) throw err
       report.providers.push({ provider, status: 'BLOCKED', reason: 'DATASET_INTEGRITY_FAILURE', model, scores: null, accounting: accountSection('vision', ledger, results, price) })

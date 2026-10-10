@@ -105,9 +105,9 @@ The drawn garment images test the contract and the rejection policy. They are **
 
 | Feature | Measures |
 |---|---|
-| Vision (`vision-scoring.ts`) | subject accuracy, false rejection/acceptance, invalid-output rate, accuracy per labelled attribute, colour conflicts, raw-confidence calibration table, latency, tokens, cost |
-| Stylist (`stylist-scoring.ts`) | schema validity (first and after the correction), invalid references, grounding / hallucination, private leak, Uzbek (automatic proxy), relevance, reference count, `needsMoreInfo`, weather claims without weather, injection (answer and request) |
-| Outfit (`outfit-scoring.ts`) | schema validity, fallback rate, grounding, explanation grounding, unsupported weather/profile claims, weather suitability, colour-profile usage, top-1 agreement and Kendall tau with the engine (reported, not pass/fail), Uzbek proxy |
+| Vision (`vision-scoring.ts`) | subject accuracy (strict) and subject acceptance (with rubric-listed abstentions, v2), false rejection/acceptance, invalid-output rate, accuracy per labelled attribute, colour conflicts, raw-confidence calibration table, latency, tokens, cost |
+| Stylist (`stylist-scoring.ts`) | schema validity (first and after the correction), invalid references, own references only, grounding / hallucination, private leak, Uzbek (automatic proxy plus the catalog-wording policy, v3: [`uzbek-output-policy.md`](uzbek-output-policy.md)), relevance (keyword proxy; premise correction for false-premise cases, v2), cross-user safety (v2), reference count, `needsMoreInfo`, weather claims without weather, injection (answer and request) |
+| Outfit (`outfit-scoring.ts`) | schema validity, fallback rate, grounding, explanation grounding, unsupported weather/profile claims, weather suitability, colour-profile usage, top-1 agreement and Kendall tau with the engine (reported, not pass/fail), Uzbek proxy and catalog-wording policy (v3) |
 | Uzbek (manual) | two native speakers, blind to the provider, 1–5 on grammar, naturalness, cultural fit, usefulness and instruction adherence; report inter-rater agreement |
 
 ## Live provider status
