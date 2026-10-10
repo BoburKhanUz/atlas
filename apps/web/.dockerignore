@@ -8,8 +8,6 @@ public/uploads
 .env.*
 *.log
 coverage
-tests
-# test-only config (imports tests/, which is excluded above)
 vitest.config.ts
 vitest.integration.config.ts
 Dockerfile
