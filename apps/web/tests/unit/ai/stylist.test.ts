@@ -80,8 +80,8 @@ describe('reference resolution', () => {
     expect(() => resolveReferences('Bugun [W9] kiying.', items)).toThrow(InvalidStylistOutputError)
   })
 
-  it('names items from the catalog labels', () => {
-    expect(itemDisplayName({ category: 'pants', subcategory: 'chinos', colors: ['navy'] })).toBe('ko‘k (navy) chinos')
+  it('names items from the catalog labels, with the owner-approved names where they differ', () => {
+    expect(itemDisplayName({ category: 'pants', subcategory: 'chinos', colors: ['navy'] })).toBe('to‘q ko‘k chinos')
     expect(itemDisplayName({ category: 'bag', subcategory: null, colors: [] })).toBe('sumka')
   })
 })

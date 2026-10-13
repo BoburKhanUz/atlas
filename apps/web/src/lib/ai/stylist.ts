@@ -152,26 +152,127 @@ export interface ReferencedItem {
 
 const lower = (s: string) => s.charAt(0).toLocaleLowerCase('uz') + s.slice(1)
 
-/** Natural Uzbek name of a wardrobe item, e.g. "oq futbolka", "qora jins". */
+/**
+ * Owner-approved names for stylist answers, used instead of catalog labels
+ * the owner has replaced (docs/ai/catalog-terminology-*.md). Interim: they
+ * move into the catalog itself once both clients and the evaluator follow it.
+ */
+const APPROVED_COLOR_NAMES: Readonly<Record<string, string>> = {
+  navy: 'To‘q ko‘k',
+  teal: 'Ko‘k-yashil',
+  rust: 'Zang rang',
+  brown: 'Jigarrang',
+}
+const APPROVED_SUBCATEGORY_NAMES: Readonly<Record<string, string>> = {
+  knit: 'Sviter',
+  loafers: 'Lofer tufli',
+  windbreaker: 'Shamol kurtkasi',
+  crossbody: 'Ko‘ndalang tasmali sumka',
+  belt: 'Kamar',
+  oxford_shoes: 'Oksford tufli',
+  trousers: 'Klassik shim',
+  sandals: 'Sandal',
+  clutch: 'Klatch',
+}
+const APPROVED_CATEGORY_NAMES: Readonly<Record<string, string>> = {
+  shirt: 'Ko‘ylak',
+  dress: 'Ko‘ylak (ayol)',
+}
+
+const subcategoryName = (item: ReferencedItem) =>
+  item.subcategory
+    ? APPROVED_SUBCATEGORY_NAMES[item.subcategory] ?? SUBCATEGORIES[item.category]?.find((s) => s.id === item.subcategory)?.label
+    : undefined
+const categoryName = (category: string) => APPROVED_CATEGORY_NAMES[category] ?? CATEGORIES.find((c) => c.id === category)?.label
+const colorName = (color: string) => APPROVED_COLOR_NAMES[color] ?? COLORS.find((c) => c.id === color)?.label
+
+/** Natural Uzbek name of a wardrobe item, e.g. "oq futbolka", "to‘q ko‘k chinos". */
 export function itemDisplayName(item: ReferencedItem): string {
-  const sub = item.subcategory ? SUBCATEGORIES[item.category]?.find((s) => s.id === item.subcategory)?.label : undefined
-  const noun = sub ?? CATEGORIES.find((c) => c.id === item.category)?.label ?? 'kiyim'
-  const color = item.colors[0] ? COLORS.find((c) => c.id === item.colors[0])?.label : undefined
+  const noun = subcategoryName(item) ?? categoryName(item.category) ?? 'kiyim'
+  const color = item.colors[0] ? colorName(item.colors[0]) : undefined
   return lower(color ? `${color} ${lower(noun)}` : noun)
 }
 
+/** Lower-cased word with every apostrophe form as ‘ (for comparison only). */
+const norm = (w: string) => w.toLocaleLowerCase('uz').replace(/['’ʻʼ`]/g, '‘')
+const wordsOf = (...texts: Array<string | undefined>) =>
+  texts.flatMap((t) => (t ? norm(t).split(/[\s_/()]+/).filter(Boolean) : []))
+
+/** Colour words of every colour (catalog and approved names, ids) and shade modifiers. */
+const COLOR_WORDS: ReadonlySet<string> = new Set([
+  ...COLORS.flatMap((c) => wordsOf(c.id, c.label, APPROVED_COLOR_NAMES[c.id])),
+  'och', 'to‘q', 'rangli',
+])
+
+/** Words that name this item itself: its subcategory and category (labels, approved names, ids). */
+function itemWords(item: ReferencedItem): ReadonlySet<string> {
+  const catalogSub = item.subcategory ? SUBCATEGORIES[item.category]?.find((s) => s.id === item.subcategory)?.label : undefined
+  const catalogCat = CATEGORIES.find((c) => c.id === item.category)?.label
+  return new Set(wordsOf(item.subcategory ?? undefined, catalogSub, subcategoryName(item), item.category, catalogCat, categoryName(item.category)))
+}
+
 /**
- * Replaces each validated reference with the item's name. Works on the
- * reference tokens found by the same pattern as the validation, so nothing
- * but a validated reference is ever replaced; an unknown token (which
- * validation already rejects) would throw rather than leak.
+ * `text` without its trailing run (≤ 5 words, within the last line) made only
+ * of colour words or words naming the item; `text` itself when there is none.
+ */
+function withoutOwnName(text: string, own: ReadonlySet<string>): string {
+  const lineStart = text.lastIndexOf('\n') + 1
+  const words = text.slice(lineStart).split(' ')
+  let n = 0
+  while (n < Math.min(5, words.length)) {
+    const w = norm(words[words.length - 1 - n])
+    if (!w || !(COLOR_WORDS.has(w) || own.has(w))) break
+    n++
+  }
+  if (n === 0) return text
+  const kept = words.slice(0, words.length - n).join(' ')
+  return text.slice(0, lineStart) + (kept ? kept + ' ' : '')
+}
+
+/** `word` is `head` or `head` + a suffix (with the k→g, q→g‘ stem change), e.g. ko‘ylak → ko‘ylagini. */
+function inflects(word: string, head: string): boolean {
+  const w = norm(word), h = norm(head)
+  if (w === h || w.startsWith(h)) return true
+  const stem = h.endsWith('k') ? h.slice(0, -1) + 'g' : h.endsWith('q') ? h.slice(0, -1) + 'g‘' : null
+  return !!stem && w.startsWith(stem) && w.length > stem.length
+}
+
+/**
+ * Replaces each validated reference with the item's name, shown once:
+ * - words the model wrote right before the reference that name this same
+ *   item (its colour/shade words and its own noun words, up to the nearest
+ *   other word or punctuation) are replaced together with the reference;
+ * - the model's own noun right after the reference keeps its suffix
+ *   ("[W1] ko‘ylagini" → "oq oksford ko‘ylagini").
+ * Words naming another item, clause words and punctuation are never touched.
+ * Only reference tokens found by the validation's pattern are replaced; an
+ * unknown token (which validation already rejects) throws rather than leaks.
  */
 export function resolveReferences(answer: string, items: ReadonlyMap<string, ReferencedItem>): string {
-  return answer.replace(REFERENCE, (_token, n: string) => {
-    const item = items.get(`W${n}`)
-    if (!item) throw new InvalidStylistOutputError('invalid_reference', [`W${n}`])
-    return itemDisplayName(item)
-  })
+  let out = ''
+  let rest = 0
+  for (const m of answer.matchAll(REFERENCE)) {
+    const item = items.get(`W${m[1]}`)
+    if (!item) throw new InvalidStylistOutputError('invalid_reference', [`W${m[1]}`])
+    const own = itemWords(item)
+    let name = itemDisplayName(item)
+
+    let before = answer.slice(rest, m.index)
+    const trimmed = before.replace(/[ \t]+$/, '')
+    const stripped = withoutOwnName(trimmed, own)
+    if (stripped !== trimmed) before = stripped
+
+    let end = m.index + m[0].length
+    const next = /^[ \t]+([^\s.,;:!?()[\]]+)/.exec(answer.slice(end))
+    const head = name.split(' ').pop() ?? name
+    if (next && own.has(norm(head)) && inflects(next[1], head)) {
+      name = name.slice(0, name.length - head.length) + next[1]
+      end += next[0].length
+    }
+    out += before + name
+    rest = end
+  }
+  return out + answer.slice(rest)
 }
 
 // ─── Mock (development, e2e) ────────────────────────────────────────────────

@@ -36,8 +36,9 @@ const _password = 'it-profile-pw-123';
 
 String _email() => 'mobile-it-p-${DateTime.now().microsecondsSinceEpoch}-${Random().nextInt(1 << 20)}@test.local';
 
-/// The landscape fixture prepared like a selfie (JPEG, metadata stripped).
-PreparedImage selfie() => prepared(name: 'selfie.jpg');
+/// A synthetic selfie (face, skin, even light) that passes the backend's
+/// photo-quality checks, prepared like an upload (JPEG, metadata stripped).
+PreparedImage selfie() => prepared(name: 'selfie.jpg', fixture: 'selfie_portrait.jpg', w: 600, h: 800);
 
 ProviderContainer appRun(Device d) {
   final c = ProviderContainer(
@@ -157,7 +158,7 @@ void main() {
       final a = current as Analysed;
       expect(a.profile.season, result.profile.season);
       expect(a.profile.recommendedColors, result.profile.recommendedColors);
-      expect(a.profile.confidence, isNull, reason: 'GET carries no confidence');
+      expect(a.profile.confidence, result.profile.confidence, reason: 'GET returns the stored confidence (Phase 4.3)');
     });
 
     test('an invalid image → 422 INVALID_IMAGE; nothing stored', () async {

@@ -78,18 +78,17 @@ export function StylistScreen() {
 
     try {
       // Build a context object — if the user landed here from a quick action,
-      // pass that occasion. Future: also pass weather if user has granted it.
-      const eventLabel =
-        eventFromParam && hasContextBadge
-          ? OCCASIONS.find((o) => o.id === eventFromParam)?.label ?? eventFromParam
-          : undefined
+      // pass that occasion as its catalog id, as the mobile app does (the
+      // server maps ids, labels and aliases). Future: also pass weather if
+      // user has granted it.
+      const event = eventFromParam && hasContextBadge ? eventFromParam : undefined
 
       const res = await api<ChatResponse>('/api/v1/stylist/chat', {
         method: 'POST',
         body: {
           message: trimmed,
           conversationId,
-          event: eventLabel,
+          event,
           weather: null,
         },
       })

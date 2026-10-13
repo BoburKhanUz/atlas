@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { requireAuth, unauthorized } from '@/lib/api-helpers'
 import { ApiError, withApi, parseJson, validate } from '@/server/http'
 import { WardrobeItemPatchRequest } from '@/server/schemas/requests'
+import { subcategoriesOf } from '@/server/schemas/catalog'
 import { idParamsSchema } from '@/server/schemas/common'
 import { getStorageProvider } from '@/lib/storage/provider'
 import { serializeWardrobeItem } from '@/lib/wardrobe/serialize'
@@ -31,6 +32,17 @@ export const PATCH = withApi<Ctx>(async (req, ctx) => {
     where: { id, userId: authUser.sub },
   })
   if (!current) throw new ApiError('NOT_FOUND')
+
+  // The subcategory must belong to the category the item ends up with
+  // (either may change alone; a stale subcategory is not kept silently).
+  if (data.category !== undefined || data.subcategory !== undefined) {
+    const category = data.category ?? current.category
+    const subcategory = data.subcategory !== undefined ? data.subcategory : current.subcategory
+    if (subcategory != null && !subcategoriesOf(category).includes(subcategory)) {
+      const message = 'Bu tur tanlangan toifaga mos emas'
+      throw new ApiError('VALIDATION_ERROR', message, [{ path: 'subcategory', message }])
+    }
+  }
 
   // Compute the list of fields that actually changed
   const corrections: Array<{ field: string; from: string; to: string; at: string }> = []

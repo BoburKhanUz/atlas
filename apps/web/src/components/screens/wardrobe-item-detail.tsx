@@ -416,7 +416,14 @@ function EditModal({
         <div className="p-5 space-y-5">
           {/* Category */}
           <EditField label="Kategoriya">
-            <Select value={category} onValueChange={setCategory}>
+            <Select
+              value={category}
+              onValueChange={(v) => {
+                setCategory(v)
+                // Keep the subcategory only when it belongs to the new category.
+                if (!(SUBCATEGORIES[v] ?? []).some((s) => s.id === subcategory)) setSubcategory('__none__')
+              }}
+            >
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {CATEGORIES.map((c) => (

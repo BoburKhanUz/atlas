@@ -46,11 +46,56 @@ export function subcategoriesOf(category: string): string[] {
 }
 
 /**
- * Map a free-text event to an occasion id. Accepts an exact id ("wedding") or
- * an exact catalog label ("To‘y"), case-insensitive. Anything else is free text.
+ * Other labels accepted as an `event` for an occasion: legacy and client
+ * labels (Flutter shows "Kundalik"). Input matching only; the catalog labels
+ * shown to users do not change.
+ */
+export const OCCASION_ALIASES: Readonly<Partial<Record<Occasion, readonly string[]>>> = {
+  casual: ['Kasual', 'Kundalik'],
+  wedding: ["To'y"],
+}
+
+/** Trimmed, lower-cased, with ' ’ ‘ ʻ ʼ treated as one apostrophe. */
+function normalizeEvent(text: string): string {
+  return text.trim().toLowerCase().replace(/[’‘ʻʼ]/g, "'")
+}
+
+/**
+ * Exact-match lookup from normalized id, label and alias to occasion id.
+ * Throws if one normalized key would name two occasions.
+ */
+export function buildOccasionLookup(
+  entries: readonly CatalogEntry[],
+  aliases: Readonly<Partial<Record<string, readonly string[]>>>,
+): ReadonlyMap<string, string> {
+  const lookup = new Map<string, string>()
+  const add = (key: string, id: string) => {
+    const k = normalizeEvent(key)
+    const existing = lookup.get(k)
+    if (existing !== undefined && existing !== id) {
+      throw new Error(`occasion alias "${key}" maps to both ${existing} and ${id}`)
+    }
+    lookup.set(k, id)
+  }
+  for (const o of entries) {
+    add(o.id, o.id)
+    add(o.label, o.id)
+  }
+  for (const [id, list] of Object.entries(aliases)) {
+    if (!entries.some((o) => o.id === id)) throw new Error(`occasion alias for unknown id ${id}`)
+    for (const alias of list ?? []) add(alias, id)
+  }
+  return lookup
+}
+
+const OCCASION_LOOKUP = buildOccasionLookup(OCCASIONS, OCCASION_ALIASES)
+
+/**
+ * Map a free-text event to an occasion id. Accepts an exact id ("wedding"),
+ * catalog label ("To‘y") or alias ("To'y", "Kundalik"), case-insensitive.
+ * Anything else is free text.
  */
 export function occasionFromEvent(event: string | null | undefined): Occasion | undefined {
   if (!event) return undefined
-  const e = event.trim().toLowerCase()
-  return OCCASIONS.find((o) => o.id === e || o.label.toLowerCase() === e)?.id as Occasion | undefined
+  return OCCASION_LOOKUP.get(normalizeEvent(event)) as Occasion | undefined
 }

@@ -22,12 +22,18 @@ vi.mock('@/lib/ai/recommendation', async (importOriginal) => {
   return { ...m, generateOutfits: vi.fn(m.generateOutfits) }
 })
 
+vi.mock('@/lib/ai/stylist-service', async (importOriginal) => {
+  const m = await importOriginal<typeof import('@/lib/ai/stylist-service')>()
+  return { ...m, runStylistTurn: vi.fn(m.runStylistTurn) }
+})
+
 import { GET as listItems, POST as uploadItem } from '@/app/api/v1/wardrobe/items/route'
 import { PATCH as patchItem } from '@/app/api/v1/wardrobe/items/[id]/route'
 import { POST as saveOutfit } from '@/app/api/v1/outfits/route'
 import { POST as chat } from '@/app/api/v1/stylist/chat/route'
 import { GET as health } from '@/app/api/health/route'
 import { generateOutfits } from '@/lib/ai/recommendation'
+import { runStylistTurn } from '@/lib/ai/stylist-service'
 import { setLLMProviderForTesting } from '@/lib/ai/providers'
 import { MockProvider } from '@/lib/ai/providers/mock'
 import { authHeader, jsonRequest } from '../helpers'
@@ -95,6 +101,46 @@ describe('validation', () => {
     expect(body.details.map((d: { path: string }) => d.path)).toEqual(expect.arrayContaining(['category', 'colors.1']))
     expect(body.requestId).toBeTruthy()
     expect(db.wardrobeItem.findFirst).not.toHaveBeenCalled()
+  })
+
+  describe('PATCH wardrobe item: subcategory must belong to the resulting category', () => {
+    const shirt = {
+      id: 'item_1', userId: 'u', category: 'shirt', subcategory: 'tshirt', colors: '["white"]', season: '["summer"]',
+      confidences: '{}', wasCorrected: false, correctionLog: '[]', createdAt: new Date(0), updatedAt: new Date(0),
+    }
+    async function patch(body: unknown) {
+      return patchItem(
+        req('/api/v1/wardrobe/items/item_1', {
+          method: 'PATCH',
+          headers: { ...(await authHeader()), 'content-type': 'application/json' },
+          body: JSON.stringify(body),
+        }),
+        ID,
+      )
+    }
+    beforeEach(() => {
+      db.wardrobeItem.findFirst.mockResolvedValue(shirt)
+      db.wardrobeItem.update.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({ ...shirt, ...data, images: [] }))
+    })
+
+    it.each([
+      ['a subcategory of another category', { subcategory: 'sneakers' }],
+      ['a new category that keeps a stale subcategory', { category: 'shoes' }],
+      ['both changed to a mismatching pair', { category: 'shirt', subcategory: 'sneakers' }],
+    ])('rejects %s -> 400 VALIDATION_ERROR on subcategory, nothing written', async (_name, body) => {
+      const err = await expectErrorShape(await patch(body), 400, 'VALIDATION_ERROR')
+      expect(err.details.map((d: { path: string }) => d.path)).toEqual(['subcategory'])
+      expect(db.wardrobeItem.update).not.toHaveBeenCalled()
+    })
+
+    it.each([
+      ['a matching pair', { category: 'shoes', subcategory: 'sneakers' }],
+      ['a subcategory of the current category', { subcategory: 'polo' }],
+      ['a new category with the subcategory cleared', { category: 'shoes', subcategory: null }],
+      ['fields other than category/subcategory', { colors: ['black'] }],
+    ])('accepts %s', async (_name, body) => {
+      expect((await patch(body)).status).toBe(200)
+    })
   })
 
   it('GET wardrobe with an unknown ?category -> 400', async () => {
@@ -220,18 +266,44 @@ describe('stylist chat event handling', () => {
     )
   }
 
-  it('free-text event "to\'y" does not crash the engine (occasion undefined)', async () => {
-    const res = await send("to'y")
+  it('free-text event "nikoh" does not crash the engine (occasion undefined)', async () => {
+    const res = await send('nikoh')
     expect(res.status).toBe(200)
     expect(generateOutfits).toHaveBeenCalledTimes(1)
     expect(vi.mocked(generateOutfits).mock.calls[0][0].occasion).toBeUndefined()
   })
 
-  it('maps an occasion id or catalog label to the occasion', async () => {
+  it('maps an occasion id, catalog label or alias to the occasion', async () => {
     await send('wedding')
     expect(vi.mocked(generateOutfits).mock.calls[0][0].occasion).toBe('wedding')
     await send('Uchrashuv')
     expect(vi.mocked(generateOutfits).mock.calls[1][0].occasion).toBe('date')
+    await send("to'y")
+    expect(vi.mocked(generateOutfits).mock.calls[2][0].occasion).toBe('wedding')
+    await send('Kundalik')
+    expect(vi.mocked(generateOutfits).mock.calls[3][0].occasion).toBe('casual')
+  })
+
+  it('resolves an alias for the engine but passes the original event text to the stylist', async () => {
+    const res = await send('Kundalik')
+    expect(res.status).toBe(200)
+    expect(vi.mocked(generateOutfits).mock.calls[0][0].occasion).toBe('casual')
+    expect(runStylistTurn).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(runStylistTurn).mock.calls[0][0].occasionText).toBe('Kundalik')
+  })
+
+  it('an occasion id (what both clients send) reaches the engine and the stylist as that id', async () => {
+    const res = await send('wedding')
+    expect(res.status).toBe(200)
+    expect(vi.mocked(generateOutfits).mock.calls[0][0].occasion).toBe('wedding')
+    expect(vi.mocked(runStylistTurn).mock.calls[0][0].occasionText).toBe('wedding')
+  })
+
+  it('an event that is not an occasion stays free text for the stylist, without an occasion', async () => {
+    const res = await send('Do‘stimning tug‘ilgan kuni')
+    expect(res.status).toBe(200)
+    expect(vi.mocked(generateOutfits).mock.calls[0][0].occasion).toBeUndefined()
+    expect(vi.mocked(runStylistTurn).mock.calls[0][0].occasionText).toBe('Do‘stimning tug‘ilgan kuni')
   })
 
   it('rejects an event longer than 60 characters', async () => {

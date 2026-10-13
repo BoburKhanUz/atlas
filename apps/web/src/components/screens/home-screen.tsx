@@ -36,15 +36,18 @@ interface WeatherData {
   cached: boolean
 }
 
-// Quick action visual config
-const QUICK_ACTIONS: Array<CatalogEntry & { icon: React.ComponentType<{ className?: string }> }> = [
-  { id: 'work', label: 'Ish', icon: Briefcase },
-  { id: 'wedding', label: "To'y", icon: Heart },
-  { id: 'date', label: 'Uchrashuv', icon: Coffee },
-  { id: 'travel', label: 'Sayohat', icon: Plane },
-  { id: 'casual', label: 'Casual', icon: Calendar },
-  { id: 'other', label: 'Boshqa', icon: Sparkle },
-]
+// Quick action visual config; ids and labels come from the catalog.
+const OCCASION_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  work: Briefcase,
+  wedding: Heart,
+  date: Coffee,
+  travel: Plane,
+  casual: Calendar,
+  other: Sparkle,
+}
+const QUICK_ACTIONS: Array<CatalogEntry & { icon: React.ComponentType<{ className?: string }> }> = OCCASIONS.map(
+  (o) => ({ ...o, icon: OCCASION_ICONS[o.id] ?? Sparkle }),
+)
 
 export function HomeScreen() {
   const user = useUser()
