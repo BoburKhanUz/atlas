@@ -266,7 +266,8 @@ export function resolveReferences(answer: string, items: ReadonlyMap<string, Ref
     const next = /^[ \t]+([^\s.,;:!?()[\]]+)/.exec(answer.slice(end))
     const head = name.split(' ').pop() ?? name
     if (next && own.has(norm(head)) && inflects(next[1], head)) {
-      name = name.slice(0, name.length - head.length) + next[1]
+      // The model's suffix, with the app's apostrophe (ko'ylagini → ko‘ylagini).
+      name = name.slice(0, name.length - head.length) + next[1].replace(/['’ʻʼ`]/g, '‘')
       end += next[0].length
     }
     out += before + name

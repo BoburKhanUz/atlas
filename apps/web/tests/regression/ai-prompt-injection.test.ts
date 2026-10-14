@@ -195,6 +195,28 @@ describe('outfit AI', () => {
     for (const o of body.outfits) for (const i of o.items) expect(rows.map((r) => r.id)).toContain(i.id)
   })
 
+  it.each([
+    ['English catalog words', 'Oq oxford shirt va brown loafers bilan kiying.'],
+    ['Cyrillic text', 'Бу образ салқин ҳавога мос.'],
+  ])('%s in the explanation → the model’s ranking is kept, its text is replaced by the grounded one; no extra call', async (_n, text) => {
+    const reversed = (r: string[]) => [...r].reverse()
+    const p = new Capturing([ranked(text, reversed)])
+    setLLMProviderForTesting(p)
+    const body = await (await generate()).json()
+    expect(p.requests).toHaveLength(1)
+    expect(body.fallback).toBe(false)
+    const shown = body.outfits.map((o: { explanation: string }) => o.explanation)
+    expect(shown).not.toContain(text)
+    expect(JSON.stringify(shown)).not.toMatch(/shirt|loafers|brown|[Ѐ-ӿ]/)
+    expect(lines.join('\n')).toContain('ai.outfit.explanation_replaced')
+  })
+
+  it('a policy-conforming explanation is shown as written', async () => {
+    setLLMProviderForTesting(new Capturing([ranked('Bu obraz salqin havoga mos.')]))
+    const body = await (await generate()).json()
+    expect(body.outfits[0].explanation).toBe('Bu obraz salqin havoga mos.')
+  })
+
   it('logs carry no prompt, explanation, injected text or ids', async () => {
     setLLMProviderForTesting(new Capturing([ranked('MAXFIY-IZOH.')]))
     expect((await (await generate()).json()).fallback).toBe(false)

@@ -89,9 +89,9 @@ describe('stylist item names: real provider outputs (captured raw answers, local
     expect(shown).not.toMatch(/\bW\d|mokasin|jigarron|\(navy\)|oxford|loafers/i)
   })
 
-  it('gemini: the model’s inflected nouns keep their suffix on the canonical name', () => {
+  it('gemini: the model’s inflected nouns keep their suffix on the canonical name, with the app’s apostrophe', () => {
     expect(resolveReferences(real.gemini, items)).toBe(
-      "Ofisdagi muhim uchrashuv uchun oq oksford ko'ylagini to‘q ko‘k chinos shim va jigarrang lofer tuflilar bilan moslab kiyishingizni tavsiya qilaman. Bu ko'rinish ish uslubiga juda mos keladi.",
+      "Ofisdagi muhim uchrashuv uchun oq oksford ko‘ylagini to‘q ko‘k chinos shim va jigarrang lofer tuflilar bilan moslab kiyishingizni tavsiya qilaman. Bu ko'rinish ish uslubiga juda mos keladi.",
     )
   })
 })

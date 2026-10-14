@@ -20,6 +20,7 @@ import { recordAiRequest } from './monitoring'
 import { decideAiEligibility } from './rollout'
 import { chargeQuota, refundQuota } from './quota-monitoring'
 import { itemDisplayName } from './stylist'
+import { exposedCatalogTerms, hasCyrillic } from './catalog-wording'
 import { CATEGORIES, COLORS, FORMALITIES, MATERIALS, PATTERNS, SLEEVE_LENGTHS, STYLES, SUBCATEGORIES, type CatalogEntry } from './catalog'
 import { SEASONAL_PALETTES } from './color-analysis'
 import type { Occasion } from './color-theory'
@@ -305,12 +306,16 @@ export async function rerankAndExplain(input: RerankInput, deps: { now?: () => D
       return fail(`invalid_after_correction_${again.reason}`)
     }
   }
+  // The ranking is the model's; its wording reaches the user only if it follows
+  // the Uzbek output policy. Otherwise the grounded deterministic text is shown.
+  const wordingOk = exposedCatalogTerms(result.explanation).length === 0 && !hasCyrillic(result.explanation)
+  if (!wordingOk) log.info('ai.outfit.explanation_replaced', { reason: 'wording_policy', provider: provider.name, model: provider.model })
   const byRef = new Map(refs.map((r, i) => [r, input.candidates[i]]))
   request({ outcome: 'ok', billable: true })
   return {
     outfits: result.ranking.map((ref, i) => {
       const candidate = byRef.get(ref)!
-      return { candidate, explanation: i === 0 ? result.explanation : deterministicExplanation(candidate, explainCtx) }
+      return { candidate, explanation: i === 0 && wordingOk ? result.explanation : deterministicExplanation(candidate, explainCtx) }
     }),
     fallback: false,
   }
