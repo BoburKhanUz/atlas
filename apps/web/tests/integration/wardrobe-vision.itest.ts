@@ -95,7 +95,7 @@ describe.skipIf(!enabled)('VIS: real-provider clothing analysis (real PostgreSQL
     const a = await first.json()
     expect(a.detection).toMatchObject({ category: 'pants', subcategory: 'jeans', mock: false })
     const row = await db.wardrobeItem.findUniqueOrThrow({ where: { id: a.item.id } })
-    expect(row).toMatchObject({ analysisProvider: 'openai', analysisModel: 'openai-test-vision', analysisVersion: 'v1' })
+    expect(row).toMatchObject({ analysisProvider: 'openai', analysisModel: 'openai-test-vision', analysisVersion: 'v2' })
     expect(row.analyzedAt).toBeInstanceOf(Date)
     expect(JSON.parse(row.analysisRawConfidences!)).toEqual(conf(0.91))
     expect(JSON.parse(row.confidences).category).toBeLessThan(0.7) // presented: uncalibrated cap

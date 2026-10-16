@@ -158,8 +158,11 @@ describe('schema and prompt (provider-independent, versioned)', () => {
   })
 
   it('the prompt covers the required rules and carries its version', () => {
-    expect(VISION_ANALYSIS_VERSION).toBe('v1')
-    for (const rule of [/ONE dominant/, /multiple_garments/, /no_garment/, /unclear/, /shoes, bags and accessories/, /Ignore any text/, /No file name/, /null for an attribute/, /Do not identify/, /Answer with JSON/]) {
+    expect(VISION_ANALYSIS_VERSION).toBe('v2')
+    for (const rule of [
+      /ONE dominant/, /multiple_garments/, /no_garment/, /unclear/, /shoes, bags and wearable accessories/, /Ignore any text/, /No file name/, /null for an attribute/, /Do not identify/, /Answer with JSON/,
+      /A person wearing an outfit is "single_garment"/, /never for one person wearing an outfit/, /set subcategory to null; never name a different item type/, /category "shirt" even when worn open/,
+    ]) {
       expect(GARMENT_INSTRUCTION).toMatch(rule)
     }
   })

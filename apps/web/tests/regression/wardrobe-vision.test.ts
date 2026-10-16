@@ -105,7 +105,7 @@ describe('VisionService with a real provider', () => {
     expect(detection).toMatchObject({ category: 'pants', subcategory: 'jeans', colors: ['blue'], mock: false })
     expect(detection.confidence.category).toBe(UNCALIBRATED_MAX_CONFIDENCE)
     expect(detection.confidence.color).toBe(UNCALIBRATED_MAX_CONFIDENCE) // blue supported by the pixels
-    expect(metadata).toEqual({ provider: 'gemini', model: 'gemini-test-vision', version: 'v1', analyzedAt: at, rawConfidences: garment().confidence })
+    expect(metadata).toEqual({ provider: 'gemini', model: 'gemini-test-vision', version: 'v2', analyzedAt: at, rawConfidences: garment().confidence })
     expect(quota.consumeAiQuota).toHaveBeenCalledTimes(1)
     expect(quota.consumeAiQuota).toHaveBeenCalledWith('u1', 'clothing_analysis', at)
     expect(quota.refundAiQuota).not.toHaveBeenCalled()
@@ -257,7 +257,7 @@ describe('POST /api/v1/wardrobe/items with a real provider', () => {
     expect(body.detection.category).toBe('pants')
     expect(body.item.confidences.category).toBe(UNCALIBRATED_MAX_CONFIDENCE)
     expect(body.item).not.toHaveProperty('analysisRawConfidences')
-    expect(data).toMatchObject({ analysisProvider: 'gemini', analysisModel: 'gemini-test-vision', analysisVersion: 'v1' })
+    expect(data).toMatchObject({ analysisProvider: 'gemini', analysisModel: 'gemini-test-vision', analysisVersion: 'v2' })
     expect(JSON.parse(data.analysisRawConfidences as string).category).toBe(0.93)
     expect(data.analyzedAt).toBeInstanceOf(Date)
   })

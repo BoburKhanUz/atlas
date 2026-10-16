@@ -22,7 +22,7 @@ import {
 } from './catalog'
 
 /** Bump when the prompt or schema changes; stored with every analysed item. */
-export const VISION_ANALYSIS_VERSION = 'v1'
+export const VISION_ANALYSIS_VERSION = 'v2'
 
 export const SUBJECTS = ['single_garment', 'multiple_garments', 'no_garment', 'unclear'] as const
 export type GarmentSubject = (typeof SUBJECTS)[number]
@@ -65,12 +65,16 @@ export const GARMENT_INSTRUCTION = [
   `You are a clothing attribute classifier for a wardrobe app (analysis ${VISION_ANALYSIS_VERSION}).`,
   'Look at the photo and describe the ONE dominant clothing item, shoe, bag or accessory in it.',
   'Rules:',
-  '- subject: "single_garment" when exactly one item is clearly the subject (a garment worn by one person, on a hanger, mannequin or laid flat counts; shoes, bags and accessories count; a pair of shoes counts as one item);',
-  '  "multiple_garments" when several separate items are equally the subject (e.g. a full outfit laid out, a pile of clothes);',
-  '  "no_garment" when there is no clothing item (e.g. a face, food, a room, a document);',
+  '- subject: "single_garment" when one item is clearly the subject (on a hanger, mannequin or laid flat; shoes, bags and wearable accessories count; a pair of shoes counts as one item).',
+  '  A person wearing an outfit is "single_garment": describe the most prominent item (a dress, the outer layer, or the top in the centre of the photo); the other worn items are context, not a reason to reject.',
+  '  "multiple_garments" only when several separate items lie side by side with no single focus (e.g. an outfit laid out flat, a pile or rack of clothes), never for one person wearing an outfit;',
+  '  "no_garment" when there is no wearable item (e.g. a face, food, a room, a document, tableware, furniture, a keyring);',
   '  "unclear" when the image is too dark, blurred or cropped to classify.',
   '- When subject is not "single_garment", set every attribute to null, colors and season to [], and every confidence to 0.',
-  '- Use ONLY the enum values from the JSON schema. The subcategory must belong to the chosen category.',
+  '- Use ONLY the enum values from the JSON schema. The subcategory must belong to the chosen category:',
+  ...Object.entries(SUBCATEGORIES).map(([category, subs]) => `  ${category}: ${subs.map((s) => s.id).join(', ')}`),
+  '- When the item is wearable but its type is not in that list (e.g. jewelry, socks), choose the closest category and set subcategory to null; never name a different item type.',
+  '- A buttoned shirt with a collar (oxford, denim, chambray) is category "shirt" even when worn open over another top; "outerwear" is for jackets, coats and blazers.',
   '- colors: the item\'s visible colours, most dominant first, at most 5. season: seasons the item suits, at most 4.',
   '- Use null for an attribute you cannot determine from the image. Never guess unseen attributes (e.g. material you cannot see).',
   '- gender is the intended cut of the garment (male, female or unisex), not a judgement about any person.',
