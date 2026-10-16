@@ -6,7 +6,6 @@
  * reaches telemetry.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import sharp from 'sharp'
 
 const db = vi.hoisted(() => ({
   wardrobeItem: { findMany: vi.fn() },
@@ -30,7 +29,7 @@ import { MockProvider } from '@/lib/ai/providers/mock'
 import type { LLMProvider, LLMRequest, VisionProvider, VisionRequest } from '@/lib/ai/providers/types'
 import { allowlistDigest, rolloutBucket } from '@/lib/ai/rollout'
 import { analyzeGarment } from '@/lib/ai/vision-service'
-import { authHeader, jsonRequest, TEST_USER } from '../helpers'
+import { authHeader, garmentPhoto, jsonRequest, TEST_USER } from '../helpers'
 
 class CountingLLM implements LLMProvider {
   readonly name = 'gemini'
@@ -111,7 +110,7 @@ afterEach(() => {
 
 const chat = async () => stylistPOST(jsonRequest('/api/v1/stylist/chat', { message: 'Bugun nima kiyay?' }, await authHeader()), undefined)
 const generate = async () => (await generatePOST(jsonRequest('/api/v1/outfits/generate', { occasion: 'casual' }, await authHeader()), undefined)).json()
-const image = () => sharp({ create: { width: 400, height: 500, channels: 3, background: '#2F5DA8' } }).jpeg().toBuffer()
+const image = () => garmentPhoto(400, 500).jpeg().toBuffer()
 const disabled = (feature: string, reason: string) => expect(events.filter((e) => e.event === 'ai.request')).toEqual([expect.objectContaining({ feature, outcome: 'disabled', reason, billable: false })])
 
 describe('stylist', () => {

@@ -24,6 +24,7 @@ import * as colorProfileRoute from '@/app/api/v1/color-profile/route'
 import { GET as getColorProfile } from '@/app/api/v1/color-profile/route'
 import * as colorAnalysis from '@/lib/ai/color-analysis'
 import { selfie as syntheticSelfie } from '../unit/ai/selfie-fixtures'
+import { garmentPhoto } from '../helpers'
 import { POST as analyzeColor } from '@/app/api/v1/color-profile/analyze/route'
 import * as wardrobeRoute from '@/app/api/v1/wardrobe/items/route'
 import * as wardrobeItemRoute from '@/app/api/v1/wardrobe/items/[id]/route'
@@ -115,6 +116,8 @@ async function multipart(url: string, file: Buffer | null, opts: { name?: string
 }
 
 const image = (w: number, h: number, color = '#0F766E') => sharp({ create: { width: w, height: h, channels: 3, background: color } }).jpeg().toBuffer()
+/** Real-provider uploads need photo detail (the vision sharpness check refuses a flat image). */
+const garmentJpeg = (w: number, h: number, color?: string) => garmentPhoto(w, h, color).jpeg().toBuffer()
 const params = <T extends Record<string, string | string[]>>(p: T) => ({ params: Promise.resolve(p) })
 const MOBILE = { 'x-atlas-client': 'mobile' }
 
@@ -278,17 +281,17 @@ describe.skipIf(!enabled)('OAS-04: real responses match the OpenAPI contract', (
       setVisionProviderForTesting({ name: 'gemini', model: 'contract-vision', analyzeImage: async () => ({ output: step(), metadata: { provider: 'gemini', model: 'contract-vision', usage: {} } }) })
     try {
       scripted(() => ({ subject: 'single_garment', category: 'shoes', subcategory: 'boots', colors: ['black'], pattern: 'solid', material: 'leather', sleeveLength: null, fit: null, style: 'classic', season: ['winter'], gender: 'unisex', formality: 'smart_casual', confidence: { ...zero, category: 0.9 } }))
-      const real = await up(await image(500, 600, '#151515'))
+      const real = await up(await garmentJpeg(500, 600, '#151515'))
       expect(real.status).toBe(201)
       expect((await real.json()).detection.mock).toBe(false)
       scripted(() => ({ subject: 'no_garment', category: null, subcategory: null, colors: [], pattern: null, material: null, sleeveLength: null, fit: null, style: null, season: [], gender: null, formality: null, confidence: zero }))
-      await up(await image(500, 500)) // NOT_A_GARMENT
+      await up(await garmentJpeg(500, 500)) // NOT_A_GARMENT
       scripted(() => {
         throw new AiProviderError('unavailable', 'gemini', { status: 503 })
       })
-      await up(await image(500, 500)) // AI_UNAVAILABLE
+      await up(await garmentJpeg(500, 500)) // AI_UNAVAILABLE
       sql(DB, `INSERT INTO "AiUsage" ("id","userId","feature","day","count","updatedAt") VALUES ('${crypto.randomUUID()}','${u.userId}','clothing_analysis', (now() AT TIME ZONE 'Asia/Tashkent')::date, 50, now()) ON CONFLICT ("userId","feature","day") DO UPDATE SET "count" = 50`)
-      await up(await image(500, 500)) // AI_QUOTA_EXCEEDED
+      await up(await garmentJpeg(500, 500)) // AI_QUOTA_EXCEEDED
     } finally {
       setVisionProviderForTesting(null)
     }

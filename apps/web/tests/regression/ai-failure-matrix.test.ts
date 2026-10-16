@@ -13,7 +13,7 @@
  * at configuration time (no silent mock).
  */
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import sharp from 'sharp'
+import { garmentPhoto } from '../helpers'
 
 const db = vi.hoisted(() => ({}))
 vi.mock('@/lib/db', () => ({ db }))
@@ -78,7 +78,7 @@ beforeAll(async () => {
   process.env.AI_LLM_TIMEOUT_MS = '1000'
   process.env.AI_VISION_TIMEOUT_MS = '1000'
   resetAiConfigForTesting()
-  image = await sharp({ create: { width: 400, height: 500, channels: 3, background: '#2F5DA8' } }).jpeg().toBuffer()
+  image = await garmentPhoto(400, 500).jpeg().toBuffer()
 })
 afterAll(() => {
   delete process.env.AI_LLM_TIMEOUT_MS

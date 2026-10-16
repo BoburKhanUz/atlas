@@ -53,9 +53,18 @@ const fail = (kind: ConstructorParameters<typeof AiProviderError>[0]) => () => {
   throw new AiProviderError(kind, 'gemini')
 }
 
+/** Blue fabric with a woven stripe (detail for the sharpness check), 1600×1200. */
+const stripes = (blur?: number) => {
+  const img = sharp(Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200"><rect width="1600" height="1200" fill="#2F5DA8"/>` +
+      Array.from({ length: 40 }, (_, i) => `<rect x="${i * 40}" width="12" height="1200" fill="#3A68B6"/>`).join('') +
+      `</svg>`,
+  ))
+  return blur ? img.blur(blur) : img
+}
 /** A blue garment with EXIF orientation 6 and GPS, 1600×1200 before rotation. */
-const photo = () =>
-  sharp({ create: { width: 1600, height: 1200, channels: 3, background: '#2F5DA8' } })
+const photo = async (blur?: number) =>
+  sharp(await stripes(blur).png().toBuffer())
     .withMetadata({ orientation: 6 })
     .withExifMerge({ IFD0: { Make: 'LeakCam' }, IFD3: { GPSLatitudeRef: 'N', GPSLatitude: '41/1 18/1 0/1' } })
     .jpeg()
@@ -185,6 +194,15 @@ describe('VisionService with a real provider', () => {
     expect(quota.consumeAiQuota).not.toHaveBeenCalled()
   })
 
+  it('a strongly blurred photo → NOT_A_GARMENT unclear before any quota or provider call', async () => {
+    const p = new ScriptedVision([() => garment()])
+    setVisionProviderForTesting(p)
+    expect(await failureOf(analyzeGarment({ buffer: await photo(40), filename: 'x.jpg', userId: 'u1' }))).toEqual({ kind: 'not_a_garment', subject: 'unclear' })
+    expect(p.requests).toHaveLength(0)
+    expect(quota.consumeAiQuota).not.toHaveBeenCalled()
+    expect(lines.join('\n')).toContain('blurry_precheck')
+  })
+
   it('the mock never touches the quota', async () => {
     setVisionProviderForTesting(new MockProvider())
     const { detection } = await analyzeGarment({ buffer: await photo(), filename: 'blue-jeans.jpg', userId: 'u1' })
@@ -230,9 +248,9 @@ describe('POST /api/v1/wardrobe/items with a real provider', () => {
   })
 
   const userFiles = async () => fs.readdir(path.join(dir, 'users', TEST_USER.sub)).catch(() => [] as string[])
-  const send = async () => {
+  const send = async (blur?: number) => {
     const form = new FormData()
-    form.append('file', new File([new Uint8Array(await photo())], `${SECRET_NAME}.jpg`, { type: 'image/jpeg' }))
+    form.append('file', new File([new Uint8Array(await photo(blur))], `${SECRET_NAME}.jpg`, { type: 'image/jpeg' }))
     return upload(await multipartRequest(form, await authHeader()), undefined)
   }
 
@@ -278,6 +296,20 @@ describe('POST /api/v1/wardrobe/items with a real provider', () => {
     expect(await userFiles()).toEqual(before)
     expect(JSON.stringify(body)).not.toMatch(/gemini|provider|HTTP/i) // no provider details
     if (code === 'NOT_A_GARMENT') expect(body.details).toEqual([{ path: 'subject', message: 'multiple_garments' }])
+  })
+
+  it('a strongly blurred photo → 422 NOT_A_GARMENT (unclear), provider not called, nothing stored', async () => {
+    const p = new ScriptedVision([() => garment()])
+    setVisionProviderForTesting(p)
+    const before = await userFiles()
+    const res = await send(40)
+    expect(res.status).toBe(422)
+    const body = await res.json()
+    expect(body.code).toBe('NOT_A_GARMENT')
+    expect(body.details).toEqual([{ path: 'subject', message: 'unclear' }])
+    expect(p.requests).toHaveLength(0)
+    expect(db.$transaction).not.toHaveBeenCalled()
+    expect(await userFiles()).toEqual(before)
   })
 
   it('AI_QUOTA_EXCEEDED → 429 with Retry-After, provider not called, files removed', async () => {

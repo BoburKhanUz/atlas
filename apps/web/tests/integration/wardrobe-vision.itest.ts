@@ -9,6 +9,7 @@ import { promises as fs } from 'fs'
 import os from 'os'
 import path from 'path'
 import sharp from 'sharp'
+import { garmentPhoto } from '../helpers'
 import { NextRequest } from 'next/server'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { POST as upload } from '@/app/api/v1/wardrobe/items/route'
@@ -46,7 +47,7 @@ async function post(file: Buffer, headers: Record<string, string>) {
   )
 }
 
-const jpeg = (color = '#2F5DA8') => sharp({ create: { width: 600, height: 800, channels: 3, background: color } }).jpeg().toBuffer()
+const jpeg = (color = '#2F5DA8') => garmentPhoto(600, 800, color).jpeg().toBuffer()
 const conf = (v: number) => Object.fromEntries(CONFIDENCE_KEYS.map((k) => [k, v]))
 const jeans = () => ({
   subject: 'single_garment', category: 'pants', subcategory: 'jeans', colors: ['blue'], pattern: 'denim', material: 'denim',

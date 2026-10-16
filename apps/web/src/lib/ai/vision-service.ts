@@ -29,6 +29,7 @@ import { analyzeClothing, type ClothingDetection as MockDetection } from './mock
 import { getVisionProvider } from './providers'
 import { isAiProviderError } from './providers/errors'
 import { prepareVisionImage } from './providers/vision-input'
+import { isTooBlurryForAnalysis } from './garment-quality'
 import { recordAiRequest } from './monitoring'
 import { decideAiEligibility, type AiEligibilityReason } from './rollout'
 import { secondsUntilNextQuotaDay } from './quota'
@@ -123,6 +124,12 @@ async function analyzeWithProvider(input: GarmentInput, now: () => Date): Promis
   } catch {
     request({ outcome: 'image_rejected', reason: 'unprocessable_image', billable: false })
     throw new GarmentAnalysisError({ kind: 'image_rejected' })
+  }
+
+  // 1b. A strongly blurred photo is "unclear" without asking the model (garment-quality.ts).
+  if (await isTooBlurryForAnalysis(input.buffer)) {
+    request({ outcome: 'not_a_garment', reason: 'blurry_precheck', billable: false })
+    throw new GarmentAnalysisError({ kind: 'not_a_garment', subject: 'unclear' })
   }
 
   // 2. Quota, immediately before the provider call (atomic; never for the mock).

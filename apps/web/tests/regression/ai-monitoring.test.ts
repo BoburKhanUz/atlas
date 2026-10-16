@@ -9,7 +9,7 @@
  * where user, wardrobe and provider content tries to reach telemetry.
  */
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import sharp from 'sharp'
+import { garmentPhoto } from '../helpers'
 
 const db = vi.hoisted(() => ({}))
 vi.mock('@/lib/db', () => ({ db }))
@@ -72,7 +72,7 @@ beforeAll(async () => {
   process.env.AI_VISION_TIMEOUT_MS = '1000'
   resetAiConfigForTesting()
   // A photo with EXIF/GPS: none of it may reach telemetry.
-  image = await sharp({ create: { width: 400, height: 500, channels: 3, background: '#2F5DA8' } })
+  image = await garmentPhoto(400, 500)
     .withExifMerge({ IFD0: { Make: 'LeakCam' }, IFD3: { GPSLatitudeRef: 'N', GPSLatitude: '41/1 18/1 0/1' } })
     .jpeg()
     .toBuffer()
