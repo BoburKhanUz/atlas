@@ -7,7 +7,7 @@ Files:
 | File | Purpose |
 |---|---|
 | `deploy/compose.server.yml` | Overlay on `docker-compose.yml`: Caddy on ports 80/443, no database or app port on the host, restart policies, log rotation (5 × 10 MB per container), `TRUST_PROXY=1`, `PUBLIC_BASE_URL`, AI price variables |
-| `deploy/Caddyfile` | HTTPS for `ATLAS_DOMAIN`; Caddy obtains and renews the certificate |
+| `deploy/Caddyfile` | HTTPS for `ATLAS_DOMAIN`; Caddy obtains and renews the certificate and sends HSTS (the app sets its other security headers in `apps/web/next.config.ts`) |
 | `deploy/server.env.example` | Settings template with the hybrid AI configuration; copied to `deploy/server.env` (git-ignored) on the server |
 | `deploy/compose.sh` | `docker compose` with the base file, the overlay and `deploy/server.env` |
 | `deploy/backup.sh` | Database dump and uploads archive into `deploy/backups/<UTC time>/` (git-ignored) |

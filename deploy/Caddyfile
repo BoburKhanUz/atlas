@@ -1,7 +1,9 @@
 # HTTPS for the ATLAS API (deploy/compose.server.yml). Caddy obtains and renews
 # the certificate for ATLAS_DOMAIN automatically: the domain's DNS A record must
-# point at this server and ports 80 and 443 must be reachable.
+# point at this server and ports 80 and 443 must be reachable. HSTS is set
+# here, where HTTPS ends; the app sets the other security headers.
 {$ATLAS_DOMAIN} {
 	encode zstd gzip
+	header Strict-Transport-Security "max-age=31536000"
 	reverse_proxy web:3000
 }
