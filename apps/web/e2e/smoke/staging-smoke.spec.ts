@@ -40,11 +40,16 @@ test.describe('staging smoke', () => {
     const started = new Date().toISOString()
     const forbidden: string[] = []
 
+    let legalVersion = ''
     await test.step('health and config', async () => {
       const health = await request.get('/api/health')
       expect(health.status()).toBe(200)
       expect(await health.json()).toMatchObject({ status: 'ok', database: 'ok' })
       expect((await request.get('/api/v1/openapi.json')).status()).toBe(200)
+      // Registration accepts the target's current document version, not this checkout's.
+      const legal = await request.get('/api/v1/legal')
+      expect(legal.status()).toBe(200)
+      legalVersion = ((await legal.json()) as { version: string }).version
     })
 
     const user = mode.account ?? uniqueUser('smoke')
@@ -53,7 +58,7 @@ test.describe('staging smoke', () => {
       expect(anonymous.status()).toBe(401)
       const res = mode.account
         ? await request.post('/api/v1/auth/login', { data: { email: user.email, password: user.password } })
-        : await request.post('/api/v1/auth/register', { data: user })
+        : await request.post('/api/v1/auth/register', { data: { ...user, acceptedLegalVersion: legalVersion, ageConfirmed: true } })
       expect(res.status(), 'sign in').toBe(mode.account ? 200 : 201)
       expect((await request.get('/api/v1/auth/me')).status()).toBe(200)
       forbidden.push(user.email, user.password)

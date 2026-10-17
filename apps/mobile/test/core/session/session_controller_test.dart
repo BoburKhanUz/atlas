@@ -141,7 +141,13 @@ void main() {
       final h = SessionHarness();
       await h.session.restore();
       h.backend.script(P.register, [JsonReply(201, pairJson(1))]);
-      await h.session.register(email: 'new@test.local', password: 'long-enough', name: 'Ali');
+      await h.session.register(
+        email: 'new@test.local',
+        password: 'long-enough',
+        name: 'Ali',
+        acceptedLegalVersion: '2026-10-17',
+        ageConfirmed: true,
+      );
       final r = h.backend.to(P.register).single;
       expect(r.header('X-Atlas-Client'), 'mobile');
       expect(bodyOf(r), {
@@ -149,6 +155,8 @@ void main() {
         'password': 'long-enough',
         'name': 'Ali',
         'deviceName': 'Test device',
+        'acceptedLegalVersion': '2026-10-17',
+        'ageConfirmed': true,
       });
       expect(h.session.state, isA<Authenticated>());
       expect(h.kv.stored?.refreshToken, refresh(1));
@@ -159,7 +167,12 @@ void main() {
       await h.session.restore();
       h.backend.script(P.register, [JsonReply(409, errorBody('CONFLICT'))]);
       await expectLater(
-        h.session.register(email: 'a@test.local', password: 'long-enough'),
+        h.session.register(
+          email: 'a@test.local',
+          password: 'long-enough',
+          acceptedLegalVersion: 'v',
+          ageConfirmed: true,
+        ),
         throwsA(isA<ApiHttpFailure>().having((f) => f.code, 'code', ApiErrorCode.conflict)),
       );
       expect(h.session.state, const Unauthenticated());
@@ -169,7 +182,12 @@ void main() {
       final h = SessionHarness();
       await h.session.restore();
       h.backend.script(P.register, [JsonReply(201, pairJson(1))]);
-      await h.session.register(email: 'n@test.local', password: 'long-enough');
+      await h.session.register(
+        email: 'n@test.local',
+        password: 'long-enough',
+        acceptedLegalVersion: 'v',
+        ageConfirmed: true,
+      );
       expect(bodyOf(h.backend.to(P.register).single).containsKey('name'), isFalse);
     });
   });

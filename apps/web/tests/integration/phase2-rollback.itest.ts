@@ -17,6 +17,7 @@ import path from 'path'
 import sharp from 'sharp'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { PrismaClient } from '@prisma/client'
+import { LEGAL_VERSION } from '@/lib/legal/version'
 import { legacyAbsoluteExpiresAt, preflightFamilies } from '@/server/session/maintenance'
 import { PG, createDb, dbUrl, dropDb, enabled, installTestClock, migrationRows, rows, setClock, snapshot, sql } from './pg'
 
@@ -28,6 +29,7 @@ const DOWN_SQL = path.join(ROLLBACK_DIR, 'down-session-families.sql')
 const DOWN_AI_USAGE = path.join(ROLLBACK_DIR, 'down-ai-usage.sql')
 const DOWN_ANALYSIS_METADATA = path.join(ROLLBACK_DIR, 'down-wardrobe-analysis-metadata.sql')
 const DOWN_COLOR_PROFILE = path.join(ROLLBACK_DIR, 'down-color-profile-v2.sql')
+const DOWN_LEGAL_CONSENT = path.join(ROLLBACK_DIR, 'down-legal-consent.sql')
 const runnable = enabled && !!PHASE2_DIR && existsSync(path.join(PHASE2_DIR, '.next/standalone/server.js')) && existsSync(path.join(NEW_DIR, '.next/standalone/server.js'))
 
 const SECRETS = {
@@ -104,9 +106,9 @@ async function startServer(which: 'phase2' | 'next', db: string, storage: string
   }
 }
 
-/** Reverses the Phase 4 migrations first, newest first, as docs/database/cutover.md says. */
+/** Reverses the later migrations first (legal consent, then Phase 4), newest first, as docs/database/cutover.md says. */
 function downAiUsage(db: string) {
-  for (const file of [DOWN_COLOR_PROFILE, DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE]) {
+  for (const file of [DOWN_LEGAL_CONSENT, DOWN_COLOR_PROFILE, DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE]) {
     const r = downScript(db, file)
     expect(r.code, `${path.basename(file)}: ${r.output}`).toBe(0)
   }
@@ -185,11 +187,13 @@ class Client {
 const photo = (color: string) => sharp({ create: { width: 900, height: 1200, channels: 3, background: color } }).jpeg().toBuffer()
 const email = (tag: string) => `rb_${tag}_${crypto.randomBytes(3).toString('hex')}@test.local`
 const PASSWORD = 'rollback-password-1'
+/** Consent to the current legal documents, required by registration (older builds ignore the fields). */
+const CONSENT = { acceptedLegalVersion: LEGAL_VERSION, ageConfirmed: true }
 const hash = (t: string) => crypto.createHash('sha256').update(t).digest('hex')
 
 async function account(c: Client, tag: string, headers: Record<string, string> = {}) {
   const e = email(tag)
-  const r = await c.req('POST', '/api/v1/auth/register', { email: e, password: PASSWORD }, headers)
+  const r = await c.req('POST', '/api/v1/auth/register', { email: e, password: PASSWORD, ...CONSENT }, headers)
   expect(r.status, `${tag} register: ${JSON.stringify(r.json)}`).toBe(201)
   return { email: e, json: r.json }
 }
@@ -237,7 +241,7 @@ describe.skipIf(!runnable)('Phase 2 rollback and roll-forward (real builds)', ()
     p2 = await startServer('phase2', db, storage) // operator error: old build started after the cutover
     try {
       const fresh = new Client(p2.base)
-      const reg = await fresh.req('POST', '/api/v1/auth/register', { email: email('cut2'), password: PASSWORD })
+      const reg = await fresh.req('POST', '/api/v1/auth/register', { email: email('cut2'), password: PASSWORD, ...CONSENT })
       const login = await fresh.req('POST', '/api/v1/auth/login', { email: (await rows<{ email: string }>(db, `SELECT "email" FROM "User" LIMIT 1`))[0].email, password: PASSWORD })
       const refresh = await user.on(p2.base).req('POST', '/api/v1/auth/refresh')
       note(`CUT-04 phase2-after-cutover: register ${reg.status} ${reg.json.code ?? ''}, login ${login.status} ${login.json.code ?? ''}, refresh ${refresh.status} ${refresh.json.code ?? ''}`)
@@ -466,19 +470,19 @@ describe.skipIf(!runnable)('Phase 2 rollback and roll-forward (real builds)', ()
     const media = path.join(ROLLBACK_DIR, 'down-media-variants.sql')
     // wrong order: later migrations still applied → refused, nothing changed
     const before = snapshot(db)
-    for (const f of [DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE, DOWN_SQL, idem, media]) {
+    for (const f of [DOWN_COLOR_PROFILE, DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE, DOWN_SQL, idem, media]) {
       const r = downScript(db, f)
       expect(r.code).not.toBe(0)
       expect(r.output).toMatch(/later migrations are applied/)
     }
     expect(snapshot(db)).toEqual(before)
     // right order
-    for (const f of [DOWN_COLOR_PROFILE, DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE, DOWN_SQL, idem, media]) {
+    for (const f of [DOWN_LEGAL_CONSENT, DOWN_COLOR_PROFILE, DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE, DOWN_SQL, idem, media]) {
       const r = downScript(db, f)
       expect(r.code, `${path.basename(f)}: ${r.output}`).toBe(0)
     }
-    // the Phase 4 scripts refuse a second run (nothing to reverse)
-    for (const f of [DOWN_COLOR_PROFILE, DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE]) {
+    // the later scripts refuse a second run (nothing to reverse)
+    for (const f of [DOWN_LEGAL_CONSENT, DOWN_COLOR_PROFILE, DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE]) {
       const again = downScript(db, f)
       expect(again.code).not.toBe(0)
       expect(again.output).toMatch(/is not applied/)

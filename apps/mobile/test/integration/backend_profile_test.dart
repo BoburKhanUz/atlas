@@ -198,7 +198,7 @@ void main() {
       final email = _email();
       final a = Device();
       await a.session.restore();
-      await a.session.register(email: email, password: _password);
+      await a.register(email: email, password: _password);
       final b = Device(); // the same account on a second device
       await b.session.restore();
       await b.session.login(email: email, password: _password);

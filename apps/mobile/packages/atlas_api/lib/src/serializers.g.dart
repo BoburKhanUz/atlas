@@ -33,6 +33,10 @@ Serializers _$serializers =
           ..add(HealthResponseDatabaseEnum.serializer)
           ..add(HealthResponseStatusEnum.serializer)
           ..add(ImageObject.serializer)
+          ..add(LegalDocument.serializer)
+          ..add(LegalDocumentIdEnum.serializer)
+          ..add(LegalResponse.serializer)
+          ..add(LegalSection.serializer)
           ..add(LoginRequest.serializer)
           ..add(MeResponse.serializer)
           ..add(MeResponseUser.serializer)
@@ -137,6 +141,14 @@ Serializers _$serializers =
             () => ListBuilder<ErrorResponseDetailsInner>(),
           )
           ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(LegalDocument)]),
+            () => ListBuilder<LegalDocument>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(LegalSection)]),
+            () => ListBuilder<LegalSection>(),
+          )
+          ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(OutfitDetailItem)]),
             () => ListBuilder<OutfitDetailItem>(),
           )
@@ -185,6 +197,7 @@ Serializers _$serializers =
             const FullType(BuiltList, const [const FullType(ProfilePatchRequestPreferencesPreferredStylesEnum)]),
             () => ListBuilder<ProfilePatchRequestPreferencesPreferredStylesEnum>(),
           )
+          ..addBuilderFactory(const FullType(BuiltList, const [const FullType(String)]), () => ListBuilder<String>())
           ..addBuilderFactory(const FullType(BuiltList, const [const FullType(String)]), () => ListBuilder<String>())
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(ImageObject)]),

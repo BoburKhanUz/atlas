@@ -16,6 +16,7 @@ const _signedIn = <AuthState>[Authenticated(_user), Refreshing(_user), LoggingOu
 const _allStates = <AuthState>[AuthRestoring(), ..._signedOut, ..._signedIn];
 
 const _tabs = [AtlasRoutes.home, AtlasRoutes.wardrobe, AtlasRoutes.outfits, AtlasRoutes.stylist, AtlasRoutes.profile];
+const _legal = [AtlasRoutes.privacy, AtlasRoutes.terms];
 
 /// Every route, plus a full-screen route of a later phase.
 const _allLocations = [
@@ -24,6 +25,7 @@ const _allLocations = [
   AtlasRoutes.register,
   AtlasRoutes.onboarding,
   ..._tabs,
+  ..._legal,
   '/wardrobe-item/abc',
 ];
 
@@ -50,11 +52,12 @@ void main() {
     }
   });
 
-  test('signed out → only login/register (onboarding and full-screen routes included)', () {
+  test('signed out → login/register or a legal document; everything else (onboarding, full-screen) → login', () {
     for (final s in _signedOut) {
       for (final o in OnboardingStatus.values) {
         for (final loc in _allLocations) {
-          expect([AtlasRoutes.login, AtlasRoutes.register], contains(_target(s, o, loc)), reason: '$s/$o @ $loc');
+          final stays = [AtlasRoutes.login, AtlasRoutes.register, ..._legal].contains(loc);
+          expect(_target(s, o, loc), stays ? loc : AtlasRoutes.login, reason: '$s/$o @ $loc');
         }
       }
     }
@@ -83,7 +86,7 @@ void main() {
       for (final loc in [AtlasRoutes.splash, AtlasRoutes.login, AtlasRoutes.register, AtlasRoutes.onboarding]) {
         expect(_target(s, OnboardingStatus.notRequired, loc), AtlasRoutes.home);
       }
-      for (final loc in [..._tabs, '/wardrobe-item/abc']) {
+      for (final loc in [..._tabs, ..._legal, '/wardrobe-item/abc']) {
         expect(authRedirect(s, OnboardingStatus.notRequired, loc), isNull);
       }
     }

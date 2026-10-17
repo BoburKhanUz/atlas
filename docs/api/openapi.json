@@ -810,6 +810,83 @@
         ],
         "type": "object"
       },
+      "LegalDocument": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "enum": [
+              "privacy",
+              "terms"
+            ],
+            "type": "string"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/LegalSection"
+            },
+            "type": "array"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "sections"
+        ],
+        "type": "object"
+      },
+      "LegalResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/LegalDocument"
+            },
+            "type": "array"
+          },
+          "draft": {
+            "description": "True while the texts await legal review: clients show a draft notice",
+            "type": "boolean"
+          },
+          "effectiveDate": {
+            "description": "YYYY-MM-DD",
+            "type": "string"
+          },
+          "version": {
+            "description": "Send it back as acceptedLegalVersion when registering",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "effectiveDate",
+          "draft",
+          "documents"
+        ],
+        "type": "object"
+      },
+      "LegalSection": {
+        "additionalProperties": false,
+        "properties": {
+          "heading": {
+            "type": "string"
+          },
+          "paragraphs": {
+            "description": "Plain text; a paragraph starting with \"• \" is a list item",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "heading",
+          "paragraphs"
+        ],
+        "type": "object"
+      },
       "LoginRequest": {
         "properties": {
           "deviceName": {
@@ -2680,6 +2757,15 @@
       },
       "RegisterRequest": {
         "properties": {
+          "acceptedLegalVersion": {
+            "description": "The `version` from GET /api/v1/legal that the user accepted; it must be the current one.",
+            "maxLength": 40,
+            "type": "string"
+          },
+          "ageConfirmed": {
+            "description": "The user confirmed being 18 or older; must be true.",
+            "type": "boolean"
+          },
           "deviceName": {
             "description": "Mobile only: a label for the device in the session list (ignored for web).",
             "maxLength": 100,
@@ -2704,7 +2790,9 @@
         },
         "required": [
           "email",
-          "password"
+          "password",
+          "acceptedLegalVersion",
+          "ageConfirmed"
         ],
         "type": "object"
       },
@@ -4473,6 +4561,41 @@
         "summary": "Analyse a selfie into a colour profile, replacing the current one. Deterministic and on the server only: the selfie is not stored, logged or sent to any AI provider. Nothing is stored for any error.",
         "tags": [
           "profile"
+        ]
+      }
+    },
+    "/api/v1/legal": {
+      "get": {
+        "operationId": "getLegalDocuments",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalResponse"
+                }
+              }
+            },
+            "description": "Legal documents"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [],
+        "summary": "The current privacy policy and terms of use (versioned; registration accepts the version)",
+        "tags": [
+          "legal"
         ]
       }
     },
@@ -6651,6 +6774,9 @@
     },
     {
       "name": "auth"
+    },
+    {
+      "name": "legal"
     },
     {
       "name": "media"

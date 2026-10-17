@@ -298,10 +298,21 @@ export function ProfileScreen() {
       {/* Privacy note */}
       <div className="flex items-start gap-2 text-xs text-muted-foreground mt-6 px-1 leading-relaxed">
         <Shield className="w-3.5 h-3.5 mt-0.5 text-primary shrink-0" />
-        <p>
-          Ma'lumotlaringiz shaxsiy saqlanadi. Rasmlaringiz modelni
-          o'rgatish uchun ishlatilmaydi.
-        </p>
+        <div className="space-y-1.5">
+          <p>
+            Ma'lumotlaringiz shaxsiy saqlanadi. Rasmlaringiz modelni
+            o'rgatish uchun ishlatilmaydi.
+          </p>
+          <p>
+            <Link href={routes.privacy()} className="underline underline-offset-2 hover:text-foreground">
+              Maxfiylik siyosati
+            </Link>
+            {' · '}
+            <Link href={routes.terms()} className="underline underline-offset-2 hover:text-foreground">
+              Foydalanish shartlari
+            </Link>
+          </p>
+        </div>
       </div>
 
       <ConfirmDialog

@@ -189,6 +189,17 @@ describe('proxy page gate', () => {
     expect((await proxy(page('/login'))).headers.get('x-middleware-next')).toBe('1')
   })
 
+  it('/privacy and /terms are public: no redirect, no rotation, signed in or not', async () => {
+    const at = await signAccessToken({ ...TEST_USER, sid: 'sess_x' })
+    for (const p of ['/privacy', '/terms']) {
+      for (const cookies of [{}, { atlas_at: at }, { atlas_rt: 'some-refresh-token' }]) {
+        const res = await proxy(page(p, cookies)) // the fake session store throws if it is touched
+        expect(res.headers.get('x-middleware-next')).toBe('1')
+        expect(setCookies(res)).toHaveLength(0)
+      }
+    }
+  })
+
   it('safeNextPath only allows same-origin relative paths', () => {
     expect(safeNextPath('/a?b=1')).toBe('/a?b=1')
     for (const bad of ['//evil.com', 'https://evil.com', '/\\evil.com', 'javascript:alert(1)', '/a\nb', '', null]) {

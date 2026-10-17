@@ -70,6 +70,7 @@ Class | Method | HTTP request | Description
 [*AuthApi*](doc/AuthApi.md) | [**logout**](doc/AuthApi.md#logout) | **POST** /api/v1/auth/logout | End this login (session family). Idempotent.
 [*AuthApi*](doc/AuthApi.md) | [**refreshSession**](doc/AuthApi.md#refreshsession) | **POST** /api/v1/auth/refresh | Rotate the refresh token (web: atlas_rt cookie; mobile: body). A token rotated ≤ 60 s ago returns the same new token.
 [*AuthApi*](doc/AuthApi.md) | [**register**](doc/AuthApi.md#register) | **POST** /api/v1/auth/register | Create an account and sign in (web: cookies; mobile: tokens in the body)
+[*LegalApi*](doc/LegalApi.md) | [**getLegalDocuments**](doc/LegalApi.md#getlegaldocuments) | **GET** /api/v1/legal | The current privacy policy and terms of use (versioned; registration accepts the version)
 [*MediaApi*](doc/MediaApi.md) | [**getMedia**](doc/MediaApi.md#getmedia) | **GET** /api/v1/media/{key} | A private image through its signed URL (use the URLs from API responses as-is)
 [*OutfitsApi*](doc/OutfitsApi.md) | [**deleteOutfit**](doc/OutfitsApi.md#deleteoutfit) | **DELETE** /api/v1/outfits/{id} | Delete an outfit
 [*OutfitsApi*](doc/OutfitsApi.md) | [**generateOutfits**](doc/OutfitsApi.md#generateoutfits) | **POST** /api/v1/outfits/generate | Generate outfit suggestions from the wardrobe: a deterministic engine (hard filters, bounded candidates, scoring, stable order) plus optional AI reranking/explanation that never fails the request (fallback: true). The same wardrobe, context and seed always give the same result; omit seed for the best outfits, send a new seed for another deterministic option.
@@ -118,6 +119,9 @@ Class | Method | HTTP request | Description
  - [ErrorResponseDetailsInner](doc/ErrorResponseDetailsInner.md)
  - [HealthResponse](doc/HealthResponse.md)
  - [ImageObject](doc/ImageObject.md)
+ - [LegalDocument](doc/LegalDocument.md)
+ - [LegalResponse](doc/LegalResponse.md)
+ - [LegalSection](doc/LegalSection.md)
  - [LoginRequest](doc/LoginRequest.md)
  - [MeResponse](doc/MeResponse.md)
  - [MeResponseUser](doc/MeResponseUser.md)

@@ -7,6 +7,7 @@ import { NextRequest } from 'next/server'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { POST as login } from '@/app/api/v1/auth/login/route'
 import { POST as register } from '@/app/api/v1/auth/register/route'
+import { LEGAL_VERSION } from '@/lib/legal/version'
 import { POST as refresh } from '@/app/api/v1/auth/refresh/route'
 import { POST as logout } from '@/app/api/v1/auth/logout/route'
 import { GET as me } from '@/app/api/v1/auth/me/route'
@@ -50,9 +51,12 @@ function isCleared(res: Response, name: string) {
   return !!line && /Max-Age=0/i.test(line) && line.startsWith(`${name}=;`)
 }
 
+/** Consent to the current legal documents, required by registration. */
+const CONSENT = { acceptedLegalVersion: LEGAL_VERSION, ageConfirmed: true }
+
 async function newAccount(headers: Record<string, string> = {}, extra: Record<string, unknown> = {}) {
   const email = `http_${process.pid}_${++seq}@test.local`
-  const res = await register(request('/api/v1/auth/register', { body: { email, password: PASSWORD, ...extra }, headers }))
+  const res = await register(request('/api/v1/auth/register', { body: { email, password: PASSWORD, ...CONSENT, ...extra }, headers }))
   expect(res.status).toBe(201)
   return { email, res }
 }

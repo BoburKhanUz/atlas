@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { api, ApiError } from '@/lib/api-client'
@@ -16,6 +17,19 @@ export type AuthMode = 'login' | 'register'
 
 interface AuthResponse {
   user: { id: string; email: string; name: string | null }
+}
+
+interface LegalResponse {
+  version: string
+}
+
+/** Registration refused because the legal documents changed since they were loaded. */
+function isOutdatedConsent(err: ApiError): boolean {
+  return (
+    err.code === 'VALIDATION_ERROR' &&
+    Array.isArray(err.details) &&
+    err.details.some((d) => (d as { path?: unknown })?.path === 'acceptedLegalVersion')
+  )
 }
 
 /**
@@ -35,13 +49,36 @@ export function AuthScreen({ mode }: { mode: AuthMode }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
+  const [ageConfirmed, setAgeConfirmed] = useState(false)
+  const [legalAccepted, setLegalAccepted] = useState(false)
+  // The version of the documents behind the links (GET /api/v1/legal): the
+  // server accepts only the current one, so it is not baked into the bundle.
+  const [legalVersion, setLegalVersion] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (mode !== 'register' || legalVersion) return
+    let cancelled = false
+    api<LegalResponse>('/api/v1/legal')
+      .then((r) => {
+        if (!cancelled) setLegalVersion(r.version)
+      })
+      .catch(() => {}) // loaded again on submit
+    return () => {
+      cancelled = true
+    }
+  }, [mode, legalVersion])
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     if (busy) return
     setError(null)
+    // Same rule as the server (RegisterRequest): both boxes are required.
+    if (mode === 'register' && (!ageConfirmed || !legalAccepted)) {
+      setError(ageConfirmed ? t('consentRequired') : t('ageRequired'))
+      return
+    }
     setBusy(true)
 
     try {
@@ -49,7 +86,13 @@ export function AuthScreen({ mode }: { mode: AuthMode }) {
       const body =
         mode === 'login'
           ? { email, password }
-          : { email, password, name: name || undefined }
+          : {
+              email,
+              password,
+              name: name || undefined,
+              acceptedLegalVersion: legalVersion ?? (await api<LegalResponse>('/api/v1/legal')).version,
+              ageConfirmed,
+            }
       // Server sets HttpOnly session cookies; the body only carries the user.
       await api<AuthResponse>(path, { method: 'POST', body })
       toast({
@@ -60,6 +103,11 @@ export function AuthScreen({ mode }: { mode: AuthMode }) {
       // Keep `busy` on while navigating away.
       return
     } catch (err) {
+      if (err instanceof ApiError && isOutdatedConsent(err)) {
+        // Load the new version and ask for the consent again.
+        setLegalAccepted(false)
+        setLegalVersion(null)
+      }
       const msg = err instanceof ApiError ? err.message : tErrors('network')
       setError(msg)
     }
@@ -191,6 +239,37 @@ export function AuthScreen({ mode }: { mode: AuthMode }) {
               )}
             </div>
 
+            {mode === 'register' && (
+              <div className="space-y-3 pt-1">
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="ageConfirmed"
+                    checked={ageConfirmed}
+                    onCheckedChange={(v) => setAgeConfirmed(v === true)}
+                    className="mt-0.5"
+                  />
+                  <Label htmlFor="ageConfirmed" className="font-normal leading-snug">
+                    {t('ageLabel')}
+                  </Label>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="legalAccepted"
+                    checked={legalAccepted}
+                    onCheckedChange={(v) => setLegalAccepted(v === true)}
+                    className="mt-0.5"
+                  />
+                  {/* The links open in a new tab so the form keeps what was typed. */}
+                  <Label htmlFor="legalAccepted" className="block font-normal leading-snug">
+                    {t.rich('consentLabel', {
+                      terms: (chunks) => <LegalLink href={routes.terms()}>{chunks}</LegalLink>,
+                      privacy: (chunks) => <LegalLink href={routes.privacy()}>{chunks}</LegalLink>,
+                    })}
+                  </Label>
+                </div>
+              </div>
+            )}
+
             {error && (
               <motion.div
                 role="alert"
@@ -216,11 +295,29 @@ export function AuthScreen({ mode }: { mode: AuthMode }) {
           </form>
         </motion.div>
 
-        <p className="text-xs text-muted-foreground text-center mt-6 leading-relaxed">
-          {t('terms')}
-        </p>
+        <nav
+          aria-label={t('legalLinks')}
+          className="flex justify-center gap-2 text-xs text-muted-foreground mt-6"
+        >
+          <LegalLink href={routes.privacy()}>{t('privacyLink')}</LegalLink>
+          <span aria-hidden="true">·</span>
+          <LegalLink href={routes.terms()}>{t('termsLink')}</LegalLink>
+        </nav>
       </div>
     </div>
+  )
+}
+
+function LegalLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="underline underline-offset-2 hover:text-foreground"
+    >
+      {children}
+    </Link>
   )
 }
 

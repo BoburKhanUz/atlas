@@ -12,6 +12,7 @@ import '../../../core/widgets/atlas_card.dart';
 import '../../../core/widgets/atlas_page.dart';
 import '../../../core/widgets/skeleton.dart' show LoadingView;
 import '../../../core/widgets/state_views.dart';
+import '../../legal/data/legal_repository.dart' show LegalDocumentKind;
 import '../../onboarding/data/options.dart';
 import '../data/color_profile_repository.dart';
 import '../providers.dart';
@@ -137,6 +138,17 @@ class ProfileScreen extends ConsumerWidget {
                   icon: const Icon(Icons.delete_forever_outlined, color: AtlasColors.error),
                   label: const Text('Hisobni o‘chirish', style: TextStyle(color: AtlasColors.error)),
                 ),
+                const SizedBox(height: AtlasSpacing.lg),
+                Text('Huquqiy hujjatlar', style: text.titleSmall),
+                for (final kind in LegalDocumentKind.values)
+                  ListTile(
+                    key: Key('profile.${kind.name}'),
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.description_outlined),
+                    title: Text(kind.label),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => context.push(AtlasRoutes.legal(kind)),
+                  ),
                 const SizedBox(height: AtlasSpacing.xl),
               ],
             ),

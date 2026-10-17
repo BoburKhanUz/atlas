@@ -11,6 +11,7 @@ import 'package:atlas_api/src/auth/bearer_auth.dart';
 import 'package:atlas_api/src/auth/oauth.dart';
 import 'package:atlas_api/src/api/account_api.dart';
 import 'package:atlas_api/src/api/auth_api.dart';
+import 'package:atlas_api/src/api/legal_api.dart';
 import 'package:atlas_api/src/api/media_api.dart';
 import 'package:atlas_api/src/api/outfits_api.dart';
 import 'package:atlas_api/src/api/profile_api.dart';
@@ -86,6 +87,12 @@ class AtlasApi {
   /// by doing that all interceptors will not be executed
   AuthApi getAuthApi() {
     return AuthApi(dio, serializers);
+  }
+
+  /// Get LegalApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  LegalApi getLegalApi() {
+    return LegalApi(dio, serializers);
   }
 
   /// Get MediaApi instance, base route and serializer can be overridden by a given but be careful,

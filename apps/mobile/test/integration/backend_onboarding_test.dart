@@ -48,10 +48,7 @@ void main() {
       final c = containerFor(d);
       final gate = c.read(onboardingGateProvider);
       await d.session.restore();
-      await d.session.register(
-        email: 'onb-${DateTime.now().microsecondsSinceEpoch}@test.local',
-        password: 'it-password-123',
-      );
+      await d.register(email: 'onb-${DateTime.now().microsecondsSinceEpoch}@test.local', password: 'it-password-123');
       await settle(gate);
       expect(gate.status, OnboardingStatus.required, reason: 'a new account has no preferences');
 

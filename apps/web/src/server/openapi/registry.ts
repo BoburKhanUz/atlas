@@ -84,6 +84,13 @@ export const OPERATIONS: Operation[] = [
     success: [{ status: 200, description: 'Current user', schema: Res.MeResponse }],
     errors: ['NOT_FOUND'],
   },
+  // ─── Legal ────────────────────────────────────────────────────────────────
+  {
+    method: 'GET', path: '/api/v1/legal', route: 'api/v1/legal', operationId: 'getLegalDocuments', tags: ['legal'],
+    summary: 'The current privacy policy and terms of use (versioned; registration accepts the version)', auth: 'none',
+    success: [{ status: 200, description: 'Legal documents', schema: Res.LegalResponse }],
+    errors: [],
+  },
   // ─── Account and profile ──────────────────────────────────────────────────
   {
     method: 'DELETE', path: '/api/v1/account', route: 'api/v1/account', operationId: 'deleteAccount', tags: ['account'],

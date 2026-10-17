@@ -179,7 +179,7 @@ describe.skipIf(!enabled)('COL: colour profile v2 (real PostgreSQL)', () => {
   it('COL-09: the migration keeps only each user’s current profile, labels it v1 and drops raw colour data; the rollback restores the old shape', async () => {
     const db_ = 'itest_color_migration'
     const V2 = MIGRATION_NAMES.indexOf('20261009000000_color_profile_v2')
-    expect(V2).toBe(MIGRATION_NAMES.length - 1)
+    expect(V2).toBeGreaterThan(0)
     createDb(db_)
     try {
       const before = migrationsDir(V2)
@@ -191,7 +191,7 @@ describe.skipIf(!enabled)('COL: colour profile v2 (real PostgreSQL)', () => {
           ('cur1','u1','autumn','{"skinAvgRgb":{"r":2}}', now(), TIMESTAMP '2026-10-02'),
           ('cur2','u2','winter','{}', now(), TIMESTAMP '2026-10-03');
         INSERT INTO "UserProfile" ("id","userId","colorProfileId","updatedAt") VALUES ('p1','u1','cur1', now()), ('p2','u2','cur2', now());`)
-      const all = migrationsDir()
+      const all = migrationsDir(V2 + 1) // up to and including this migration (its down script needs it to be the newest)
       expect((await prisma(db_, all)).code).toBe(0)
       rmDir(all)
       expect(rows(db_, `SELECT "id", "season", "analysisVersion" AS v, "analysisJson" AS j, "confidence" AS c FROM "ColorProfile" ORDER BY "id"`)).toEqual([

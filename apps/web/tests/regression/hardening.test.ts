@@ -21,6 +21,7 @@ const db = vi.hoisted(() => ({
 vi.mock('@/lib/db', () => ({ db }))
 
 import { POST as register } from '@/app/api/v1/auth/register/route'
+import { LEGAL_VERSION } from '@/lib/legal/version'
 import { POST as upload } from '@/app/api/v1/wardrobe/items/route'
 import { checkRateLimit, clientIp, resetRateLimits } from '@/lib/rate-limit'
 import { getStorageProvider, setStorageProviderForTesting } from '@/lib/storage/provider'
@@ -100,7 +101,7 @@ describe('register global rate limit', () => {
 
   it('returns 429 after the global limit when no trusted IP is available', async () => {
     const attempt = (i: number) =>
-      register(jsonRequest('/api/v1/auth/register', { email: `u${i}@example.com`, password: 'password123' }))
+      register(jsonRequest('/api/v1/auth/register', { email: `u${i}@example.com`, password: 'password123', acceptedLegalVersion: LEGAL_VERSION, ageConfirmed: true }))
     for (let i = 0; i < 100; i++) expect((await attempt(i)).status).toBe(409)
     const blocked = await attempt(100)
     expect(blocked.status).toBe(429)

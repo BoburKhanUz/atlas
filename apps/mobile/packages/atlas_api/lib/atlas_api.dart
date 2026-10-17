@@ -12,6 +12,7 @@ export 'package:atlas_api/src/model/date.dart';
 
 export 'package:atlas_api/src/api/account_api.dart';
 export 'package:atlas_api/src/api/auth_api.dart';
+export 'package:atlas_api/src/api/legal_api.dart';
 export 'package:atlas_api/src/api/media_api.dart';
 export 'package:atlas_api/src/api/outfits_api.dart';
 export 'package:atlas_api/src/api/profile_api.dart';
@@ -40,6 +41,9 @@ export 'package:atlas_api/src/model/error_response.dart';
 export 'package:atlas_api/src/model/error_response_details_inner.dart';
 export 'package:atlas_api/src/model/health_response.dart';
 export 'package:atlas_api/src/model/image_object.dart';
+export 'package:atlas_api/src/model/legal_document.dart';
+export 'package:atlas_api/src/model/legal_response.dart';
+export 'package:atlas_api/src/model/legal_section.dart';
 export 'package:atlas_api/src/model/login_request.dart';
 export 'package:atlas_api/src/model/me_response.dart';
 export 'package:atlas_api/src/model/me_response_user.dart';

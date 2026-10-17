@@ -231,7 +231,29 @@ abstract final class P {
   static const colorProfile = '/api/v1/color-profile';
   static const analyze = '/api/v1/color-profile/analyze';
   static const account = '/api/v1/account';
+  static const legal = '/api/v1/legal';
 }
+
+/// GET /api/v1/legal: both documents, one section each (a paragraph and a
+/// list item).
+Map<String, Object?> legalJson({String version = '2026-10-17-draft', bool draft = true}) => {
+  'version': version,
+  'effectiveDate': '2026-10-17',
+  'draft': draft,
+  'documents': [
+    for (final (id, title) in [('privacy', 'Maxfiylik siyosati'), ('terms', 'Foydalanish shartlari')])
+      {
+        'id': id,
+        'title': title,
+        'sections': [
+          {
+            'heading': '$title: asosiy qoida',
+            'paragraphs': ['$title matni.', '• $title bandi'],
+          },
+        ],
+      },
+  ],
+};
 
 /// GET /api/v1/profile of user u1 (no name, no preferences).
 Map<String, Object?> defaultProfileJson() => {
@@ -270,6 +292,8 @@ class SessionHarness {
     backend.script(P.colorProfile, [
       JsonReply(200, {'status': 'not_analyzed', 'colorProfile': null, 'message': 'Selfie yuklang.'}),
     ]);
+    // The register screen and the legal pages read the documents.
+    backend.script(P.legal, [JsonReply(200, legalJson())]);
     store = TokenStore(kv);
     final config = AtlasEnvironmentConfig.fromValues(environment: 'development', apiBaseUrl: 'http://api.test');
     session = SessionController(

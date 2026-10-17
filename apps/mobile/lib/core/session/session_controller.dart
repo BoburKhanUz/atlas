@@ -214,8 +214,16 @@ class SessionController extends ChangeNotifier implements AccessTokenSource {
   );
 
   /// POST /api/v1/auth/register (mobile mode): 201 with a mobile session,
-  /// handled exactly like login.
-  Future<void> register({required String email, required String password, String? name}) => _signIn(
+  /// handled exactly like login. [acceptedLegalVersion] is the `version` of
+  /// the legal documents the user agreed to (GET /api/v1/legal);
+  /// [ageConfirmed] the 18+ confirmation. The server refuses either missing.
+  Future<void> register({
+    required String email,
+    required String password,
+    String? name,
+    required String acceptedLegalVersion,
+    required bool ageConfirmed,
+  }) => _signIn(
     () => _auth.register(
       xAtlasClient: 'mobile',
       registerRequest: RegisterRequest(
@@ -223,7 +231,9 @@ class SessionController extends ChangeNotifier implements AccessTokenSource {
           ..email = email
           ..password = password
           ..name = name
-          ..deviceName = deviceName,
+          ..deviceName = deviceName
+          ..acceptedLegalVersion = acceptedLegalVersion
+          ..ageConfirmed = ageConfirmed,
       ),
     ),
   );

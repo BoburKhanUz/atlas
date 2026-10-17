@@ -25,7 +25,7 @@ const handler = withApi(async (req: NextRequest) => {
     throw new ApiError('RATE_LIMITED', undefined, undefined, { 'Retry-After': String(blocked.retryAfterSeconds) })
   }
 
-  const { email, password, name, deviceName } = await parseJson(req, RegisterRequest)
+  const { email, password, name, deviceName, acceptedLegalVersion, ageConfirmed } = await parseJson(req, RegisterRequest)
   const normalizedEmail = email.toLowerCase().trim()
 
   const existing = await db.user.findUnique({ where: { email: normalizedEmail } })
@@ -33,8 +33,8 @@ const handler = withApi(async (req: NextRequest) => {
 
   const passwordHash = await hashPassword(password)
 
-  // Transactional create: user + profile + preferences — never leave a User
-  // without its companion rows (spec section 23).
+  // Transactional create: user + profile + preferences + the legal consent —
+  // never leave a User without its companion rows (spec section 23).
   const user = await db.$transaction(async (tx) => {
     const u = await tx.user.create({
       data: { email: normalizedEmail, name, passwordHash },
@@ -50,6 +50,7 @@ const handler = withApi(async (req: NextRequest) => {
         language: 'uz',
       },
     })
+    await tx.legalConsent.create({ data: { userId: u.id, version: acceptedLegalVersion, ageConfirmed } })
     return u
   })
 

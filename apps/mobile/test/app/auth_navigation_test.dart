@@ -102,6 +102,7 @@ void main() {
       await tester.tap(find.byKey(const Key('login.toRegister')));
       await tester.pumpAndSettle();
       expect(location(router), AtlasRoutes.register);
+      await tester.ensureVisible(find.byKey(const Key('register.toLogin')));
       await tester.tap(find.byKey(const Key('register.toLogin')));
       await tester.pumpAndSettle();
       expect(location(router), AtlasRoutes.login);

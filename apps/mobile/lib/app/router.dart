@@ -9,6 +9,8 @@ import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
 import '../features/auth/presentation/splash_screen.dart';
 import '../features/home/presentation/home_screen.dart';
+import '../features/legal/data/legal_repository.dart' show LegalDocumentKind;
+import '../features/legal/presentation/legal_document_screen.dart';
 import '../features/onboarding/onboarding_gate.dart';
 import '../features/onboarding/presentation/onboarding_screen.dart';
 import '../features/onboarding/providers.dart';
@@ -53,6 +55,14 @@ abstract final class AtlasRoutes {
   static const profileColorAnalyze = '/profile/color/analyze';
   static const profileDelete = '/profile/delete';
   static String stylistChat(String id) => '/stylist/chat/$id';
+
+  /// The legal documents: readable signed out too (the register screen links them).
+  static const privacy = '/legal/privacy';
+  static const terms = '/legal/terms';
+  static String legal(LegalDocumentKind kind) => switch (kind) {
+    LegalDocumentKind.privacy => privacy,
+    LegalDocumentKind.terms => terms,
+  };
 }
 
 /// The only place that decides where the user may be, from the auth state
@@ -62,10 +72,11 @@ abstract final class AtlasRoutes {
 /// only a session that ended leads to sign-in).
 String? authRedirect(AuthState state, OnboardingStatus onboarding, String location) {
   final onAuthPage = location == AtlasRoutes.login || location == AtlasRoutes.register;
+  final onLegalPage = location == AtlasRoutes.privacy || location == AtlasRoutes.terms;
   String? stay(String target) => location == target ? null : target;
   return switch (state) {
     AuthRestoring() => stay(AtlasRoutes.splash),
-    Unauthenticated() || SessionExpired() || Authenticating() => onAuthPage ? null : AtlasRoutes.login,
+    Unauthenticated() || SessionExpired() || Authenticating() => onAuthPage || onLegalPage ? null : AtlasRoutes.login,
     Authenticated() || Refreshing() || LoggingOut() => switch (onboarding) {
       // Signed in, decision pending (a moment at most): keep the splash.
       OnboardingStatus.none || OnboardingStatus.checking => stay(AtlasRoutes.splash),
@@ -110,6 +121,11 @@ GoRouter buildRouter({
     atlasFullScreenRoute(path: AtlasRoutes.profileColor, builder: (_, _) => const ColorProfileScreen()),
     atlasFullScreenRoute(path: AtlasRoutes.profileColorAnalyze, builder: (_, _) => const SelfieAnalysisScreen()),
     atlasFullScreenRoute(path: AtlasRoutes.profileDelete, builder: (_, _) => const DeleteAccountScreen()),
+    for (final kind in LegalDocumentKind.values)
+      atlasFullScreenRoute(
+        path: AtlasRoutes.legal(kind),
+        builder: (_, _) => LegalDocumentScreen(kind: kind),
+      ),
     atlasFullScreenRoute(
       path: '/wardrobe/item/:id',
       builder: (_, state) => ItemDetailScreen(id: state.pathParameters['id']!),

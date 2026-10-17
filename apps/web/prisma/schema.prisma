@@ -34,6 +34,7 @@ model User {
   sessionFamilies SessionFamily[]
   idempotencyKeys IdempotencyKey[]
   aiUsage      AiUsage[]
+  legalConsents LegalConsent[]
 }
 
 // Refresh-token sessions. Only the SHA-256 hash of the opaque refresh token is
@@ -355,4 +356,18 @@ model AiUsage {
 
   @@unique([userId, feature, day])
   @@index([day])
+}
+
+// ─── Legal consent (privacy policy + terms of use) ──────────────────────────
+// One row per acceptance of a document version (src/lib/legal/version.ts).
+// Written at registration; a later re-consent adds a row. Cascades from User.
+model LegalConsent {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  version      String   // LEGAL_VERSION the user accepted
+  ageConfirmed Boolean  // the user confirmed being 18 or older
+  acceptedAt   DateTime @default(now())
+
+  @@index([userId])
 }

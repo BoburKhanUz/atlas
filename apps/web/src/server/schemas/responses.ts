@@ -80,6 +80,26 @@ export const MeResponse = z.strictObject({
   user: z.strictObject({ id: z.string(), email: z.string(), name: nullableString, createdAt: DateTime }),
 })
 
+// ─── Legal ──────────────────────────────────────────────────────────────────
+
+export const LegalSection = z.strictObject({
+  heading: z.string(),
+  paragraphs: z.array(z.string()).describe('Plain text; a paragraph starting with "• " is a list item'),
+})
+
+export const LegalDocument = z.strictObject({
+  id: z.enum(['privacy', 'terms']),
+  title: z.string(),
+  sections: z.array(LegalSection),
+})
+
+export const LegalResponse = z.strictObject({
+  version: z.string().describe('Send it back as acceptedLegalVersion when registering'),
+  effectiveDate: z.string().describe('YYYY-MM-DD'),
+  draft: z.boolean().describe('True while the texts await legal review: clients show a draft notice'),
+  documents: z.array(LegalDocument),
+})
+
 // ─── Wardrobe ───────────────────────────────────────────────────────────────
 
 export const ImageObject = z

@@ -2,6 +2,8 @@
 
 Status: **engineering review, not a legal opinion.** The items marked **REQUIRES LEGAL REVIEW** need the data owner and counsel before real user data is sent to any provider. Reviewed against commit `516d2d1` plus the Phase 4.5 fixes listed at the end.
 
+The user-facing privacy policy and terms (`apps/web/src/lib/legal/documents.ts`, shown at `/privacy`, `/terms` and in the mobile app) describe these data flows. A change to what a provider receives changes those texts too, with a new `LEGAL_VERSION`.
+
 ## What each provider receives
 
 Nothing below includes a database id, user id, email, name, conversation id, image URL, storage key, file name or API key of another service. The key of the selected provider is sent only as a header (`x-goog-api-key` or `Authorization`), never in a URL.

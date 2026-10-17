@@ -3,8 +3,11 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import sharp from 'sharp'
+import { LEGAL_VERSION } from '../src/lib/legal/version'
 
 export const PASSWORD = 'e2e-Passw0rd!'
+/** Consent to the current legal documents, required by registration. */
+export const CONSENT = { acceptedLegalVersion: LEGAL_VERSION, ageConfirmed: true }
 
 let seq = 0
 export function uniqueUser(label = 'u') {
@@ -17,7 +20,7 @@ export type TestUser = ReturnType<typeof uniqueUser>
 
 /** Register through the API; the context's cookie jar gets the session cookies. */
 export async function registerViaApi(request: APIRequestContext, user = uniqueUser()) {
-  const res = await request.post('/api/v1/auth/register', { data: user })
+  const res = await request.post('/api/v1/auth/register', { data: { ...user, ...CONSENT } })
   expect(res.status(), 'register').toBe(201)
   return user
 }
@@ -28,6 +31,8 @@ export async function registerViaUi(page: Page, user = uniqueUser()) {
   await page.getByLabel('Ismingiz').fill(user.name)
   await page.getByLabel('Email').fill(user.email)
   await page.getByLabel('Parol').fill(user.password)
+  await page.getByLabel('18 yoshdan kattaman').check()
+  await page.getByLabel(/Foydalanish shartlari.*roziman/).check()
   await page.getByRole('button', { name: 'Boshlash' }).click()
   await expect(page).toHaveURL(/\/$/)
   return user

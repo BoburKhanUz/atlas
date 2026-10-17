@@ -7,6 +7,7 @@
  * - /api/**: CSRF guard only — a state-changing, cookie-authenticated request
  *   whose Origin host differs from Host gets 403 FORBIDDEN. Bearer-authenticated
  *   requests are exempt. No DB work on API requests.
+ * - /privacy and /terms: public, no session work (readable before sign-up).
  * - Pages: valid access cookie → continue. Otherwise, with a refresh cookie,
  *   rotate server-side and continue with fresh cookies. Otherwise redirect to
  *   /login?next=<path>. /login and /register redirect a signed-in user to `/`.
@@ -31,6 +32,8 @@ import { ApiError, errorResponse, requestIdOf } from '@/server/http'
 import { log } from '@/server/log'
 
 const GUEST_ONLY_PATHS = new Set(['/login', '/register'])
+/** Pages anyone can open, signed in or not: the legal documents. */
+const PUBLIC_PATHS = new Set(['/privacy', '/terms'])
 export const RETRY_COOKIE = 'atlas_retry'
 const RETRY_COOKIE_SECONDS = 5
 
@@ -70,6 +73,8 @@ export async function proxy(request: NextRequest) {
     }
     return next(request, requestId)
   }
+
+  if (PUBLIC_PATHS.has(pathname)) return next(request, requestId)
 
   // ── Pages ────────────────────────────────────────────────────────────────
   let state: PageSession = 'none'

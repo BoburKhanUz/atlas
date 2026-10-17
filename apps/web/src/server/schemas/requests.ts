@@ -20,6 +20,7 @@ import {
   subcategorySchema,
 } from '@/server/schemas/catalog'
 import { idSchema, partialWeatherSchema, weatherSnapshotSchema } from '@/server/schemas/common'
+import { LEGAL_VERSION } from '@/lib/legal/version'
 
 // ─── Auth ───────────────────────────────────────────────────────────────────
 
@@ -35,11 +36,23 @@ export const LoginRequest = z.object({
   deviceName: deviceName.optional(),
 })
 
+const CONSENT_REQUIRED = 'Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.'
+const CONSENT_OUTDATED = 'Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang.'
+
 export const RegisterRequest = z.object({
   email: z.string().email('Email noto‘g‘ri'),
   password: z.string().min(8, 'Parol kamida 8 belgi bo‘lishi kerak').max(200),
   name: z.string().min(1).max(60).optional(),
   deviceName: deviceName.optional(),
+  acceptedLegalVersion: z
+    .string({ error: CONSENT_REQUIRED })
+    .max(40, CONSENT_OUTDATED)
+    .refine((v) => v === LEGAL_VERSION, CONSENT_OUTDATED)
+    .describe('The `version` from GET /api/v1/legal that the user accepted; it must be the current one.'),
+  ageConfirmed: z
+    .boolean({ error: CONSENT_REQUIRED })
+    .refine((v) => v, '18 yoshdan kattaligingizni tasdiqlang.')
+    .describe('The user confirmed being 18 or older; must be true.'),
 })
 
 export const MobileRefreshRequest = z.object({ refreshToken })

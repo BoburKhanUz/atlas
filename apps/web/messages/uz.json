@@ -34,7 +34,13 @@
     "registeredTitle": "Ro‘yxatdan o‘tdingiz",
     "welcomeDescription": "Garderobingizni to‘ldirishni boshlaymizmi?",
     "sessionExpired": "Sessiya muddati tugadi. Iltimos, qaytadan kiring.",
-    "terms": "Davom etish orqali siz foydalanuvchi shartlariga rozilik bildirasiz. Garderobingiz ma'lumotlari shaxsiy saqlanadi."
+    "ageLabel": "18 yoshdan kattaman",
+    "consentLabel": "<terms>Foydalanish shartlari</terms> va <privacy>Maxfiylik siyosati</privacy>ga roziman",
+    "ageRequired": "18 yoshdan kattaligingizni tasdiqlang.",
+    "consentRequired": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+    "legalLinks": "Huquqiy hujjatlar",
+    "privacyLink": "Maxfiylik siyosati",
+    "termsLink": "Foydalanish shartlari"
   },
   "errors": {
     "network": "Tarmoq xatosi yuz berdi",
@@ -49,5 +55,10 @@
   "states": {
     "loadFailed": "Yuklab bo'lmadi",
     "empty": "Hozircha bo‘sh"
+  },
+  "legal": {
+    "meta": "Kuchga kirish sanasi: {date} · Versiya: {version}",
+    "draft": "Loyiha: bu matnni hali yurist ko‘rib chiqmagan, u o‘zgarishi mumkin. Kvadrat qavs ichidagi joylar keyinroq to‘ldiriladi.",
+    "seeAlso": "Shuningdek o‘qing:"
   }
 }

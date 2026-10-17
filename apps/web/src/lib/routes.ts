@@ -27,6 +27,9 @@ export const routes = {
     withQuery('/login', { next: opts.next, expired: opts.expired ? '1' : null }),
   register: (opts: { next?: string | null } = {}) =>
     withQuery('/register', { next: opts.next }),
+  // Public legal documents (no session needed, see src/proxy.ts).
+  privacy: () => '/privacy',
+  terms: () => '/terms',
 } as const
 
 /**

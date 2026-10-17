@@ -38,6 +38,8 @@ import { GET as conversations } from '@/app/api/v1/stylist/conversations/route'
 import { GET as conversation } from '@/app/api/v1/stylist/conversations/[id]/route'
 import { GET as weather } from '@/app/api/v1/weather/current/route'
 import { GET as health } from '@/app/api/health/route'
+import { GET as legal } from '@/app/api/v1/legal/route'
+import { LEGAL_VERSION } from '@/lib/legal/version'
 import { GET as openapi } from '@/app/api/v1/openapi.json/route'
 import { hashToken, signAccessToken } from '@/lib/auth'
 import { setLLMProviderForTesting, setVisionProviderForTesting } from '@/lib/ai/providers'
@@ -120,10 +122,12 @@ const image = (w: number, h: number, color = '#0F766E') => sharp({ create: { wid
 const garmentJpeg = (w: number, h: number, color?: string) => garmentPhoto(w, h, color).jpeg().toBuffer()
 const params = <T extends Record<string, string | string[]>>(p: T) => ({ params: Promise.resolve(p) })
 const MOBILE = { 'x-atlas-client': 'mobile' }
+/** Consent to the current legal documents, required by registration. */
+const CONSENT = { acceptedLegalVersion: LEGAL_VERSION, ageConfirmed: true }
 
 async function mobileAccount() {
   const email = `contract_${process.pid}_${++seq}@test.local`
-  const res = await call('register', register as Handler, req('/api/v1/auth/register', { method: 'POST', headers: MOBILE, json: { email, password: PASSWORD, deviceName: 'Test phone' } }))
+  const res = await call('register', register as Handler, req('/api/v1/auth/register', { method: 'POST', headers: MOBILE, json: { email, password: PASSWORD, deviceName: 'Test phone', ...CONSENT } }))
   expect(res.status).toBe(201)
   const t = await res.json()
   return { email, userId: t.user.id as string, refreshToken: t.refreshToken as string, auth: { authorization: `Bearer ${t.accessToken}` } }
@@ -154,9 +158,11 @@ describe.skipIf(!enabled)('OAS-04: real responses match the OpenAPI contract', (
   it('auth: register/login/refresh/logout/me in both modes and every session error code', async () => {
     // web register + login (cookies) and their errors
     const webEmail = `contract_web_${process.pid}@test.local`
-    const wr = await call('register', register as Handler, req('/api/v1/auth/register', { method: 'POST', json: { email: webEmail, password: PASSWORD } }))
+    const wr = await call('register', register as Handler, req('/api/v1/auth/register', { method: 'POST', json: { email: webEmail, password: PASSWORD, ...CONSENT } }))
     expect(wr.status).toBe(201)
-    await call('register', register as Handler, req('/api/v1/auth/register', { method: 'POST', json: { email: webEmail, password: PASSWORD } })) // CONFLICT
+    // the consent is stored with the account
+    expect(sql(DB, `SELECT c."version" || ':' || c."ageConfirmed" FROM "LegalConsent" c JOIN "User" u ON u."id" = c."userId" WHERE u."email" = '${webEmail}'`)).toBe(`${LEGAL_VERSION}:true`)
+    await call('register', register as Handler, req('/api/v1/auth/register', { method: 'POST', json: { email: webEmail, password: PASSWORD, ...CONSENT } })) // CONFLICT
     await call('register', register as Handler, req('/api/v1/auth/register', { method: 'POST', json: { email: 'bad', password: 'x' } })) // VALIDATION_ERROR
     await call('register', register as Handler, req('/api/v1/auth/register', { method: 'POST', body: '{', headers: { 'content-type': 'application/json' } })) // BAD_REQUEST
     const wl = await call('login', login as Handler, req('/api/v1/auth/login', { method: 'POST', json: { email: webEmail, password: PASSWORD } }))
@@ -374,6 +380,7 @@ describe.skipIf(!enabled)('OAS-04: real responses match the OpenAPI contract', (
     await call('getCurrentWeather', weather as Handler, req('/api/v1/weather/current?lat=41.31&lon=69.28', { headers: u.auth })) // cached
     await call('getCurrentWeather', weather as Handler, req('/api/v1/weather/current?lat=500', { headers: u.auth })) // VALIDATION_ERROR
     await call('getHealth', health as Handler, req('/api/health'))
+    await call('getLegalDocuments', legal as Handler, req('/api/v1/legal'))
     const doc = await call('getOpenApiDocument', openapi as Handler, req('/api/v1/openapi.json'))
     expect(await doc.text()).toBe(serializeOpenApiDocument())
   })

@@ -34,6 +34,9 @@ import 'package:atlas_api/src/model/error_response.dart';
 import 'package:atlas_api/src/model/error_response_details_inner.dart';
 import 'package:atlas_api/src/model/health_response.dart';
 import 'package:atlas_api/src/model/image_object.dart';
+import 'package:atlas_api/src/model/legal_document.dart';
+import 'package:atlas_api/src/model/legal_response.dart';
+import 'package:atlas_api/src/model/legal_section.dart';
 import 'package:atlas_api/src/model/login_request.dart';
 import 'package:atlas_api/src/model/me_response.dart';
 import 'package:atlas_api/src/model/me_response_user.dart';
@@ -120,6 +123,9 @@ part 'serializers.g.dart';
   ErrorResponseDetailsInner,
   HealthResponse,
   ImageObject,
+  LegalDocument,
+  LegalResponse,
+  LegalSection,
   LoginRequest,
   MeResponse,
   MeResponseUser,

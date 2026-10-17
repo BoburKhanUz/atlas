@@ -23,6 +23,7 @@ import 'package:atlas_mobile/core/session/session_controller.dart';
 import 'package:atlas_mobile/core/session/session_interceptor.dart';
 import 'package:atlas_mobile/core/session/session_tokens.dart';
 import 'package:atlas_mobile/core/session/token_store.dart';
+import 'package:atlas_mobile/features/legal/data/legal_repository.dart';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -92,6 +93,19 @@ class Device {
   int get refreshCalls => authAdapter.counts['/api/v1/auth/refresh'] ?? 0;
   SessionTokens? get stored => kv.stored;
 
+  /// Registers with consent to the backend's current legal documents, read
+  /// through the app's own repository (as the register screen does).
+  Future<void> register({required String email, required String password, String? name}) async {
+    final legal = await LegalRepository(client).get();
+    await session.register(
+      email: email,
+      password: password,
+      name: name,
+      acceptedLegalVersion: legal.version,
+      ageConfirmed: true,
+    );
+  }
+
   Future<Object> me() async {
     try {
       return await client.call((api) => api.getAuthApi().getMe());
@@ -124,7 +138,7 @@ const _password = 'it-password-123';
 Future<Device> registered() async {
   final d = Device();
   await d.session.restore();
-  await d.session.register(email: _email(), password: _password, name: 'IT');
+  await d.register(email: _email(), password: _password, name: 'IT');
   return d;
 }
 
@@ -144,11 +158,36 @@ void main() {
       expect(await d.me(), isA<MeResponse>());
     });
 
+    test('legal documents load signed out; an outdated accepted version is refused', () async {
+      final d = Device();
+      await d.session.restore();
+      final legal = await LegalRepository(d.client).get();
+      expect(legal.version, isNotEmpty);
+      expect(legal.documents.keys, unorderedEquals(LegalDocumentKind.values));
+      await expectLater(
+        d.session.register(
+          email: _email(),
+          password: _password,
+          acceptedLegalVersion: '2000-01-01',
+          ageConfirmed: true,
+        ),
+        throwsA(
+          isA<ApiHttpFailure>().having(
+            (f) => f.fieldErrors.map((e) => e.path),
+            'paths',
+            contains('acceptedLegalVersion'),
+          ),
+        ),
+      );
+      expect(d.session.state, const Unauthenticated());
+      expect(d.kv.values, isEmpty);
+    });
+
     test('login → /me; wrong password is UNAUTHORIZED and stores nothing', () async {
       final email = _email();
       final a = Device();
       await a.session.restore();
-      await a.session.register(email: email, password: _password);
+      await a.register(email: email, password: _password);
       final b = Device();
       await b.session.restore();
       await expectLater(b.session.login(email: email, password: 'wrong-password'), throwsA(isA<ApiHttpFailure>()));
@@ -264,7 +303,7 @@ void main() {
       final email = _email();
       final a = Device();
       await a.session.restore();
-      await a.session.register(email: email, password: _password);
+      await a.register(email: email, password: _password);
       // Web login: the refresh token arrives as an HttpOnly cookie.
       final client = HttpClient();
       final req = await client.postUrl(Uri.parse('$_base/api/v1/auth/login'));

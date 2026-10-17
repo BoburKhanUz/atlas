@@ -9,6 +9,8 @@ import '../../../core/network/api_failure.dart';
 import '../../../core/session/auth_state.dart';
 import '../../../core/session/providers.dart';
 import '../../../core/widgets/atlas_button.dart';
+import '../../legal/data/legal_repository.dart' show LegalBundle, LegalDocumentKind;
+import '../../legal/providers.dart';
 import 'auth_form_scaffold.dart';
 import 'auth_messages.dart';
 
@@ -24,6 +26,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _name = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
+  final _consent = GlobalKey<FormFieldState<bool>>();
+  bool _ageConfirmed = false;
+  bool _loadingLegal = false;
   String? _error;
 
   @override
@@ -40,11 +45,33 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     TextInput.finishAutofillContext();
     final name = _name.text.trim();
     try {
+      // The version of the documents behind the links is the one accepted.
+      if (ref.read(legalDocumentsProvider).hasError) ref.invalidate(legalDocumentsProvider);
+      setState(() => _loadingLegal = true);
+      final LegalBundle legal;
+      try {
+        legal = await ref.read(legalDocumentsProvider.future);
+      } finally {
+        if (mounted) setState(() => _loadingLegal = false);
+      }
+      if (!mounted) return;
       await ref
           .read(sessionControllerProvider)
-          .register(email: _email.text.trim(), password: _password.text, name: name.isEmpty ? null : name);
+          .register(
+            email: _email.text.trim(),
+            password: _password.text,
+            name: name.isEmpty ? null : name,
+            acceptedLegalVersion: legal.version,
+            ageConfirmed: _ageConfirmed,
+          );
     } on ApiFailure catch (f) {
-      if (mounted) setState(() => _error = authFailureMessage(f));
+      if (!mounted) return;
+      if (f is ApiHttpFailure && f.fieldErrors.any((e) => e.path == 'acceptedLegalVersion')) {
+        // The documents changed since they were loaded: load the new ones and ask again.
+        ref.invalidate(legalDocumentsProvider);
+        _consent.currentState?.didChange(false);
+      }
+      setState(() => _error = authFailureMessage(f));
     } on StateError {
       // A sign-in is already running.
     }
@@ -52,7 +79,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final busy = ref.watch(authStateProvider) is Authenticating;
+    final busy = ref.watch(authStateProvider) is Authenticating || _loadingLegal;
+    // Loaded with the screen, so the links open at once and submit has the version.
+    ref.watch(legalDocumentsProvider);
     return AuthFormScaffold(
       title: 'Hisob yaratish',
       subtitle: 'Shaxsiy stilistingiz bir daqiqada tayyor.',
@@ -98,6 +127,35 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   decoration: const InputDecoration(labelText: 'Parol', helperText: 'Kamida 8 belgi'),
                   validator: AuthValidators.newPassword,
                 ),
+                const SizedBox(height: AtlasSpacing.sm),
+                _ConsentField(
+                  key: const Key('register.age'),
+                  label: '18 yoshdan kattaman',
+                  requiredMessage: '18 yoshdan kattaligingizni tasdiqlang.',
+                  enabled: !busy,
+                  onChanged: (v) => _ageConfirmed = v,
+                ),
+                KeyedSubtree(
+                  key: const Key('register.consent'),
+                  child: _ConsentField(
+                    key: _consent,
+                    label: 'Foydalanish shartlari va Maxfiylik siyosatiga roziman',
+                    requiredMessage:
+                        'Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.',
+                    enabled: !busy,
+                  ),
+                ),
+                Wrap(
+                  spacing: AtlasSpacing.xs,
+                  children: [
+                    for (final kind in LegalDocumentKind.values)
+                      TextButton(
+                        key: Key('register.${kind.name}'),
+                        onPressed: () => context.push(AtlasRoutes.legal(kind)),
+                        child: Text(kind.label),
+                      ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -114,4 +172,33 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       ],
     );
   }
+}
+
+/// A required checkbox of the form: validation fails until it is ticked.
+class _ConsentField extends FormField<bool> {
+  _ConsentField({
+    super.key,
+    required String label,
+    required String requiredMessage,
+    ValueChanged<bool>? onChanged,
+    super.enabled,
+  }) : super(
+         initialValue: false,
+         validator: (v) => v == true ? null : requiredMessage,
+         builder: (field) => CheckboxListTile(
+           value: field.value ?? false,
+           onChanged: field.widget.enabled
+               ? (v) {
+                   field.didChange(v ?? false);
+                   onChanged?.call(v ?? false);
+                 }
+               : null,
+           title: Text(label),
+           subtitle: field.errorText == null
+               ? null
+               : Text(field.errorText!, style: const TextStyle(color: AtlasColors.error)),
+           controlAffinity: ListTileControlAffinity.leading,
+           contentPadding: EdgeInsets.zero,
+         ),
+       );
 }

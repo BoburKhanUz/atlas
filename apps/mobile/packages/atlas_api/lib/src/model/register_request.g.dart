@@ -8,6 +8,10 @@ part of 'register_request.dart';
 
 class _$RegisterRequest extends RegisterRequest {
   @override
+  final String acceptedLegalVersion;
+  @override
+  final bool ageConfirmed;
+  @override
   final String? deviceName;
   @override
   final String email;
@@ -19,7 +23,14 @@ class _$RegisterRequest extends RegisterRequest {
   factory _$RegisterRequest([void Function(RegisterRequestBuilder)? updates]) =>
       (RegisterRequestBuilder()..update(updates))._build();
 
-  _$RegisterRequest._({this.deviceName, required this.email, this.name, required this.password}) : super._();
+  _$RegisterRequest._({
+    required this.acceptedLegalVersion,
+    required this.ageConfirmed,
+    this.deviceName,
+    required this.email,
+    this.name,
+    required this.password,
+  }) : super._();
   @override
   RegisterRequest rebuild(void Function(RegisterRequestBuilder) updates) => (toBuilder()..update(updates)).build();
 
@@ -30,6 +41,8 @@ class _$RegisterRequest extends RegisterRequest {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is RegisterRequest &&
+        acceptedLegalVersion == other.acceptedLegalVersion &&
+        ageConfirmed == other.ageConfirmed &&
         deviceName == other.deviceName &&
         email == other.email &&
         name == other.name &&
@@ -39,6 +52,8 @@ class _$RegisterRequest extends RegisterRequest {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, acceptedLegalVersion.hashCode);
+    _$hash = $jc(_$hash, ageConfirmed.hashCode);
     _$hash = $jc(_$hash, deviceName.hashCode);
     _$hash = $jc(_$hash, email.hashCode);
     _$hash = $jc(_$hash, name.hashCode);
@@ -50,6 +65,8 @@ class _$RegisterRequest extends RegisterRequest {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'RegisterRequest')
+          ..add('acceptedLegalVersion', acceptedLegalVersion)
+          ..add('ageConfirmed', ageConfirmed)
           ..add('deviceName', deviceName)
           ..add('email', email)
           ..add('name', name)
@@ -60,6 +77,14 @@ class _$RegisterRequest extends RegisterRequest {
 
 class RegisterRequestBuilder implements Builder<RegisterRequest, RegisterRequestBuilder> {
   _$RegisterRequest? _$v;
+
+  String? _acceptedLegalVersion;
+  String? get acceptedLegalVersion => _$this._acceptedLegalVersion;
+  set acceptedLegalVersion(String? acceptedLegalVersion) => _$this._acceptedLegalVersion = acceptedLegalVersion;
+
+  bool? _ageConfirmed;
+  bool? get ageConfirmed => _$this._ageConfirmed;
+  set ageConfirmed(bool? ageConfirmed) => _$this._ageConfirmed = ageConfirmed;
 
   String? _deviceName;
   String? get deviceName => _$this._deviceName;
@@ -84,6 +109,8 @@ class RegisterRequestBuilder implements Builder<RegisterRequest, RegisterRequest
   RegisterRequestBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _acceptedLegalVersion = $v.acceptedLegalVersion;
+      _ageConfirmed = $v.ageConfirmed;
       _deviceName = $v.deviceName;
       _email = $v.email;
       _name = $v.name;
@@ -110,6 +137,12 @@ class RegisterRequestBuilder implements Builder<RegisterRequest, RegisterRequest
     final _$result =
         _$v ??
         _$RegisterRequest._(
+          acceptedLegalVersion: BuiltValueNullFieldError.checkNotNull(
+            acceptedLegalVersion,
+            r'RegisterRequest',
+            'acceptedLegalVersion',
+          ),
+          ageConfirmed: BuiltValueNullFieldError.checkNotNull(ageConfirmed, r'RegisterRequest', 'ageConfirmed'),
           deviceName: deviceName,
           email: BuiltValueNullFieldError.checkNotNull(email, r'RegisterRequest', 'email'),
           name: name,

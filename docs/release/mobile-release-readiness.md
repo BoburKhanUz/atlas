@@ -116,7 +116,7 @@ All must be done before submission. ☐ = open.
 - ☐ Production backend deployed at the contract version; production config created by the pipeline
 - ☐ Real app icon and splash. The Android launcher icon is still the Flutter template default; iOS icons need checking.
 - ☐ Version and build number set (`pubspec.yaml` is `0.1.0+1`)
-- ☐ Privacy policy URL; account-deletion instructions (in-app deletion exists)
+- ☐ Privacy policy URL: `<PUBLIC_BASE_URL>/privacy` exists, but its text is a draft until legal review (`apps/web/src/lib/legal/documents.ts`); account-deletion instructions (in-app deletion exists)
 - ☐ Decide on crash reporting before a public release (none today)
 - ☐ Backend follow-ups triaged (none block a first release technically; the missing idempotency keys are mitigated by the app never auto-retrying those POSTs)
 

@@ -134,7 +134,9 @@ psql --single-transaction -v ON_ERROR_STOP=1 -f docs/database/rollback/down-sess
 
 It refuses to run if `session_families` is not applied or a later migration
 is. Since Phase 4 later migrations are applied too; reverse them first, newest
-first, with the same command: `down-color-profile-v2.sql`
+first, with the same command: `down-legal-consent.sql`
+(`20261017000000_legal_consent`: the users' legal consent records; export
+them first if they must be kept as evidence), then `down-color-profile-v2.sql`
 (`20261009000000_color_profile_v2`: colour-profile version/confidence
 columns and the one-profile-per-user index; current profiles stay, the
 superseded rows the migration deleted cannot be restored), then
