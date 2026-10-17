@@ -35,6 +35,7 @@ model User {
   idempotencyKeys IdempotencyKey[]
   aiUsage      AiUsage[]
   legalConsents LegalConsent[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 // Refresh-token sessions. Only the SHA-256 hash of the opaque refresh token is
@@ -51,7 +52,7 @@ model SessionFamily {
   createdAt         DateTime  @default(now())
   absoluteExpiresAt DateTime
   revokedAt         DateTime?
-  revokeReason      String?   // logout | reuse | expired | migrated | anomaly
+  revokeReason      String?   // logout | reuse | expired | migrated | anomaly | password_reset
   sessions          Session[]
 
   @@index([userId])
@@ -370,4 +371,20 @@ model LegalConsent {
   acceptedAt   DateTime @default(now())
 
   @@index([userId])
+}
+
+// ─── Password reset ──────────────────────────────────────────────────────────
+// One-time links sent by e-mail (src/server/password-reset.ts). Only the
+// SHA-256 hash of the token is stored. A link works once, until expiresAt; a
+// new request and a completed reset delete the user's rows. Cascades from User.
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([userId])
+  @@index([expiresAt])
 }

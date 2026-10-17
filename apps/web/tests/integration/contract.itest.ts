@@ -18,6 +18,8 @@ import { POST as login } from '@/app/api/v1/auth/login/route'
 import { POST as refresh } from '@/app/api/v1/auth/refresh/route'
 import { POST as logout } from '@/app/api/v1/auth/logout/route'
 import { GET as me } from '@/app/api/v1/auth/me/route'
+import { POST as forgotPassword } from '@/app/api/v1/auth/password/forgot/route'
+import { POST as resetPassword } from '@/app/api/v1/auth/password/reset/route'
 import { DELETE as deleteAccount } from '@/app/api/v1/account/route'
 import * as profileRoute from '@/app/api/v1/profile/route'
 import * as colorProfileRoute from '@/app/api/v1/color-profile/route'
@@ -38,6 +40,7 @@ import { GET as conversations } from '@/app/api/v1/stylist/conversations/route'
 import { GET as conversation } from '@/app/api/v1/stylist/conversations/[id]/route'
 import { GET as weather } from '@/app/api/v1/weather/current/route'
 import { GET as health } from '@/app/api/health/route'
+import { POST as clientErrors } from '@/app/api/v1/client-errors/route'
 import { GET as legal } from '@/app/api/v1/legal/route'
 import { LEGAL_VERSION } from '@/lib/legal/version'
 import { GET as openapi } from '@/app/api/v1/openapi.json/route'
@@ -51,6 +54,8 @@ import { setStorageProviderForTesting } from '@/lib/storage/provider'
 import { setWeatherProviderForTesting } from '@/lib/weather/provider'
 import { errorStatus } from '@/server/http'
 import { claimIdempotencyKey, multipartRequestHash, jsonRequestHash } from '@/server/idempotency'
+import { setMailTransportForTesting, type MailMessage } from '@/server/mail'
+import { settlePasswordResets } from '@/server/password-reset'
 import { errorCodesFor, serializeOpenApiDocument } from '@/server/openapi/document'
 import { OPERATIONS, type Operation } from '@/server/openapi/registry'
 import { ErrorResponse } from '@/server/schemas/responses'
@@ -210,6 +215,49 @@ describe.skipIf(!enabled)('OAS-04: real responses match the OpenAPI contract', (
     for (let i = 0; i < 100; i++) await register(req('/api/v1/auth/register', { method: 'POST', json: {} }))
     await call('register', register as Handler, req('/api/v1/auth/register', { method: 'POST', json: {} })) // RATE_LIMITED
     resetRateLimits()
+
+    // password reset: forgot (same answer for any address, per-address limit,
+    // mail switched off) and reset (bad link, busy session store, success)
+    const mails: MailMessage[] = []
+    setMailTransportForTesting({ send: async (m) => void mails.push(m) })
+    try {
+      const pr = await mobileAccount()
+      const forgotReq = (email: string) => req('/api/v1/auth/password/forgot', { method: 'POST', json: { email } })
+      for (let i = 0; i < 3; i++) await call('requestPasswordReset', forgotPassword as Handler, forgotReq(pr.email))
+      await call('requestPasswordReset', forgotPassword as Handler, forgotReq(pr.email)) // RATE_LIMITED (per address)
+      await call('requestPasswordReset', forgotPassword as Handler, forgotReq('bad')) // VALIDATION_ERROR
+      await call('requestPasswordReset', forgotPassword as Handler, forgotReq(`nobody_${process.pid}@test.local`)) // same answer
+      const saved = process.env.MAIL_TRANSPORT
+      process.env.MAIL_TRANSPORT = 'disabled'
+      await call('requestPasswordReset', forgotPassword as Handler, forgotReq(pr.email)) // PASSWORD_RESET_UNAVAILABLE
+      if (saved === undefined) delete process.env.MAIL_TRANSPORT
+      else process.env.MAIL_TRANSPORT = saved
+      await settlePasswordResets()
+      // the three requests ran in the background; the stored link is the last one committed
+      const sent = mails.filter((m) => m.to === pr.email).map((m) => new URL(m.text.match(/https?:\/\/\S+/)![0]).searchParams.get('token')!)
+      const stored = sql(DB, `SELECT "tokenHash" FROM "PasswordResetToken" WHERE "userId" = '${pr.userId}'`)
+      const token = sent.find((t) => hashToken(t) === stored)!
+      expect(sent).toHaveLength(3)
+      const resetReq = (t: string) => req('/api/v1/auth/password/reset', { method: 'POST', json: { token: t, password: 'contract-new-password-2' } })
+      await call('resetPassword', resetPassword as Handler, resetReq('unknown-token')) // RESET_TOKEN_INVALID
+      await call('resetPassword', resetPassword as Handler, req('/api/v1/auth/password/reset', { method: 'POST', json: { token } })) // VALIDATION_ERROR
+      const userLock = psqlSession(DB, 'contract_user_lock')
+      userLock.send(`BEGIN; SELECT 1 FROM "User" WHERE "id" = '${pr.userId}' FOR UPDATE; SELECT 'locked';`)
+      await waitFor(() => userLock.output().includes('locked'), 'user lock')
+      await call('resetPassword', resetPassword as Handler, resetReq(token)) // SESSION_BUSY (nothing changed)
+      userLock.send('COMMIT;')
+      userLock.end()
+      await userLock.done
+      const ok = await call('resetPassword', resetPassword as Handler, resetReq(token))
+      expect(ok.status).toBe(200)
+      await call('refreshSession', refresh as Handler, req('/api/v1/auth/refresh', { method: 'POST', headers: MOBILE, json: { refreshToken: pr.refreshToken } })) // SESSION_REVOKED
+      resetRateLimits()
+      for (let i = 0; i < 300; i++) await resetPassword(req('/api/v1/auth/password/reset', { method: 'POST', json: {} }))
+      await call('resetPassword', resetPassword as Handler, resetReq(token)) // RATE_LIMITED
+      resetRateLimits()
+    } finally {
+      setMailTransportForTesting(null)
+    }
   }, 120_000)
 
   it('account, profile, colour profile', async () => {
@@ -381,6 +429,15 @@ describe.skipIf(!enabled)('OAS-04: real responses match the OpenAPI contract', (
     await call('getCurrentWeather', weather as Handler, req('/api/v1/weather/current?lat=500', { headers: u.auth })) // VALIDATION_ERROR
     await call('getHealth', health as Handler, req('/api/health'))
     await call('getLegalDocuments', legal as Handler, req('/api/v1/legal'))
+    // crash monitoring: reports are logged, never stored
+    const report = { platform: 'android', appVersion: '0.1.0+1', kind: 'dart', errorType: 'StateError', message: 'Bad state: contract' }
+    const errorsReq = (json: unknown) => req('/api/v1/client-errors', { method: 'POST', json })
+    await call('reportClientErrors', clientErrors as Handler, errorsReq({ reports: [report] }))
+    await call('reportClientErrors', clientErrors as Handler, errorsReq({ reports: [] })) // VALIDATION_ERROR
+    resetRateLimits()
+    for (let i = 0; i < 300; i++) await clientErrors(errorsReq({}))
+    await call('reportClientErrors', clientErrors as Handler, errorsReq({ reports: [report] })) // RATE_LIMITED
+    resetRateLimits()
     const doc = await call('getOpenApiDocument', openapi as Handler, req('/api/v1/openapi.json'))
     expect(await doc.text()).toBe(serializeOpenApiDocument())
   })

@@ -65,6 +65,20 @@ export const OPERATIONS: Operation[] = [
     errors: ['UNAUTHORIZED', 'RATE_LIMITED'],
   },
   {
+    method: 'POST', path: '/api/v1/auth/password/forgot', route: 'api/v1/auth/password/forgot', operationId: 'requestPasswordReset', tags: ['auth'],
+    summary: 'E-mail a one-time password reset link. The answer is the same whether or not the account exists.',
+    auth: 'none', jsonBody: Req.PasswordForgotRequest,
+    success: [{ status: 200, description: 'Accepted', schema: Res.OkResponse }],
+    errors: ['RATE_LIMITED', 'PASSWORD_RESET_UNAVAILABLE'],
+  },
+  {
+    method: 'POST', path: '/api/v1/auth/password/reset', route: 'api/v1/auth/password/reset', operationId: 'resetPassword', tags: ['auth'],
+    summary: 'Set a new password with the e-mailed token. Every session of the account is signed out.',
+    auth: 'none', jsonBody: Req.PasswordResetRequest,
+    success: [{ status: 200, description: 'Password changed', schema: Res.OkResponse }],
+    errors: ['RESET_TOKEN_INVALID', 'RATE_LIMITED', 'SESSION_BUSY'],
+  },
+  {
     method: 'POST', path: '/api/v1/auth/refresh', route: 'api/v1/auth/refresh', operationId: 'refreshSession', tags: ['auth'],
     summary: 'Rotate the refresh token (web: atlas_rt cookie; mobile: body). A token rotated ≤ 60 s ago returns the same new token.',
     auth: 'none', clientMode: true, jsonBody: Req.MobileRefreshRequest, jsonBodyMobileOnly: true,
@@ -252,6 +266,13 @@ export const OPERATIONS: Operation[] = [
       { status: 503, description: 'Database unreachable', schema: Res.HealthResponse },
     ],
     errors: [],
+  },
+  {
+    method: 'POST', path: '/api/v1/client-errors', route: 'api/v1/client-errors', operationId: 'reportClientErrors', tags: ['service'],
+    summary: 'Error reports from the apps (crash monitoring): scrubbed and written to the server log, never stored',
+    auth: 'none', jsonBody: Req.ClientErrorsRequest,
+    success: [{ status: 200, description: 'Logged', schema: Res.OkResponse }],
+    errors: ['RATE_LIMITED'],
   },
   {
     method: 'GET', path: '/api/v1/openapi.json', route: 'api/v1/openapi.json', operationId: 'getOpenApiDocument', tags: ['service'],

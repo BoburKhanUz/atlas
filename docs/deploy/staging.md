@@ -59,6 +59,8 @@ openssl rand -base64 32   # SESSION_ENC_KEY
 
 Set `ATLAS_DOMAIN` to the host name only (no `https://`). Keep the file on the server; never copy it into the repository, a chat or a ticket.
 
+Password reset e-mail: fill in the `SMTP_*` values and `MAIL_FROM` of any SMTP provider, then set `MAIL_TRANSPORT=smtp`. With `MAIL_TRANSPORT=disabled` (the template's value) the rest works and "forgot password" says reset is unavailable. The links point to `https://<ATLAS_DOMAIN>/reset-password`. Check it once after the start: request a reset for your own account; a failed send shows in the log as `password reset request failed` (the user still sees the neutral answer).
+
 ## 3. Start
 
 ```bash

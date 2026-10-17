@@ -13,7 +13,9 @@ function `atlas_now()` (migration `20261006000300_session_families`).
   (`LEAST(C + 90 d, GREATEST(chain start + 90 d, C + 30 d))`, `C` =
   `legacyCutoverAt`; `docs/database/cutover.md`, *Legacy session lifetime*).
   `revokedAt` / `revokeReason` (`logout`, `reuse`, `expired`, `migrated`,
-  `anomaly`) end the whole family.
+  `anomaly`, `password_reset`) end the whole family. A password reset revokes
+  every live family of the account in the same transaction as the new
+  password (`src/server/password-reset.ts`; families locked in id order).
 - **Session** = one refresh token (stored as SHA-256 only). Every refresh
   rotates: the presented row gets `revokedAt = rotatedAt = t`,
   `replacedById = successor`, and `successorTokenEnc` (the successor token,
@@ -103,8 +105,9 @@ closed (`SESSION_RACE`).
 
 `bun scripts/session-cleanup.ts` (dry run; `--apply` to change data; `--json`):
 clears ciphertexts older than 60 s, deletes rotated sessions and whole
-families revoked or expired more than 30 days ago. A deleted old token then
-reads as `INVALID_TOKEN` instead of `REFRESH_REUSED`.
+families revoked or expired more than 30 days ago, and expired password reset
+links. A deleted old token then reads as `INVALID_TOKEN` instead of
+`REFRESH_REUSED`.
 
 `bun scripts/session-cleanup.ts --preflight-families` — read-only, run
 against the Phase 2 database before the cutover (`docs/database/cutover.md`):

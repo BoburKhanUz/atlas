@@ -102,7 +102,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
         ),
-        const SizedBox(height: AtlasSpacing.lg),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton(
+            key: const Key('login.forgot'),
+            onPressed: busy ? null : () => context.push(AtlasRoutes.forgotPassword),
+            child: const Text('Parolni unutdingizmi?'),
+          ),
+        ),
+        const SizedBox(height: AtlasSpacing.sm),
         AtlasButton(key: const Key('login.submit'), label: 'Kirish', loading: busy, onPressed: _submit),
         const SizedBox(height: AtlasSpacing.sm),
         AtlasButton(

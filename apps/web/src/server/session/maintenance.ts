@@ -10,7 +10,8 @@
  *    would fail), and how many live chains get the legacy transition limit.
  *  - cleanupSessions: after the cutover. Clears successor ciphertexts that can
  *    no longer be replayed (rotated > 60 s ago), deletes rotated sessions and
- *    whole families revoked or expired more than 30 days ago.
+ *    whole families revoked or expired more than 30 days ago, and expired
+ *    password reset links.
  */
 import { Prisma, type PrismaClient } from '@prisma/client'
 
@@ -150,6 +151,8 @@ export interface CleanupReport {
   rotatedSessionsDeleted: number
   familiesDeleted: number
   familySessionsDeleted: number
+  /** Password reset links past their expiry (they no longer work). */
+  expiredResetLinksDeleted: number
 }
 
 const RETENTION = Prisma.sql`interval '30 days'`
@@ -166,6 +169,7 @@ export async function cleanupSessions(client: PrismaClient, opts: { apply: boole
       // rotated rows of other families, rotated > 30 days ago (never a live tail)
       const oldRotated = Prisma.sql`"replacedById" IS NOT NULL AND "revokedAt" < atlas_now() - ${RETENTION}
         AND "familyId" NOT IN (SELECT "id" FROM "SessionFamily" WHERE ${deadFamily})`
+      const expiredResetLink = Prisma.sql`"expiresAt" <= atlas_now()`
 
       const count = async (q: Prisma.Sql) => Number((await tx.$queryRaw<{ n: bigint }[]>(q))[0].n)
       const report: CleanupReport = {
@@ -176,11 +180,13 @@ export async function cleanupSessions(client: PrismaClient, opts: { apply: boole
         familySessionsDeleted: await count(
           Prisma.sql`SELECT count(*) AS n FROM "Session" WHERE "familyId" IN (SELECT "id" FROM "SessionFamily" WHERE ${deadFamily})`,
         ),
+        expiredResetLinksDeleted: await count(Prisma.sql`SELECT count(*) AS n FROM "PasswordResetToken" WHERE ${expiredResetLink}`),
       }
       if (opts.apply) {
         await tx.$executeRaw(Prisma.sql`UPDATE "Session" SET "successorTokenEnc" = NULL WHERE ${staleCipher}`)
         await tx.$executeRaw(Prisma.sql`DELETE FROM "Session" WHERE ${oldRotated}`)
         await tx.$executeRaw(Prisma.sql`DELETE FROM "SessionFamily" WHERE ${deadFamily}`) // sessions cascade
+        await tx.$executeRaw(Prisma.sql`DELETE FROM "PasswordResetToken" WHERE ${expiredResetLink}`)
       }
       return report
     },

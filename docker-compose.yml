@@ -73,6 +73,14 @@ services:
       AI_ROLLOUT_PERCENT: ${AI_ROLLOUT_PERCENT:-}
       AI_ROLLOUT_ALLOWLIST: ${AI_ROLLOUT_ALLOWLIST:-}
       TRUST_PROXY: ${TRUST_PROXY:-0}
+      # Password reset e-mail (empty MAIL_TRANSPORT = disabled in production).
+      MAIL_TRANSPORT: ${MAIL_TRANSPORT:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-}
+      SMTP_SECURE: ${SMTP_SECURE:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
     ports:
       - "127.0.0.1:3000:3000"
     volumes:

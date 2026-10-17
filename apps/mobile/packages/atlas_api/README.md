@@ -70,6 +70,8 @@ Class | Method | HTTP request | Description
 [*AuthApi*](doc/AuthApi.md) | [**logout**](doc/AuthApi.md#logout) | **POST** /api/v1/auth/logout | End this login (session family). Idempotent.
 [*AuthApi*](doc/AuthApi.md) | [**refreshSession**](doc/AuthApi.md#refreshsession) | **POST** /api/v1/auth/refresh | Rotate the refresh token (web: atlas_rt cookie; mobile: body). A token rotated ≤ 60 s ago returns the same new token.
 [*AuthApi*](doc/AuthApi.md) | [**register**](doc/AuthApi.md#register) | **POST** /api/v1/auth/register | Create an account and sign in (web: cookies; mobile: tokens in the body)
+[*AuthApi*](doc/AuthApi.md) | [**requestPasswordReset**](doc/AuthApi.md#requestpasswordreset) | **POST** /api/v1/auth/password/forgot | E-mail a one-time password reset link. The answer is the same whether or not the account exists.
+[*AuthApi*](doc/AuthApi.md) | [**resetPassword**](doc/AuthApi.md#resetpassword) | **POST** /api/v1/auth/password/reset | Set a new password with the e-mailed token. Every session of the account is signed out.
 [*LegalApi*](doc/LegalApi.md) | [**getLegalDocuments**](doc/LegalApi.md#getlegaldocuments) | **GET** /api/v1/legal | The current privacy policy and terms of use (versioned; registration accepts the version)
 [*MediaApi*](doc/MediaApi.md) | [**getMedia**](doc/MediaApi.md#getmedia) | **GET** /api/v1/media/{key} | A private image through its signed URL (use the URLs from API responses as-is)
 [*OutfitsApi*](doc/OutfitsApi.md) | [**deleteOutfit**](doc/OutfitsApi.md#deleteoutfit) | **DELETE** /api/v1/outfits/{id} | Delete an outfit
@@ -86,6 +88,7 @@ Class | Method | HTTP request | Description
 [*ProfileApi*](doc/ProfileApi.md) | [**updateProfile**](doc/ProfileApi.md#updateprofile) | **PATCH** /api/v1/profile | Update name, profile fields or preferences
 [*ServiceApi*](doc/ServiceApi.md) | [**getHealth**](doc/ServiceApi.md#gethealth) | **GET** /api/health | Liveness and database check
 [*ServiceApi*](doc/ServiceApi.md) | [**getOpenApiDocument**](doc/ServiceApi.md#getopenapidocument) | **GET** /api/v1/openapi.json | This OpenAPI document
+[*ServiceApi*](doc/ServiceApi.md) | [**reportClientErrors**](doc/ServiceApi.md#reportclienterrors) | **POST** /api/v1/client-errors | Error reports from the apps (crash monitoring): scrubbed and written to the server log, never stored
 [*StylistApi*](doc/StylistApi.md) | [**getConversation**](doc/StylistApi.md#getconversation) | **GET** /api/v1/stylist/conversations/{id} | A conversation with its messages
 [*StylistApi*](doc/StylistApi.md) | [**listConversations**](doc/StylistApi.md#listconversations) | **GET** /api/v1/stylist/conversations | Recent stylist conversations (50)
 [*StylistApi*](doc/StylistApi.md) | [**stylistChat**](doc/StylistApi.md#stylistchat) | **POST** /api/v1/stylist/chat | Send a message to the AI stylist. The user message and the answer are stored together, only when the turn succeeds: any error (incl. 503 AI_UNAVAILABLE and 429 AI_QUOTA_EXCEEDED) stores nothing. An unknown or foreign conversationId is 404 (never a new conversation).
@@ -100,6 +103,8 @@ Class | Method | HTTP request | Description
 ## Documentation For Models
 
  - [AuthResponse](doc/AuthResponse.md)
+ - [ClientErrorReport](doc/ClientErrorReport.md)
+ - [ClientErrorsRequest](doc/ClientErrorsRequest.md)
  - [ColorAnalysisResponse](doc/ColorAnalysisResponse.md)
  - [ColorAnalysisResponseColorProfile](doc/ColorAnalysisResponseColorProfile.md)
  - [ColorAnalysisResponseColorProfileContrastLevel](doc/ColorAnalysisResponseColorProfileContrastLevel.md)
@@ -157,6 +162,8 @@ Class | Method | HTTP request | Description
  - [OutfitSaveResponseOutfitItemsInner](doc/OutfitSaveResponseOutfitItemsInner.md)
  - [OutfitSummary](doc/OutfitSummary.md)
  - [OutfitSummaryItem](doc/OutfitSummaryItem.md)
+ - [PasswordForgotRequest](doc/PasswordForgotRequest.md)
+ - [PasswordResetRequest](doc/PasswordResetRequest.md)
  - [PreferencesRow](doc/PreferencesRow.md)
  - [ProfilePatchRequest](doc/ProfilePatchRequest.md)
  - [ProfilePatchRequestPreferences](doc/ProfilePatchRequestPreferences.md)

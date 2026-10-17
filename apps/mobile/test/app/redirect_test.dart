@@ -23,6 +23,7 @@ const _allLocations = [
   AtlasRoutes.splash,
   AtlasRoutes.login,
   AtlasRoutes.register,
+  AtlasRoutes.forgotPassword,
   AtlasRoutes.onboarding,
   ..._tabs,
   ..._legal,
@@ -56,7 +57,7 @@ void main() {
     for (final s in _signedOut) {
       for (final o in OnboardingStatus.values) {
         for (final loc in _allLocations) {
-          final stays = [AtlasRoutes.login, AtlasRoutes.register, ..._legal].contains(loc);
+          final stays = [AtlasRoutes.login, AtlasRoutes.register, AtlasRoutes.forgotPassword, ..._legal].contains(loc);
           expect(_target(s, o, loc), stays ? loc : AtlasRoutes.login, reason: '$s/$o @ $loc');
         }
       }
@@ -83,7 +84,13 @@ void main() {
 
   test('signed in, onboarding done → never splash, auth pages or onboarding; tabs and full-screen routes stay', () {
     for (final s in _signedIn) {
-      for (final loc in [AtlasRoutes.splash, AtlasRoutes.login, AtlasRoutes.register, AtlasRoutes.onboarding]) {
+      for (final loc in [
+        AtlasRoutes.splash,
+        AtlasRoutes.login,
+        AtlasRoutes.register,
+        AtlasRoutes.forgotPassword,
+        AtlasRoutes.onboarding,
+      ]) {
         expect(_target(s, OnboardingStatus.notRequired, loc), AtlasRoutes.home);
       }
       for (final loc in [..._tabs, ..._legal, '/wardrobe-item/abc']) {

@@ -237,6 +237,16 @@ export function AuthScreen({ mode }: { mode: AuthMode }) {
                   {t('passwordHint')}
                 </p>
               )}
+              {mode === 'login' && (
+                <div className="text-right">
+                  <Link
+                    href={routes.forgotPassword()}
+                    className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+                  >
+                    {t('forgotLink')}
+                  </Link>
+                </div>
+              )}
             </div>
 
             {mode === 'register' && (

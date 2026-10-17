@@ -61,6 +61,8 @@ abstract final class UserMessages {
       ApiErrorCode.skinNotVisible =>
         'Rasmda yuz terisi yetarlicha ko‘rinmadi. Yuzingiz to‘liq ko‘rinadigan selfi oling.',
       ApiErrorCode.analysisUnavailable => 'Rang tahlili hozir bajarilmadi. Birozdan so‘ng qayta urinib ko‘ring.',
+      ApiErrorCode.resetTokenInvalid => 'Havola yaroqsiz yoki muddati tugagan. Parolni tiklashni qaytadan so‘rang.',
+      ApiErrorCode.passwordResetUnavailable => 'Parolni tiklash hozircha ishlamayapti. Keyinroq qayta urinib ko‘ring.',
       ApiErrorCode.unknown => null,
     };
     if (specific != null) return specific;

@@ -2,9 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../core/logging/crash_reporter.dart';
 import '../core/session/auth_state.dart';
 import '../core/session/providers.dart';
 import '../core/session/session_controller.dart';
+import '../features/auth/presentation/forgot_password_screen.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
 import '../features/auth/presentation/splash_screen.dart';
@@ -38,6 +40,10 @@ abstract final class AtlasRoutes {
   static const onboarding = '/onboarding';
   static const login = '/login';
   static const register = '/register';
+
+  /// Requests the e-mailed reset link (the link opens the web page that sets
+  /// the new password; the app then signs in with it).
+  static const forgotPassword = '/forgot-password';
   static const home = '/home';
   static const wardrobe = '/wardrobe';
   static const outfits = '/outfits';
@@ -71,7 +77,8 @@ abstract final class AtlasRoutes {
 /// Login → refresh → Login loops: refreshing keeps the user where they are,
 /// only a session that ended leads to sign-in).
 String? authRedirect(AuthState state, OnboardingStatus onboarding, String location) {
-  final onAuthPage = location == AtlasRoutes.login || location == AtlasRoutes.register;
+  final onAuthPage =
+      location == AtlasRoutes.login || location == AtlasRoutes.register || location == AtlasRoutes.forgotPassword;
   final onLegalPage = location == AtlasRoutes.privacy || location == AtlasRoutes.terms;
   String? stay(String target) => location == target ? null : target;
   return switch (state) {
@@ -115,6 +122,7 @@ GoRouter buildRouter({
     GoRoute(path: AtlasRoutes.splash, builder: (_, _) => const SplashScreen()),
     GoRoute(path: AtlasRoutes.login, builder: (_, _) => const LoginScreen()),
     GoRoute(path: AtlasRoutes.register, builder: (_, _) => const RegisterScreen()),
+    GoRoute(path: AtlasRoutes.forgotPassword, builder: (_, _) => const ForgotPasswordScreen()),
     GoRoute(path: AtlasRoutes.onboarding, builder: (_, _) => const OnboardingScreen()),
     atlasFullScreenRoute(path: AtlasRoutes.wardrobeAdd, builder: (_, _) => const AddItemScreen()),
     atlasFullScreenRoute(path: AtlasRoutes.profileEdit, builder: (_, _) => const ProfileEditScreen()),
@@ -175,6 +183,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     session: ref.watch(sessionControllerProvider),
     onboarding: ref.watch(onboardingGateProvider),
   );
+  ref.read(crashReporterProvider)?.currentRoute = () => router.routerDelegate.currentConfiguration.uri.path;
   ref.onDispose(router.dispose);
   return router;
 });

@@ -232,6 +232,7 @@ abstract final class P {
   static const analyze = '/api/v1/color-profile/analyze';
   static const account = '/api/v1/account';
   static const legal = '/api/v1/legal';
+  static const forgotPassword = '/api/v1/auth/password/forgot';
 }
 
 /// GET /api/v1/legal: both documents, one section each (a paragraph and a

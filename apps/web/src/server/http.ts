@@ -58,6 +58,8 @@ const DEFAULT_MESSAGES: Record<ErrorCode, string> = {
   PHOTO_QUALITY_TOO_LOW: 'Rasm sifati tahlil uchun yetarli emas. Kunduzgi yorug‘likda, aniq selfi oling.',
   SKIN_NOT_VISIBLE: 'Rasmda yuz terisi yetarlicha ko‘rinmadi. Yuzingiz to‘liq ko‘rinadigan selfi oling.',
   ANALYSIS_UNAVAILABLE: 'Rang tahlili hozir bajarilmadi. Birozdan so‘ng qayta urinib ko‘ring.',
+  RESET_TOKEN_INVALID: 'Havola yaroqsiz yoki muddati tugagan. Parolni tiklashni qaytadan so‘rang.',
+  PASSWORD_RESET_UNAVAILABLE: 'Parolni tiklash hozircha ishlamayapti. Keyinroq qayta urinib ko‘ring.',
 }
 
 const STATUS: Record<ErrorCode, number> = {
@@ -89,6 +91,8 @@ const STATUS: Record<ErrorCode, number> = {
   PHOTO_QUALITY_TOO_LOW: 422,
   SKIN_NOT_VISIBLE: 422,
   ANALYSIS_UNAVAILABLE: 503,
+  RESET_TOKEN_INVALID: 400,
+  PASSWORD_RESET_UNAVAILABLE: 503,
 }
 
 /** HTTP status for an error code (used by the OpenAPI document). */

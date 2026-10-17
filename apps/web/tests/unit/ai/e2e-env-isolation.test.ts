@@ -32,6 +32,7 @@ beforeEach(async () => {
   // The configuration needs these to load; nothing connects to them.
   vi.stubEnv('E2E_DATABASE_URL', 'postgresql://unused@127.0.0.1:1/unused')
   vi.stubEnv('STORAGE_LOCAL_DIR', '/nonexistent/atlas-e2e-storage')
+  vi.stubEnv('E2E_MAIL_OUTBOX_DIR', '/nonexistent/atlas-e2e-mail')
   vi.resetModules()
   const config = (await import('../../../playwright.config')).default as { webServer: WebServer[] }
   servers = config.webServer
@@ -59,6 +60,12 @@ describe('e2e server environment (playwright.config.ts)', () => {
       expect(c.mockInProduction).toBe(true)
       expect(merged.GEMINI_API_KEY).toBe('')
       expect(merged.OPENAI_API_KEY).toBe('')
+    }
+  })
+
+  it('e-mail only goes to the outbox directory, whatever SMTP settings the shell holds', () => {
+    for (const s of servers) {
+      expect([s.env.MAIL_TRANSPORT, s.env.MAIL_ALLOW_OUTBOX_IN_PRODUCTION, s.env.MAIL_OUTBOX_DIR]).toEqual(['outbox', '1', '/nonexistent/atlas-e2e-mail'])
     }
   })
 

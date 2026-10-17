@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { ClientErrorReporter } from "@/components/client-error-reporter";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -57,6 +58,7 @@ export default async function RootLayout({
         <NextIntlClientProvider>
           {children}
           <Toaster />
+          <ClientErrorReporter />
         </NextIntlClientProvider>
       </body>
     </html>

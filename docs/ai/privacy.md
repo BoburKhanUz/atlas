@@ -4,6 +4,8 @@ Status: **engineering review, not a legal opinion.** The items marked **REQUIRES
 
 The user-facing privacy policy and terms (`apps/web/src/lib/legal/documents.ts`, shown at `/privacy`, `/terms` and in the mobile app) describe these data flows. A change to what a provider receives changes those texts too, with a new `LEGAL_VERSION`.
 
+Outside AI: the SMTP provider (`MAIL_TRANSPORT=smtp`) receives the account e-mail address and a one-time reset link, nothing else. Crash reports go only to our own server log (`POST /api/v1/client-errors`, scrubbed, no user id).
+
 ## What each provider receives
 
 Nothing below includes a database id, user id, email, name, conversation id, image URL, storage key, file name or API key of another service. The key of the selected provider is sent only as a header (`x-goog-api-key` or `Authorization`), never in a URL.

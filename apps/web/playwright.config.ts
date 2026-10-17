@@ -30,6 +30,9 @@ const MEDIA_SIGNING_SECRET = secret('MEDIA_SIGNING_SECRET')
 // exactly 32 random bytes, base64
 const SESSION_ENC_KEY = process.env.SESSION_ENC_KEY || randomBytes(32).toString('base64')
 const STORAGE_LOCAL_DIR = process.env.STORAGE_LOCAL_DIR || mkdtempSync(path.join(tmpdir(), 'atlas-e2e-storage-'))
+// Reset e-mails are written here as files; the specs read them (set once by
+// the runner, inherited by its workers).
+const MAIL_OUTBOX_DIR = (process.env.E2E_MAIL_OUTBOX_DIR ||= mkdtempSync(path.join(tmpdir(), 'atlas-e2e-mail-')))
 
 const baseEnv = {
   HOSTNAME: '127.0.0.1',
@@ -60,6 +63,10 @@ const baseEnv = {
   AI_VISION_ENABLED: 'true',
   AI_OUTFIT_AI_ENABLED: 'true',
   AI_ROLLOUT_PERCENT: '100',
+  // E-mail is never sent from an e2e run: files only, whatever SMTP_* the shell holds.
+  MAIL_TRANSPORT: 'outbox',
+  MAIL_ALLOW_OUTBOX_IN_PRODUCTION: '1',
+  MAIL_OUTBOX_DIR,
   NODE_ENV: 'production',
   COOKIE_SECURE: '0', // plain http
   NEXT_TELEMETRY_DISABLED: '1',

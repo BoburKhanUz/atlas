@@ -187,11 +187,13 @@ describe('proxy page gate', () => {
     expect((await proxy(page('/register?next=%2Foutfits', { atlas_at: at }))).headers.get('location')).toBe('http://localhost/outfits')
     expect((await proxy(page('/login?next=%2F%2Fevil.example', { atlas_at: at }))).headers.get('location')).toBe('http://localhost/')
     expect((await proxy(page('/login'))).headers.get('x-middleware-next')).toBe('1')
+    expect((await proxy(page('/forgot-password', { atlas_at: at }))).headers.get('location')).toBe('http://localhost/')
+    expect((await proxy(page('/forgot-password'))).headers.get('x-middleware-next')).toBe('1')
   })
 
-  it('/privacy and /terms are public: no redirect, no rotation, signed in or not', async () => {
+  it('/privacy, /terms and /reset-password are public: no redirect, no rotation, signed in or not', async () => {
     const at = await signAccessToken({ ...TEST_USER, sid: 'sess_x' })
-    for (const p of ['/privacy', '/terms']) {
+    for (const p of ['/privacy', '/terms', '/reset-password']) {
       for (const cookies of [{}, { atlas_at: at }, { atlas_rt: 'some-refresh-token' }]) {
         const res = await proxy(page(p, cookies)) // the fake session store throws if it is touched
         expect(res.headers.get('x-middleware-next')).toBe('1')

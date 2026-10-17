@@ -22,7 +22,7 @@ part 'error_response.g.dart';
 abstract class ErrorResponse implements Built<ErrorResponse, ErrorResponseBuilder> {
   @BuiltValueField(wireName: r'code')
   ErrorResponseCodeEnum get code;
-  // enum codeEnum {  BAD_REQUEST,  VALIDATION_ERROR,  UNAUTHORIZED,  FORBIDDEN,  NOT_FOUND,  CONFLICT,  PAYLOAD_TOO_LARGE,  UNSUPPORTED_MEDIA_TYPE,  INVALID_IMAGE,  UNSUPPORTED_IMAGE_FORMAT,  IMAGE_DIMENSIONS,  IDEMPOTENCY_KEY_MISMATCH,  IDEMPOTENCY_IN_PROGRESS,  RATE_LIMITED,  INTERNAL,  INVALID_TOKEN,  SESSION_EXPIRED,  SESSION_REVOKED,  REFRESH_REUSED,  SESSION_RACE,  CLIENT_MISMATCH,  SESSION_BUSY,  NOT_A_GARMENT,  AI_QUOTA_EXCEEDED,  AI_UNAVAILABLE,  PHOTO_QUALITY_TOO_LOW,  SKIN_NOT_VISIBLE,  ANALYSIS_UNAVAILABLE,  };
+  // enum codeEnum {  BAD_REQUEST,  VALIDATION_ERROR,  UNAUTHORIZED,  FORBIDDEN,  NOT_FOUND,  CONFLICT,  PAYLOAD_TOO_LARGE,  UNSUPPORTED_MEDIA_TYPE,  INVALID_IMAGE,  UNSUPPORTED_IMAGE_FORMAT,  IMAGE_DIMENSIONS,  IDEMPOTENCY_KEY_MISMATCH,  IDEMPOTENCY_IN_PROGRESS,  RATE_LIMITED,  INTERNAL,  INVALID_TOKEN,  SESSION_EXPIRED,  SESSION_REVOKED,  REFRESH_REUSED,  SESSION_RACE,  CLIENT_MISMATCH,  SESSION_BUSY,  NOT_A_GARMENT,  AI_QUOTA_EXCEEDED,  AI_UNAVAILABLE,  PHOTO_QUALITY_TOO_LOW,  SKIN_NOT_VISIBLE,  ANALYSIS_UNAVAILABLE,  RESET_TOKEN_INVALID,  PASSWORD_RESET_UNAVAILABLE,  };
 
   @BuiltValueField(wireName: r'details')
   BuiltList<ErrorResponseDetailsInner>? get details;
@@ -199,6 +199,10 @@ class ErrorResponseCodeEnum extends EnumClass {
   static const ErrorResponseCodeEnum SKIN_NOT_VISIBLE = _$errorResponseCodeEnum_SKIN_NOT_VISIBLE;
   @BuiltValueEnumConst(wireName: r'ANALYSIS_UNAVAILABLE')
   static const ErrorResponseCodeEnum ANALYSIS_UNAVAILABLE = _$errorResponseCodeEnum_ANALYSIS_UNAVAILABLE;
+  @BuiltValueEnumConst(wireName: r'RESET_TOKEN_INVALID')
+  static const ErrorResponseCodeEnum RESET_TOKEN_INVALID = _$errorResponseCodeEnum_RESET_TOKEN_INVALID;
+  @BuiltValueEnumConst(wireName: r'PASSWORD_RESET_UNAVAILABLE')
+  static const ErrorResponseCodeEnum PASSWORD_RESET_UNAVAILABLE = _$errorResponseCodeEnum_PASSWORD_RESET_UNAVAILABLE;
   @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
   static const ErrorResponseCodeEnum unknownDefaultOpenApi = _$errorResponseCodeEnum_unknownDefaultOpenApi;
 

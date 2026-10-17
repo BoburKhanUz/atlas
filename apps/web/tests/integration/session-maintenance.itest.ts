@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { cleanupSessions } from '@/server/session/maintenance'
 import { refreshSession, startSession, endSession } from '@/server/session/protocol'
-import { createDb, dbUrl, dropDb, enabled, installTestClock, migrationsDir, prisma, rmDir, setClock, snapshot, sql } from './pg'
+import { createDb, dbUrl, dropDb, enabled, installTestClock, migrationsDir, prisma, rmDir, setClock, snapshot, sql, sqlTimestamp } from './pg'
 
 const DB = 'itest_maint'
 const DAY = 86_400_000
@@ -52,6 +52,10 @@ describe.skipIf(!enabled)('session cleanup', () => {
     await endSession(client, { refreshToken: recentOut.refreshToken })
 
     setClock(DB, at(61 * DAY))
+    // password reset links: one expired a minute ago, one still valid
+    sql(DB, `INSERT INTO "PasswordResetToken" ("id","userId","tokenHash","expiresAt") VALUES
+      ('rt_old','mu','${'a'.repeat(64)}', TIMESTAMP '${sqlTimestamp(at(61 * DAY - 60_000))}'),
+      ('rt_new','mu','${'b'.repeat(64)}', TIMESTAMP '${sqlTimestamp(at(61 * DAY + 30 * 60_000))}')`)
     const before = snapshot(DB)
     const dry = await cleanupSessions(client, { apply: false })
     expect(snapshot(DB)).toEqual(before)
@@ -61,6 +65,7 @@ describe.skipIf(!enabled)('session cleanup', () => {
       rotatedSessionsDeleted: 2, // the rows rotated at Δ0 and Δ25
       familiesDeleted: 1, // oldOut (revoked 61 days ago); recentOut was revoked 21 days ago
       familySessionsDeleted: 1,
+      expiredResetLinksDeleted: 1,
     })
     expect(await cleanupSessions(client, { apply: true })).toEqual({ ...dry, applied: true })
 
@@ -68,6 +73,7 @@ describe.skipIf(!enabled)('session cleanup', () => {
     expect(sql(DB, `SELECT string_agg("id", ',' ORDER BY "id") FROM "SessionFamily"`)).toBe([live.familyId, recentOut.familyId].sort().join(','))
     expect(sql(DB, `SELECT count(*) FROM "Session" WHERE "id" IN ('${live.sessionId}', '${l1.issued.sessionId}')`)).toBe('0')
     expect(sql(DB, `SELECT count(*) FROM "Session" WHERE "id" = '${l2.issued.sessionId}'`)).toBe('1')
+    expect(sql(DB, `SELECT string_agg("id", ',') FROM "PasswordResetToken"`)).toBe('rt_new')
     // the live tail still refreshes; a deleted old token is simply unknown now
     expect(ok(await refreshSession(client, l3.issued.refreshToken, { clientType: 'web' })).replay).toBe(false)
     expect(await refreshSession(client, live.refreshToken, { clientType: 'web' })).toEqual({ ok: false, code: 'INVALID_TOKEN' })

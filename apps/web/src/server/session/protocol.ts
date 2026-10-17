@@ -10,8 +10,9 @@
  *   classifyRefresh(t, F, R) and act; COMMIT
  *
  * Every refresh, grace replay and revocation of a family takes the family lock
- * first, so they are serialised per family and never deadlock each other (no
- * operation locks two families). All times come from the database clock.
+ * first, so they are serialised per family and never deadlock each other (only
+ * a password reset locks several families, all of one user, in id order). All
+ * times come from the database clock.
  * A family-level revocation also stamps `revokedAt` on every live session of
  * the family (session rows alone are always enough to enforce it) and clears
  * stored successor ciphertexts.
@@ -156,7 +157,7 @@ async function lockSession(tx: Tx, sessionId: string): Promise<SessionRow | null
 }
 
 /** Revoke a family (caller holds its lock) and stamp every live session in it. */
-async function revokeFamily(tx: Tx, familyId: string, t: Date, reason: 'logout' | 'reuse' | 'expired') {
+async function revokeFamily(tx: Tx, familyId: string, t: Date, reason: 'logout' | 'reuse' | 'expired' | 'password_reset') {
   await tx.sessionFamily.updateMany({ where: { id: familyId, revokedAt: null }, data: { revokedAt: t, revokeReason: reason } })
   await tx.session.updateMany({ where: { familyId, revokedAt: null }, data: { revokedAt: t } })
   await tx.session.updateMany({ where: { familyId, successorTokenEnc: { not: null } }, data: { successorTokenEnc: null } })
@@ -178,6 +179,29 @@ async function run<T>(client: PrismaClient, fn: (tx: Tx) => Promise<T>): Promise
     }
     throw err
   }
+}
+
+/**
+ * Runs `fn` in one session-protocol transaction (database clock `t`, lock and
+ * statement timeouts). A busy store throws SessionBusyError (503
+ * SESSION_BUSY) after the rollback: nothing is changed.
+ */
+export async function inSessionTransaction<T>(client: PrismaClient, fn: (tx: Tx, t: Date) => Promise<T>): Promise<T> {
+  const result = await run(client, async (tx) => ({ value: await fn(tx, await begin(tx)) }))
+  if ('ok' in result) throw new SessionBusyError('session store busy')
+  return result.value
+}
+
+/**
+ * Revoke every live family of a user (password reset). The families are
+ * locked in id order, so two such calls for one user never deadlock.
+ * Returns how many were revoked.
+ */
+export async function revokeUserFamilies(tx: Tx, userId: string, t: Date): Promise<number> {
+  const families = await tx.$queryRaw<{ id: string }[]>`
+    SELECT "id" FROM "SessionFamily" WHERE "userId" = ${userId} AND "revokedAt" IS NULL ORDER BY "id" FOR UPDATE`
+  for (const f of families) await revokeFamily(tx, f.id, t, 'password_reset')
+  return families.length
 }
 
 /** Login / register: a new family and its first session, in one transaction. */

@@ -7,10 +7,11 @@
  * - /api/**: CSRF guard only — a state-changing, cookie-authenticated request
  *   whose Origin host differs from Host gets 403 FORBIDDEN. Bearer-authenticated
  *   requests are exempt. No DB work on API requests.
- * - /privacy and /terms: public, no session work (readable before sign-up).
+ * - /privacy, /terms and /reset-password: public, no session work (readable
+ *   before sign-up; the e-mailed reset link works signed in or not).
  * - Pages: valid access cookie → continue. Otherwise, with a refresh cookie,
  *   rotate server-side and continue with fresh cookies. Otherwise redirect to
- *   /login?next=<path>. /login and /register redirect a signed-in user to `/`.
+ *   /login?next=<path>. /login, /register and /forgot-password redirect a signed-in user to `/`.
  *   SESSION_RACE / SESSION_BUSY on a page load (a parallel request rotated the
  *   token, or the store is busy): one automatic retry of the same URL, guarded
  *   by a 5 s `atlas_retry` cookie; a second race goes to /login (session
@@ -31,9 +32,9 @@ import {
 import { ApiError, errorResponse, requestIdOf } from '@/server/http'
 import { log } from '@/server/log'
 
-const GUEST_ONLY_PATHS = new Set(['/login', '/register'])
-/** Pages anyone can open, signed in or not: the legal documents. */
-const PUBLIC_PATHS = new Set(['/privacy', '/terms'])
+const GUEST_ONLY_PATHS = new Set(['/login', '/register', '/forgot-password'])
+/** Pages anyone can open, signed in or not: the legal documents and the reset link. */
+const PUBLIC_PATHS = new Set(['/privacy', '/terms', '/reset-password'])
 export const RETRY_COOKIE = 'atlas_retry'
 const RETRY_COOKIE_SECONDS = 5
 

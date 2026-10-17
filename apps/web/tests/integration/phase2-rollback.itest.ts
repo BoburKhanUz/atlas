@@ -30,6 +30,7 @@ const DOWN_AI_USAGE = path.join(ROLLBACK_DIR, 'down-ai-usage.sql')
 const DOWN_ANALYSIS_METADATA = path.join(ROLLBACK_DIR, 'down-wardrobe-analysis-metadata.sql')
 const DOWN_COLOR_PROFILE = path.join(ROLLBACK_DIR, 'down-color-profile-v2.sql')
 const DOWN_LEGAL_CONSENT = path.join(ROLLBACK_DIR, 'down-legal-consent.sql')
+const DOWN_PASSWORD_RESET = path.join(ROLLBACK_DIR, 'down-password-reset.sql')
 const runnable = enabled && !!PHASE2_DIR && existsSync(path.join(PHASE2_DIR, '.next/standalone/server.js')) && existsSync(path.join(NEW_DIR, '.next/standalone/server.js'))
 
 const SECRETS = {
@@ -106,9 +107,9 @@ async function startServer(which: 'phase2' | 'next', db: string, storage: string
   }
 }
 
-/** Reverses the later migrations first (legal consent, then Phase 4), newest first, as docs/database/cutover.md says. */
+/** Reverses the later migrations first (password reset, legal consent, then Phase 4), newest first, as docs/database/cutover.md says. */
 function downAiUsage(db: string) {
-  for (const file of [DOWN_LEGAL_CONSENT, DOWN_COLOR_PROFILE, DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE]) {
+  for (const file of [DOWN_PASSWORD_RESET, DOWN_LEGAL_CONSENT, DOWN_COLOR_PROFILE, DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE]) {
     const r = downScript(db, file)
     expect(r.code, `${path.basename(file)}: ${r.output}`).toBe(0)
   }
@@ -470,19 +471,19 @@ describe.skipIf(!runnable)('Phase 2 rollback and roll-forward (real builds)', ()
     const media = path.join(ROLLBACK_DIR, 'down-media-variants.sql')
     // wrong order: later migrations still applied → refused, nothing changed
     const before = snapshot(db)
-    for (const f of [DOWN_COLOR_PROFILE, DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE, DOWN_SQL, idem, media]) {
+    for (const f of [DOWN_LEGAL_CONSENT, DOWN_COLOR_PROFILE, DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE, DOWN_SQL, idem, media]) {
       const r = downScript(db, f)
       expect(r.code).not.toBe(0)
       expect(r.output).toMatch(/later migrations are applied/)
     }
     expect(snapshot(db)).toEqual(before)
     // right order
-    for (const f of [DOWN_LEGAL_CONSENT, DOWN_COLOR_PROFILE, DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE, DOWN_SQL, idem, media]) {
+    for (const f of [DOWN_PASSWORD_RESET, DOWN_LEGAL_CONSENT, DOWN_COLOR_PROFILE, DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE, DOWN_SQL, idem, media]) {
       const r = downScript(db, f)
       expect(r.code, `${path.basename(f)}: ${r.output}`).toBe(0)
     }
     // the later scripts refuse a second run (nothing to reverse)
-    for (const f of [DOWN_LEGAL_CONSENT, DOWN_COLOR_PROFILE, DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE]) {
+    for (const f of [DOWN_PASSWORD_RESET, DOWN_LEGAL_CONSENT, DOWN_COLOR_PROFILE, DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE]) {
       const again = downScript(db, f)
       expect(again.code).not.toBe(0)
       expect(again.output).toMatch(/is not applied/)

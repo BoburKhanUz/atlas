@@ -44,6 +44,8 @@ export const ERROR_CODES = [
   'PHOTO_QUALITY_TOO_LOW',
   'SKIN_NOT_VISIBLE',
   'ANALYSIS_UNAVAILABLE',
+  'RESET_TOKEN_INVALID',
+  'PASSWORD_RESET_UNAVAILABLE',
 ] as const
 
 export const ErrorResponse = z

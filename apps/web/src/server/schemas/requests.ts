@@ -36,12 +36,14 @@ export const LoginRequest = z.object({
   deviceName: deviceName.optional(),
 })
 
+const newPassword = z.string().min(8, 'Parol kamida 8 belgi bo‘lishi kerak').max(200)
+
 const CONSENT_REQUIRED = 'Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.'
 const CONSENT_OUTDATED = 'Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang.'
 
 export const RegisterRequest = z.object({
   email: z.string().email('Email noto‘g‘ri'),
-  password: z.string().min(8, 'Parol kamida 8 belgi bo‘lishi kerak').max(200),
+  password: newPassword,
   name: z.string().min(1).max(60).optional(),
   deviceName: deviceName.optional(),
   acceptedLegalVersion: z
@@ -54,6 +56,34 @@ export const RegisterRequest = z.object({
     .refine((v) => v, '18 yoshdan kattaligingizni tasdiqlang.')
     .describe('The user confirmed being 18 or older; must be true.'),
 })
+
+export const PasswordForgotRequest = z.object({
+  email: z.string().email('Email noto‘g‘ri'),
+})
+
+export const PasswordResetRequest = z.object({
+  token: z.string().min(1).max(200).describe('The `token` query parameter of the e-mailed link'),
+  password: newPassword,
+})
+
+// ─── Client error reports (crash monitoring) ────────────────────────────────
+
+export const ClientErrorReport = z.object({
+  platform: z.enum(['android', 'ios', 'web']),
+  appVersion: z.string().min(1).max(40).describe('App version and build, e.g. 0.1.0+1 (web: the build id)'),
+  osVersion: z.string().max(120).optional(),
+  kind: z
+    .enum(['flutter', 'dart', 'web_error', 'web_rejection', 'react'])
+    .describe('flutter: a framework error; dart: an uncaught async error; web_*: window error / unhandled rejection; react: an error boundary'),
+  fatal: z.boolean().optional(),
+  errorType: z.string().min(1).max(200),
+  message: z.string().max(1000).describe('Scrubbed by the app: no user text, e-mail addresses, tokens or URL queries'),
+  stack: z.string().max(4000).optional(),
+  route: z.string().max(200).optional().describe('Screen path with ids replaced by :id'),
+  occurredAt: z.iso.datetime().optional().describe('Device clock'),
+})
+
+export const ClientErrorsRequest = z.object({ reports: z.array(ClientErrorReport).min(1).max(10) })
 
 export const MobileRefreshRequest = z.object({ refreshToken })
 export const MobileLogoutRequest = z.object({ refreshToken: refreshToken.optional() })

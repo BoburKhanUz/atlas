@@ -22,6 +22,8 @@ export 'package:atlas_api/src/api/wardrobe_api.dart';
 export 'package:atlas_api/src/api/weather_api.dart';
 
 export 'package:atlas_api/src/model/auth_response.dart';
+export 'package:atlas_api/src/model/client_error_report.dart';
+export 'package:atlas_api/src/model/client_errors_request.dart';
 export 'package:atlas_api/src/model/color_analysis_response.dart';
 export 'package:atlas_api/src/model/color_analysis_response_color_profile.dart';
 export 'package:atlas_api/src/model/color_analysis_response_color_profile_contrast_level.dart';
@@ -79,6 +81,8 @@ export 'package:atlas_api/src/model/outfit_save_response_outfit.dart';
 export 'package:atlas_api/src/model/outfit_save_response_outfit_items_inner.dart';
 export 'package:atlas_api/src/model/outfit_summary.dart';
 export 'package:atlas_api/src/model/outfit_summary_item.dart';
+export 'package:atlas_api/src/model/password_forgot_request.dart';
+export 'package:atlas_api/src/model/password_reset_request.dart';
 export 'package:atlas_api/src/model/preferences_row.dart';
 export 'package:atlas_api/src/model/profile_patch_request.dart';
 export 'package:atlas_api/src/model/profile_patch_request_preferences.dart';

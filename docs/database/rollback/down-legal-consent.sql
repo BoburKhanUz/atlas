@@ -1,5 +1,6 @@
--- Reverse 20261017000000_legal_consent (legal consent records). Run it FIRST,
--- before down-color-profile-v2.sql, when rolling back further:
+-- Reverse 20261017000000_legal_consent (legal consent records). Run it after
+-- down-password-reset.sql and before down-color-profile-v2.sql when rolling
+-- back further:
 --   psql --single-transaction -v ON_ERROR_STOP=1 -f down-legal-consent.sql "$DATABASE_URL"
 -- The consent records are lost: export them first if they must be kept as
 -- evidence (no other user content is stored in this table).

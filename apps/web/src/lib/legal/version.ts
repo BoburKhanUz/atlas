@@ -4,7 +4,7 @@
  * documents.ts: each consent stores the version it accepted (LegalConsent).
  * Kept apart from the texts so client components can import it cheaply.
  */
-export const LEGAL_VERSION = '2026-10-17-draft'
+export const LEGAL_VERSION = '2026-10-17.2-draft'
 
 /** Date the documents take effect (YYYY-MM-DD). */
 export const LEGAL_EFFECTIVE_DATE = '2026-10-17'

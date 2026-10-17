@@ -1,10 +1,16 @@
 'use client'
 
+import { useEffect } from 'react'
+import { reportClientError } from '@/lib/client-errors'
+
 /**
  * Last-resort boundary for errors in the root layout itself. It replaces the
  * root layout, so no i18n provider/global CSS is guaranteed — keep it plain.
  */
-export default function GlobalError({ reset }: { error: Error; reset: () => void }) {
+export default function GlobalError({ error, reset }: { error: Error; reset: () => void }) {
+  useEffect(() => {
+    reportClientError(error, 'react', true)
+  }, [error])
   return (
     <html lang="uz">
       <body

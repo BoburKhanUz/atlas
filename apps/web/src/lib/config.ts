@@ -7,6 +7,7 @@
 
 import path from 'path'
 import { parseAiConfig } from '@/lib/ai/config'
+import { parseMailConfig } from '@/server/mail-config'
 
 const MIN_SECRET_LENGTH = 32
 
@@ -177,4 +178,5 @@ export function assertServerConfig(): void {
   getSessionEncKeys()
   getPublicBaseUrl()
   parseAiConfig()
+  parseMailConfig()
 }

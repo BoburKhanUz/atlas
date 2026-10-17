@@ -9,6 +9,10 @@ part of 'serializers.dart';
 Serializers _$serializers =
     (Serializers().toBuilder()
           ..add(AuthResponse.serializer)
+          ..add(ClientErrorReport.serializer)
+          ..add(ClientErrorReportKindEnum.serializer)
+          ..add(ClientErrorReportPlatformEnum.serializer)
+          ..add(ClientErrorsRequest.serializer)
           ..add(ColorAnalysisResponse.serializer)
           ..add(ColorAnalysisResponseColorProfile.serializer)
           ..add(ColorAnalysisResponseColorProfileContrastLevel.serializer)
@@ -78,6 +82,8 @@ Serializers _$serializers =
           ..add(OutfitSaveResponseOutfitItemsInner.serializer)
           ..add(OutfitSummary.serializer)
           ..add(OutfitSummaryItem.serializer)
+          ..add(PasswordForgotRequest.serializer)
+          ..add(PasswordResetRequest.serializer)
           ..add(PreferencesRow.serializer)
           ..add(ProfilePatchRequest.serializer)
           ..add(ProfilePatchRequestPreferences.serializer)
@@ -124,6 +130,10 @@ Serializers _$serializers =
           ..add(WeatherResponse.serializer)
           ..add(WeatherResponseWeather.serializer)
           ..add(WebAuthResponse.serializer)
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(ClientErrorReport)]),
+            () => ListBuilder<ClientErrorReport>(),
+          )
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(ConversationListResponseConversationsInner)]),
             () => ListBuilder<ConversationListResponseConversationsInner>(),

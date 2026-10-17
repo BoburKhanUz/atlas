@@ -90,7 +90,7 @@ The job has been validated locally (actionlint 1.7.7; every step run on Linux). 
 - **No offline database.** Data is kept in memory; offline means "last loaded data while the app runs".
 - **The AI stylist doesn't stream.** It shows one answer per request, with a 70 s timeout.
 - **Lists aren't paginated where the API isn't** (outfits, conversations).
-- **No push notifications, analytics or crash reporting.** These are product decisions. With no crash reporting, release crashes are invisible until one is added.
+- **No push notifications or analytics.** Crash monitoring is our own: Flutter framework errors and uncaught Dart errors are scrubbed and sent to `POST /api/v1/client-errors`, which writes them to the server log (`docs/ai/monitoring.md`, *Client errors*). Native (non-Dart) crashes and ANRs are not captured.
 - ~~The colour profile can't be deleted on its own.~~ Phase 4.3: `DELETE /api/v1/color-profile` and a delete action on the colour-profile screen.
 - **Profile body fields** (gender, fit, sizes and so on) are not shown or edited, because `ProfileRow` lacks them in the contract.
 - **Flutter build warning:** some plugins haven't migrated to Flutter's "Built-in Kotlin". It isn't an error today, but a future Flutter upgrade will need updated plugins.
@@ -117,13 +117,13 @@ All must be done before submission. ☐ = open.
 - ☐ Real app icon and splash. The Android launcher icon is still the Flutter template default; iOS icons need checking.
 - ☐ Version and build number set (`pubspec.yaml` is `0.1.0+1`)
 - ☐ Privacy policy URL: `<PUBLIC_BASE_URL>/privacy` exists, but its text is a draft until legal review (`apps/web/src/lib/legal/documents.ts`); account-deletion instructions (in-app deletion exists)
-- ☐ Decide on crash reporting before a public release (none today)
+- ☐ Decide whether a public release also needs native crash capture (Dart errors already reach the server log)
 - ☐ Backend follow-ups triaged (none block a first release technically; the missing idempotency keys are mitigated by the app never auto-retrying those POSTs)
 
 **Android / Google Play**
 - ☐ Release keystore and `android/key.properties` in the release pipeline; Play App Signing enrolled
 - ☐ Release **App Bundle** built and signed (`flutter build appbundle --release`) and tested via an internal testing track
-- ☐ Data safety form: account email, name, style/colour preferences, wardrobe photos (EXIF removed), approximate location (sent rounded, not stored), selfie (processed once, derived colours kept), chat messages
+- ☐ Data safety form: account email, name, style/colour preferences, wardrobe photos (EXIF removed), approximate location (sent rounded, not stored), selfie (processed once, derived colours kept), chat messages, crash reports (scrubbed, not linked to the account)
 - ☐ Target API level meets Play's requirement at submission time (the app targets API 36 today)
 - ☐ Store listing (text, screenshots, content rating)
 

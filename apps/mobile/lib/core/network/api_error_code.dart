@@ -29,6 +29,8 @@ enum ApiErrorCode {
   photoQualityTooLow('PHOTO_QUALITY_TOO_LOW', ApiErrorKind.invalidImage),
   skinNotVisible('SKIN_NOT_VISIBLE', ApiErrorKind.invalidImage),
   analysisUnavailable('ANALYSIS_UNAVAILABLE', ApiErrorKind.server),
+  resetTokenInvalid('RESET_TOKEN_INVALID', ApiErrorKind.invalidRequest),
+  passwordResetUnavailable('PASSWORD_RESET_UNAVAILABLE', ApiErrorKind.server),
   unknown('', ApiErrorKind.unknown);
 
   const ApiErrorCode(this.wire, this.kind);

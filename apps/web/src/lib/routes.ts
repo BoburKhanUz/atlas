@@ -27,9 +27,12 @@ export const routes = {
     withQuery('/login', { next: opts.next, expired: opts.expired ? '1' : null }),
   register: (opts: { next?: string | null } = {}) =>
     withQuery('/register', { next: opts.next }),
-  // Public legal documents (no session needed, see src/proxy.ts).
+  forgotPassword: () => '/forgot-password',
+  // Public pages (no session work, see src/proxy.ts): the legal documents and
+  // the e-mailed password reset link.
   privacy: () => '/privacy',
   terms: () => '/terms',
+  resetPassword: () => '/reset-password',
 } as const
 
 /**
@@ -43,6 +46,6 @@ export function safeNextPath(raw: string | null | undefined, fallback: string = 
   if (!raw || raw.length > 2048) return fallback
   if (!raw.startsWith('/') || raw.startsWith('//') || raw.includes('\\')) return fallback
   if (/[\u0000-\u001f\u007f]/.test(raw)) return fallback
-  if (/^\/(login|register)(\/|\?|#|$)/.test(raw)) return fallback
+  if (/^\/(login|register|forgot-password|reset-password)(\/|\?|#|$)/.test(raw)) return fallback
   return raw
 }

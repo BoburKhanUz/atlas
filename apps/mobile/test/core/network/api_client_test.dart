@@ -271,9 +271,11 @@ void main() {
           'PHOTO_QUALITY_TOO_LOW',
           'SKIN_NOT_VISIBLE',
           'ANALYSIS_UNAVAILABLE',
+          'RESET_TOKEN_INVALID',
+          'PASSWORD_RESET_UNAVAILABLE',
         ]),
       );
-      expect(ErrorResponseCodeEnum.values.length, 29); // 28 contract codes + unknown_default_open_api
+      expect(ErrorResponseCodeEnum.values.length, 31); // 30 contract codes + unknown_default_open_api
     });
   });
 }

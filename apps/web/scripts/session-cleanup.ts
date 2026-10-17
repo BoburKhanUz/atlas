@@ -44,6 +44,7 @@ async function main(): Promise<number> {
       console.log(`successor ciphertexts cleared: ${report.successorCiphertextsCleared}`)
       console.log(`rotated sessions deleted:      ${report.rotatedSessionsDeleted}`)
       console.log(`families deleted:              ${report.familiesDeleted} (with ${report.familySessionsDeleted} sessions)`)
+      console.log(`expired reset links deleted:   ${report.expiredResetLinksDeleted}`)
     }
     return 0
   } finally {

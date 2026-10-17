@@ -21,6 +21,8 @@ lib/src/auth/bearer_auth.dart
 lib/src/auth/oauth.dart
 lib/src/date_serializer.dart
 lib/src/model/auth_response.dart
+lib/src/model/client_error_report.dart
+lib/src/model/client_errors_request.dart
 lib/src/model/color_analysis_response.dart
 lib/src/model/color_analysis_response_color_profile.dart
 lib/src/model/color_analysis_response_color_profile_contrast_level.dart
@@ -79,6 +81,8 @@ lib/src/model/outfit_save_response_outfit.dart
 lib/src/model/outfit_save_response_outfit_items_inner.dart
 lib/src/model/outfit_summary.dart
 lib/src/model/outfit_summary_item.dart
+lib/src/model/password_forgot_request.dart
+lib/src/model/password_reset_request.dart
 lib/src/model/preferences_row.dart
 lib/src/model/profile_patch_request.dart
 lib/src/model/profile_patch_request_preferences.dart

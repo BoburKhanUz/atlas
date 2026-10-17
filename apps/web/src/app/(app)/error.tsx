@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { AlertCircle } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
+import { reportClientError } from '@/lib/client-errors'
 
 export default function AppError({
   error,
@@ -17,6 +18,7 @@ export default function AppError({
 
   useEffect(() => {
     console.error(error)
+    reportClientError(error, 'react', true)
   }, [error])
 
   return (

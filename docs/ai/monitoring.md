@@ -158,6 +158,26 @@ Defined in `INITIAL_ALERT_THRESHOLDS` (`src/lib/ai/monitoring-metrics.ts`). Rate
 
 Suggested windows: 15 minutes for error, timeout and availability; 1 hour for p95 latency; 1 day for quota and usage. Recalibrate every threshold from the live bake-off and the first production week.
 
+## Client errors (crash monitoring)
+
+Our own crash monitoring, no third party: the mobile app (`lib/core/logging/crash_reporter.dart`: Flutter framework errors and uncaught Dart errors) and the web pages (`src/lib/client-errors.ts`: uncaught errors, unhandled rejections, error boundaries) send reports to `POST /api/v1/client-errors`. The server writes one `client error` line (level `error`) per report and stores nothing.
+
+| Field | Content |
+|---|---|
+| `platform`, `appVersion`, `osVersion` | `android` / `ios` / `web`, the build (`0.1.0+1`; web: the package version), the device OS |
+| `kind`, `fatal` | `flutter`, `dart`, `web_error`, `web_rejection`, `react`; uncaught = fatal |
+| `errorType`, `message`, `stack` | scrubbed on the device and again on the server (`src/lib/error-scrub.ts`): no e-mail address, Bearer value, JWT, URL query or long opaque value |
+| `route`, `occurredAt` | the screen with ids replaced by `:id`; the device clock |
+
+No user id or request id ties a report to an account. Limits: each distinct error once per app run or page load, at most 20 per run (10 per page) in batches of 10; the server accepts 30 requests per IP and 300 in total per 10 minutes. Native (non-Dart) crashes and ANRs are not captured.
+
+```bash
+deploy/compose.sh logs --since 24h web | grep '"msg":"client error"'        # all reports of the last day
+deploy/compose.sh logs --since 24h web | grep '"msg":"client error"' | grep -o '"errorType":"[^"]*"' | sort | uniq -c | sort -rn
+```
+
+Watch for a new `errorType` after a release, or one `appVersion` producing most reports. INITIAL rule (to calibrate with real traffic): more than 20 reports of one `errorType` in an hour is worth a look the same day.
+
 ## Future backend integration
 
 Add a sink: `setAiMonitoringSinks([logSink, prometheusSink])`. A Prometheus/OpenTelemetry sink maps:

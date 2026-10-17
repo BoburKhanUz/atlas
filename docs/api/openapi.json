@@ -11,6 +11,90 @@
           }
         ]
       },
+      "ClientErrorReport": {
+        "properties": {
+          "appVersion": {
+            "description": "App version and build, e.g. 0.1.0+1 (web: the build id)",
+            "maxLength": 40,
+            "minLength": 1,
+            "type": "string"
+          },
+          "errorType": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "fatal": {
+            "type": "boolean"
+          },
+          "kind": {
+            "description": "flutter: a framework error; dart: an uncaught async error; web_*: window error / unhandled rejection; react: an error boundary",
+            "enum": [
+              "flutter",
+              "dart",
+              "web_error",
+              "web_rejection",
+              "react"
+            ],
+            "type": "string"
+          },
+          "message": {
+            "description": "Scrubbed by the app: no user text, e-mail addresses, tokens or URL queries",
+            "maxLength": 1000,
+            "type": "string"
+          },
+          "occurredAt": {
+            "description": "Device clock",
+            "format": "date-time",
+            "type": "string"
+          },
+          "osVersion": {
+            "maxLength": 120,
+            "type": "string"
+          },
+          "platform": {
+            "enum": [
+              "android",
+              "ios",
+              "web"
+            ],
+            "type": "string"
+          },
+          "route": {
+            "description": "Screen path with ids replaced by :id",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "stack": {
+            "maxLength": 4000,
+            "type": "string"
+          }
+        },
+        "required": [
+          "platform",
+          "appVersion",
+          "kind",
+          "errorType",
+          "message"
+        ],
+        "type": "object"
+      },
+      "ClientErrorsRequest": {
+        "properties": {
+          "reports": {
+            "items": {
+              "$ref": "#/components/schemas/ClientErrorReport"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "reports"
+        ],
+        "type": "object"
+      },
       "ColorAnalysisResponse": {
         "additionalProperties": false,
         "properties": {
@@ -683,7 +767,9 @@
               "AI_UNAVAILABLE",
               "PHOTO_QUALITY_TOO_LOW",
               "SKIN_NOT_VISIBLE",
-              "ANALYSIS_UNAVAILABLE"
+              "ANALYSIS_UNAVAILABLE",
+              "RESET_TOKEN_INVALID",
+              "PASSWORD_RESET_UNAVAILABLE"
             ],
             "type": "string"
           },
@@ -2259,6 +2345,39 @@
           "material",
           "season",
           "image"
+        ],
+        "type": "object"
+      },
+      "PasswordForgotRequest": {
+        "properties": {
+          "email": {
+            "format": "email",
+            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "type": "object"
+      },
+      "PasswordResetRequest": {
+        "properties": {
+          "password": {
+            "maxLength": 200,
+            "minLength": 8,
+            "type": "string"
+          },
+          "token": {
+            "description": "The `token` query parameter of the e-mailed link",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "password"
         ],
         "type": "object"
       },
@@ -4024,6 +4143,227 @@
         ]
       }
     },
+    "/api/v1/auth/password/forgot": {
+      "post": {
+        "operationId": "requestPasswordReset",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordForgotRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Accepted"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: BAD_REQUEST | VALIDATION_ERROR",
+            "x-error-codes": [
+              "BAD_REQUEST",
+              "VALIDATION_ERROR"
+            ]
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: PAYLOAD_TOO_LARGE",
+            "x-error-codes": [
+              "PAYLOAD_TOO_LARGE"
+            ]
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: RATE_LIMITED",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying (retryable codes)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "x-error-codes": [
+              "RATE_LIMITED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: PASSWORD_RESET_UNAVAILABLE",
+            "x-error-codes": [
+              "PASSWORD_RESET_UNAVAILABLE"
+            ]
+          }
+        },
+        "security": [],
+        "summary": "E-mail a one-time password reset link. The answer is the same whether or not the account exists.",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/password/reset": {
+      "post": {
+        "operationId": "resetPassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordResetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Password changed"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: BAD_REQUEST | RESET_TOKEN_INVALID | VALIDATION_ERROR",
+            "x-error-codes": [
+              "BAD_REQUEST",
+              "RESET_TOKEN_INVALID",
+              "VALIDATION_ERROR"
+            ]
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: PAYLOAD_TOO_LARGE",
+            "x-error-codes": [
+              "PAYLOAD_TOO_LARGE"
+            ]
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: RATE_LIMITED",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying (retryable codes)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "x-error-codes": [
+              "RATE_LIMITED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: SESSION_BUSY",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying (retryable codes)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "x-error-codes": [
+              "SESSION_BUSY"
+            ]
+          }
+        },
+        "security": [],
+        "summary": "Set a new password with the e-mailed token. Every session of the account is signed out.",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/v1/auth/refresh": {
       "post": {
         "operationId": "refreshSession",
@@ -4283,6 +4623,99 @@
         "summary": "Create an account and sign in (web: cookies; mobile: tokens in the body)",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/api/v1/client-errors": {
+      "post": {
+        "operationId": "reportClientErrors",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientErrorsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Logged"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: BAD_REQUEST | VALIDATION_ERROR",
+            "x-error-codes": [
+              "BAD_REQUEST",
+              "VALIDATION_ERROR"
+            ]
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: PAYLOAD_TOO_LARGE",
+            "x-error-codes": [
+              "PAYLOAD_TOO_LARGE"
+            ]
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: RATE_LIMITED",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying (retryable codes)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "x-error-codes": [
+              "RATE_LIMITED"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [],
+        "summary": "Error reports from the apps (crash monitoring): scrubbed and written to the server log, never stored",
+        "tags": [
+          "service"
         ]
       }
     },

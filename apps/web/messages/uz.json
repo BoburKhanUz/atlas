@@ -40,7 +40,8 @@
     "consentRequired": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
     "legalLinks": "Huquqiy hujjatlar",
     "privacyLink": "Maxfiylik siyosati",
-    "termsLink": "Foydalanish shartlari"
+    "termsLink": "Foydalanish shartlari",
+    "forgotLink": "Parolni unutdingizmi?"
   },
   "errors": {
     "network": "Tarmoq xatosi yuz berdi",
@@ -60,5 +61,24 @@
     "meta": "Kuchga kirish sanasi: {date} · Versiya: {version}",
     "draft": "Loyiha: bu matnni hali yurist ko‘rib chiqmagan, u o‘zgarishi mumkin. Kvadrat qavs ichidagi joylar keyinroq to‘ldiriladi.",
     "seeAlso": "Shuningdek o‘qing:"
+  },
+  "passwordReset": {
+    "forgotTitle": "Parolni tiklash",
+    "forgotDescription": "Ro‘yxatdan o‘tgan email manzilingizni kiriting. Unga yangi parol o‘rnatish havolasini yuboramiz.",
+    "sendLink": "Havola yuborish",
+    "sent": "Agar bu email ro‘yxatdan o‘tgan bo‘lsa, unga parolni tiklash havolasi yuborildi.",
+    "sentHint": "Xatni oching va havola orqali 60 daqiqa ichida yangi parol o‘rnating. Xat kelmasa, «Spam» papkasini tekshiring.",
+    "backToLogin": "Kirish sahifasiga qaytish",
+    "resetTitle": "Yangi parol",
+    "resetDescription": "Yangi parolni kiriting. Saqlangach, barcha qurilmalarda qaytadan kirasiz.",
+    "newPasswordLabel": "Yangi parol",
+    "confirmPasswordLabel": "Parolni takrorlang",
+    "tooShort": "Parol kamida 8 belgi bo‘lishi kerak.",
+    "mismatch": "Parollar bir xil emas.",
+    "save": "Parolni saqlash",
+    "savedTitle": "Parol o‘zgartirildi",
+    "saved": "Yangi parol saqlandi. Barcha qurilmalardagi kirishlar yakunlandi: yangi parol bilan qaytadan kiring.",
+    "invalidLink": "Havola yaroqsiz yoki muddati tugagan. Parolni tiklashni qaytadan so‘rang.",
+    "requestNew": "Yangi havola so‘rash"
   }
 }

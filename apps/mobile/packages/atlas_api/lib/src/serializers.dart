@@ -15,6 +15,8 @@ import 'package:atlas_api/src/date_serializer.dart';
 import 'package:atlas_api/src/model/date.dart';
 
 import 'package:atlas_api/src/model/auth_response.dart';
+import 'package:atlas_api/src/model/client_error_report.dart';
+import 'package:atlas_api/src/model/client_errors_request.dart';
 import 'package:atlas_api/src/model/color_analysis_response.dart';
 import 'package:atlas_api/src/model/color_analysis_response_color_profile.dart';
 import 'package:atlas_api/src/model/color_analysis_response_color_profile_contrast_level.dart';
@@ -72,6 +74,8 @@ import 'package:atlas_api/src/model/outfit_save_response_outfit.dart';
 import 'package:atlas_api/src/model/outfit_save_response_outfit_items_inner.dart';
 import 'package:atlas_api/src/model/outfit_summary.dart';
 import 'package:atlas_api/src/model/outfit_summary_item.dart';
+import 'package:atlas_api/src/model/password_forgot_request.dart';
+import 'package:atlas_api/src/model/password_reset_request.dart';
 import 'package:atlas_api/src/model/preferences_row.dart';
 import 'package:atlas_api/src/model/profile_patch_request.dart';
 import 'package:atlas_api/src/model/profile_patch_request_preferences.dart';
@@ -104,6 +108,8 @@ part 'serializers.g.dart';
 
 @SerializersFor([
   AuthResponse,
+  ClientErrorReport,
+  ClientErrorsRequest,
   ColorAnalysisResponse,
   ColorAnalysisResponseColorProfile,
   ColorAnalysisResponseColorProfileContrastLevel,
@@ -161,6 +167,8 @@ part 'serializers.g.dart';
   OutfitSaveResponseOutfitItemsInner,
   OutfitSummary,
   OutfitSummaryItem,
+  PasswordForgotRequest,
+  PasswordResetRequest,
   PreferencesRow,
   ProfilePatchRequest,
   ProfilePatchRequestPreferences,
