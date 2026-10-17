@@ -1,6 +1,6 @@
 # Staging server runbook
 
-Status: **not provisioned yet.** This runbook sets up one staging server with the existing Docker image: PostgreSQL 16, the one-shot migration, the web app and Caddy for HTTPS. The staging contract and the smoke test are in [`docs/ai/staging.md`](../ai/staging.md); the app's variables are described in [`.env.example`](../../.env.example), and `ATLAS_DOMAIN` is used only by the overlay and Caddy.
+Status: **not provisioned yet.** The stack was rehearsed locally on 2026-10-17 with these files (`ATLAS_DOMAIN=localhost`, Caddy's internal certificate, mock AI): migrations, HTTPS, the smoke test below in mock mode, the mobile sign-in and upload flow, password reset over SMTP with STARTTLS, and backup and restore. This runbook sets up one staging server with the existing Docker image: PostgreSQL 16, the one-shot migration, the web app and Caddy for HTTPS. The staging contract and the smoke test are in [`docs/ai/staging.md`](../ai/staging.md); the app's variables are described in [`.env.example`](../../.env.example), and `ATLAS_DOMAIN` is used only by the overlay and Caddy.
 
 Files:
 
@@ -59,7 +59,7 @@ openssl rand -base64 32   # SESSION_ENC_KEY
 
 Set `ATLAS_DOMAIN` to the host name only (no `https://`). Keep the file on the server; never copy it into the repository, a chat or a ticket.
 
-Password reset e-mail: fill in the `SMTP_*` values and `MAIL_FROM` of any SMTP provider, then set `MAIL_TRANSPORT=smtp`. With `MAIL_TRANSPORT=disabled` (the template's value) the rest works and "forgot password" says reset is unavailable. The links point to `https://<ATLAS_DOMAIN>/reset-password`. Check it once after the start: request a reset for your own account; a failed send shows in the log as `password reset request failed` (the user still sees the neutral answer).
+Password reset e-mail: fill in the `SMTP_*` values and `MAIL_FROM` of any SMTP provider, then set `MAIL_TRANSPORT=smtp`. With `MAIL_TRANSPORT=disabled` (the template's value) the rest works and "forgot password" says reset is unavailable. The links point to `https://<ATLAS_DOMAIN>/reset-password`. Check it once after the start: request a reset for your own account; a failed send shows in the log as `password reset request failed` with the reason, for example `unable to verify the first certificate` or an authentication error (the user still sees the neutral answer).
 
 ## 3. Start
 
@@ -122,7 +122,7 @@ deploy/compose.sh up -d
 deploy/compose.sh exec -T web sh -c 'tar -xzf - -C /app/storage/uploads' < deploy/backups/<time>/uploads.tgz
 ```
 
-The backup and restore commands have not been run against a live stack yet: test them once on staging before relying on them.
+Rehearsed on a local copy of this stack on 2026-10-17: after a backup, a new account and the deletion of every uploaded file, the restore brought back the same accounts, items, consents and image files, and the images loaded again. Run it once on the staging server before relying on it.
 
 ## Before production (not covered here)
 

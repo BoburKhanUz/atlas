@@ -24,6 +24,8 @@ Result values: `PASS` · `FAIL` · `NOT TESTED`
   - `apps/mobile/test/fixtures/images/` has a HEIC sample, a rotated reference and plain JPEG/PNG files.
   - Make the rest from a photo with readable text (the automated tests generate them in memory): eight copies with EXIF `Orientation` 1–8 (for example `exiftool -Orientation=6 -n img6.jpg`), one ~8000 px photo, and one with GPS tags (`exiftool -GPSLatitude=41.3 -GPSLatitudeRef=N -GPSLongitude=69.2 -GPSLongitudeRef=E gps.jpg`).
 - To read logs, use `adb logcat` (Android) or Console.app (iOS). A **release** build must print nothing from the app.
+- A37–A38 need password reset e-mail on the staging server (`MAIL_TRANSPORT=smtp` and a working SMTP account, [`docs/deploy/staging.md`](../deploy/staging.md) section 2); A39 needs `MAIL_TRANSPORT=disabled`.
+- A41–A42 call the real AI providers: every photo analysis, stylist question and outfit explanation is a billed request. Set the spending limits at the providers before the run.
 
 ## Android
 
@@ -65,6 +67,15 @@ Run on **two devices or emulators**: API 29–33 (for example API 29 or 30) and 
 | A32 | Release logs | Release build: `adb logcat` shows no app logs (no tokens, URLs, images, profile, location or chat text) | NOT TESTED | NOT TESTED | |
 | A33 | Account deletion | Profile → delete account → type the confirmation → signed out with "Hisobingiz o‘chirildi."; sign-in with the old account fails; another user on the same device is unaffected | NOT TESTED | NOT TESTED | |
 | A34 | Selfie analysis | Profile → colour profile → consent screen before any permission prompt → front camera → result shown; no selfie file left in the app's cache | NOT TESTED | NOT TESTED | |
+| A35 | Consent at registration | Register → the account can't be created until both boxes are ticked (privacy policy; terms of use and 18+); the document links open the texts and back returns to the form with the input kept | NOT TESTED | NOT TESTED | |
+| A36 | Legal documents | Profile → "Huquqiy hujjatlar" → both documents open and are readable at 2× text; the "Loyiha: …" notice shows while the texts are drafts | NOT TESTED | NOT TESTED | |
+| A37 | Forgot password | Sign-in → "Parolni unutdingizmi?" → an existing and an unknown address get the same confirmation; the e-mail for the existing one arrives within a minute (check spam) with an `https://<staging host>/reset-password?token=…` link | NOT TESTED | NOT TESTED | |
+| A38 | Reset round trip | Open the link on the phone → set a new password → the phone that was signed in keeps working until its access token expires (at most 15 min), then its next action signs it out with "Sessiya yakunlangan…"; the new password signs in; the same link again → "Havola yaroqsiz yoki muddati tugagan…" | NOT TESTED | NOT TESTED | |
+| A39 | Reset unavailable | Staging with `MAIL_TRANSPORT=disabled`: "Parolni unutdingizmi?" → "Parolni tiklash hozircha ishlamayapti…" | NOT TESTED | NOT TESTED | |
+| A40 | Crash reports | After the run, on the server: `deploy/compose.sh logs web \| grep '"client error"'` → one line per distinct error per app run, with platform, app version and route; no e-mail address, token or URL query in any line. Attach the lines to the run | NOT TESTED | NOT TESTED | |
+| A41 | Real AI: photos | Real vision provider: a clear photo of one garment → sensible category and colour; a strongly blurred photo → "Rasm aniq emas…", no item created | NOT TESTED | NOT TESTED | |
+| A42 | Real AI: stylist, outfits | Stylist question in Uzbek → the answer is in Uzbek and names only items from the wardrobe; outfit generation → explanation in Uzbek; each request has an `ai.call` log line with the provider, model and cost estimate | NOT TESTED | NOT TESTED | |
+| A43 | Mobile data | Wi-Fi off, 4G/LTE: sign in, camera upload and a stylist question work; a slow answer shows progress and ends with an answer or a clear error, never an endless spinner | NOT TESTED | NOT TESTED | |
 
 ## iOS
 
@@ -87,6 +98,7 @@ Run on **two devices or emulators**: API 29–33 (for example API 29 or 30) and 
 | I13 | Export compliance | `ITSAppUsesNonExemptEncryption` set correctly (the app uses only standard HTTPS); App Store Connect accepts the build | NOT TESTED | |
 | I14 | VoiceOver / Dynamic Type | Main screens with VoiceOver and the largest text size | NOT TESTED | |
 | I15 | Release logs | Release build: Console.app shows no app logs | NOT TESTED | |
+| I16 | Consent, reset, crash reports | A35–A40 on the iPhone; the reset link opens in Safari | NOT TESTED | |
 
 ## Sign-off
 
