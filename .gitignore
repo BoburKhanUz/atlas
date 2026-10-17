@@ -26,3 +26,7 @@ apps/web/public/uploads/
 
 # generated Dart client (CI / local check only)
 /.dart-client/
+
+# Server deployment (deploy/): filled-in settings and backups stay on the server
+/deploy/server.env
+/deploy/backups/

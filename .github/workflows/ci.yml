@@ -233,6 +233,13 @@ jobs:
             echo "SESSION_ENC_KEY=$(openssl rand -base64 32)"
           } > "$RUNNER_TEMP/ci.env"
           docker compose --env-file "$RUNNER_TEMP/ci.env" config --quiet
+      - name: Validate the server overlay (deploy/) and its Caddyfile
+        run: |
+          # Same throwaway values plus a placeholder domain; nothing is stored.
+          { cat "$RUNNER_TEMP/ci.env"; echo "ATLAS_DOMAIN=staging-api.example.com"; } > "$RUNNER_TEMP/server.env"
+          docker compose -f docker-compose.yml -f deploy/compose.server.yml --env-file "$RUNNER_TEMP/server.env" config --quiet
+          docker run --rm -e ATLAS_DOMAIN=staging-api.example.com -v "$PWD/deploy/Caddyfile:/etc/caddy/Caddyfile:ro" \
+            caddy:2.11-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
 
   secret-scan:
     name: secret-scan (gitleaks)

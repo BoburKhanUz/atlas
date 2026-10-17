@@ -2,7 +2,7 @@
 
 Status: **foundation only.** The smoke test exists. It runs in mock mode inside the normal e2e suite and has been run locally against a production build through the staging config. **There is no staging environment yet** (STAGING INFRASTRUCTURE REQUIRED). No real provider has been called. This document lists the names and rules of the staging settings, never their values.
 
-Related: [`rollout.md`](rollout.md), [`monitoring.md`](monitoring.md), [`provider-evaluation.md`](provider-evaluation.md), [`privacy.md`](privacy.md).
+Related: [`rollout.md`](rollout.md), [`monitoring.md`](monitoring.md), [`provider-evaluation.md`](provider-evaluation.md), [`privacy.md`](privacy.md). Server setup: [`../deploy/staging.md`](../deploy/staging.md).
 
 ## Environment contract
 
