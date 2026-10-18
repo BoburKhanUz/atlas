@@ -15,7 +15,7 @@ part 'client_error_report.g.dart';
 /// * [appVersion] - App version and build, e.g. 0.1.0+1 (web: the build id)
 /// * [errorType]
 /// * [fatal]
-/// * [kind] - flutter: a framework error; dart: an uncaught async error; web_*: window error / unhandled rejection; react: an error boundary
+/// * [kind] - flutter: a framework error; dart: an uncaught async error; android_*: a Java/Kotlin exception, a native crash or an ANR that ended the Android app (sent at its next start); web_*: window error / unhandled rejection; react: an error boundary
 /// * [message] - Scrubbed by the app: no user text, e-mail addresses, tokens or URL queries
 /// * [occurredAt] - Device clock
 /// * [osVersion]
@@ -34,10 +34,10 @@ abstract class ClientErrorReport implements Built<ClientErrorReport, ClientError
   @BuiltValueField(wireName: r'fatal')
   bool? get fatal;
 
-  /// flutter: a framework error; dart: an uncaught async error; web_*: window error / unhandled rejection; react: an error boundary
+  /// flutter: a framework error; dart: an uncaught async error; android_*: a Java/Kotlin exception, a native crash or an ANR that ended the Android app (sent at its next start); web_*: window error / unhandled rejection; react: an error boundary
   @BuiltValueField(wireName: r'kind')
   ClientErrorReportKindEnum get kind;
-  // enum kindEnum {  flutter,  dart,  web_error,  web_rejection,  react,  };
+  // enum kindEnum {  flutter,  dart,  android_java,  android_native,  android_anr,  web_error,  web_rejection,  react,  };
 
   /// Scrubbed by the app: no user text, e-mail addresses, tokens or URL queries
   @BuiltValueField(wireName: r'message')
@@ -209,27 +209,39 @@ class _$ClientErrorReportSerializer implements PrimitiveSerializer<ClientErrorRe
 }
 
 class ClientErrorReportKindEnum extends EnumClass {
-  /// flutter: a framework error; dart: an uncaught async error; web_*: window error / unhandled rejection; react: an error boundary
+  /// flutter: a framework error; dart: an uncaught async error; android_*: a Java/Kotlin exception, a native crash or an ANR that ended the Android app (sent at its next start); web_*: window error / unhandled rejection; react: an error boundary
   @BuiltValueEnumConst(wireName: r'flutter')
   static const ClientErrorReportKindEnum flutter = _$clientErrorReportKindEnum_flutter;
 
-  /// flutter: a framework error; dart: an uncaught async error; web_*: window error / unhandled rejection; react: an error boundary
+  /// flutter: a framework error; dart: an uncaught async error; android_*: a Java/Kotlin exception, a native crash or an ANR that ended the Android app (sent at its next start); web_*: window error / unhandled rejection; react: an error boundary
   @BuiltValueEnumConst(wireName: r'dart')
   static const ClientErrorReportKindEnum dart = _$clientErrorReportKindEnum_dart;
 
-  /// flutter: a framework error; dart: an uncaught async error; web_*: window error / unhandled rejection; react: an error boundary
+  /// flutter: a framework error; dart: an uncaught async error; android_*: a Java/Kotlin exception, a native crash or an ANR that ended the Android app (sent at its next start); web_*: window error / unhandled rejection; react: an error boundary
+  @BuiltValueEnumConst(wireName: r'android_java')
+  static const ClientErrorReportKindEnum androidJava = _$clientErrorReportKindEnum_androidJava;
+
+  /// flutter: a framework error; dart: an uncaught async error; android_*: a Java/Kotlin exception, a native crash or an ANR that ended the Android app (sent at its next start); web_*: window error / unhandled rejection; react: an error boundary
+  @BuiltValueEnumConst(wireName: r'android_native')
+  static const ClientErrorReportKindEnum androidNative = _$clientErrorReportKindEnum_androidNative;
+
+  /// flutter: a framework error; dart: an uncaught async error; android_*: a Java/Kotlin exception, a native crash or an ANR that ended the Android app (sent at its next start); web_*: window error / unhandled rejection; react: an error boundary
+  @BuiltValueEnumConst(wireName: r'android_anr')
+  static const ClientErrorReportKindEnum androidAnr = _$clientErrorReportKindEnum_androidAnr;
+
+  /// flutter: a framework error; dart: an uncaught async error; android_*: a Java/Kotlin exception, a native crash or an ANR that ended the Android app (sent at its next start); web_*: window error / unhandled rejection; react: an error boundary
   @BuiltValueEnumConst(wireName: r'web_error')
   static const ClientErrorReportKindEnum webError = _$clientErrorReportKindEnum_webError;
 
-  /// flutter: a framework error; dart: an uncaught async error; web_*: window error / unhandled rejection; react: an error boundary
+  /// flutter: a framework error; dart: an uncaught async error; android_*: a Java/Kotlin exception, a native crash or an ANR that ended the Android app (sent at its next start); web_*: window error / unhandled rejection; react: an error boundary
   @BuiltValueEnumConst(wireName: r'web_rejection')
   static const ClientErrorReportKindEnum webRejection = _$clientErrorReportKindEnum_webRejection;
 
-  /// flutter: a framework error; dart: an uncaught async error; web_*: window error / unhandled rejection; react: an error boundary
+  /// flutter: a framework error; dart: an uncaught async error; android_*: a Java/Kotlin exception, a native crash or an ANR that ended the Android app (sent at its next start); web_*: window error / unhandled rejection; react: an error boundary
   @BuiltValueEnumConst(wireName: r'react')
   static const ClientErrorReportKindEnum react = _$clientErrorReportKindEnum_react;
 
-  /// flutter: a framework error; dart: an uncaught async error; web_*: window error / unhandled rejection; react: an error boundary
+  /// flutter: a framework error; dart: an uncaught async error; android_*: a Java/Kotlin exception, a native crash or an ANR that ended the Android app (sent at its next start); web_*: window error / unhandled rejection; react: an error boundary
   @BuiltValueEnumConst(wireName: r'unknown_default_open_api', fallback: true)
   static const ClientErrorReportKindEnum unknownDefaultOpenApi = _$clientErrorReportKindEnum_unknownDefaultOpenApi;
 

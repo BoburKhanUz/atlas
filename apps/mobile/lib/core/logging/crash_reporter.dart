@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/environment_config.dart';
+import 'android_crashes.dart';
 import 'app_log.dart';
 
 /// The scrubbing rules of the server (apps/web/src/lib/error-scrub.ts): an
@@ -23,6 +24,11 @@ abstract final class ErrorScrub {
   // '/' is not part of it: paths in stack frames stay readable
   static final _opaque = RegExp(r'[A-Za-z0-9_+=-]{32,}');
   static final _idSegment = RegExp(r'^[A-Za-z0-9_-]{16,}$');
+
+  /// The patterns in the order [text] applies them (CrashRecords.kt on the
+  /// Android side has the same).
+  @visibleForTesting
+  static List<String> get patterns => [_bearer, _jwt, _email, _urlQuery, _opaque].map((r) => r.pattern).toList();
 
   static String text(String s) => s
       .replaceAll(_bearer, 'Bearer [REDACTED]')
@@ -43,6 +49,8 @@ typedef ErrorReportSender = Future<void> Function(List<ClientErrorReport> report
 /// Each distinct error once, at most [maxPerRun] per app run, sent in batches
 /// of [maxBatch] shortly after the first one. No user id; every text goes
 /// through [ErrorScrub]. A failing send is dropped and never reported itself.
+/// On Android also the crashes that ended earlier runs outside Dart
+/// ([reportAndroidCrashes]).
 class CrashReporter {
   CrashReporter({
     required ErrorReportSender send,
@@ -128,6 +136,41 @@ class CrashReporter {
       _sending = false;
     }
   }
+
+  /// Sends what earlier runs left on Android ([AndroidCrashRecords]) at once:
+  /// the oldest [maxBatch], the rest at a later start. The phone forgets a
+  /// record when the server took it or refused it (it would refuse it again);
+  /// after any other failure (offline) the record comes back at the next
+  /// start. Never throws.
+  Future<void> reportAndroidCrashes(AndroidCrashRecords records) async {
+    try {
+      final crashes = [...await records.pending()]..sort((a, b) => a.occurredAt.compareTo(b.occurredAt));
+      final batch = crashes.take(maxBatch).toList();
+      if (batch.isEmpty) return;
+      try {
+        await _send([for (final c in batch) _androidReport(c)]);
+      } on DioException catch (e) {
+        if (!const {400, 413}.contains(e.response?.statusCode)) return;
+      }
+      await records.acknowledge(batch.map((c) => c.id));
+      AppLog.info('reported ${batch.length} Android crash(es) of earlier runs');
+    } on Object {
+      // Reporting must never throw.
+    }
+  }
+
+  ClientErrorReport _androidReport(AndroidCrash crash) => ClientErrorReport(
+    (b) => b
+      ..platform = _platform
+      ..appVersion = _cap(crash.appVersion ?? _appVersion, 40)
+      ..osVersion = _osVersion
+      ..kind = crash.kind
+      ..fatal = true
+      ..errorType = _cap(ErrorScrub.text(crash.errorType), 200)
+      ..message = _cap(ErrorScrub.text(crash.message), 1000)
+      ..stack = crash.stack == null ? null : _cap(ErrorScrub.text(crash.stack!), 4000)
+      ..occurredAt = crash.occurredAt,
+  );
 
   /// Hooks framework errors (keeping their usual presentation) and uncaught
   /// async errors.

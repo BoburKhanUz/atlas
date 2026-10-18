@@ -83,8 +83,10 @@ export const ClientErrorReport = z.object({
   appVersion: z.string().min(1).max(40).describe('App version and build, e.g. 0.1.0+1 (web: the build id)'),
   osVersion: z.string().max(120).optional(),
   kind: z
-    .enum(['flutter', 'dart', 'web_error', 'web_rejection', 'react'])
-    .describe('flutter: a framework error; dart: an uncaught async error; web_*: window error / unhandled rejection; react: an error boundary'),
+    .enum(['flutter', 'dart', 'android_java', 'android_native', 'android_anr', 'web_error', 'web_rejection', 'react'])
+    .describe(
+      'flutter: a framework error; dart: an uncaught async error; android_*: a Java/Kotlin exception, a native crash or an ANR that ended the Android app (sent at its next start); web_*: window error / unhandled rejection; react: an error boundary',
+    ),
   fatal: z.boolean().optional(),
   errorType: z.string().min(1).max(200),
   message: z.string().max(1000).describe('Scrubbed by the app: no user text, e-mail addresses, tokens or URL queries'),

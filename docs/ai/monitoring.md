@@ -160,23 +160,38 @@ Suggested windows: 15 minutes for error, timeout and availability; 1 hour for p9
 
 ## Client errors (crash monitoring)
 
-Our own crash monitoring, no third party: the mobile app (`lib/core/logging/crash_reporter.dart`: Flutter framework errors and uncaught Dart errors) and the web pages (`src/lib/client-errors.ts`: uncaught errors, unhandled rejections, error boundaries) send reports to `POST /api/v1/client-errors`. The server writes one `client error` line (level `error`) per report and stores nothing.
+Our own crash monitoring, no third party: the mobile app (`lib/core/logging/crash_reporter.dart`: Flutter framework errors and uncaught Dart errors; on Android also the crashes outside Dart, below) and the web pages (`src/lib/client-errors.ts`: uncaught errors, unhandled rejections, error boundaries) send reports to `POST /api/v1/client-errors`. The server writes one `client error` line (level `error`) per report and stores nothing.
 
 | Field | Content |
 |---|---|
 | `platform`, `appVersion`, `osVersion` | `android` / `ios` / `web`, the build (`0.1.0+1`; web: the package version), the device OS |
-| `kind`, `fatal` | `flutter`, `dart`, `web_error`, `web_rejection`, `react`; uncaught = fatal |
+| `kind`, `fatal` | `flutter`, `dart`, `android_java`, `android_native`, `android_anr`, `web_error`, `web_rejection`, `react`; uncaught = fatal (every `android_*` report) |
 | `errorType`, `message`, `stack` | scrubbed on the device and again on the server (`src/lib/error-scrub.ts`): no e-mail address, Bearer value, JWT, URL query or long opaque value |
-| `route`, `occurredAt` | the screen with ids replaced by `:id`; the device clock |
+| `route`, `occurredAt` | the screen with ids replaced by `:id` (none for `android_*`); the device clock (for `android_*` the time of the crash) |
 
-No user id or request id ties a report to an account. Limits: each distinct error once per app run or page load, at most 20 per run (10 per page) in batches of 10; the server accepts 30 requests per IP and 300 in total per 10 minutes. Native (non-Dart) crashes and ANRs are not captured.
+No user id or request id ties a report to an account. Limits: each distinct error once per app run or page load, at most 20 per run (10 per page) in batches of 10, and at a start up to 10 Android crashes of earlier runs; the server accepts 30 requests per IP and 300 in total per 10 minutes.
 
 ```bash
 deploy/compose.sh logs --since 24h web | grep '"msg":"client error"'        # all reports of the last day
 deploy/compose.sh logs --since 24h web | grep '"msg":"client error"' | grep -o '"errorType":"[^"]*"' | sort | uniq -c | sort -rn
+deploy/compose.sh logs --since 24h web | grep '"msg":"client error"' | grep '"kind":"android_'   # crashes outside Dart
 ```
 
 Watch for a new `errorType` after a release, or one `appVersion` producing most reports. INITIAL rule (to calibrate with real traffic): more than 20 reports of one `errorType` in an hour is worth a look the same day.
+
+### Android crashes outside Dart
+
+A crash in Java/Kotlin code (the Android embedding, a plugin), in native code (the Flutter engine, a plugin's library) or an ANR ends the app before Dart can report it. `android/app/src/main/kotlin/uz/atlas/app/CrashRecords.kt` keeps it, and `lib/core/logging/android_crashes.dart` sends it at the next start:
+
+| `kind` | Kept by | Android | Report |
+|---|---|---|---|
+| `android_java` | the app's uncaught-exception handler: the scrubbed stack trace in the app's private storage (`files/crash_records`, no backup), written just before the app dies | all | `errorType` the exception class, `message`, `stack` (at most 12 frames per exception; the causes are kept) |
+| `android_native` | the system's exit history (`ApplicationExitInfo`), with the tombstone on Android 12+ | 11+ | `errorType` the signal (`SIGSEGV`, `SIGABRT`…), `message` the signal line, the cause and the abort message, `stack` the crashing thread: `#00 pc <offset>  <library> (<function>+<offset>)` |
+| `android_anr` | the exit history, with the ANR trace | 11+ | `errorType` `ANR`, `message` the system's reason, `stack` the app's main thread |
+
+Nothing else of a tombstone or an ANR trace is read: no registers, memory, memory maps, open files or log lines, no other thread of a native crash and no other thread or process of an ANR trace. Library paths are cut to the file name (the install directory has random names). `appVersion` is the version that crashed: on Android 11+ the exit record keeps it, so a crash before an update keeps its version. A start sends at most 10 records, the oldest first. The phone deletes a record once the server took it, or refused it as invalid; after any other failed send (offline, a server error, rate limited) it tries again at the next start. Not captured: an ANR the user waited out, native crashes and ANRs before Android 11, a crash before the app's `Application` starts, and nothing of this kind on iOS yet.
+
+Reading them: R8 renames Java/Kotlin classes of a release build, so keep `build/app/outputs/mapping/release/mapping.txt` of every release and decode a stack with `retrace mapping.txt stack.txt` (Android SDK command-line tools). A `libflutter.so` frame needs the symbols of the engine that built the release: `bin/internal/engine.version` of that Flutter SDK names it, the symbols are at `https://storage.googleapis.com/flutter_infra_release/flutter/<engine version>/android-arm64-release/symbols.zip`, then `llvm-addr2line -Cfe libflutter.so <pc>` (Android NDK).
 
 ## Future backend integration
 

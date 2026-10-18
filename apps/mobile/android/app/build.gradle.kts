@@ -16,6 +16,11 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    // BuildConfig.VERSION_NAME and VERSION_CODE go into crash records (CrashRecords.kt).
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         applicationId = "uz.atlas.app"
         // You can update the following values to match your application needs.

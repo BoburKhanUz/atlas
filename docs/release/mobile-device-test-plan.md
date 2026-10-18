@@ -26,6 +26,7 @@ Result values: `PASS` · `FAIL` · `NOT TESTED`
 - To read logs, use `adb logcat` (Android) or Console.app (iOS). A **release** build must print nothing from the app.
 - A37–A38 need password reset e-mail on the staging server (`MAIL_TRANSPORT=smtp` and a working SMTP account, [`docs/deploy/staging.md`](../deploy/staging.md) section 2); A39 needs `MAIL_TRANSPORT=disabled`.
 - A41–A42 call the real AI providers: every photo analysis, stylist question and outfit explanation is a billed request. Set the spending limits at the providers before the run.
+- A45 needs `adb`. Its native-crash and ANR steps need a debug build (`run-as` works only for a debuggable app) on Android 11+.
 
 ## Android
 
@@ -77,6 +78,7 @@ Run on **two devices or emulators**: API 29–33 (for example API 29 or 30) and 
 | A42 | Real AI: stylist, outfits | Stylist question in Uzbek → the answer is in Uzbek and names only items from the wardrobe; outfit generation → explanation in Uzbek; each request has an `ai.call` log line with the provider, model and cost estimate | NOT TESTED | NOT TESTED | |
 | A43 | Mobile data | Wi-Fi off, 4G/LTE: sign in, camera upload and a stylist question work; a slow answer shows progress and ends with an answer or a clear error, never an endless spinner | NOT TESTED | NOT TESTED | |
 | A44 | Changed legal texts | On staging, make the account's consent older than `LEGAL_CONSENT_MIN_VERSION` (`UPDATE "LegalConsent" SET "version" = '2020-01-01.1' WHERE "userId" = …`) → at the next start, or at the next request of an open app, "Hujjatlar yangilandi" opens and nothing else does; the documents open from it; "Qabul qilaman" with both boxes ticked continues to the app; "Chiqish" signs out; "Rozi emasman — hisobni o‘chirish" opens account deletion | NOT TESTED | NOT TESTED | |
+| A45 | Crashes outside Dart | `adb shell am crash uz.atlas.app` → the app closes; open it again → within seconds the server log has one `client error` line with `"kind":"android_java"`, `"fatal":true`, the app version and an `errorType` of `android.app.RemoteServiceException…` (message `shell-induced crash`); the start after that sends nothing new. Android 11+ (not the API 29 device), debug build: `adb shell run-as uz.atlas.app kill -SEGV $(adb shell pidof uz.atlas.app)` → open again → `"kind":"android_native"` with `SIGSEGV` (on Android 12+ also `#00 pc …` frames); `adb shell run-as uz.atlas.app kill -STOP $(adb shell pidof uz.atlas.app)`, tap the screen until "ATLAS isn't responding" → Close app → open again → `"kind":"android_anr"`. No line holds an e-mail address or a token | NOT TESTED | NOT TESTED | |
 
 ## iOS
 

@@ -7,7 +7,8 @@ import { ApiError, parseJson, withApi } from '@/server/http'
 export const runtime = 'nodejs'
 
 const WINDOW_MS = 10 * 60 * 1000
-// An app run sends at most 2 requests (20 reports), a page load at most 10.
+// An app run sends at most 3 requests (20 reports, and up to 10 Android crashes
+// of earlier runs), a page load at most 10.
 const MAX_PER_IP = 30
 // Always applied — keeps a crash loop on many devices, or a flood, from
 // pushing everything else out of the rotated log.

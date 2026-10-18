@@ -28,10 +28,13 @@
             "type": "boolean"
           },
           "kind": {
-            "description": "flutter: a framework error; dart: an uncaught async error; web_*: window error / unhandled rejection; react: an error boundary",
+            "description": "flutter: a framework error; dart: an uncaught async error; android_*: a Java/Kotlin exception, a native crash or an ANR that ended the Android app (sent at its next start); web_*: window error / unhandled rejection; react: an error boundary",
             "enum": [
               "flutter",
               "dart",
+              "android_java",
+              "android_native",
+              "android_anr",
               "web_error",
               "web_rejection",
               "react"

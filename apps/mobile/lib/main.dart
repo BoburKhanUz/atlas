@@ -1,9 +1,13 @@
+import 'dart:async';
+import 'dart:io' show Platform;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'app/app.dart';
 import 'app/build_info.dart';
 import 'core/config/environment_config.dart';
+import 'core/logging/android_crashes.dart';
 import 'core/logging/app_log.dart';
 import 'core/logging/crash_reporter.dart';
 import 'core/network/providers.dart';
@@ -20,6 +24,8 @@ void main() {
     platform: devicePlatform(),
     osVersion: deviceOsVersion(),
   )..install();
+  // Crashes outside Dart that ended an earlier run.
+  if (Platform.isAndroid) unawaited(crashes.reportAndroidCrashes(const MethodChannelAndroidCrashRecords()));
   AppLog.info('ATLAS starting (${config.environment.name})');
   runApp(
     ProviderScope(

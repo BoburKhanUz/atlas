@@ -4,7 +4,7 @@ Status: **engineering review, not a legal opinion.** The items marked **REQUIRES
 
 The user-facing privacy policy and terms (`apps/web/src/lib/legal/documents.ts`, shown at `/privacy`, `/terms` and in the mobile app) describe these data flows. A change to what a provider receives changes those texts too, with a new `LEGAL_VERSION`; such a change needs new consent, so `LEGAL_CONSENT_MIN_VERSION` is raised with it (`apps/web/src/lib/legal/version.ts`): every account then accepts the new texts before using the app again.
 
-Outside AI: the SMTP provider (`MAIL_TRANSPORT=smtp`) receives the account e-mail address and a one-time reset link, nothing else. Crash reports go only to our own server log (`POST /api/v1/client-errors`, scrubbed, no user id).
+Outside AI: the SMTP provider (`MAIL_TRANSPORT=smtp`) receives the account e-mail address and a one-time reset link, nothing else. Crash reports go only to our own server log (`POST /api/v1/client-errors`, scrubbed, no user id); a crash that ends the Android app is sent at the next start: a Java/Kotlin crash waits in the app's private storage (scrubbed, no backup), native crashes and ANRs come from the system's exit history ([`monitoring.md`](monitoring.md)).
 
 ## What each provider receives
 

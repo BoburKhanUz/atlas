@@ -48,6 +48,24 @@ describe('POST /api/v1/client-errors', () => {
     ])
   })
 
+  it('accepts the Android crashes an app sends at its next start, with native frames kept readable', async () => {
+    const frames = '#00 pc 000000000004ca1c  libc.so (abort+168)\n#01 pc 00000000016a3d4c  libflutter.so'
+    const res = await post({
+      reports: [
+        report({ kind: 'android_java', fatal: true, errorType: 'java.lang.IllegalStateException', stack: 'at uz.atlas.app.MainActivity.onCreate(MainActivity.kt:12)' }),
+        report({ kind: 'android_native', fatal: true, errorType: 'SIGSEGV', message: 'signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0x0000000000000000', stack: frames }),
+        report({ kind: 'android_anr', fatal: true, errorType: 'ANR', message: 'Input dispatching timed out' }),
+      ],
+    })
+    expect(res.status).toBe(200)
+    expect(clientLines().map((l) => [l.kind, l.fatal])).toEqual([
+      ['android_java', true],
+      ['android_native', true],
+      ['android_anr', true],
+    ])
+    expect(clientLines()[1]).toMatchObject({ message: 'signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0x0000000000000000', stack: frames })
+  })
+
   it('scrubs what the app may have missed: e-mail, Bearer, JWT, URL queries, opaque tokens, ids in the route', async () => {
     const token = 'Ab3_dEf-'.repeat(6) // 48 characters, like a refresh or reset token
     const jwt = `eyJ${'a'.repeat(20)}.${'b'.repeat(20)}.${'c'.repeat(20)}`
@@ -68,8 +86,13 @@ describe('POST /api/v1/client-errors', () => {
     expect(line.stack).toContain('package:atlas_mobile/main.dart:10:3')
   })
 
-  it('refuses malformed batches (no report, more than 10, unknown platform) and oversized bodies', async () => {
-    for (const body of [{ reports: [] }, { reports: Array.from({ length: 11 }, () => report()) }, { reports: [report({ platform: 'symbian' })] }]) {
+  it('refuses malformed batches (no report, more than 10, unknown platform or kind) and oversized bodies', async () => {
+    for (const body of [
+      { reports: [] },
+      { reports: Array.from({ length: 11 }, () => report()) },
+      { reports: [report({ platform: 'symbian' })] },
+      { reports: [report({ kind: 'android_oom' })] },
+    ]) {
       const res = await post(body)
       expect(res.status).toBe(400)
       expect((await res.json()).code).toBe('VALIDATION_ERROR')

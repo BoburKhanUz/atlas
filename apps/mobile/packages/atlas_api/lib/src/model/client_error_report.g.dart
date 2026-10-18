@@ -8,6 +8,15 @@ part of 'client_error_report.dart';
 
 const ClientErrorReportKindEnum _$clientErrorReportKindEnum_flutter = const ClientErrorReportKindEnum._('flutter');
 const ClientErrorReportKindEnum _$clientErrorReportKindEnum_dart = const ClientErrorReportKindEnum._('dart');
+const ClientErrorReportKindEnum _$clientErrorReportKindEnum_androidJava = const ClientErrorReportKindEnum._(
+  'androidJava',
+);
+const ClientErrorReportKindEnum _$clientErrorReportKindEnum_androidNative = const ClientErrorReportKindEnum._(
+  'androidNative',
+);
+const ClientErrorReportKindEnum _$clientErrorReportKindEnum_androidAnr = const ClientErrorReportKindEnum._(
+  'androidAnr',
+);
 const ClientErrorReportKindEnum _$clientErrorReportKindEnum_webError = const ClientErrorReportKindEnum._('webError');
 const ClientErrorReportKindEnum _$clientErrorReportKindEnum_webRejection = const ClientErrorReportKindEnum._(
   'webRejection',
@@ -23,6 +32,12 @@ ClientErrorReportKindEnum _$clientErrorReportKindEnumValueOf(String name) {
       return _$clientErrorReportKindEnum_flutter;
     case 'dart':
       return _$clientErrorReportKindEnum_dart;
+    case 'androidJava':
+      return _$clientErrorReportKindEnum_androidJava;
+    case 'androidNative':
+      return _$clientErrorReportKindEnum_androidNative;
+    case 'androidAnr':
+      return _$clientErrorReportKindEnum_androidAnr;
     case 'webError':
       return _$clientErrorReportKindEnum_webError;
     case 'webRejection':
@@ -40,6 +55,9 @@ final BuiltSet<ClientErrorReportKindEnum> _$clientErrorReportKindEnumValues = Bu
   const <ClientErrorReportKindEnum>[
     _$clientErrorReportKindEnum_flutter,
     _$clientErrorReportKindEnum_dart,
+    _$clientErrorReportKindEnum_androidJava,
+    _$clientErrorReportKindEnum_androidNative,
+    _$clientErrorReportKindEnum_androidAnr,
     _$clientErrorReportKindEnum_webError,
     _$clientErrorReportKindEnum_webRejection,
     _$clientErrorReportKindEnum_react,
@@ -86,6 +104,9 @@ class _$ClientErrorReportKindEnumSerializer implements PrimitiveSerializer<Clien
   static const Map<String, Object> _toWire = const <String, Object>{
     'flutter': 'flutter',
     'dart': 'dart',
+    'androidJava': 'android_java',
+    'androidNative': 'android_native',
+    'androidAnr': 'android_anr',
     'webError': 'web_error',
     'webRejection': 'web_rejection',
     'react': 'react',
@@ -94,6 +115,9 @@ class _$ClientErrorReportKindEnumSerializer implements PrimitiveSerializer<Clien
   static const Map<Object, String> _fromWire = const <Object, String>{
     'flutter': 'flutter',
     'dart': 'dart',
+    'android_java': 'androidJava',
+    'android_native': 'androidNative',
+    'android_anr': 'androidAnr',
     'web_error': 'webError',
     'web_rejection': 'webRejection',
     'react': 'react',

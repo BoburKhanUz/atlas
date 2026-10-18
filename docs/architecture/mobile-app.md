@@ -25,7 +25,8 @@ apps/mobile/
       config/                  AtlasEnvironmentConfig (environment, URL, logging, timeouts, retry)
       design/                  tokens (colours, spacing, radii, motion), typography, ThemeData
       widgets/                 shared UI: buttons, cards, skeletons, empty, error and offline states
-      logging/                 redacting logger (silent in release)
+      logging/                 redacting logger (silent in release), crash reports to our server
+                               (Android: also crashes outside Dart, kept by android/…/CrashRecords.kt)
       network/                 Dio + interceptors, ApiFailure + error mapper, retry, connectivity
       session/       (3.3)     token store (secure storage), refresh coordinator (recovery vectors)
     features/
@@ -498,7 +499,8 @@ flutter build apk --release --dart-define=ATLAS_ENV=production --dart-define=ATL
   - minSdk 24, target and compile SDK 36. `INTERNET` permission in the main manifest.
   - Network security: release builds forbid cleartext. The debug variant allows cleartext only to `10.0.2.2`, `localhost` and `127.0.0.1` for the local backend.
   - `allowBackup="false"` and backup exclusion rules.
-  - Release signing comes from `android/key.properties`, which is not committed; without it release builds fail (3.10; local opt-in `-PallowDebugSigning=true` only). R8 shrinking is enabled for release.
+  - Release signing comes from `android/key.properties`, which is not committed; without it release builds fail (3.10; local opt-in `-PallowDebugSigning=true` only). R8 shrinking is enabled for release: keep each release's `mapping.txt` to read its Java crash reports.
+  - `AtlasApplication` installs the crash records first (`CrashRecords.kt`): uncaught Java/Kotlin exceptions, and on Android 11+ native crashes and ANRs from the exit history, sent at the next start ([`docs/ai/monitoring.md`](../ai/monitoring.md)).
 - **iOS:**
   - The App Transport Security default applies, with only `NSAllowsLocalNetworking` for local development.
   - Usage descriptions for camera, photo library and location are added in the phases that use them.

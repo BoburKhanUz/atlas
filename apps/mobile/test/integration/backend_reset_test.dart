@@ -1,5 +1,6 @@
 // Real-backend integration: the password reset requested from the app (its
-// e-mailed link completed the way the web page does it) and crash reports.
+// e-mailed link completed the way the web page does it) and crash reports,
+// those of earlier Android runs included.
 // Skipped unless ATLAS_IT_BASE_URL is set (a local, disposable backend only —
 // see backend_session_test.dart). The reset round trip also needs
 // ATLAS_IT_MAIL_OUTBOX: the backend's MAIL_OUTBOX_DIR with MAIL_TRANSPORT=outbox.
@@ -9,6 +10,7 @@ import 'dart:io';
 import 'package:atlas_api/atlas_api.dart'
     show ClientErrorReport, ClientErrorReportKindEnum, ClientErrorReportPlatformEnum;
 import 'package:atlas_mobile/core/config/environment_config.dart';
+import 'package:atlas_mobile/core/logging/android_crashes.dart';
 import 'package:atlas_mobile/core/logging/crash_reporter.dart';
 import 'package:atlas_mobile/core/network/api_error_code.dart';
 import 'package:atlas_mobile/core/network/api_failure.dart';
@@ -22,6 +24,18 @@ final _base = Platform.environment['ATLAS_IT_BASE_URL'];
 final _outbox = Platform.environment['ATLAS_IT_MAIL_OUTBOX'];
 const _password = 'it-password-123';
 const _newPassword = 'it-new-password-456';
+
+class _Records implements AndroidCrashRecords {
+  _Records(this.crashes);
+  final List<AndroidCrash> crashes;
+  final acknowledged = <String>[];
+
+  @override
+  Future<List<AndroidCrash>> pending() async => crashes;
+
+  @override
+  Future<void> acknowledge(Iterable<String> ids) async => acknowledged.addAll(ids);
+}
 
 String _email(String label) => 'mobile-$label-${DateTime.now().microsecondsSinceEpoch}@test.local';
 
@@ -132,6 +146,45 @@ void main() {
         await reporter.flush();
         expect(failure, isNull);
         expect(sent, hasLength(1));
+      });
+
+      test('Android crashes of earlier runs: a full batch of the largest records is taken and acknowledged', () async {
+        final send = httpErrorReportSender(
+          AtlasEnvironmentConfig.fromValues(environment: 'development', apiBaseUrl: _base!),
+        );
+        Object? failure;
+        final reporter = CrashReporter(
+          send: (reports) async {
+            try {
+              await send(reports);
+            } on Object catch (e) {
+              failure = e;
+              rethrow;
+            }
+          },
+          appVersion: '0.1.0+1',
+          platform: ClientErrorReportPlatformEnum.android,
+          osVersion: 'it',
+        );
+        const kinds = [
+          ClientErrorReportKindEnum.androidJava,
+          ClientErrorReportKindEnum.androidNative,
+          ClientErrorReportKindEnum.androidAnr,
+        ];
+        final records = _Records([
+          for (var i = 0; i < CrashReporter.maxBatch; i++)
+            AndroidCrash(
+              id: 'exit-$i',
+              kind: kinds[i % kinds.length],
+              occurredAt: DateTime.utc(2026, 10, 17, 9, i),
+              errorType: 'mobile integration test ${kinds[i % kinds.length].name}',
+              message: 'word ' * 200, // 1000 characters, the limit
+              stack: List.filled(100, '#00 pc 000000000004ca1c  libc.so (abort+168)').join('\n'), // cut to 4000
+            ),
+        ]);
+        await reporter.reportAndroidCrashes(records);
+        expect(failure, isNull);
+        expect(records.acknowledged, [for (var i = 0; i < CrashReporter.maxBatch; i++) 'exit-$i']);
       });
     },
   );
