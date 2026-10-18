@@ -114,6 +114,10 @@ test.describe('client session recovery', () => {
     const databaseUrl = process.env.E2E_DATABASE_URL
     test.skip(!databaseUrl, 'needs E2E_DATABASE_URL')
     await registerViaUi(page)
+    // Leave the app first: a request the home page still makes after the
+    // access cookie is gone would lose the race too and send the page to
+    // /login under this test's own navigation (it did on slow machines).
+    await page.goto('about:blank')
     const rt1 = cookieByName(await page.context().cookies(), 'atlas_rt')!
     // rotate rt1 elsewhere (another tab), and remove the stored successor so a
     // replay of rt1 inside the 60 s window cannot be served → SESSION_RACE

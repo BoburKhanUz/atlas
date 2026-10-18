@@ -15,13 +15,18 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../support/fake_http.dart';
 import '../../support/fake_session.dart';
+import '../onboarding/onboarding_flow_test.dart' show profileJson, profilePath;
 
 /// The real app on a fake backend, signed in as u1; the consent check asks
 /// the backend (GET /api/v1/auth/me) like the app does.
-Future<(SessionHarness, ProviderContainer)> pumpSignedIn(WidgetTester tester, {required bool consentRequired}) async {
+Future<(SessionHarness, ProviderContainer)> pumpSignedIn(
+  WidgetTester tester, {
+  required bool consentRequired,
+  bool onboarded = true,
+}) async {
   final h = SessionHarness(stored: pair(1));
   h.backend.script(P.me, [JsonReply(200, meJson(consentRequired: consentRequired))]);
-  final container = ProviderContainer(overrides: appOverrides(h, consentRequired: null));
+  final container = ProviderContainer(overrides: appOverrides(h, onboarded: onboarded, consentRequired: null));
   addTearDown(container.dispose);
   unawaited(h.session.restore());
   await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const AtlasApp()));
@@ -84,6 +89,20 @@ void main() {
     expect(sent.header('Authorization'), isNotNull);
     expect(path(c), AtlasRoutes.home);
     expect(c.read(consentGateProvider).status, ConsentStatus.notRequired);
+  });
+
+  testWidgets('an account that never finished onboarding gets it after accepting the changed texts', (tester) async {
+    final (h, c) = await pumpSignedIn(tester, consentRequired: true, onboarded: false);
+    expect(path(c), AtlasRoutes.consent);
+    expect(h.backend.calls(profilePath), 0);
+
+    h.backend.script(profilePath, [JsonReply(200, profileJson())]);
+    h.backend.script(P.legalConsent, [
+      JsonReply(200, {'ok': true}),
+    ]);
+    await tickBoth(tester);
+    await tap(tester, find.byKey(const Key('consent.accept')));
+    expect(path(c), AtlasRoutes.onboarding);
   });
 
   testWidgets('the texts changed again meanwhile: the new ones are loaded and the consent asked again', (tester) async {

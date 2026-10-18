@@ -90,7 +90,7 @@ The folders marked with a phase are created in that phase, not as empty placehol
 
 - **Who sees it (`OnboardingGate`):** decided once per signed-in user.
   - A local `completed`/`skipped` marker for this user means no.
-  - Otherwise, `GET /api/v1/profile` with no style or colour preferences means yes.
+  - Otherwise, `GET /api/v1/profile` with no style or colour preferences means yes. It is asked only once `ConsentGate` lets the user in: until changed legal texts are accepted the server refuses it, and that refusal must not read as "no onboarding".
   - Any failure or a 6 s timeout means no, so the user is never blocked.
   - A token refresh never re-decides; only a different user or the end of the session does.
 - **Steps:** welcome → style (liked/disliked) → profile (`gender`, `preferredFit`) → colours (favourite/disliked) → finish.

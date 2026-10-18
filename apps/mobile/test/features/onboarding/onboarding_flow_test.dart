@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:atlas_mobile/core/network/api_error_code.dart';
 import 'package:atlas_mobile/core/network/api_failure.dart';
 import 'package:atlas_mobile/core/session/auth_state.dart';
+import 'package:atlas_mobile/features/legal/consent_gate.dart';
+import 'package:atlas_mobile/features/legal/providers.dart';
 import 'package:atlas_mobile/features/onboarding/data/onboarding_marker_store.dart';
 import 'package:atlas_mobile/features/onboarding/data/options.dart';
 import 'package:atlas_mobile/features/onboarding/onboarding_gate.dart';
@@ -112,6 +114,37 @@ void main() {
       h.backend.script(profilePath, [TransportFailure(DioExceptionType.connectionError)]);
       final c = await start(h);
       expect(c.read(onboardingGateProvider).status, OnboardingStatus.notRequired);
+    });
+
+    test('changed legal texts: no server check before they are accepted, onboarding after', () async {
+      final h = SessionHarness(stored: pair(1));
+      final c = ProviderContainer(overrides: appOverrides(h, onboarded: false, consentRequired: true));
+      addTearDown(c.dispose);
+      final consent = c.read(consentGateProvider);
+      final gate = c.read(onboardingGateProvider);
+      await h.session.restore();
+      await settle(gate);
+      expect(consent.status, ConsentStatus.required);
+      // The server refuses it until then, and a refusal used to read as "no onboarding".
+      expect(h.backend.calls(profilePath), 0);
+      expect(gate.status, OnboardingStatus.checking);
+
+      h.backend.script(profilePath, [JsonReply(200, profileJson())]);
+      consent.markAccepted();
+      await settle(gate);
+      expect(gate.status, OnboardingStatus.required);
+      expect(h.backend.calls(profilePath), 1);
+    });
+
+    test('a marker decides at once, while the legal texts still wait', () async {
+      final h = SessionHarness(stored: pair(1));
+      final c = ProviderContainer(overrides: appOverrides(h, consentRequired: true));
+      addTearDown(c.dispose);
+      final gate = c.read(onboardingGateProvider);
+      await h.session.restore();
+      await settle(gate);
+      expect(gate.status, OnboardingStatus.notRequired);
+      expect(h.backend.calls(profilePath), 0);
     });
 
     test('unreadable marker storage → falls back to the server check', () async {
