@@ -65,13 +65,14 @@ All URIs are relative to *http://localhost*
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
 [*AccountApi*](doc/AccountApi.md) | [**deleteAccount**](doc/AccountApi.md#deleteaccount) | **DELETE** /api/v1/account | Delete the account and all its data and images
-[*AuthApi*](doc/AuthApi.md) | [**getMe**](doc/AuthApi.md#getme) | **GET** /api/v1/auth/me | The signed-in user
+[*AuthApi*](doc/AuthApi.md) | [**getMe**](doc/AuthApi.md#getme) | **GET** /api/v1/auth/me | The signed-in user, and whether the changed legal texts must be accepted first
 [*AuthApi*](doc/AuthApi.md) | [**login**](doc/AuthApi.md#login) | **POST** /api/v1/auth/login | Sign in (web: cookies; mobile: tokens in the body)
 [*AuthApi*](doc/AuthApi.md) | [**logout**](doc/AuthApi.md#logout) | **POST** /api/v1/auth/logout | End this login (session family). Idempotent.
 [*AuthApi*](doc/AuthApi.md) | [**refreshSession**](doc/AuthApi.md#refreshsession) | **POST** /api/v1/auth/refresh | Rotate the refresh token (web: atlas_rt cookie; mobile: body). A token rotated ≤ 60 s ago returns the same new token.
 [*AuthApi*](doc/AuthApi.md) | [**register**](doc/AuthApi.md#register) | **POST** /api/v1/auth/register | Create an account and sign in (web: cookies; mobile: tokens in the body)
 [*AuthApi*](doc/AuthApi.md) | [**requestPasswordReset**](doc/AuthApi.md#requestpasswordreset) | **POST** /api/v1/auth/password/forgot | E-mail a one-time password reset link. The answer is the same whether or not the account exists.
 [*AuthApi*](doc/AuthApi.md) | [**resetPassword**](doc/AuthApi.md#resetpassword) | **POST** /api/v1/auth/password/reset | Set a new password with the e-mailed token. Every session of the account is signed out.
+[*LegalApi*](doc/LegalApi.md) | [**acceptLegalDocuments**](doc/LegalApi.md#acceptlegaldocuments) | **POST** /api/v1/legal/consent | Accept the current legal texts after they changed (ends CONSENT_REQUIRED)
 [*LegalApi*](doc/LegalApi.md) | [**getLegalDocuments**](doc/LegalApi.md#getlegaldocuments) | **GET** /api/v1/legal | The current privacy policy and terms of use (versioned; registration accepts the version)
 [*MediaApi*](doc/MediaApi.md) | [**getMedia**](doc/MediaApi.md#getmedia) | **GET** /api/v1/media/{key} | A private image through its signed URL (use the URLs from API responses as-is)
 [*OutfitsApi*](doc/OutfitsApi.md) | [**deleteOutfit**](doc/OutfitsApi.md#deleteoutfit) | **DELETE** /api/v1/outfits/{id} | Delete an outfit
@@ -124,6 +125,7 @@ Class | Method | HTTP request | Description
  - [ErrorResponseDetailsInner](doc/ErrorResponseDetailsInner.md)
  - [HealthResponse](doc/HealthResponse.md)
  - [ImageObject](doc/ImageObject.md)
+ - [LegalConsentRequest](doc/LegalConsentRequest.md)
  - [LegalDocument](doc/LegalDocument.md)
  - [LegalResponse](doc/LegalResponse.md)
  - [LegalSection](doc/LegalSection.md)

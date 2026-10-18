@@ -80,5 +80,17 @@
     "saved": "Yangi parol saqlandi. Barcha qurilmalardagi kirishlar yakunlandi: yangi parol bilan qaytadan kiring.",
     "invalidLink": "Havola yaroqsiz yoki muddati tugagan. Parolni tiklashni qaytadan so‘rang.",
     "requestNew": "Yangi havola so‘rash"
+  },
+  "consent": {
+    "title": "Hujjatlar yangilandi",
+    "description": "Maxfiylik siyosati va Foydalanish shartlari o‘zgardi. Ilovadan foydalanishni davom ettirish uchun ularni o‘qib chiqing va qabul qiling.",
+    "required": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+    "accept": "Qabul qilaman",
+    "signOut": "Chiqish",
+    "decline": "Rozi emasman — hisobni o‘chirish",
+    "deleteTitle": "Hisobni o‘chirish",
+    "deleteDescription": "Hisobingiz va barcha ma’lumotlaringiz (garderob, outfitlar, suhbatlar, rang tahlili) butunlay o‘chiriladi. Bu amalni qaytarib bo‘lmaydi.",
+    "deleted": "Hisob o‘chirildi",
+    "deleteFailed": "Hisobni o‘chirib bo‘lmadi"
   }
 }

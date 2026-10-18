@@ -28,6 +28,8 @@ export const routes = {
   register: (opts: { next?: string | null } = {}) =>
     withQuery('/register', { next: opts.next }),
   forgotPassword: () => '/forgot-password',
+  // Signed in, outside the app shell: the changed legal texts to accept.
+  consent: (opts: { next?: string | null } = {}) => withQuery('/consent', { next: opts.next }),
   // Public pages (no session work, see src/proxy.ts): the legal documents and
   // the e-mailed password reset link.
   privacy: () => '/privacy',
@@ -46,6 +48,6 @@ export function safeNextPath(raw: string | null | undefined, fallback: string = 
   if (!raw || raw.length > 2048) return fallback
   if (!raw.startsWith('/') || raw.startsWith('//') || raw.includes('\\')) return fallback
   if (/[\u0000-\u001f\u007f]/.test(raw)) return fallback
-  if (/^\/(login|register|forgot-password|reset-password)(\/|\?|#|$)/.test(raw)) return fallback
+  if (/^\/(login|register|forgot-password|reset-password|consent)(\/|\?|#|$)/.test(raw)) return fallback
   return raw
 }

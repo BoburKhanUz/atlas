@@ -23,7 +23,8 @@ export const runtime = 'nodejs'
  * delete the user's storage directory.
  */
 export const DELETE = withApi(async (req) => {
-  const authUser = await requireAuth(req)
+  // A user who does not accept changed legal texts can still leave.
+  const authUser = await requireAuth(req, { allowOutdatedConsent: true })
   if (!authUser) return unauthorized()
 
   // Verify the user exists before deleting

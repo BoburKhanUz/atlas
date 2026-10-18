@@ -26,7 +26,7 @@ class AuthApi {
 
   const AuthApi(this._dio, this._serializers);
 
-  /// The signed-in user
+  /// The signed-in user, and whether the changed legal texts must be accepted first
   ///
   ///
   /// Parameters:

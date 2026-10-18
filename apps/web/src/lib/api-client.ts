@@ -104,6 +104,20 @@ function redirectToLogin(): Promise<never> {
   return new Promise<never>(() => {})
 }
 
+let redirectingToConsent = false
+
+/** CONSENT_REQUIRED: the legal texts changed; accept them on /consent, then come back. */
+function redirectToConsent(): Promise<never> {
+  if (typeof window !== 'undefined' && !redirectingToConsent) {
+    redirectingToConsent = true
+    const here = window.location.pathname + window.location.search
+    // A full navigation for the same reasons as redirectToLogin.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- intentional hard navigation
+    window.location.assign(`/consent?next=${encodeURIComponent(here)}`)
+  }
+  return new Promise<never>(() => {})
+}
+
 // ─── Core request ───────────────────────────────────────────────────────────
 function buildInit(opts: FetchOpts): RequestInit {
   const headers: Record<string, string> = {}
@@ -170,6 +184,7 @@ export async function api<T = unknown>(path: string, opts: FetchOpts = {}): Prom
   }
 
   const data = await parseBody(res)
+  if (res.status === 403 && (data as { code?: unknown } | null)?.code === 'CONSENT_REQUIRED') return redirectToConsent()
   if (!res.ok) throw toApiError(res, data)
   return data as T
 }

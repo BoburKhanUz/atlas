@@ -25,7 +25,9 @@ import type { LLMProvider, LLMRequest } from '@/lib/ai/providers/types'
 import { AI_DAILY_LIMITS } from '@/lib/ai/quota'
 import { interpretOutfitOutput, InvalidOutfitOutputError, outfitJsonSchema, OUTFIT_SYSTEM_PROMPT } from '@/lib/ai/outfit-intelligence'
 import { OutfitGenerateResponse } from '@/server/schemas/responses'
-import { authHeader, jsonRequest, TEST_USER } from '../helpers'
+import { acceptedLegalTexts, authHeader, jsonRequest, TEST_USER } from '../helpers'
+
+Object.assign(db, { legalConsent: acceptedLegalTexts() })
 
 type Step = (req: LLMRequest) => string | Promise<string>
 class ScriptedLLM implements LLMProvider {

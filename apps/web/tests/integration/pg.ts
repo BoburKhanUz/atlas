@@ -8,6 +8,8 @@ import { execFileSync, spawn, type ChildProcess } from 'child_process'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
+// Relative: vitest.integration.config.ts loads this file before the @/ alias exists.
+import { LEGAL_VERSION } from '../../src/lib/legal/version'
 
 export const PG = {
   host: process.env.ATLAS_ITEST_PGHOST ?? '',
@@ -175,6 +177,15 @@ export function psqlSession(db: string, appName: string) {
     output: () => output,
     done,
   }
+}
+
+/** One signed-up user as registration leaves it: with consent to the current legal texts (requireAuth needs it). */
+export function insertUser(db: string, id: string) {
+  sql(
+    db,
+    `INSERT INTO "User" ("id","email","passwordHash","updatedAt") VALUES ('${id}','${id}@test.local','x', now());
+     INSERT INTO "LegalConsent" ("id","userId","version","ageConfirmed") VALUES ('lc_${id}','${id}','${LEGAL_VERSION}', true)`,
+  )
 }
 
 /** Seed users u1..uN (ids `u1`…). */

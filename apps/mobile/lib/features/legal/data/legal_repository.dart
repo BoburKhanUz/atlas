@@ -1,4 +1,4 @@
-import 'package:atlas_api/atlas_api.dart' show LegalDocumentIdEnum;
+import 'package:atlas_api/atlas_api.dart' show LegalConsentRequest, LegalDocumentIdEnum;
 import 'package:flutter/foundation.dart';
 
 import '../../../core/network/api_client.dart';
@@ -56,7 +56,8 @@ class LegalBundle {
   final Map<LegalDocumentKind, LegalDocumentData> documents;
 }
 
-/// GET /api/v1/legal (public, no session needed). Throws `ApiFailure`.
+/// GET /api/v1/legal (public, no session needed), and the signed-in user's
+/// consent to the current texts. Throws `ApiFailure`.
 class LegalRepository {
   LegalRepository(this._client);
   final AtlasApiClient _client;
@@ -78,4 +79,19 @@ class LegalRepository {
       },
     );
   }
+
+  /// Whether the texts changed since the user accepted them (GET /api/v1/auth/me).
+  Future<bool> consentRequired() async => (await _client.call((api) => api.getAuthApi().getMe())).consentRequired;
+
+  /// POST /api/v1/legal/consent: the user accepts [version] (the current
+  /// texts) and confirms being 18 or older.
+  Future<void> accept({required String version}) => _client.callVoid(
+    (api) => api.getLegalApi().acceptLegalDocuments(
+      legalConsentRequest: LegalConsentRequest(
+        (b) => b
+          ..acceptedLegalVersion = version
+          ..ageConfirmed = true,
+      ),
+    ),
+  );
 }

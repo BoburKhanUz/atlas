@@ -26,6 +26,13 @@ final apiReachabilityProvider = Provider<ApiReachability>((ref) {
   return reachability;
 });
 
+/// CONSENT_REQUIRED answers of any request (the consent gate listens).
+final consentRefusalsProvider = Provider<ConsentRefusals>((ref) {
+  final refusals = ConsentRefusals();
+  ref.onDispose(refusals.dispose);
+  return refusals;
+});
+
 final dioProvider = Provider<Dio>((ref) {
   final dio = buildAtlasDio(
     config: ref.watch(environmentConfigProvider),
@@ -38,7 +45,11 @@ final dioProvider = Provider<Dio>((ref) {
 });
 
 final atlasApiClientProvider = Provider<AtlasApiClient>(
-  (ref) => AtlasApiClient(dio: ref.watch(dioProvider), network: ref.watch(deviceNetworkProvider)),
+  (ref) => AtlasApiClient(
+    dio: ref.watch(dioProvider),
+    network: ref.watch(deviceNetworkProvider),
+    consentRefusals: ref.watch(consentRefusalsProvider),
+  ),
 );
 
 /// Device connectivity combined with whether the API answered recently.

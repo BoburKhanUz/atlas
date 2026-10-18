@@ -29,7 +29,9 @@ import { MockProvider } from '@/lib/ai/providers/mock'
 import type { LLMProvider, LLMRequest, VisionProvider, VisionRequest } from '@/lib/ai/providers/types'
 import { allowlistDigest, rolloutBucket } from '@/lib/ai/rollout'
 import { analyzeGarment } from '@/lib/ai/vision-service'
-import { authHeader, garmentPhoto, jsonRequest, TEST_USER } from '../helpers'
+import { acceptedLegalTexts, authHeader, garmentPhoto, jsonRequest, TEST_USER } from '../helpers'
+
+Object.assign(db, { legalConsent: acceptedLegalTexts() })
 
 class CountingLLM implements LLMProvider {
   readonly name = 'gemini'

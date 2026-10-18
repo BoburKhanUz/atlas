@@ -31,6 +31,7 @@ enum ApiErrorCode {
   analysisUnavailable('ANALYSIS_UNAVAILABLE', ApiErrorKind.server),
   resetTokenInvalid('RESET_TOKEN_INVALID', ApiErrorKind.invalidRequest),
   passwordResetUnavailable('PASSWORD_RESET_UNAVAILABLE', ApiErrorKind.server),
+  consentRequired('CONSENT_REQUIRED', ApiErrorKind.consentRequired),
   unknown('', ApiErrorKind.unknown);
 
   const ApiErrorCode(this.wire, this.kind);
@@ -85,6 +86,10 @@ enum ApiErrorKind {
 
   /// 503 SESSION_BUSY: retry after Retry-After.
   sessionBusy(retryable: true),
+
+  /// 403 CONSENT_REQUIRED: the legal texts changed; nothing works until the
+  /// user accepts them again (the consent screen).
+  consentRequired(retryable: false),
   unknown(retryable: false);
 
   const ApiErrorKind({required this.retryable});

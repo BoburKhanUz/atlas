@@ -1,4 +1,5 @@
 import { expect, type APIRequestContext, type Page } from '@playwright/test'
+import { execFileSync } from 'node:child_process'
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -17,6 +18,14 @@ export function uniqueUser(label = 'u') {
 }
 
 export type TestUser = ReturnType<typeof uniqueUser>
+
+/** Runs SQL on the e2e database (E2E_DATABASE_URL; a test that needs it skips without it). */
+export function e2eSql(query: string) {
+  const databaseUrl = process.env.E2E_DATABASE_URL!
+  execFileSync('psql', [databaseUrl.replace(/\?.*$/, ''), '-v', 'ON_ERROR_STOP=1', '-c', query], {
+    env: { ...process.env, PGHOST: new URL(databaseUrl).searchParams.get('host') ?? undefined },
+  })
+}
 
 /** Register through the API; the context's cookie jar gets the session cookies. */
 export async function registerViaApi(request: APIRequestContext, user = uniqueUser()) {

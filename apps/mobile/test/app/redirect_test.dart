@@ -1,6 +1,7 @@
 import 'package:atlas_mobile/app/router.dart';
 import 'package:atlas_mobile/core/session/auth_state.dart';
 import 'package:atlas_mobile/core/session/session_tokens.dart';
+import 'package:atlas_mobile/features/legal/consent_gate.dart';
 import 'package:atlas_mobile/features/onboarding/onboarding_gate.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -25,95 +26,143 @@ const _allLocations = [
   AtlasRoutes.register,
   AtlasRoutes.forgotPassword,
   AtlasRoutes.onboarding,
+  AtlasRoutes.consent,
   ..._tabs,
   ..._legal,
+  AtlasRoutes.profileDelete,
   '/wardrobe-item/abc',
 ];
 
-String _target(AuthState s, OnboardingStatus o, String loc) => authRedirect(s, o, loc) ?? loc;
+/// The user may use the app (no changed legal texts to accept): onboarding decides.
+const _ok = ConsentStatus.notRequired;
+
+String _target(AuthState s, ConsentStatus c, OnboardingStatus o, String loc) => authRedirect(s, c, o, loc) ?? loc;
 
 void main() {
-  test('no loops: for every state × onboarding status × location the target is stable', () {
+  test('no loops: for every state × consent × onboarding status × location the target is stable', () {
     for (final s in _allStates) {
-      for (final o in OnboardingStatus.values) {
-        for (final loc in _allLocations) {
-          final target = _target(s, o, loc);
-          expect(authRedirect(s, o, target), isNull, reason: '$s/$o: $loc → $target → …');
-          expect(_allLocations, contains(target));
+      for (final c in ConsentStatus.values) {
+        for (final o in OnboardingStatus.values) {
+          for (final loc in _allLocations) {
+            final target = _target(s, c, o, loc);
+            expect(authRedirect(s, c, o, target), isNull, reason: '$s/$c/$o: $loc → $target → …');
+            expect(_allLocations, contains(target));
+          }
         }
       }
     }
   });
 
-  test('restoring → splash, whatever the onboarding status', () {
-    for (final o in OnboardingStatus.values) {
-      for (final loc in _allLocations) {
-        expect(_target(const AuthRestoring(), o, loc), AtlasRoutes.splash);
-      }
-    }
-  });
-
-  test('signed out → login/register or a legal document; everything else (onboarding, full-screen) → login', () {
-    for (final s in _signedOut) {
+  test('restoring → splash, whatever the consent and onboarding status', () {
+    for (final c in ConsentStatus.values) {
       for (final o in OnboardingStatus.values) {
         for (final loc in _allLocations) {
-          final stays = [AtlasRoutes.login, AtlasRoutes.register, AtlasRoutes.forgotPassword, ..._legal].contains(loc);
-          expect(_target(s, o, loc), stays ? loc : AtlasRoutes.login, reason: '$s/$o @ $loc');
+          expect(_target(const AuthRestoring(), c, o, loc), AtlasRoutes.splash);
         }
       }
     }
   });
 
-  test('signed in, decision pending → splash', () {
+  test(
+    'signed out → login/register or a legal document; everything else (consent, onboarding, full-screen) → login',
+    () {
+      for (final s in _signedOut) {
+        for (final c in ConsentStatus.values) {
+          for (final o in OnboardingStatus.values) {
+            for (final loc in _allLocations) {
+              final stays = [
+                AtlasRoutes.login,
+                AtlasRoutes.register,
+                AtlasRoutes.forgotPassword,
+                ..._legal,
+              ].contains(loc);
+              expect(_target(s, c, o, loc), stays ? loc : AtlasRoutes.login, reason: '$s/$c/$o @ $loc');
+            }
+          }
+        }
+      }
+    },
+  );
+
+  test('signed in, either decision pending → splash', () {
     for (final s in _signedIn) {
-      for (final o in [OnboardingStatus.none, OnboardingStatus.checking]) {
-        for (final loc in _allLocations) {
-          expect(_target(s, o, loc), AtlasRoutes.splash, reason: '$s/$o @ $loc');
+      for (final loc in _allLocations) {
+        for (final c in [ConsentStatus.none, ConsentStatus.checking]) {
+          for (final o in OnboardingStatus.values) {
+            expect(_target(s, c, o, loc), AtlasRoutes.splash, reason: '$s/$c/$o @ $loc');
+          }
+        }
+        for (final o in [OnboardingStatus.none, OnboardingStatus.checking]) {
+          expect(_target(s, _ok, o, loc), AtlasRoutes.splash, reason: '$s/$o @ $loc');
         }
       }
+    }
+  });
+
+  test('signed in, changed legal texts → the consent screen; only the documents and account deletion stay open', () {
+    for (final s in _signedIn) {
+      for (final o in OnboardingStatus.values) {
+        for (final loc in _allLocations) {
+          final stays = [..._legal, AtlasRoutes.profileDelete].contains(loc);
+          expect(_target(s, ConsentStatus.required, o, loc), stays ? loc : AtlasRoutes.consent, reason: '$s/$o @ $loc');
+        }
+      }
+    }
+  });
+
+  test('accepted: the consent screen leads home, or to onboarding when that is still due', () {
+    for (final s in _signedIn) {
+      expect(_target(s, _ok, OnboardingStatus.notRequired, AtlasRoutes.consent), AtlasRoutes.home);
+      expect(_target(s, _ok, OnboardingStatus.required, AtlasRoutes.consent), AtlasRoutes.onboarding);
     }
   });
 
   test('signed in, onboarding required → onboarding from everywhere', () {
     for (final s in _signedIn) {
       for (final loc in _allLocations) {
-        expect(_target(s, OnboardingStatus.required, loc), AtlasRoutes.onboarding, reason: '$s @ $loc');
+        expect(_target(s, _ok, OnboardingStatus.required, loc), AtlasRoutes.onboarding, reason: '$s @ $loc');
       }
     }
   });
 
-  test('signed in, onboarding done → never splash, auth pages or onboarding; tabs and full-screen routes stay', () {
-    for (final s in _signedIn) {
-      for (final loc in [
-        AtlasRoutes.splash,
-        AtlasRoutes.login,
-        AtlasRoutes.register,
-        AtlasRoutes.forgotPassword,
-        AtlasRoutes.onboarding,
-      ]) {
-        expect(_target(s, OnboardingStatus.notRequired, loc), AtlasRoutes.home);
+  test(
+    'signed in, onboarding done → never splash, auth pages, onboarding or consent; tabs and full-screen routes stay',
+    () {
+      for (final s in _signedIn) {
+        for (final loc in [
+          AtlasRoutes.splash,
+          AtlasRoutes.login,
+          AtlasRoutes.register,
+          AtlasRoutes.forgotPassword,
+          AtlasRoutes.onboarding,
+          AtlasRoutes.consent,
+        ]) {
+          expect(_target(s, _ok, OnboardingStatus.notRequired, loc), AtlasRoutes.home);
+        }
+        for (final loc in [..._tabs, ..._legal, AtlasRoutes.profileDelete, '/wardrobe-item/abc']) {
+          expect(authRedirect(s, _ok, OnboardingStatus.notRequired, loc), isNull);
+        }
       }
-      for (final loc in [..._tabs, ..._legal, '/wardrobe-item/abc']) {
-        expect(authRedirect(s, OnboardingStatus.notRequired, loc), isNull);
-      }
-    }
-  });
+    },
+  );
 
   test('a token refresh never moves the user (Authenticated ↔ Refreshing)', () {
-    for (final o in OnboardingStatus.values) {
-      for (final loc in _allLocations) {
-        expect(
-          _target(const Refreshing(_user), o, loc),
-          _target(const Authenticated(_user), o, loc),
-          reason: '$o @ $loc',
-        );
+    for (final c in ConsentStatus.values) {
+      for (final o in OnboardingStatus.values) {
+        for (final loc in _allLocations) {
+          expect(
+            _target(const Refreshing(_user), c, o, loc),
+            _target(const Authenticated(_user), c, o, loc),
+            reason: '$c/$o @ $loc',
+          );
+        }
       }
     }
   });
 
   test('a terminal session error leaves onboarding for sign-in', () {
     expect(
-      _target(const SessionExpired(SignedOutReason.revoked), OnboardingStatus.required, AtlasRoutes.onboarding),
+      _target(const SessionExpired(SignedOutReason.revoked), _ok, OnboardingStatus.required, AtlasRoutes.onboarding),
       AtlasRoutes.login,
     );
   });

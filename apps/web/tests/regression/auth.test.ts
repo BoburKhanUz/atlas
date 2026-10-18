@@ -17,7 +17,9 @@ import { POST as login } from '@/app/api/v1/auth/login/route'
 import { assertServerConfig, ConfigError } from '@/lib/config'
 import { getUserFromAuthHeader } from '@/lib/auth'
 import { resetRateLimits } from '@/lib/rate-limit'
-import { authHeader, jsonRequest, TEST_USER } from '../helpers'
+import { acceptedLegalTexts, authHeader, jsonRequest, TEST_USER } from '../helpers'
+
+Object.assign(db, { legalConsent: acceptedLegalTexts() })
 
 const OLD_DEFAULT_SECRET = 'dev-secret-change-in-production-please-use-env'
 

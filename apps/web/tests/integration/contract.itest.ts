@@ -42,6 +42,7 @@ import { GET as weather } from '@/app/api/v1/weather/current/route'
 import { GET as health } from '@/app/api/health/route'
 import { POST as clientErrors } from '@/app/api/v1/client-errors/route'
 import { GET as legal } from '@/app/api/v1/legal/route'
+import { POST as acceptLegal } from '@/app/api/v1/legal/consent/route'
 import { LEGAL_VERSION } from '@/lib/legal/version'
 import { GET as openapi } from '@/app/api/v1/openapi.json/route'
 import { hashToken, signAccessToken } from '@/lib/auth'
@@ -440,6 +441,65 @@ describe.skipIf(!enabled)('OAS-04: real responses match the OpenAPI contract', (
     resetRateLimits()
     const doc = await call('getOpenApiDocument', openapi as Handler, req('/api/v1/openapi.json'))
     expect(await doc.text()).toBe(serializeOpenApiDocument())
+  })
+
+  it('legal consent: after the texts change every gated operation answers CONSENT_REQUIRED until the user accepts', async () => {
+    const u = await mobileAccount()
+    // The user's only consent is older than LEGAL_CONSENT_MIN_VERSION.
+    sql(DB, `UPDATE "LegalConsent" SET "version" = '2020-01-01.1' WHERE "userId" = '${u.userId}'`)
+    const W = '/api/v1/wardrobe/items'
+    const get = (path: string) => req(path, { headers: u.auth })
+    const write = (method: string, path: string) => req(path, { method, headers: u.auth, json: {} })
+    const gated: Record<string, () => Promise<Response>> = {
+      getProfile: () => call('getProfile', profileRoute.GET as Handler, get('/api/v1/profile')),
+      updateProfile: () => call('updateProfile', profileRoute.PATCH as Handler, write('PATCH', '/api/v1/profile')),
+      getColorProfile: () => call('getColorProfile', getColorProfile as Handler, get('/api/v1/color-profile')),
+      deleteColorProfile: () => call('deleteColorProfile', colorProfileRoute.DELETE as Handler, write('DELETE', '/api/v1/color-profile')),
+      analyzeColorProfile: async () => call('analyzeColorProfile', analyzeColor as Handler, await multipart('/api/v1/color-profile/analyze', null, { headers: u.auth })),
+      createWardrobeItem: async () => call('createWardrobeItem', wardrobeRoute.POST as Handler, await multipart(W, null, { headers: u.auth })),
+      listWardrobeItems: () => call('listWardrobeItems', wardrobeRoute.GET as Handler, get(W)),
+      getWardrobeItem: () => call('getWardrobeItem', wardrobeItemRoute.GET as Handler, get(`${W}/x`), params({ id: 'x' })),
+      updateWardrobeItem: () => call('updateWardrobeItem', wardrobeItemRoute.PATCH as Handler, write('PATCH', `${W}/x`), params({ id: 'x' })),
+      deleteWardrobeItem: () => call('deleteWardrobeItem', wardrobeItemRoute.DELETE as Handler, write('DELETE', `${W}/x`), params({ id: 'x' })),
+      generateOutfits: () => call('generateOutfits', generate as Handler, write('POST', '/api/v1/outfits/generate')),
+      saveOutfit: () => call('saveOutfit', outfitsRoute.POST as Handler, write('POST', '/api/v1/outfits')),
+      listOutfits: () => call('listOutfits', outfitsRoute.GET as Handler, get('/api/v1/outfits')),
+      getOutfit: () => call('getOutfit', outfitRoute.GET as Handler, get('/api/v1/outfits/x'), params({ id: 'x' })),
+      updateOutfit: () => call('updateOutfit', outfitRoute.PATCH as Handler, write('PATCH', '/api/v1/outfits/x'), params({ id: 'x' })),
+      deleteOutfit: () => call('deleteOutfit', outfitRoute.DELETE as Handler, write('DELETE', '/api/v1/outfits/x'), params({ id: 'x' })),
+      sendOutfitFeedback: () => call('sendOutfitFeedback', feedback as Handler, write('POST', '/api/v1/outfits/x/feedback'), params({ id: 'x' })),
+      stylistChat: () => call('stylistChat', chat as Handler, write('POST', '/api/v1/stylist/chat')),
+      listConversations: () => call('listConversations', conversations as Handler, get('/api/v1/stylist/conversations')),
+      getConversation: () => call('getConversation', conversation as Handler, get('/api/v1/stylist/conversations/x'), params({ id: 'x' })),
+      getCurrentWeather: () => call('getCurrentWeather', weather as Handler, get('/api/v1/weather/current?lat=41.31&lon=69.28')),
+    }
+    // Every operation that needs the consent is listed: a new one cannot skip this check.
+    const required = OPERATIONS.filter((op) => op.auth === 'required' && !op.consentExempt).map((op) => op.operationId)
+    expect(Object.keys(gated).sort()).toEqual(required.sort())
+    for (const [operationId, run] of Object.entries(gated)) {
+      const res = await run()
+      expect([operationId, res.status, (await res.json()).code]).toEqual([operationId, 403, 'CONSENT_REQUIRED'])
+    }
+
+    const meNow = async () => (await (await call('getMe', me as Handler, get('/api/v1/auth/me'))).json()).consentRequired
+    expect(await meNow()).toBe(true)
+    const accept = (json: unknown, headers: Record<string, string> = u.auth) =>
+      call('acceptLegalDocuments', acceptLegal as Handler, req('/api/v1/legal/consent', { method: 'POST', headers, json }))
+    await accept({ ...CONSENT, acceptedLegalVersion: '2020-01-01.1' }) // VALIDATION_ERROR: not the current texts
+    await accept(CONSENT, {}) // UNAUTHORIZED
+    expect((await accept(CONSENT)).status).toBe(200)
+    expect((await accept(CONSENT)).status).toBe(200) // a repeat records nothing more
+    expect(sql(DB, `SELECT string_agg("version", ',' ORDER BY "acceptedAt") FROM "LegalConsent" WHERE "userId" = '${u.userId}'`)).toBe(
+      `2020-01-01.1,${LEGAL_VERSION}`,
+    )
+    expect(await meNow()).toBe(false)
+    expect((await gated.getProfile()).status).toBe(200)
+
+    // Declining stays possible: the account can be deleted without accepting.
+    const leaving = await mobileAccount()
+    sql(DB, `DELETE FROM "LegalConsent" WHERE "userId" = '${leaving.userId}'`)
+    const del = await call('deleteAccount', deleteAccount as Handler, req('/api/v1/account', { method: 'DELETE', headers: leaving.auth }))
+    expect(del.status).toBe(200)
   })
 
   it('coverage: every operation succeeded and produced each of its specific error codes', () => {

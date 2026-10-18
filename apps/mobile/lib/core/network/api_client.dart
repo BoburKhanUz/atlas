@@ -8,6 +8,7 @@ import 'package:dio/dio.dart';
 import '../config/environment_config.dart';
 import '../logging/app_log.dart';
 import 'access_token_source.dart';
+import 'api_error_code.dart';
 import 'api_failure.dart';
 import 'connectivity.dart';
 import 'error_mapper.dart';
@@ -53,11 +54,25 @@ Dio buildAtlasDio({
   return dio;
 }
 
+/// CONSENT_REQUIRED answers: the legal texts changed and must be accepted
+/// again. Reported whichever call met one, so the app shows the texts
+/// (ConsentGate) instead of an error on some screen.
+class ConsentRefusals {
+  final _controller = StreamController<void>.broadcast();
+
+  Stream<void> get stream => _controller.stream;
+
+  void report() => _controller.add(null);
+
+  Future<void> dispose() => _controller.close();
+}
+
 /// The generated API ([AtlasApi]) behind one error contract: every call
 /// returns data or throws exactly one [ApiFailure].
 class AtlasApiClient {
-  AtlasApiClient({required this.dio, required DeviceNetwork network})
+  AtlasApiClient({required this.dio, required DeviceNetwork network, ConsentRefusals? consentRefusals})
     : _network = network, // ignore: prefer_initializing_formals
+      _consentRefusals = consentRefusals, // ignore: prefer_initializing_formals
       // `interceptors: const []` — never add the generated auth interceptors:
       // its ApiKeyAuthInterceptor would send the token as an `atlas_at`
       // cookie (cookieAuth), which the mobile client must never do.
@@ -66,6 +81,7 @@ class AtlasApiClient {
   final Dio dio;
   final AtlasApi api;
   final DeviceNetwork _network;
+  final ConsentRefusals? _consentRefusals;
 
   /// Runs one generated operation, e.g.
   /// `client.call((api) => api.getWardrobeApi().listWardrobeItems(limit: 20))`.
@@ -121,6 +137,7 @@ class AtlasApiClient {
     if (cause is Error) Error.throwWithStackTrace(cause, stack);
     final failure = ApiErrorMapper.fromDio(e, deviceHasNetwork: await _network.hasNetwork());
     AppLog.warn('API call failed: ${failure.describe()}');
+    if (failure case ApiHttpFailure(code: ApiErrorCode.consentRequired)) _consentRefusals?.report();
     return failure;
   }
 }

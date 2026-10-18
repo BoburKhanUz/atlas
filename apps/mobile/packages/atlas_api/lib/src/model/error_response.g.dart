@@ -62,6 +62,9 @@ const ErrorResponseCodeEnum _$errorResponseCodeEnum_RESET_TOKEN_INVALID = const 
 const ErrorResponseCodeEnum _$errorResponseCodeEnum_PASSWORD_RESET_UNAVAILABLE = const ErrorResponseCodeEnum._(
   'PASSWORD_RESET_UNAVAILABLE',
 );
+const ErrorResponseCodeEnum _$errorResponseCodeEnum_CONSENT_REQUIRED = const ErrorResponseCodeEnum._(
+  'CONSENT_REQUIRED',
+);
 const ErrorResponseCodeEnum _$errorResponseCodeEnum_unknownDefaultOpenApi = const ErrorResponseCodeEnum._(
   'unknownDefaultOpenApi',
 );
@@ -128,6 +131,8 @@ ErrorResponseCodeEnum _$errorResponseCodeEnumValueOf(String name) {
       return _$errorResponseCodeEnum_RESET_TOKEN_INVALID;
     case 'PASSWORD_RESET_UNAVAILABLE':
       return _$errorResponseCodeEnum_PASSWORD_RESET_UNAVAILABLE;
+    case 'CONSENT_REQUIRED':
+      return _$errorResponseCodeEnum_CONSENT_REQUIRED;
     case 'unknownDefaultOpenApi':
       return _$errorResponseCodeEnum_unknownDefaultOpenApi;
     default:
@@ -167,6 +172,7 @@ final BuiltSet<ErrorResponseCodeEnum> _$errorResponseCodeEnumValues = BuiltSet<E
     _$errorResponseCodeEnum_ANALYSIS_UNAVAILABLE,
     _$errorResponseCodeEnum_RESET_TOKEN_INVALID,
     _$errorResponseCodeEnum_PASSWORD_RESET_UNAVAILABLE,
+    _$errorResponseCodeEnum_CONSENT_REQUIRED,
     _$errorResponseCodeEnum_unknownDefaultOpenApi,
   ],
 );
@@ -205,6 +211,7 @@ class _$ErrorResponseCodeEnumSerializer implements PrimitiveSerializer<ErrorResp
     'ANALYSIS_UNAVAILABLE': 'ANALYSIS_UNAVAILABLE',
     'RESET_TOKEN_INVALID': 'RESET_TOKEN_INVALID',
     'PASSWORD_RESET_UNAVAILABLE': 'PASSWORD_RESET_UNAVAILABLE',
+    'CONSENT_REQUIRED': 'CONSENT_REQUIRED',
     'unknownDefaultOpenApi': 'unknown_default_open_api',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
@@ -238,6 +245,7 @@ class _$ErrorResponseCodeEnumSerializer implements PrimitiveSerializer<ErrorResp
     'ANALYSIS_UNAVAILABLE': 'ANALYSIS_UNAVAILABLE',
     'RESET_TOKEN_INVALID': 'RESET_TOKEN_INVALID',
     'PASSWORD_RESET_UNAVAILABLE': 'PASSWORD_RESET_UNAVAILABLE',
+    'CONSENT_REQUIRED': 'CONSENT_REQUIRED',
     'unknown_default_open_api': 'unknownDefaultOpenApi',
   };
 

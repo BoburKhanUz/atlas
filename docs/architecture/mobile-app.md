@@ -62,13 +62,13 @@ The folders marked with a phase are created in that phase, not as empty placehol
 ## Routing: `go_router` 18
 
 - **Tab shell:** `StatefulShellRoute.indexedStack` with five branches: Home, Wardrobe, Outfits, Stylist, Profile. Each tab keeps its own navigation stack and scroll position, and re-tapping the active tab returns to its root.
-- **Guard (3.3/3.4, implemented):** one pure function, `authRedirect(AuthState, OnboardingStatus, location)` in `lib/app/router.dart`, with the router listening to `SessionController` and `OnboardingGate`.
+- **Guard (3.3/3.4, implemented):** one pure function, `authRedirect(AuthState, ConsentStatus, OnboardingStatus, location)` in `lib/app/router.dart`, with the router listening to `SessionController`, `ConsentGate` and `OnboardingGate`.
   - `AuthRestoring` → `/splash`.
   - `Unauthenticated`, `SessionExpired` and `Authenticating` → `/login` (or `/register`).
-  - `Authenticated`, `Refreshing` and `LoggingOut` → the shell, once onboarding is decided:
-    - `checking` → splash;
-    - `required` → `/onboarding`;
-    - `notRequired` → the shell, kept away from splash, auth screens and onboarding.
+  - `Authenticated`, `Refreshing` and `LoggingOut` → first the consent decision:
+    - consent `none`/`checking` → splash;
+    - consent `required` (the legal texts changed) → `/consent`; only the legal documents and `/profile/delete` stay open from there;
+    - consent `notRequired` → the onboarding decision: `checking` → splash; `required` → `/onboarding`; `notRequired` → the shell, kept away from splash, auth screens, onboarding and `/consent`.
   - A refresh never navigates. Only a session that ended leads to sign-in, so there is no Login → refresh → Login loop. Tests check that every redirect target is stable.
 - **Tab shell behaviour (3.4):**
   - Re-tapping the active tab returns it to its root, and its `AtlasPage` scrolls to the top (`TabReselect`; it jumps when reduced motion is on).
@@ -77,6 +77,13 @@ The folders marked with a phase are created in that phase, not as empty placehol
   - It lives on the root navigator and covers the bottom bar.
   - It is opened with `context.push(path)`; back returns to the tab exactly as it was.
   - The auth redirect applies to it like any other route.
+
+## Changed legal texts (re-consent)
+
+- **Who sees it (`ConsentGate`, `lib/features/legal/consent_gate.dart`):** asked once per signed-in user with `GET /api/v1/auth/me` (`consentRequired`).
+  - A failed check or a 6 s timeout lets the user in: the server refuses every other request with `CONSENT_REQUIRED` until the texts are accepted, and `AtlasApiClient` reports any such answer (`ConsentRefusals`), which turns the gate on wherever the user is.
+- **The screen (`/consent`):** the documents, the two boxes (18+, the texts), "Qabul qilaman" (`POST /api/v1/legal/consent` with the version the links showed), "Chiqish", and "Rozi emasman — hisobni o‘chirish" (account deletion, which the server allows without the consent).
+- **When:** the backend raises `LEGAL_CONSENT_MIN_VERSION` (`apps/web/src/lib/legal/version.ts`) for a change that needs new consent.
 
 ## Onboarding (3.4, implemented)
 

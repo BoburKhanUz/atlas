@@ -22,7 +22,9 @@ import { DELETE as deleteItem } from '@/app/api/v1/wardrobe/items/[id]/route'
 import { signMediaUrl, verifyMediaSignature } from '@/lib/storage/media'
 import { getStorageProvider, setStorageProviderForTesting } from '@/lib/storage/provider'
 import { serializeWardrobeItem } from '@/lib/wardrobe/serialize'
-import { authHeader, TEST_USER } from '../helpers'
+import { acceptedLegalTexts, authHeader, TEST_USER } from '../helpers'
+
+Object.assign(db, { legalConsent: acceptedLegalTexts() })
 
 /** Serialise a FormData body so the request carries Content-Length (required for uploads). */
 async function multipartRequest(url: string, form: FormData, headers: Record<string, string>) {

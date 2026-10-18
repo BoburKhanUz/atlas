@@ -15,12 +15,12 @@ import { signAccessToken } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { setLLMProviderForTesting, setVisionProviderForTesting } from '@/lib/ai/providers'
 import { selfie } from '../unit/ai/selfie-fixtures'
-import { APP_DB, MIGRATION_NAMES, PG, createDb, dropDb, enabled, migrationsDir, prisma, rmDir, rows, sql } from './pg'
+import { APP_DB, createDb, dropDb, enabled, insertUser, MIGRATION_NAMES, migrationsDir, PG, prisma, rmDir, rows, sql } from './pg'
 
 let seq = 0
 async function newUser() {
   const id = `cu_${process.pid}_${++seq}`
-  sql(APP_DB, `INSERT INTO "User" ("id","email","passwordHash","updatedAt") VALUES ('${id}','${id}@test.local','x', now())`)
+  insertUser(APP_DB, id)
   return { id, auth: { authorization: `Bearer ${await signAccessToken({ sub: id, email: `${id}@test.local` })}` } }
 }
 

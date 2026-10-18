@@ -273,9 +273,10 @@ void main() {
           'ANALYSIS_UNAVAILABLE',
           'RESET_TOKEN_INVALID',
           'PASSWORD_RESET_UNAVAILABLE',
+          'CONSENT_REQUIRED',
         ]),
       );
-      expect(ErrorResponseCodeEnum.values.length, 31); // 30 contract codes + unknown_default_open_api
+      expect(ErrorResponseCodeEnum.values.length, 32); // 31 contract codes + unknown_default_open_api
     });
   });
 }

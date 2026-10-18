@@ -12,7 +12,11 @@ const tx = vi.hoisted(() => ({
   userPreferences: { create: vi.fn() },
   legalConsent: { create: vi.fn() },
 }))
-const db = vi.hoisted(() => ({ user: { findUnique: vi.fn() }, $transaction: vi.fn() }))
+const db = vi.hoisted(() => ({
+  user: { findUnique: vi.fn() },
+  legalConsent: { findFirst: vi.fn(), create: vi.fn() },
+  $transaction: vi.fn(),
+}))
 vi.mock('@/lib/db', () => ({ db }))
 vi.mock('@/lib/session', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/session')>()),
@@ -27,11 +31,12 @@ vi.mock('@/lib/session', async (importOriginal) => ({
 
 import { POST as register } from '@/app/api/v1/auth/register/route'
 import { GET as legal } from '@/app/api/v1/legal/route'
+import { POST as acceptLegal } from '@/app/api/v1/legal/consent/route'
 import { LEGAL_DOCUMENTS } from '@/lib/legal/documents'
 import { LEGAL_DRAFT, LEGAL_EFFECTIVE_DATE, LEGAL_VERSION } from '@/lib/legal/version'
 import { resetRateLimits } from '@/lib/rate-limit'
 import { LegalResponse } from '@/server/schemas/responses'
-import { jsonRequest } from '../helpers'
+import { authHeader, jsonRequest, TEST_USER } from '../helpers'
 
 const MOBILE = { 'x-atlas-client': 'mobile' }
 const body = (extra: Record<string, unknown> = {}) => ({
@@ -80,6 +85,38 @@ describe('registration consent', () => {
     expect(json.error).toMatch(message)
     expect(json.details[0].path).toBe(path)
     expect(db.$transaction).not.toHaveBeenCalled()
+  })
+})
+
+describe('POST /api/v1/legal/consent (accepting changed texts)', () => {
+  const accept = async (json: unknown) => acceptLegal(jsonRequest('/api/v1/legal/consent', json, await authHeader()))
+
+  it('records the current version and the 18+ confirmation once', async () => {
+    db.user.findUnique.mockResolvedValue({ id: TEST_USER.sub })
+    db.legalConsent.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 'lc1' })
+    expect((await accept({ acceptedLegalVersion: LEGAL_VERSION, ageConfirmed: true })).status).toBe(200)
+    expect((await accept({ acceptedLegalVersion: LEGAL_VERSION, ageConfirmed: true })).status).toBe(200)
+    expect(db.legalConsent.create).toHaveBeenCalledTimes(1)
+    expect(db.legalConsent.create).toHaveBeenCalledWith({ data: { userId: TEST_USER.sub, version: LEGAL_VERSION, ageConfirmed: true } })
+  })
+
+  it.each([
+    ['nothing accepted', {}, /Davom etish uchun/],
+    ['an outdated version', { acceptedLegalVersion: '2020-01-01.1', ageConfirmed: true }, /yangilangan/],
+    ['18+ not confirmed', { acceptedLegalVersion: LEGAL_VERSION, ageConfirmed: false }, /18 yosh/],
+  ])('%s → 400 VALIDATION_ERROR in Uzbek, nothing recorded', async (_name, json, message) => {
+    const res = await accept(json)
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect([body.code, body.error]).toEqual(['VALIDATION_ERROR', expect.stringMatching(message)])
+    expect(db.legalConsent.create).not.toHaveBeenCalled()
+  })
+
+  it('a deleted account (token still valid) is signed out, not recorded', async () => {
+    db.user.findUnique.mockResolvedValue(null)
+    const res = await accept({ acceptedLegalVersion: LEGAL_VERSION, ageConfirmed: true })
+    expect([res.status, (await res.json()).code]).toEqual([401, 'UNAUTHORIZED'])
+    expect(db.legalConsent.create).not.toHaveBeenCalled()
   })
 })
 

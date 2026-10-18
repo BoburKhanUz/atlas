@@ -12,7 +12,7 @@ describe('safeNextPath (open-redirect guard)', () => {
 
   it.each([
     null, '', 'https://evil.com', '//evil.com', '/\\evil.com', '/\t/evil.com', '/\n/evil.com',
-    '/%09', 'javascript:alert(1)', '/login', '/login?next=/x', '/register', '/forgot-password', '/reset-password?token=t', 'x'.repeat(10),
+    '/%09', 'javascript:alert(1)', '/login', '/login?next=/x', '/register', '/forgot-password', '/reset-password?token=t', '/consent', '/consent?next=/x', 'x'.repeat(10),
   ])('rejects %j', (input) => {
     const out = safeNextPath(input as string | null, '/')
     expect(out === '/' || (input === '/%09' && out === '/%09')).toBe(true)

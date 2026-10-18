@@ -1,8 +1,18 @@
 import { NextRequest } from 'next/server'
 import sharp from 'sharp'
 import { signAccessToken } from '@/lib/auth'
+import { LEGAL_VERSION } from '@/lib/legal/version'
 
 export const TEST_USER = { sub: 'user_test_1', email: 'tester@example.com' }
+
+/**
+ * `db.legalConsent` for a fake database whose users accepted the current legal
+ * texts: requireAuth checks the consent on every authenticated route. Plain
+ * functions, so resetting mocks does not undo it.
+ */
+export function acceptedLegalTexts() {
+  return { findMany: async () => [{ version: LEGAL_VERSION }] }
+}
 
 /**
  * A garment-like photo of one colour with a faint woven stripe: enough detail

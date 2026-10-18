@@ -769,7 +769,8 @@
               "SKIN_NOT_VISIBLE",
               "ANALYSIS_UNAVAILABLE",
               "RESET_TOKEN_INVALID",
-              "PASSWORD_RESET_UNAVAILABLE"
+              "PASSWORD_RESET_UNAVAILABLE",
+              "CONSENT_REQUIRED"
             ],
             "type": "string"
           },
@@ -896,6 +897,24 @@
         ],
         "type": "object"
       },
+      "LegalConsentRequest": {
+        "properties": {
+          "acceptedLegalVersion": {
+            "description": "The `version` from GET /api/v1/legal that the user accepted; it must be the current one.",
+            "maxLength": 40,
+            "type": "string"
+          },
+          "ageConfirmed": {
+            "description": "The user confirmed being 18 or older; must be true.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "acceptedLegalVersion",
+          "ageConfirmed"
+        ],
+        "type": "object"
+      },
       "LegalDocument": {
         "additionalProperties": false,
         "properties": {
@@ -1001,6 +1020,10 @@
       "MeResponse": {
         "additionalProperties": false,
         "properties": {
+          "consentRequired": {
+            "description": "The legal texts changed: the user must accept them (POST /api/v1/legal/consent) before using the app",
+            "type": "boolean"
+          },
           "user": {
             "additionalProperties": false,
             "properties": {
@@ -1036,7 +1059,8 @@
           }
         },
         "required": [
-          "user"
+          "user",
+          "consentRequired"
         ],
         "type": "object"
       },
@@ -4137,7 +4161,7 @@
             "cookieAuth": []
           }
         ],
-        "summary": "The signed-in user",
+        "summary": "The signed-in user, and whether the changed legal texts must be accepted first",
         "tags": [
           "auth"
         ]
@@ -4754,8 +4778,9 @@
                 }
               }
             },
-            "description": "Error. code: FORBIDDEN",
+            "description": "Error. code: CONSENT_REQUIRED | FORBIDDEN",
             "x-error-codes": [
+              "CONSENT_REQUIRED",
               "FORBIDDEN"
             ]
           },
@@ -4810,6 +4835,19 @@
             "description": "Error. code: UNAUTHORIZED",
             "x-error-codes": [
               "UNAUTHORIZED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: CONSENT_REQUIRED",
+            "x-error-codes": [
+              "CONSENT_REQUIRED"
             ]
           },
           "500": {
@@ -4909,8 +4947,9 @@
                 }
               }
             },
-            "description": "Error. code: FORBIDDEN",
+            "description": "Error. code: CONSENT_REQUIRED | FORBIDDEN",
             "x-error-codes": [
+              "CONSENT_REQUIRED",
               "FORBIDDEN"
             ]
           },
@@ -5027,6 +5066,111 @@
         },
         "security": [],
         "summary": "The current privacy policy and terms of use (versioned; registration accepts the version)",
+        "tags": [
+          "legal"
+        ]
+      }
+    },
+    "/api/v1/legal/consent": {
+      "post": {
+        "operationId": "acceptLegalDocuments",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LegalConsentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Accepted"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: BAD_REQUEST | VALIDATION_ERROR",
+            "x-error-codes": [
+              "BAD_REQUEST",
+              "VALIDATION_ERROR"
+            ]
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: UNAUTHORIZED",
+            "x-error-codes": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: FORBIDDEN",
+            "x-error-codes": [
+              "FORBIDDEN"
+            ]
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: PAYLOAD_TOO_LARGE",
+            "x-error-codes": [
+              "PAYLOAD_TOO_LARGE"
+            ]
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: INTERNAL",
+            "x-error-codes": [
+              "INTERNAL"
+            ]
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "summary": "Accept the current legal texts after they changed (ends CONSENT_REQUIRED)",
         "tags": [
           "legal"
         ]
@@ -5228,6 +5372,19 @@
               "UNAUTHORIZED"
             ]
           },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: CONSENT_REQUIRED",
+            "x-error-codes": [
+              "CONSENT_REQUIRED"
+            ]
+          },
           "500": {
             "content": {
               "application/json": {
@@ -5313,8 +5470,9 @@
                 }
               }
             },
-            "description": "Error. code: FORBIDDEN",
+            "description": "Error. code: CONSENT_REQUIRED | FORBIDDEN",
             "x-error-codes": [
+              "CONSENT_REQUIRED",
               "FORBIDDEN"
             ]
           },
@@ -5418,8 +5576,9 @@
                 }
               }
             },
-            "description": "Error. code: FORBIDDEN",
+            "description": "Error. code: CONSENT_REQUIRED | FORBIDDEN",
             "x-error-codes": [
+              "CONSENT_REQUIRED",
               "FORBIDDEN"
             ]
           },
@@ -5523,8 +5682,9 @@
                 }
               }
             },
-            "description": "Error. code: FORBIDDEN",
+            "description": "Error. code: CONSENT_REQUIRED | FORBIDDEN",
             "x-error-codes": [
+              "CONSENT_REQUIRED",
               "FORBIDDEN"
             ]
           },
@@ -5616,6 +5776,19 @@
             "description": "Error. code: UNAUTHORIZED",
             "x-error-codes": [
               "UNAUTHORIZED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: CONSENT_REQUIRED",
+            "x-error-codes": [
+              "CONSENT_REQUIRED"
             ]
           },
           "404": {
@@ -5727,8 +5900,9 @@
                 }
               }
             },
-            "description": "Error. code: FORBIDDEN",
+            "description": "Error. code: CONSENT_REQUIRED | FORBIDDEN",
             "x-error-codes": [
+              "CONSENT_REQUIRED",
               "FORBIDDEN"
             ]
           },
@@ -5856,8 +6030,9 @@
                 }
               }
             },
-            "description": "Error. code: FORBIDDEN",
+            "description": "Error. code: CONSENT_REQUIRED | FORBIDDEN",
             "x-error-codes": [
+              "CONSENT_REQUIRED",
               "FORBIDDEN"
             ]
           },
@@ -5940,6 +6115,19 @@
             "description": "Error. code: UNAUTHORIZED",
             "x-error-codes": [
               "UNAUTHORIZED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: CONSENT_REQUIRED",
+            "x-error-codes": [
+              "CONSENT_REQUIRED"
             ]
           },
           "404": {
@@ -6040,8 +6228,9 @@
                 }
               }
             },
-            "description": "Error. code: FORBIDDEN",
+            "description": "Error. code: CONSENT_REQUIRED | FORBIDDEN",
             "x-error-codes": [
+              "CONSENT_REQUIRED",
               "FORBIDDEN"
             ]
           },
@@ -6165,8 +6354,9 @@
                 }
               }
             },
-            "description": "Error. code: FORBIDDEN",
+            "description": "Error. code: CONSENT_REQUIRED | FORBIDDEN",
             "x-error-codes": [
+              "CONSENT_REQUIRED",
               "FORBIDDEN"
             ]
           },
@@ -6315,6 +6505,19 @@
               "UNAUTHORIZED"
             ]
           },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: CONSENT_REQUIRED",
+            "x-error-codes": [
+              "CONSENT_REQUIRED"
+            ]
+          },
           "500": {
             "content": {
               "application/json": {
@@ -6392,6 +6595,19 @@
             "description": "Error. code: UNAUTHORIZED",
             "x-error-codes": [
               "UNAUTHORIZED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: CONSENT_REQUIRED",
+            "x-error-codes": [
+              "CONSENT_REQUIRED"
             ]
           },
           "404": {
@@ -6516,6 +6732,19 @@
               "UNAUTHORIZED"
             ]
           },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: CONSENT_REQUIRED",
+            "x-error-codes": [
+              "CONSENT_REQUIRED"
+            ]
+          },
           "500": {
             "content": {
               "application/json": {
@@ -6636,8 +6865,9 @@
                 }
               }
             },
-            "description": "Error. code: FORBIDDEN",
+            "description": "Error. code: CONSENT_REQUIRED | FORBIDDEN",
             "x-error-codes": [
+              "CONSENT_REQUIRED",
               "FORBIDDEN"
             ]
           },
@@ -6847,8 +7077,9 @@
                 }
               }
             },
-            "description": "Error. code: FORBIDDEN",
+            "description": "Error. code: CONSENT_REQUIRED | FORBIDDEN",
             "x-error-codes": [
+              "CONSENT_REQUIRED",
               "FORBIDDEN"
             ]
           },
@@ -6940,6 +7171,19 @@
             "description": "Error. code: UNAUTHORIZED",
             "x-error-codes": [
               "UNAUTHORIZED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: CONSENT_REQUIRED",
+            "x-error-codes": [
+              "CONSENT_REQUIRED"
             ]
           },
           "404": {
@@ -7051,8 +7295,9 @@
                 }
               }
             },
-            "description": "Error. code: FORBIDDEN",
+            "description": "Error. code: CONSENT_REQUIRED | FORBIDDEN",
             "x-error-codes": [
+              "CONSENT_REQUIRED",
               "FORBIDDEN"
             ]
           },
@@ -7170,6 +7415,19 @@
             "description": "Error. code: UNAUTHORIZED",
             "x-error-codes": [
               "UNAUTHORIZED"
+            ]
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: CONSENT_REQUIRED",
+            "x-error-codes": [
+              "CONSENT_REQUIRED"
             ]
           },
           "500": {

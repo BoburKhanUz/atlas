@@ -46,6 +46,7 @@ export const ERROR_CODES = [
   'ANALYSIS_UNAVAILABLE',
   'RESET_TOKEN_INVALID',
   'PASSWORD_RESET_UNAVAILABLE',
+  'CONSENT_REQUIRED',
 ] as const
 
 export const ErrorResponse = z
@@ -80,6 +81,9 @@ export const AuthResponse = z.union([MobileAuthResponse, WebAuthResponse])
 
 export const MeResponse = z.strictObject({
   user: z.strictObject({ id: z.string(), email: z.string(), name: nullableString, createdAt: DateTime }),
+  consentRequired: z
+    .boolean()
+    .describe('The legal texts changed: the user must accept them (POST /api/v1/legal/consent) before using the app'),
 })
 
 // ─── Legal ──────────────────────────────────────────────────────────────────

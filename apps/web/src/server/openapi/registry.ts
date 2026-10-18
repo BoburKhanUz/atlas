@@ -31,6 +31,12 @@ export interface Operation {
   tags: string[]
   /** required: Bearer or atlas_at cookie; optional: used when present; none: public. */
   auth: 'required' | 'optional' | 'none'
+  /**
+   * Works without the user's consent to the current legal texts (reviewing,
+   * accepting, deleting the account). Every other `auth: 'required'`
+   * operation answers CONSENT_REQUIRED until the user accepts them.
+   */
+  consentExempt?: boolean
   /** Accepts `X-Atlas-Client: mobile` (auth routes). */
   clientMode?: boolean
   /** Accepts `Idempotency-Key`. */
@@ -94,7 +100,7 @@ export const OPERATIONS: Operation[] = [
   },
   {
     method: 'GET', path: '/api/v1/auth/me', route: 'api/v1/auth/me', operationId: 'getMe', tags: ['auth'],
-    summary: 'The signed-in user', auth: 'required',
+    summary: 'The signed-in user, and whether the changed legal texts must be accepted first', auth: 'required', consentExempt: true,
     success: [{ status: 200, description: 'Current user', schema: Res.MeResponse }],
     errors: ['NOT_FOUND'],
   },
@@ -105,10 +111,17 @@ export const OPERATIONS: Operation[] = [
     success: [{ status: 200, description: 'Legal documents', schema: Res.LegalResponse }],
     errors: [],
   },
+  {
+    method: 'POST', path: '/api/v1/legal/consent', route: 'api/v1/legal/consent', operationId: 'acceptLegalDocuments', tags: ['legal'],
+    summary: 'Accept the current legal texts after they changed (ends CONSENT_REQUIRED)',
+    auth: 'required', consentExempt: true, jsonBody: Req.LegalConsentRequest,
+    success: [{ status: 200, description: 'Accepted', schema: Res.OkResponse }],
+    errors: [],
+  },
   // ─── Account and profile ──────────────────────────────────────────────────
   {
     method: 'DELETE', path: '/api/v1/account', route: 'api/v1/account', operationId: 'deleteAccount', tags: ['account'],
-    summary: 'Delete the account and all its data and images', auth: 'required',
+    summary: 'Delete the account and all its data and images', auth: 'required', consentExempt: true,
     success: [{ status: 200, description: 'Deleted', schema: Res.OkResponse }],
     errors: ['NOT_FOUND'],
   },

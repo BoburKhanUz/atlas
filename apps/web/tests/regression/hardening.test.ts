@@ -25,7 +25,9 @@ import { LEGAL_VERSION } from '@/lib/legal/version'
 import { POST as upload } from '@/app/api/v1/wardrobe/items/route'
 import { checkRateLimit, clientIp, resetRateLimits } from '@/lib/rate-limit'
 import { getStorageProvider, setStorageProviderForTesting } from '@/lib/storage/provider'
-import { authHeader, jsonRequest, TEST_USER } from '../helpers'
+import { acceptedLegalTexts, authHeader, jsonRequest, TEST_USER } from '../helpers'
+
+Object.assign(db, { legalConsent: acceptedLegalTexts() })
 
 /** Serialise a FormData body so the request carries Content-Length (required for uploads). */
 async function multipartRequest(url: string, form: FormData, headers: Record<string, string>) {

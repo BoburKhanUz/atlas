@@ -12,6 +12,8 @@ import 'package:atlas_mobile/core/session/session_controller.dart';
 import 'package:atlas_mobile/core/session/session_interceptor.dart';
 import 'package:atlas_mobile/core/session/session_tokens.dart';
 import 'package:atlas_mobile/core/session/token_store.dart';
+import 'package:atlas_mobile/features/legal/consent_gate.dart';
+import 'package:atlas_mobile/features/legal/providers.dart';
 import 'package:atlas_mobile/features/onboarding/data/onboarding_marker_store.dart';
 import 'package:atlas_mobile/features/weather/providers.dart';
 import 'package:dio/dio.dart';
@@ -232,6 +234,7 @@ abstract final class P {
   static const analyze = '/api/v1/color-profile/analyze';
   static const account = '/api/v1/account';
   static const legal = '/api/v1/legal';
+  static const legalConsent = '/api/v1/legal/consent';
   static const forgotPassword = '/api/v1/auth/password/forgot';
 }
 
@@ -270,8 +273,9 @@ Map<String, Object?> defaultProfileJson() => {
   'preferences': null,
 };
 
-Map<String, Object?> meJson() => {
+Map<String, Object?> meJson({bool consentRequired = false}) => {
   'user': {'id': 'u1', 'email': 'a@test.local', 'name': null, 'createdAt': '2026-10-01T00:00:00.000Z'},
+  'consentRequired': consentRequired,
 };
 
 /// The real session stack (controller + interceptors + generated client)
@@ -319,7 +323,7 @@ class SessionHarness {
       monotonicNow: () => now,
       session: (dio) => AtlasSessionInterceptor(session, dio),
     );
-    client = AtlasApiClient(dio: dio, network: network);
+    client = AtlasApiClient(dio: dio, network: network, consentRefusals: consentRefusals);
   }
 
   final backend = FakeBackend();
@@ -329,6 +333,7 @@ class SessionHarness {
   /// asked yet, so nothing prompts unless a test says so.
   final locator = FakeLocator();
   final reachability = ApiReachability();
+  final consentRefusals = ConsentRefusals();
   final FakeNetwork network;
   final Duration startupWait;
   late final TokenStore store;
@@ -375,10 +380,22 @@ class SessionHarness {
 
 /// Provider overrides that run the whole app on [h]: its session, secure
 /// storage, Dio and API client (all against [FakeBackend]). With
-/// [onboarded], user u1 already has the "onboarding completed" marker.
-List<Override> appOverrides(SessionHarness h, {bool onboarded = true}) {
+/// [onboarded], user u1 already has the "onboarding completed" marker. The
+/// consent check answers [consentRequired] at once (no request); null asks
+/// the backend (GET /api/v1/auth/me) like the app does.
+List<Override> appOverrides(SessionHarness h, {bool onboarded = true, bool? consentRequired = false}) {
   if (onboarded) markOnboarded(h.kv);
   return [
+    if (consentRequired != null)
+      consentGateProvider.overrideWith((ref) {
+        final gate = ConsentGate(
+          session: h.session,
+          consentRequired: () async => consentRequired,
+          refusals: h.consentRefusals.stream,
+        );
+        ref.onDispose(gate.dispose);
+        return gate;
+      }),
     environmentConfigProvider.overrideWithValue(
       AtlasEnvironmentConfig.fromValues(environment: 'development', apiBaseUrl: 'http://api.test'),
     ),
@@ -386,6 +403,7 @@ List<Override> appOverrides(SessionHarness h, {bool onboarded = true}) {
     sessionControllerProvider.overrideWithValue(h.session),
     secureKeyValueStoreProvider.overrideWithValue(h.kv),
     dioProvider.overrideWithValue(h.dio),
+    consentRefusalsProvider.overrideWithValue(h.consentRefusals),
     atlasApiClientProvider.overrideWithValue(h.client),
     deviceLocatorProvider.overrideWithValue(h.locator),
   ];

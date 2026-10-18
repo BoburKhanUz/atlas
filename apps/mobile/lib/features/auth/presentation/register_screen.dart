@@ -10,6 +10,7 @@ import '../../../core/session/auth_state.dart';
 import '../../../core/session/providers.dart';
 import '../../../core/widgets/atlas_button.dart';
 import '../../legal/data/legal_repository.dart' show LegalBundle, LegalDocumentKind;
+import '../../legal/presentation/consent_checkbox_field.dart';
 import '../../legal/providers.dart';
 import 'auth_form_scaffold.dart';
 import 'auth_messages.dart';
@@ -128,7 +129,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   validator: AuthValidators.newPassword,
                 ),
                 const SizedBox(height: AtlasSpacing.sm),
-                _ConsentField(
+                ConsentCheckboxField(
                   key: const Key('register.age'),
                   label: '18 yoshdan kattaman',
                   requiredMessage: '18 yoshdan kattaligingizni tasdiqlang.',
@@ -137,7 +138,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 KeyedSubtree(
                   key: const Key('register.consent'),
-                  child: _ConsentField(
+                  child: ConsentCheckboxField(
                     key: _consent,
                     label: 'Foydalanish shartlari va Maxfiylik siyosatiga roziman',
                     requiredMessage:
@@ -172,33 +173,4 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       ],
     );
   }
-}
-
-/// A required checkbox of the form: validation fails until it is ticked.
-class _ConsentField extends FormField<bool> {
-  _ConsentField({
-    super.key,
-    required String label,
-    required String requiredMessage,
-    ValueChanged<bool>? onChanged,
-    super.enabled,
-  }) : super(
-         initialValue: false,
-         validator: (v) => v == true ? null : requiredMessage,
-         builder: (field) => CheckboxListTile(
-           value: field.value ?? false,
-           onChanged: field.widget.enabled
-               ? (v) {
-                   field.didChange(v ?? false);
-                   onChanged?.call(v ?? false);
-                 }
-               : null,
-           title: Text(label),
-           subtitle: field.errorText == null
-               ? null
-               : Text(field.errorText!, style: const TextStyle(color: AtlasColors.error)),
-           controlAffinity: ListTileControlAffinity.leading,
-           contentPadding: EdgeInsets.zero,
-         ),
-       );
 }

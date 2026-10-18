@@ -19,14 +19,14 @@ import { db } from '@/lib/db'
 import { getStorageProvider, setStorageProviderForTesting } from '@/lib/storage/provider'
 import { backfillDisplayVariants, sweepStorage } from '@/server/media/maintenance'
 import { claimIdempotencyKey } from '@/server/idempotency'
-import { APP_DB, enabled, sql } from './pg'
+import { APP_DB, enabled, insertUser, sql } from './pg'
 
 const DB = APP_DB
 let seq = 0
 
 async function newUser() {
   const id = `mu_${process.pid}_${++seq}`
-  sql(DB, `INSERT INTO "User" ("id","email","passwordHash","updatedAt") VALUES ('${id}','${id}@test.local','x', now())`)
+  insertUser(DB, id)
   return { id, auth: { authorization: `Bearer ${await signAccessToken({ sub: id, email: `${id}@test.local` })}` } }
 }
 

@@ -6,6 +6,7 @@ import 'package:atlas_mobile/core/session/auth_state.dart';
 import 'package:atlas_mobile/core/session/providers.dart';
 import 'package:atlas_mobile/core/widgets/atlas_page.dart';
 import 'package:atlas_mobile/core/widgets/tab_reselect.dart';
+import 'package:atlas_mobile/features/legal/providers.dart';
 import 'package:atlas_mobile/features/onboarding/providers.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,6 +34,7 @@ Future<(GoRouter, SessionHarness)> pumpSignedIn(WidgetTester tester) async {
       routerProvider.overrideWith((ref) {
         final router = buildRouter(
           session: ref.watch(sessionControllerProvider),
+          consent: ref.watch(consentGateProvider),
           onboarding: ref.watch(onboardingGateProvider),
           fullScreenRoutes: [_itemRoute],
         );

@@ -26,7 +26,9 @@ import type { LLMProvider, LLMRequest } from '@/lib/ai/providers/types'
 import { STYLIST_SYSTEM_PROMPT } from '@/lib/ai/stylist'
 import { CONTEXT_PREAMBLE, LEGACY_FALLBACK_TEXT } from '@/lib/ai/stylist-context'
 import { STYLIST_DEADLINE_MS } from '@/lib/ai/stylist-service'
-import { authHeader, jsonRequest, TEST_USER } from '../helpers'
+import { acceptedLegalTexts, authHeader, jsonRequest, TEST_USER } from '../helpers'
+
+Object.assign(db, { legalConsent: acceptedLegalTexts() })
 
 const SECRET_TEXT = 'PRIVATE-USER-TEXT-7731'
 

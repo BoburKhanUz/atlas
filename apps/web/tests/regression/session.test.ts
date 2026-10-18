@@ -43,7 +43,9 @@ import { signAccessToken } from '@/lib/auth'
 import { getCurrentUser, safeNextPath } from '@/lib/session'
 import { resetRateLimits } from '@/lib/rate-limit'
 import { proxy } from '@/proxy'
-import { TEST_USER } from '../helpers'
+import { acceptedLegalTexts, TEST_USER } from '../helpers'
+
+Object.assign(fake.db, { legalConsent: acceptedLegalTexts() })
 
 const USER = { id: TEST_USER.sub, email: TEST_USER.email, name: 'Tester' }
 

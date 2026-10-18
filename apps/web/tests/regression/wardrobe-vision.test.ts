@@ -24,7 +24,9 @@ import { MockProvider } from '@/lib/ai/providers/mock'
 import type { VisionProvider, VisionRequest } from '@/lib/ai/providers/types'
 import { analyzeGarment, GarmentAnalysisError, isMockAnalysis } from '@/lib/ai/vision-service'
 import { setStorageProviderForTesting } from '@/lib/storage/provider'
-import { authHeader, TEST_USER } from '../helpers'
+import { acceptedLegalTexts, authHeader, TEST_USER } from '../helpers'
+
+Object.assign(db, { legalConsent: acceptedLegalTexts() })
 
 const SECRET_NAME = 'PRIVATE-FILENAME-futbolka'
 const conf = (v: number) => Object.fromEntries(CONFIDENCE_KEYS.map((k) => [k, v]))

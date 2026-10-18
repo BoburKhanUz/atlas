@@ -11,8 +11,11 @@ import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
 import '../features/auth/presentation/splash_screen.dart';
 import '../features/home/presentation/home_screen.dart';
+import '../features/legal/consent_gate.dart';
 import '../features/legal/data/legal_repository.dart' show LegalDocumentKind;
+import '../features/legal/presentation/consent_screen.dart';
 import '../features/legal/presentation/legal_document_screen.dart';
+import '../features/legal/providers.dart';
 import '../features/onboarding/onboarding_gate.dart';
 import '../features/onboarding/presentation/onboarding_screen.dart';
 import '../features/onboarding/providers.dart';
@@ -62,6 +65,9 @@ abstract final class AtlasRoutes {
   static const profileDelete = '/profile/delete';
   static String stylistChat(String id) => '/stylist/chat/$id';
 
+  /// The changed legal texts to accept before anything else (ConsentGate).
+  static const consent = '/consent';
+
   /// The legal documents: readable signed out too (the register screen links them).
   static const privacy = '/legal/privacy';
   static const terms = '/legal/terms';
@@ -71,12 +77,12 @@ abstract final class AtlasRoutes {
   };
 }
 
-/// The only place that decides where the user may be, from the auth state
-/// and the onboarding decision. Pure, so it is tested for every
+/// The only place that decides where the user may be, from the auth state,
+/// the consent decision and the onboarding decision. Pure, so it is tested for every
 /// state × status × location; applying it twice never moves again (no
 /// Login → refresh → Login loops: refreshing keeps the user where they are,
 /// only a session that ended leads to sign-in).
-String? authRedirect(AuthState state, OnboardingStatus onboarding, String location) {
+String? authRedirect(AuthState state, ConsentStatus consent, OnboardingStatus onboarding, String location) {
   final onAuthPage =
       location == AtlasRoutes.login || location == AtlasRoutes.register || location == AtlasRoutes.forgotPassword;
   final onLegalPage = location == AtlasRoutes.privacy || location == AtlasRoutes.terms;
@@ -84,12 +90,22 @@ String? authRedirect(AuthState state, OnboardingStatus onboarding, String locati
   return switch (state) {
     AuthRestoring() => stay(AtlasRoutes.splash),
     Unauthenticated() || SessionExpired() || Authenticating() => onAuthPage || onLegalPage ? null : AtlasRoutes.login,
-    Authenticated() || Refreshing() || LoggingOut() => switch (onboarding) {
-      // Signed in, decision pending (a moment at most): keep the splash.
-      OnboardingStatus.none || OnboardingStatus.checking => stay(AtlasRoutes.splash),
-      OnboardingStatus.required => stay(AtlasRoutes.onboarding),
-      OnboardingStatus.notRequired =>
-        onAuthPage || location == AtlasRoutes.splash || location == AtlasRoutes.onboarding ? AtlasRoutes.home : null,
+    Authenticated() || Refreshing() || LoggingOut() => switch (consent) {
+      // Signed in, decisions pending (a moment at most): keep the splash.
+      ConsentStatus.none || ConsentStatus.checking => stay(AtlasRoutes.splash),
+      // The texts to accept, readable from there; declining = deleting the account.
+      ConsentStatus.required => onLegalPage || location == AtlasRoutes.profileDelete ? null : stay(AtlasRoutes.consent),
+      ConsentStatus.notRequired => switch (onboarding) {
+        OnboardingStatus.none || OnboardingStatus.checking => stay(AtlasRoutes.splash),
+        OnboardingStatus.required => stay(AtlasRoutes.onboarding),
+        OnboardingStatus.notRequired =>
+          onAuthPage ||
+                  location == AtlasRoutes.splash ||
+                  location == AtlasRoutes.onboarding ||
+                  location == AtlasRoutes.consent
+              ? AtlasRoutes.home
+              : null,
+      },
     },
   };
 }
@@ -111,19 +127,21 @@ GoRoute atlasFullScreenRoute({
 
 GoRouter buildRouter({
   required SessionController session,
+  required ConsentGate consent,
   required OnboardingGate onboarding,
   String initialLocation = AtlasRoutes.home,
   @visibleForTesting List<RouteBase> fullScreenRoutes = const [],
 }) => GoRouter(
   initialLocation: initialLocation,
-  refreshListenable: Listenable.merge([session, onboarding]),
-  redirect: (context, state) => authRedirect(session.state, onboarding.status, state.matchedLocation),
+  refreshListenable: Listenable.merge([session, consent, onboarding]),
+  redirect: (context, state) => authRedirect(session.state, consent.status, onboarding.status, state.matchedLocation),
   routes: [
     GoRoute(path: AtlasRoutes.splash, builder: (_, _) => const SplashScreen()),
     GoRoute(path: AtlasRoutes.login, builder: (_, _) => const LoginScreen()),
     GoRoute(path: AtlasRoutes.register, builder: (_, _) => const RegisterScreen()),
     GoRoute(path: AtlasRoutes.forgotPassword, builder: (_, _) => const ForgotPasswordScreen()),
     GoRoute(path: AtlasRoutes.onboarding, builder: (_, _) => const OnboardingScreen()),
+    GoRoute(path: AtlasRoutes.consent, builder: (_, _) => const ConsentScreen()),
     atlasFullScreenRoute(path: AtlasRoutes.wardrobeAdd, builder: (_, _) => const AddItemScreen()),
     atlasFullScreenRoute(path: AtlasRoutes.profileEdit, builder: (_, _) => const ProfileEditScreen()),
     atlasFullScreenRoute(path: AtlasRoutes.profileColor, builder: (_, _) => const ColorProfileScreen()),
@@ -181,6 +199,7 @@ GoRouter buildRouter({
 final routerProvider = Provider<GoRouter>((ref) {
   final router = buildRouter(
     session: ref.watch(sessionControllerProvider),
+    consent: ref.watch(consentGateProvider),
     onboarding: ref.watch(onboardingGateProvider),
   );
   ref.read(crashReporterProvider)?.currentRoute = () => router.routerDelegate.currentConfiguration.uri.path;

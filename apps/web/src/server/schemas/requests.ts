@@ -38,24 +38,34 @@ export const LoginRequest = z.object({
 
 const newPassword = z.string().min(8, 'Parol kamida 8 belgi bo‘lishi kerak').max(200)
 
-const CONSENT_REQUIRED = 'Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.'
 const CONSENT_OUTDATED = 'Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang.'
+
+/** Consent to the current legal texts; `missing` is the message when the fields are absent. */
+function consentFields(missing: string) {
+  return {
+    acceptedLegalVersion: z
+      .string({ error: missing })
+      .max(40, CONSENT_OUTDATED)
+      .refine((v) => v === LEGAL_VERSION, CONSENT_OUTDATED)
+      .describe('The `version` from GET /api/v1/legal that the user accepted; it must be the current one.'),
+    ageConfirmed: z
+      .boolean({ error: missing })
+      .refine((v) => v, '18 yoshdan kattaligingizni tasdiqlang.')
+      .describe('The user confirmed being 18 or older; must be true.'),
+  }
+}
 
 export const RegisterRequest = z.object({
   email: z.string().email('Email noto‘g‘ri'),
   password: newPassword,
   name: z.string().min(1).max(60).optional(),
   deviceName: deviceName.optional(),
-  acceptedLegalVersion: z
-    .string({ error: CONSENT_REQUIRED })
-    .max(40, CONSENT_OUTDATED)
-    .refine((v) => v === LEGAL_VERSION, CONSENT_OUTDATED)
-    .describe('The `version` from GET /api/v1/legal that the user accepted; it must be the current one.'),
-  ageConfirmed: z
-    .boolean({ error: CONSENT_REQUIRED })
-    .refine((v) => v, '18 yoshdan kattaligingizni tasdiqlang.')
-    .describe('The user confirmed being 18 or older; must be true.'),
+  ...consentFields('Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.'),
 })
+
+export const LegalConsentRequest = z.object(
+  consentFields('Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.'),
+)
 
 export const PasswordForgotRequest = z.object({
   email: z.string().email('Email noto‘g‘ri'),

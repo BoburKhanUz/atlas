@@ -76,6 +76,7 @@ Run on **two devices or emulators**: API 29–33 (for example API 29 or 30) and 
 | A41 | Real AI: photos | Real vision provider: a clear photo of one garment → sensible category and colour; a strongly blurred photo → "Rasm aniq emas…", no item created | NOT TESTED | NOT TESTED | |
 | A42 | Real AI: stylist, outfits | Stylist question in Uzbek → the answer is in Uzbek and names only items from the wardrobe; outfit generation → explanation in Uzbek; each request has an `ai.call` log line with the provider, model and cost estimate | NOT TESTED | NOT TESTED | |
 | A43 | Mobile data | Wi-Fi off, 4G/LTE: sign in, camera upload and a stylist question work; a slow answer shows progress and ends with an answer or a clear error, never an endless spinner | NOT TESTED | NOT TESTED | |
+| A44 | Changed legal texts | On staging, make the account's consent older than `LEGAL_CONSENT_MIN_VERSION` (`UPDATE "LegalConsent" SET "version" = '2020-01-01.1' WHERE "userId" = …`) → at the next start, or at the next request of an open app, "Hujjatlar yangilandi" opens and nothing else does; the documents open from it; "Qabul qilaman" with both boxes ticked continues to the app; "Chiqish" signs out; "Rozi emasman — hisobni o‘chirish" opens account deletion | NOT TESTED | NOT TESTED | |
 
 ## iOS
 
@@ -98,7 +99,7 @@ Run on **two devices or emulators**: API 29–33 (for example API 29 or 30) and 
 | I13 | Export compliance | `ITSAppUsesNonExemptEncryption` set correctly (the app uses only standard HTTPS); App Store Connect accepts the build | NOT TESTED | |
 | I14 | VoiceOver / Dynamic Type | Main screens with VoiceOver and the largest text size | NOT TESTED | |
 | I15 | Release logs | Release build: Console.app shows no app logs | NOT TESTED | |
-| I16 | Consent, reset, crash reports | A35–A40 on the iPhone; the reset link opens in Safari | NOT TESTED | |
+| I16 | Consent, reset, crash reports | A35–A40 and A44 on the iPhone; the reset link opens in Safari | NOT TESTED | |
 
 ## Sign-off
 

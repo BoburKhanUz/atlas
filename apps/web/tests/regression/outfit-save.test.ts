@@ -12,7 +12,9 @@ const db = vi.hoisted(() => ({
 vi.mock('@/lib/db', () => ({ db }))
 
 import { POST } from '@/app/api/v1/outfits/route'
-import { authHeader, jsonRequest, TEST_USER } from '../helpers'
+import { acceptedLegalTexts, authHeader, jsonRequest, TEST_USER } from '../helpers'
+
+Object.assign(db, { legalConsent: acceptedLegalTexts() })
 
 const weather = {
   temperature: 21,

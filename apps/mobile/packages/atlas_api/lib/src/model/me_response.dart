@@ -14,9 +14,14 @@ part 'me_response.g.dart';
 /// MeResponse
 ///
 /// Properties:
+/// * [consentRequired] - The legal texts changed: the user must accept them (POST /api/v1/legal/consent) before using the app
 /// * [user]
 @BuiltValue()
 abstract class MeResponse implements Built<MeResponse, MeResponseBuilder> {
+  /// The legal texts changed: the user must accept them (POST /api/v1/legal/consent) before using the app
+  @BuiltValueField(wireName: r'consentRequired')
+  bool get consentRequired;
+
   @BuiltValueField(wireName: r'user')
   MeResponseUser get user;
 
@@ -43,6 +48,8 @@ class _$MeResponseSerializer implements PrimitiveSerializer<MeResponse> {
     MeResponse object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    yield r'consentRequired';
+    yield serializers.serialize(object.consentRequired, specifiedType: const FullType(bool));
     yield r'user';
     yield serializers.serialize(object.user, specifiedType: const FullType(MeResponseUser));
   }
@@ -64,6 +71,10 @@ class _$MeResponseSerializer implements PrimitiveSerializer<MeResponse> {
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'consentRequired':
+          final valueDes = serializers.deserialize(value, specifiedType: const FullType(bool)) as bool;
+          result.consentRequired = valueDes;
+          break;
         case r'user':
           final valueDes =
               serializers.deserialize(value, specifiedType: const FullType(MeResponseUser)) as MeResponseUser;

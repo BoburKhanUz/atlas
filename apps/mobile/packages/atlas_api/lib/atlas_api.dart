@@ -43,6 +43,7 @@ export 'package:atlas_api/src/model/error_response.dart';
 export 'package:atlas_api/src/model/error_response_details_inner.dart';
 export 'package:atlas_api/src/model/health_response.dart';
 export 'package:atlas_api/src/model/image_object.dart';
+export 'package:atlas_api/src/model/legal_consent_request.dart';
 export 'package:atlas_api/src/model/legal_document.dart';
 export 'package:atlas_api/src/model/legal_response.dart';
 export 'package:atlas_api/src/model/legal_section.dart';

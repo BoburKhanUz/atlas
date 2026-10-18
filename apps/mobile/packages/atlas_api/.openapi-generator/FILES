@@ -43,6 +43,7 @@ lib/src/model/error_response.dart
 lib/src/model/error_response_details_inner.dart
 lib/src/model/health_response.dart
 lib/src/model/image_object.dart
+lib/src/model/legal_consent_request.dart
 lib/src/model/legal_document.dart
 lib/src/model/legal_response.dart
 lib/src/model/legal_section.dart

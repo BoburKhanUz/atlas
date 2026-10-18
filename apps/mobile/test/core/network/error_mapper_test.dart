@@ -41,6 +41,7 @@ const _contract = <(String, int, ApiErrorKind, bool)>[
   ('ANALYSIS_UNAVAILABLE', 503, ApiErrorKind.server, true),
   ('RESET_TOKEN_INVALID', 400, ApiErrorKind.invalidRequest, false),
   ('PASSWORD_RESET_UNAVAILABLE', 503, ApiErrorKind.server, true),
+  ('CONSENT_REQUIRED', 403, ApiErrorKind.consentRequired, false),
 ];
 
 Response<dynamic> _resp(int status, Object? data, {Map<String, List<String>> headers = const {}}) => Response<dynamic>(
@@ -51,7 +52,7 @@ Response<dynamic> _resp(int status, Object? data, {Map<String, List<String>> hea
 );
 
 void main() {
-  test('the mapper knows exactly the 30 contract codes', () {
+  test('the mapper knows exactly the 31 contract codes', () {
     expect(
       ApiErrorCode.values.where((c) => c != ApiErrorCode.unknown).map((c) => c.wire).toSet(),
       _contract.map((c) => c.$1).toSet(),

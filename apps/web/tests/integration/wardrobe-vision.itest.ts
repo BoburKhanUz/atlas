@@ -23,12 +23,12 @@ import type { VisionProvider, VisionRequest } from '@/lib/ai/providers/types'
 import { getAiUsage } from '@/lib/ai/quota'
 import { setStorageProviderForTesting } from '@/lib/storage/provider'
 import { spawnSync } from 'child_process'
-import { APP_DB, MIGRATION_NAMES, PG, createDb, dropDb, enabled, migrationsDir, prisma, rmDir, rows, sql } from './pg'
+import { APP_DB, createDb, dropDb, enabled, insertUser, MIGRATION_NAMES, migrationsDir, PG, prisma, rmDir, rows, sql } from './pg'
 
 let seq = 0
 async function newUser() {
   const id = `vu_${process.pid}_${++seq}`
-  sql(APP_DB, `INSERT INTO "User" ("id","email","passwordHash","updatedAt") VALUES ('${id}','${id}@test.local','x', now())`)
+  insertUser(APP_DB, id)
   return { id, auth: { authorization: `Bearer ${await signAccessToken({ sub: id, email: `${id}@test.local` })}` } }
 }
 

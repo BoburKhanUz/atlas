@@ -63,6 +63,7 @@ abstract final class UserMessages {
       ApiErrorCode.analysisUnavailable => 'Rang tahlili hozir bajarilmadi. Birozdan so‘ng qayta urinib ko‘ring.',
       ApiErrorCode.resetTokenInvalid => 'Havola yaroqsiz yoki muddati tugagan. Parolni tiklashni qaytadan so‘rang.',
       ApiErrorCode.passwordResetUnavailable => 'Parolni tiklash hozircha ishlamayapti. Keyinroq qayta urinib ko‘ring.',
+      ApiErrorCode.consentRequired => 'Maxfiylik siyosati va Foydalanish shartlari yangilandi. Davom etish uchun ularni ko‘rib chiqing va qabul qiling.',
       ApiErrorCode.unknown => null,
     };
     if (specific != null) return specific;

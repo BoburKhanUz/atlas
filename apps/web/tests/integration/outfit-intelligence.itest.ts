@@ -16,12 +16,12 @@ import { AiProviderError } from '@/lib/ai/providers/errors'
 import { MockProvider } from '@/lib/ai/providers/mock'
 import type { LLMProvider, LLMRequest } from '@/lib/ai/providers/types'
 import { AI_DAILY_LIMITS, consumeAiQuota, getAiUsage } from '@/lib/ai/quota'
-import { APP_DB, enabled, sql } from './pg'
+import { APP_DB, enabled, insertUser, sql } from './pg'
 
 let seq = 0
 async function newUser() {
   const id = `ou_${process.pid}_${++seq}`
-  sql(APP_DB, `INSERT INTO "User" ("id","email","passwordHash","updatedAt") VALUES ('${id}','${id}@test.local','x', now())`)
+  insertUser(APP_DB, id)
   sql(APP_DB, `INSERT INTO "WardrobeItem" ("id","userId","category","subcategory","colors","season","style","formality","sleeveLength","updatedAt") VALUES
     ('${id}_t1','${id}','shirt','oxford_shirt','["white"]','[]','smart_casual','smart_casual','long', now()),
     ('${id}_t2','${id}','shirt','tshirt','["navy"]','["summer"]','casual','casual','short', now()),

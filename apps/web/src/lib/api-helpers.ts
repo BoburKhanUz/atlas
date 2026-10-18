@@ -19,11 +19,20 @@ import { NextRequest } from 'next/server'
 import type { JwtPayload } from '@/lib/auth'
 import { authenticateRequest } from '@/lib/session'
 import { apiError } from '@/server/http'
+import { assertConsent } from '@/server/legal-consent'
 
 export type AuthUser = JwtPayload
 
-export async function requireAuth(req: NextRequest): Promise<AuthUser | null> {
-  return (await authenticateRequest(req)).user
+/**
+ * Also requires the user's consent to the current legal texts (one indexed
+ * query): CONSENT_REQUIRED otherwise. Only the routes that let the user
+ * review and accept the texts or delete the account pass
+ * `allowOutdatedConsent` (OpenAPI: `consentExempt`).
+ */
+export async function requireAuth(req: NextRequest, { allowOutdatedConsent = false } = {}): Promise<AuthUser | null> {
+  const user = (await authenticateRequest(req)).user
+  if (user && !allowOutdatedConsent) await assertConsent(user.sub)
+  return user
 }
 
 // Thin wrappers kept for existing call sites; all errors use the shared

@@ -60,6 +60,7 @@ const DEFAULT_MESSAGES: Record<ErrorCode, string> = {
   ANALYSIS_UNAVAILABLE: 'Rang tahlili hozir bajarilmadi. Birozdan so‘ng qayta urinib ko‘ring.',
   RESET_TOKEN_INVALID: 'Havola yaroqsiz yoki muddati tugagan. Parolni tiklashni qaytadan so‘rang.',
   PASSWORD_RESET_UNAVAILABLE: 'Parolni tiklash hozircha ishlamayapti. Keyinroq qayta urinib ko‘ring.',
+  CONSENT_REQUIRED: 'Maxfiylik siyosati va Foydalanish shartlari yangilandi. Davom etish uchun ularni ko‘rib chiqing va qabul qiling.',
 }
 
 const STATUS: Record<ErrorCode, number> = {
@@ -93,6 +94,7 @@ const STATUS: Record<ErrorCode, number> = {
   ANALYSIS_UNAVAILABLE: 503,
   RESET_TOKEN_INVALID: 400,
   PASSWORD_RESET_UNAVAILABLE: 503,
+  CONSENT_REQUIRED: 403,
 }
 
 /** HTTP status for an error code (used by the OpenAPI document). */

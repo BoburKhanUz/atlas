@@ -15,12 +15,12 @@ import { setLLMProviderForTesting } from '@/lib/ai/providers'
 import { AiProviderError } from '@/lib/ai/providers/errors'
 import type { LLMProvider, LLMRequest } from '@/lib/ai/providers/types'
 import { getAiUsage } from '@/lib/ai/quota'
-import { APP_DB, enabled, sql } from './pg'
+import { APP_DB, enabled, insertUser, sql } from './pg'
 
 let seq = 0
 async function newUser() {
   const id = `su_${process.pid}_${++seq}`
-  sql(APP_DB, `INSERT INTO "User" ("id","email","passwordHash","updatedAt") VALUES ('${id}','${id}@test.local','x', now())`)
+  insertUser(APP_DB, id)
   sql(APP_DB, `INSERT INTO "WardrobeItem" ("id","userId","category","subcategory","colors","season","formality","updatedAt") VALUES
     ('${id}_w1','${id}','shirt','oxford_shirt','["white"]','["spring"]','smart_casual', now()),
     ('${id}_w2','${id}','pants','chinos','["navy"]','["spring"]','smart_casual', now()),

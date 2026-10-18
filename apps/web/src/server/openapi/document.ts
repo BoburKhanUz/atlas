@@ -73,6 +73,7 @@ export function errorCodesFor(op: Operation): ErrorCode[] {
   const codes = new Set<ErrorCode>(op.errors)
   codes.add('INTERNAL')
   if (op.auth === 'required') codes.add('UNAUTHORIZED')
+  if (op.auth === 'required' && !op.consentExempt) codes.add('CONSENT_REQUIRED')
   if (op.jsonBody) {
     codes.add('BAD_REQUEST')
     codes.add('VALIDATION_ERROR')

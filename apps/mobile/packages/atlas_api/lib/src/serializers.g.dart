@@ -37,6 +37,7 @@ Serializers _$serializers =
           ..add(HealthResponseDatabaseEnum.serializer)
           ..add(HealthResponseStatusEnum.serializer)
           ..add(ImageObject.serializer)
+          ..add(LegalConsentRequest.serializer)
           ..add(LegalDocument.serializer)
           ..add(LegalDocumentIdEnum.serializer)
           ..add(LegalResponse.serializer)

@@ -36,7 +36,9 @@ import { generateOutfits } from '@/lib/ai/recommendation'
 import { runStylistTurn } from '@/lib/ai/stylist-service'
 import { setLLMProviderForTesting } from '@/lib/ai/providers'
 import { MockProvider } from '@/lib/ai/providers/mock'
-import { authHeader, jsonRequest } from '../helpers'
+import { acceptedLegalTexts, authHeader, jsonRequest } from '../helpers'
+
+Object.assign(db, { legalConsent: acceptedLegalTexts() })
 
 const ID = { params: Promise.resolve({ id: 'item_1' }) }
 
