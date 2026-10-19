@@ -46,7 +46,7 @@ export const SUBCATEGORIES: Record<string, CatalogEntry[]> = {
     { id: 'shorts', label: 'Shorts' },
   ],
   dress: [
-    { id: 'casual_dress', label: 'Kasual ko‘ylak' },
+    { id: 'casual_dress', label: 'Kundalik ko‘ylak' },
     { id: 'evening_dress', label: 'Kechki ko‘ylak' },
     { id: 'midi_dress', label: 'Midi ko‘ylak' },
   ],
@@ -130,7 +130,7 @@ export const MATERIALS: CatalogEntry[] = [
 
 // ─── Styles ─────────────────────────────────────────────────────────────────
 export const STYLES: CatalogEntry[] = [
-  { id: 'casual', label: 'Kasual' },
+  { id: 'casual', label: 'Kundalik' },
   { id: 'smart_casual', label: 'Smart-casual' },
   { id: 'formal', label: 'Formal' },
   { id: 'sporty', label: 'Sport' },
@@ -167,7 +167,7 @@ export const SEASONS: CatalogEntry[] = [
 
 // ─── Formality ──────────────────────────────────────────────────────────────
 export const FORMALITIES: CatalogEntry[] = [
-  { id: 'casual', label: 'Kasual' },
+  { id: 'casual', label: 'Kundalik' },
   { id: 'smart_casual', label: 'Smart-casual' },
   { id: 'formal', label: 'Formal' },
   { id: 'black_tie', label: 'Black tie' },
@@ -186,7 +186,7 @@ export const OCCASIONS: CatalogEntry[] = [
   { id: 'wedding', label: 'To‘y' },
   { id: 'date', label: 'Uchrashuv' },
   { id: 'travel', label: 'Sayohat' },
-  { id: 'casual', label: 'Casual' },
+  { id: 'casual', label: 'Kundalik' },
   { id: 'other', label: 'Boshqa' },
 ]
 

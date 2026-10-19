@@ -46,12 +46,13 @@ export function subcategoriesOf(category: string): string[] {
 }
 
 /**
- * Other labels accepted as an `event` for an occasion: legacy and client
- * labels (Flutter shows "Kundalik"). Input matching only; the catalog labels
- * shown to users do not change.
+ * Other labels accepted as an `event` for an occasion: earlier labels, which a
+ * client still running an older build may send ("Casual" was the web label
+ * before "Kundalik"). Input matching only. Keep them for at least one full web
+ * and app release cycle.
  */
 export const OCCASION_ALIASES: Readonly<Partial<Record<Occasion, readonly string[]>>> = {
-  casual: ['Kasual', 'Kundalik'],
+  casual: ['Casual', 'Kasual'],
   wedding: ["To'y"],
 }
 

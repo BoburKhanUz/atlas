@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart' show LicenseEntryWithLineBreaks, LicenseRegistry;
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -14,6 +16,9 @@ import 'core/network/providers.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  LicenseRegistry.addLicense(() async* {
+    yield LicenseEntryWithLineBreaks(const ['Manrope'], await rootBundle.loadString('assets/fonts/Manrope-OFL.txt'));
+  });
   // Fails fast on a missing or invalid configuration (see config/README.md).
   final config = AtlasEnvironmentConfig.fromEnvironment();
   AppLog.policy = config.logPolicy;

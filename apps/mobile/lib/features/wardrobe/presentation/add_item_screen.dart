@@ -129,15 +129,27 @@ class _Upload extends ConsumerWidget {
         Expanded(
           child: ClipRRect(
             borderRadius: AtlasRadii.card,
-            child: Image.memory(
-              job.image.bytes,
-              key: const Key('add.preview'),
-              fit: BoxFit.contain,
-              gaplessPlayback: true,
-              semanticLabel: 'Tanlangan rasm',
+            child: ColoredBox(
+              color: AtlasColors.sand,
+              child: Image.memory(
+                job.image.bytes,
+                key: const Key('add.preview'),
+                fit: BoxFit.contain,
+                gaplessPlayback: true,
+                semanticLabel: state.usesCutout ? 'Tanlangan rasm, foni olib tashlangan' : 'Tanlangan rasm',
+              ),
             ),
           ),
         ),
+        if (state.phase == AddPhase.preview && state.cutout != null)
+          SwitchListTile(
+            key: const Key('add.cutout'),
+            contentPadding: EdgeInsets.zero,
+            value: state.usesCutout,
+            onChanged: c.chooseCutout,
+            title: const Text('Fonni olib tashlash'),
+            subtitle: const Text('Telefonning o‘zida bajariladi: rasm faqat yuklaganingizda yuboriladi.'),
+          ),
         const SizedBox(height: AtlasSpacing.md),
         switch (state.phase) {
           AddPhase.uploading => _Progress(

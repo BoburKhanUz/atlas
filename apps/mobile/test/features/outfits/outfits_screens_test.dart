@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:atlas_mobile/app/app.dart';
 import 'package:atlas_mobile/app/router.dart';
 import 'package:atlas_mobile/core/widgets/signed_image.dart';
+import 'package:atlas_mobile/features/home/presentation/home_screen.dart' show greetingFor, uzbekDate;
 import 'package:atlas_mobile/features/outfits/presentation/outfit_detail_screen.dart';
 import 'package:atlas_mobile/features/outfits/providers.dart';
 import 'package:atlas_mobile/features/weather/data/device_locator.dart';
@@ -17,7 +18,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../support/fake_http.dart';
 import '../../support/fake_session.dart';
 import '../../support/jpeg_fixtures.dart';
-import '../wardrobe/wardrobe_fixtures.dart' show itemJson, sigFor;
+import '../wardrobe/wardrobe_fixtures.dart' show itemJson, pageJson, sigFor;
 import 'outfit_fixtures.dart';
 
 class OutfitsApp {
@@ -100,6 +101,40 @@ class OutfitsApp {
 }
 
 void main() {
+  test('Home greeting and date', () {
+    expect([4, 5, 11, 12, 17, 18, 22, 23].map(greetingFor), [
+      'Xayrli tun',
+      'Xayrli tong',
+      'Xayrli tong',
+      'Xayrli kun',
+      'Xayrli kun',
+      'Xayrli kech',
+      'Xayrli kech',
+      'Xayrli tun',
+    ]);
+    expect(uzbekDate(DateTime(2026, 10, 19)), 'Dushanba, 19-oktabr');
+    expect(uzbekDate(DateTime(2026, 1, 4)), 'Yakshanba, 4-yanvar');
+  });
+
+  testWidgets('Home: wardrobe count; an occasion opens suggestions for it and asks for outfits once', (tester) async {
+    final app = OutfitsApp(tester);
+    app.h.locator.current = LocationAccess.granted;
+    app.h.backend.script(P.wardrobe, [
+      JsonReply(200, pageJson(['a', 'b'])),
+    ]);
+    await app.start();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('home.wardrobe')),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('2 ta kiyim'), findsOneWidget);
+    await app.tap(find.byKey(const Key('home.occasion.work')));
+    expect(app.router.routerDelegate.currentConfiguration.uri.path, AtlasRoutes.outfits);
+    expect(app.h.backend.calls(P.generate), 1);
+    expect((jsonDecode(app.h.backend.to(P.generate).single.bodyText) as Map<String, Object?>)['occasion'], 'work');
+  });
+
   testWidgets('Home: no prompt on open; "Ob-havoni ko‘rish" asks once and shows the weather', (tester) async {
     final app = OutfitsApp(tester);
     await app.start();
@@ -265,6 +300,12 @@ void main() {
           ? TransportFailure(DioExceptionType.connectionError)
           : JsonReply(200, listJson([summaryJson('o1', name: 'Juma ofis')]));
       await app.start();
+      // Home leads with today's card; the weather is below it.
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('weather.card')),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.byKey(const Key('weather.temp')), findsOneWidget, reason: 'granted earlier: loaded on open');
       expect(tester.takeException(), isNull);
       app.router.go(AtlasRoutes.outfits);

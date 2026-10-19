@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../design/tokens.dart';
+import '../design/typography.dart';
 
 /// Surface card with a hairline border; tappable when [onTap] is set.
 class AtlasCard extends StatelessWidget {
@@ -36,10 +37,7 @@ class SectionHeader extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Semantics(
-              header: true,
-              child: Text(title.toUpperCase(), style: Theme.of(context).textTheme.labelSmall),
-            ),
+            child: Semantics(header: true, child: Text(title.toUpperCase(), style: AtlasType.overline)),
           ),
           ?action,
         ],

@@ -131,11 +131,11 @@ export function WardrobeItemDetail({ id }: { id: string }) {
     if (!item) return true
     try {
       await api(`/api/v1/wardrobe/items/${item.id}`, { method: 'DELETE' })
-      toast({ title: "O'chirildi" })
+      toast({ title: "O‘chirildi" })
       goBack()
       return true
     } catch (err) {
-      const msg = err instanceof ApiError ? err.message : "O'chirib bo'lmadi"
+      const msg = err instanceof ApiError ? err.message : "O‘chirib bo‘lmadi"
       toast({ title: 'Xato', description: msg, variant: 'destructive' })
       return false
     }
@@ -188,7 +188,7 @@ export function WardrobeItemDetail({ id }: { id: string }) {
         <button
           onClick={() => setConfirmDeleteOpen(true)}
           className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-destructive/10 text-destructive transition-colors"
-          aria-label="O'chirish"
+          aria-label="O‘chirish"
         >
           <Trash2 className="w-4 h-4" />
         </button>
@@ -307,9 +307,9 @@ export function WardrobeItemDetail({ id }: { id: string }) {
       <ConfirmDialog
         open={confirmDeleteOpen}
         onOpenChange={setConfirmDeleteOpen}
-        title="Kiyimni o'chirish"
-        description="Bu kiyimni o'chirib tashlaysizmi? Bu amalni qaytarib bo'lmaydi."
-        confirmLabel="O'chirish"
+        title="Kiyimni o‘chirish"
+        description="Bu kiyimni o‘chirib tashlaysizmi? Bu amalni qaytarib bo‘lmaydi."
+        confirmLabel="O‘chirish"
         onConfirm={handleDelete}
       />
     </div>
@@ -329,7 +329,7 @@ function DetailRow({
     confidence >= 0.7
       ? { text: 'Yuqori', cls: 'text-success' }
       : confidence >= 0.4
-        ? { text: "O'rta", cls: 'text-muted-foreground' }
+        ? { text: "O‘rta", cls: 'text-muted-foreground' }
         : { text: 'Past', cls: 'text-amber-600' }
   return (
     <div className="flex items-baseline justify-between gap-3">

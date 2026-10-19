@@ -531,7 +531,7 @@ function ResultPhase({
               <DetectedColorTile label="Soch" colorId={profile.hairColor} />
             )}
             {profile.eyeColor && (
-              <DetectedColorTile label="Ko'z" colorId={profile.eyeColor} />
+              <DetectedColorTile label="Ko‘z" colorId={profile.eyeColor} />
             )}
           </div>
         </motion.div>

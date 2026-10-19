@@ -229,7 +229,7 @@ export type Occasion = 'work' | 'wedding' | 'date' | 'travel' | 'casual' | 'othe
 
 /**
  * Score how well the outfit's color palette suits a given occasion.
- * Spec section 16: Ish / To'y / Uchrashuv / Sayohat / Casual / Boshqa.
+ * Spec section 16: Ish / To‘y / Uchrashuv / Sayohat / Kundalik / Boshqa.
  */
 export function scoreColorForOccasion(
   colorSets: string[][],

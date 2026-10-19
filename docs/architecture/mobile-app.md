@@ -303,6 +303,9 @@ Three distinct situations:
   - Keys map to attributes; the backend's `color` key maps to `colors`. Unknown keys are ignored.
   - An attribute needs review when it is Low, not in `correctionLog`, and not acknowledged in this session.
   - The result is *completed* when nothing needs review, *needsCorrection* otherwise.
+  - Display: only what asks for attention is tagged. Medium and Low show their tag, High shows none, a corrected attribute shows "Siz tuzatgansiz". In the wardrobe grid an item that needs review carries a "Tekshiring" badge on its photo.
+- **Background removal (Android, on the phone):** after the photo is prepared, `BackgroundRemover` asks the native side (ML Kit subject segmentation, `SubjectCutout.kt`, 20 s limit) for the garment on a plain light background, cropped to it with a margin. The result goes through `ImagePreparer` again (same limits, no metadata). The preview offers "Fonni olib tashlash" (on when a cut-out exists); each version is its own upload with its own Idempotency-Key. No model yet, no garment found (under 2 % of the photo), a timeout or any error keeps the original photo without a switch. iOS and other platforms upload the original.
+- **Item names:** the grid and the detail screen name an item by its main colour and type ("Oq futbolka", "To‘q ko‘k shim"; `WardrobeLabels.itemName`), with colour swatches; the type alone when the colour is unknown.
 - **"This is correct":** client-session only, kept in screen or controller state. It sends no request, makes no `correctionLog` entry and leaves `wasCorrected` unchanged; the item asks again on the next visit.
 - **Editor (`EditItemController`, `ItemDraft`):**
   - Only contract values can be chosen. Subcategories are grouped by category exactly as the backend's `SUBCATEGORIES` (`apps/web/src/lib/ai/catalog.ts`), which a test parses and compares.
@@ -378,11 +381,11 @@ Three distinct situations:
     - the history from the server;
     - plain, selectable text and a typing indicator;
     - a reversed list, so new messages come into view on their own;
-    - a keyboard-safe composer with a 1–2000 character counter (trimmed, counted like the server);
+    - a keyboard-safe composer with a 1–2000 character limit (trimmed, counted like the server; the counter shows from 1800);
     - optional occasion chips, sent as `event`;
     - the context line from `contextSummary`;
     - a one-line notice that the stylist may remember preferences mentioned in the chat (the backend extracts "memories").
-  - Home has a "Stilistdan so‘rash" entry point.
+  - Home has a "Stilistdan so‘rang" card. A new chat offers four starter questions; a tap only fills the composer, nothing is sent until Send. The character counter appears only near the 2000 limit.
 - **Context:** weather is attached only when the 3.7 weather is **fresh**; stale weather is never sent. Wardrobe and profile context are added by the server.
 - **Sending (`ChatController`):**
   - One `POST /stylist/chat` per explicit send, never retried automatically (the endpoint has no Idempotency-Key). A double tap sends one request.
@@ -521,7 +524,7 @@ flutter build apk --release --dart-define=ATLAS_ENV=production --dart-define=ATL
 | accent | `#0F766E` |
 | success | `#22C55E` |
 
-  Plus derived hairline, soft-accent, warning and error tones; a 4-pt spacing scale; restrained radii (8/12/16/24); and motion durations (150/250/400 ms).
+  Plus derived hairline, soft-accent, warning and error tones; brand tones for hero surfaces (`ink` `#0B3B37`, the `ink → accent` hero gradient, `onInkMuted` for secondary text on it, and a warm `sand` `#F1ECE4` behind clothing photos); a soft card shadow; a 4-pt spacing scale; restrained radii (8/12/16/24, cards 20); and motion durations (150/250/400 ms).
 - **Contrast is tested in code:**
 
 | Combination | Contrast | Rule |
@@ -529,8 +532,13 @@ flutter build apk --release --dart-define=ATLAS_ENV=production --dart-define=ATL
 | primary text on background | ≥ 7:1 | |
 | secondary text on surface and background | ≥ 4.5:1 | |
 | white on accent | ≥ 4.5:1 | |
+| white on ink | ≥ 7:1 | |
+| `onInkMuted` on ink | ≥ 4.5:1 | |
+| primary text on sand | ≥ 7:1 | |
 | text on success green | low (≈ 2:1) | never used; success is used only for icons and indicators |
 
-- **Typography:** the platform system font (SF Pro / Roboto) with a tight, strong scale (display 32/700 down to caption 12/500).
+- **Typography:** Manrope, bundled in `assets/fonts` (SIL Open Font License, registered with the licence page at start-up). Every style names the family, so the app looks the same on every phone. Scale: display 30/800, headline 24/800, title 18/700, body 16/500, caption 12/600; `labelSmall` is a readable small style, and the spaced uppercase overline (`AtlasType.overline`) is used only for short section labels.
+- **Brand:** `AtlasLogo` (a hanger mark and the ATLAS wordmark) on the splash and the sign-in hero. Sign-in, registration, password reset and the re-consent screen share one layout: a brand hero and the form on a raised card; password fields have a show/hide button; the consent checkbox carries the two documents as inline links.
+- **Home:** a time-of-day greeting with the user's first name and the date; the "today's outfit" hero card (weather advice, opens suggestions); the weather card; occasion tiles that open suggestions for that occasion and generate once; the wardrobe card (item count and main categories, add item); and the stylist card.
 - **Shared widgets:** primary, secondary and ghost buttons with a loading state; cards with a hairline border; skeleton loaders that respect reduced motion; and empty, error and offline states.
 - **Navigation:** a Material 3 `NavigationBar` sized for one-handed use.

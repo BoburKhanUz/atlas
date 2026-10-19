@@ -13,11 +13,11 @@
     "home": "Bosh sahifa",
     "wardrobe": "Garderob",
     "stylist": "AI Stilist",
-    "outfits": "Outfitlar",
+    "outfits": "Obrazlar",
     "profile": "Profil"
   },
   "auth": {
-    "tagline": "Shaxsiy garderobingizdagi kiyimlardan avtomatik outfit tavsiya qiluvchi aqlli stilist. Faqat sizniki — xarid yo‘q.",
+    "tagline": "Shaxsiy garderobingizdagi kiyimlardan avtomatik obraz tavsiya qiluvchi aqlli stilist. Faqat sizniki — xarid yo‘q.",
     "modeLabel": "Kirish yoki ro'yxatdan o'tish",
     "login": "Kirish",
     "register": "Ro'yxatdan o'tish",
@@ -89,7 +89,7 @@
     "signOut": "Chiqish",
     "decline": "Rozi emasman — hisobni o‘chirish",
     "deleteTitle": "Hisobni o‘chirish",
-    "deleteDescription": "Hisobingiz va barcha ma’lumotlaringiz (garderob, outfitlar, suhbatlar, rang tahlili) butunlay o‘chiriladi. Bu amalni qaytarib bo‘lmaydi.",
+    "deleteDescription": "Hisobingiz va barcha ma’lumotlaringiz (garderob, obrazlar, suhbatlar, rang tahlili) butunlay o‘chiriladi. Bu amalni qaytarib bo‘lmaydi.",
     "deleted": "Hisob o‘chirildi",
     "deleteFailed": "Hisobni o‘chirib bo‘lmadi"
   }

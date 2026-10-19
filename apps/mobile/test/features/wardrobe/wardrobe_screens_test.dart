@@ -1,11 +1,16 @@
+import 'dart:typed_data';
+
+import 'package:atlas_mobile/features/wardrobe/data/background_remover.dart';
 import 'package:atlas_mobile/features/wardrobe/presentation/add_item_screen.dart';
 import 'package:atlas_mobile/features/wardrobe/presentation/item_detail_screen.dart';
+import 'package:atlas_mobile/features/wardrobe/providers.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../support/fake_http.dart';
 import '../../support/fake_session.dart';
+import '../../support/jpeg_fixtures.dart';
 import 'app_harness.dart';
 import 'wardrobe_fixtures.dart';
 
@@ -70,6 +75,31 @@ void main() {
     expect(find.byWidgetPredicate((w) => w is ItemDetailScreen && w.id == 'new-1'), findsOneWidget);
   });
 
+  testWidgets('add: background removed on the phone; the switch brings back the original', (tester) async {
+    final app = App(tester);
+    await app.start(
+      overrides: [backgroundRemoverProvider.overrideWithValue(_Remover(fixtureBytes('plain_landscape.jpg')))],
+    );
+    await app.tap(find.byKey(const Key('wardrobe.add')));
+    await app.tap(find.byKey(const Key('add.gallery')));
+    final toggle = find.byKey(const Key('add.cutout'));
+    expect(toggle, findsOneWidget);
+    expect(tester.widget<SwitchListTile>(toggle).value, isTrue);
+    expect(find.bySemanticsLabel('Tanlangan rasm, foni olib tashlangan'), findsOneWidget);
+    await app.tap(toggle);
+    expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
+    expect(find.bySemanticsLabel('Tanlangan rasm'), findsOneWidget);
+  });
+
+  testWidgets('add: without background removal there is no switch', (tester) async {
+    final app = App(tester);
+    await app.start(overrides: [backgroundRemoverProvider.overrideWithValue(_Remover(null))]);
+    await app.tap(find.byKey(const Key('wardrobe.add')));
+    await app.tap(find.byKey(const Key('add.gallery')));
+    expect(find.byKey(const Key('add.preview')), findsOneWidget);
+    expect(find.byKey(const Key('add.cutout')), findsNothing);
+  });
+
   testWidgets('add: network failure shows Retry; Retry succeeds with the same key', (tester) async {
     final app = App(tester);
     var posts = 0;
@@ -131,4 +161,12 @@ void main() {
       expect(find.byKey(const Key('add.completed')), findsOneWidget);
     });
   }
+}
+
+class _Remover implements BackgroundRemover {
+  _Remover(this.result);
+  final Uint8List? result;
+
+  @override
+  Future<Uint8List?> cutout(Uint8List photo) async => result;
 }

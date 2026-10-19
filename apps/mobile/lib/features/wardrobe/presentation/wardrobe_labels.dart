@@ -1,3 +1,5 @@
+import 'package:material_ui/material_ui.dart' show Color;
+
 import '../../onboarding/data/options.dart';
 
 /// Uzbek labels for the wardrobe values of the contract. Values the app does
@@ -101,6 +103,29 @@ abstract final class WardrobeLabels {
   static String gender(String v) => _genders[v] ?? v;
   static String style(String v) => StyleOption.values.where((o) => o.wire == v).firstOrNull?.label ?? v;
   static String color(String v) => ColorOption.values.where((o) => o.wire == v).firstOrNull?.label ?? v;
+
+  /// The swatch of a known colour (null for values the app does not know).
+  static Color? swatch(String v) => ColorOption.values.where((o) => o.wire == v).firstOrNull?.swatch;
+
+  static const _singular = {
+    'outerwear': 'Ustki kiyim',
+    'shirt': 'Ko‘ylak',
+    'pants': 'Shim',
+    'dress': 'Ko‘ylak',
+    'shoes': 'Poyabzal',
+    'bag': 'Sumka',
+    'accessory': 'Aksessuar',
+  };
+
+  /// A name for one item: its main colour and type ("Oq futbolka",
+  /// "To‘q ko‘k shim"); the type alone when the colour is unknown.
+  static String itemName({required String category, String? subcategory, Iterable<String> colors = const []}) {
+    final type = subcategory != null ? WardrobeLabels.subcategory(subcategory) : _singular[category] ?? category;
+    final main = colors.firstOrNull;
+    final known = main == null ? null : ColorOption.values.where((o) => o.wire == main).firstOrNull;
+    if (known == null) return type;
+    return '${known.label} ${type.toLowerCase()}';
+  }
 
   /// Field names of `correctionLog` entries.
   static String field(String v) =>

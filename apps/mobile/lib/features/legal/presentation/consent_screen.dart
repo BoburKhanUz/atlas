@@ -8,7 +8,6 @@ import '../../../core/network/api_failure.dart';
 import '../../../core/session/providers.dart';
 import '../../../core/widgets/atlas_button.dart';
 import '../../auth/presentation/auth_form_scaffold.dart';
-import '../data/legal_repository.dart' show LegalDocumentKind;
 import '../providers.dart';
 import 'consent_checkbox_field.dart';
 
@@ -63,23 +62,13 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
     // Loaded with the screen, so the links open at once and accepting has the version.
     ref.watch(legalDocumentsProvider);
     return AuthFormScaffold(
+      compactHero: true,
       title: 'Hujjatlar yangilandi',
       subtitle:
           'Maxfiylik siyosati va Foydalanish shartlari o‘zgardi. '
           'Ilovadan foydalanishni davom ettirish uchun ularni o‘qib chiqing va qabul qiling.',
       children: [
         if (_error != null) AuthNotice(key: const Key('consent.error'), message: _error!),
-        Wrap(
-          spacing: AtlasSpacing.xs,
-          children: [
-            for (final kind in LegalDocumentKind.values)
-              TextButton(
-                key: Key('consent.${kind.name}'),
-                onPressed: () => context.push(AtlasRoutes.legal(kind)),
-                child: Text(kind.label),
-              ),
-          ],
-        ),
         Form(
           key: _form,
           child: Column(
@@ -96,6 +85,10 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
                 child: ConsentCheckboxField(
                   key: _consent,
                   label: 'Foydalanish shartlari va Maxfiylik siyosatiga roziman',
+                  title: LegalConsentLabel(
+                    keyPrefix: 'consent',
+                    onOpen: (kind) => context.push(AtlasRoutes.legal(kind)),
+                  ),
                   requiredMessage: 'Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.',
                   enabled: !_busy,
                 ),

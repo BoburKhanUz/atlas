@@ -119,3 +119,10 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // On-device subject segmentation (SubjectCutout.kt): the photo never
+    // leaves the phone. Google Play services downloads the model at install
+    // time (AndroidManifest meta-data); until then the original photo is used.
+    implementation("com.google.android.gms:play-services-mlkit-subject-segmentation:16.0.0-beta1")
+}

@@ -82,7 +82,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         s.failure is NoNetworkFailure
             ? OfflineStateView(onRetry: c.retryLoad)
             : ErrorStateView(message: s.failure?.userMessage ?? 'Yuklab bo‘lmadi.', onRetry: c.retryLoad),
-      ChatStatus.ready => _Messages(state: s),
+      ChatStatus.ready => _Messages(
+        state: s,
+        onSuggest: (q) => _draft.value = TextEditingValue(
+          text: q,
+          selection: TextSelection.collapsed(offset: q.length),
+        ),
+      ),
     };
 
     return Scaffold(
@@ -158,8 +164,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 }
 
 class _Messages extends StatelessWidget {
-  const _Messages({required this.state});
+  const _Messages({required this.state, required this.onSuggest});
   final ChatState state;
+
+  /// Puts a suggested question into the composer (sent only by the user).
+  final ValueChanged<String> onSuggest;
+
+  static const suggestions = [
+    'Bugun ishga nima kiyay?',
+    'Qora shimga qaysi rang mos keladi?',
+    'To‘yga garderobimdan obraz tuzib ber',
+    'Qaysi kiyimlarim yetishmayapti?',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -174,10 +190,49 @@ class _Messages extends StatelessWidget {
       if (s.send == SendStatus.sending) const _Typing(),
     ];
     if (items.isEmpty) {
-      return const EmptyStateView(
-        icon: Icons.auto_awesome_outlined,
-        title: 'Nima haqida gaplashamiz?',
-        message: 'Garderobingiz, ob-havo yoki tadbir haqida so‘rang. Stilist javobni kiyimlaringizga qarab beradi.',
+      final text = Theme.of(context).textTheme;
+      return ListView(
+        key: const Key('chat.empty'),
+        padding: const EdgeInsets.fromLTRB(AtlasSpacing.screen, AtlasSpacing.xl, AtlasSpacing.screen, AtlasSpacing.md),
+        children: [
+          Center(
+            child: Container(
+              width: 72,
+              height: 72,
+              decoration: const BoxDecoration(gradient: AtlasColors.heroGradient, shape: BoxShape.circle),
+              child: const Icon(Icons.auto_awesome_rounded, color: AtlasColors.onAccent, size: 32),
+            ),
+          ),
+          const SizedBox(height: AtlasSpacing.md),
+          Text('Nima haqida gaplashamiz?', textAlign: TextAlign.center, style: text.headlineSmall),
+          const SizedBox(height: AtlasSpacing.xs),
+          Text(
+            'Garderobingiz, ob-havo yoki tadbir haqida so‘rang. Stilist javobni kiyimlaringizga qarab beradi.',
+            textAlign: TextAlign.center,
+            style: text.bodyMedium,
+          ),
+          const SizedBox(height: AtlasSpacing.lg),
+          for (final (i, q) in suggestions.indexed)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AtlasSpacing.xs),
+              child: OutlinedButton(
+                key: Key('chat.suggestion.$i'),
+                style: OutlinedButton.styleFrom(
+                  alignment: Alignment.centerLeft,
+                  backgroundColor: AtlasColors.surface,
+                  padding: const EdgeInsets.symmetric(horizontal: AtlasSpacing.md, vertical: AtlasSpacing.sm),
+                  textStyle: text.bodyLarge,
+                ),
+                onPressed: () => onSuggest(q),
+                child: Row(
+                  children: [
+                    Expanded(child: Text(q)),
+                    const Icon(Icons.north_west_rounded, size: 18, color: AtlasColors.textSecondary),
+                  ],
+                ),
+              ),
+            ),
+        ],
       );
     }
     // Reversed: the newest message sits at the bottom and new ones scroll
@@ -209,11 +264,16 @@ class _Bubble extends StatelessWidget {
         child: MergeSemantics(
           child: Container(
             margin: const EdgeInsets.only(bottom: AtlasSpacing.xs),
-            padding: const EdgeInsets.symmetric(horizontal: AtlasSpacing.sm, vertical: AtlasSpacing.xs),
+            padding: const EdgeInsets.symmetric(horizontal: AtlasSpacing.md, vertical: AtlasSpacing.sm),
             constraints: const BoxConstraints(minHeight: 48),
             decoration: BoxDecoration(
               color: mine ? AtlasColors.accent.withValues(alpha: pending ? 0.55 : 1) : AtlasColors.surface,
-              borderRadius: AtlasRadii.field,
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(18),
+                topRight: const Radius.circular(18),
+                bottomLeft: Radius.circular(mine ? 18 : 4),
+                bottomRight: Radius.circular(mine ? 4 : 18),
+              ),
               border: mine ? null : Border.all(color: AtlasColors.hairline),
             ),
             child: Align(
@@ -374,7 +434,10 @@ class _Composer extends ConsumerWidget {
                       textInputAction: TextInputAction.newline,
                       decoration: InputDecoration(
                         hintText: 'Stilistga yozing…',
-                        counterText: '$length / ${StylistLimits.maxMessage}',
+                        // Shown only near the limit.
+                        counterText: length >= StylistLimits.maxMessage - 200
+                            ? '$length / ${StylistLimits.maxMessage}'
+                            : '',
                         counterStyle: length > StylistLimits.maxMessage
                             ? text.labelSmall?.copyWith(color: AtlasColors.error)
                             : text.labelSmall,

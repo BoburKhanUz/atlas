@@ -168,7 +168,11 @@ void main() {
     await app.go(AtlasRoutes.wardrobe);
     expect(find.byType(SignedImage), findsWidgets);
     expect(images, findsNothing, reason: 'grid thumbnails sit inside the labelled card');
-    expect(find.bySemanticsLabel(RegExp('Futbolka')), findsWidgets, reason: 'the card itself stays labelled');
+    expect(
+      find.bySemanticsLabel(RegExp('futbolka', caseSensitive: false)),
+      findsWidgets,
+      reason: 'the card itself stays labelled',
+    );
 
     await app.go(AtlasRoutes.outfits);
     await app.tap(find.byKey(const Key('outfits.generate')));

@@ -119,6 +119,17 @@ void main() {
     expect((jsonDecode(app.h.backend.to(P.chat).single.bodyText) as Map)['event'], 'work');
   });
 
+  testWidgets('new chat: a suggestion fills the composer; nothing is sent before Send', (tester) async {
+    final app = StylistApp(tester);
+    await app.start();
+    await app.openNewChat();
+    expect(find.byKey(const Key('chat.empty')), findsOneWidget);
+    await app.tap(find.byKey(const Key('chat.suggestion.0')));
+    expect(app.draft(), 'Bugun ishga nima kiyay?');
+    expect(find.text('23 / 2000'), findsNothing, reason: 'the counter appears only near the limit');
+    expect(app.h.backend.calls(P.chat), 0);
+  });
+
   testWidgets('chat: counter; over 2000 characters → Send disabled, nothing sent', (tester) async {
     final app = StylistApp(tester);
     await app.start();

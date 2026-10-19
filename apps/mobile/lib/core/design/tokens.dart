@@ -38,6 +38,30 @@ abstract final class AtlasColors {
 
   /// Text placed on the accent colour.
   static const onAccent = Color(0xFFFFFFFF);
+
+  /// Warm backdrop behind clothing photos and the brand hero.
+  static const sand = Color(0xFFF1ECE4);
+
+  /// Deep brand tone for hero cards (white text on it, see tokens_test).
+  static const ink = Color(0xFF0B3B37);
+
+  /// Muted text on [ink].
+  static const onInkMuted = Color(0xFFB9D6D2);
+
+  /// Hero cards: from [ink] to [accent].
+  static const heroGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [ink, accent],
+  );
+}
+
+/// Soft shadows for raised surfaces (cards that hold the main action).
+abstract final class AtlasShadows {
+  static const card = [
+    BoxShadow(color: Color(0x0F1C1917), blurRadius: 24, offset: Offset(0, 8)),
+    BoxShadow(color: Color(0x0A1C1917), blurRadius: 4, offset: Offset(0, 1)),
+  ];
 }
 
 /// 4-pt spacing scale.
@@ -62,7 +86,7 @@ abstract final class AtlasRadii {
   static const double xl = 24;
   static const double pill = 999;
 
-  static const card = BorderRadius.all(Radius.circular(lg));
+  static const card = BorderRadius.all(Radius.circular(20));
   static const control = BorderRadius.all(Radius.circular(14));
   static const field = BorderRadius.all(Radius.circular(md));
   static const sheet = BorderRadius.vertical(top: Radius.circular(xl));

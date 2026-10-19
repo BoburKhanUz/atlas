@@ -16,6 +16,7 @@ class AtlasPage extends StatefulWidget {
     this.body,
     this.onRefresh,
     this.floatingActionButton,
+    this.header,
   }) : assert((slivers == null) != (body == null), 'Provide either slivers or body');
 
   final String title;
@@ -27,6 +28,10 @@ class AtlasPage extends StatefulWidget {
   /// Pull-to-refresh.
   final Future<void> Function()? onRefresh;
   final Widget? floatingActionButton;
+
+  /// Replaces the large title (Home's greeting); [title] stays the name of
+  /// the page for screen readers.
+  final Widget? header;
 
   @override
   State<AtlasPage> createState() => _AtlasPageState();
@@ -74,28 +79,36 @@ class _AtlasPageState extends State<AtlasPage> {
     final scrollView = CustomScrollView(
       controller: _scroll,
       slivers: [
-        SliverAppBar.large(
-          title: Text(title),
-          actions: [
-            ...actions,
-            const SizedBox(width: AtlasSpacing.xs),
-          ],
-          expandedHeight: subtitle == null ? 120 : 140,
-          flexibleSpace: subtitle == null
-              ? null
-              : FlexibleSpaceBar(
-                  titlePadding: const EdgeInsetsDirectional.only(start: AtlasSpacing.screen, bottom: AtlasSpacing.sm),
-                  expandedTitleScale: 1,
-                  title: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title, style: text.headlineMedium),
-                      Text(subtitle, style: text.bodyMedium),
-                    ],
+        if (widget.header case final header?) ...[
+          // Keeps the status bar readable over scrolled content.
+          const SliverAppBar(pinned: true, toolbarHeight: 0),
+          SliverToBoxAdapter(
+            child: Semantics(header: true, label: title, child: header),
+          ),
+        ] else
+          SliverAppBar.large(
+            title: Text(title),
+            actions: [
+              ...actions,
+              const SizedBox(width: AtlasSpacing.xs),
+            ],
+            toolbarHeight: 48,
+            expandedHeight: subtitle == null ? 104 : 124,
+            flexibleSpace: subtitle == null
+                ? null
+                : FlexibleSpaceBar(
+                    titlePadding: const EdgeInsetsDirectional.only(start: AtlasSpacing.screen, bottom: AtlasSpacing.sm),
+                    expandedTitleScale: 1,
+                    title: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title, style: text.headlineMedium),
+                        Text(subtitle, style: text.bodyMedium),
+                      ],
+                    ),
                   ),
-                ),
-        ),
+          ),
         ...?slivers,
         // The body fills the rest of the viewport and handles its own
         // scrolling (state views are scrollable for pull-to-refresh).

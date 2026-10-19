@@ -9,7 +9,7 @@ import '../../../core/network/api_failure.dart';
 import '../../../core/session/auth_state.dart';
 import '../../../core/session/providers.dart';
 import '../../../core/widgets/atlas_button.dart';
-import '../../legal/data/legal_repository.dart' show LegalBundle, LegalDocumentKind;
+import '../../legal/data/legal_repository.dart' show LegalBundle;
 import '../../legal/presentation/consent_checkbox_field.dart';
 import '../../legal/providers.dart';
 import 'auth_form_scaffold.dart';
@@ -84,8 +84,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     // Loaded with the screen, so the links open at once and submit has the version.
     ref.watch(legalDocumentsProvider);
     return AuthFormScaffold(
+      compactHero: true,
       title: 'Hisob yaratish',
-      subtitle: 'Shaxsiy stilistingiz bir daqiqada tayyor.',
+      subtitle: 'Bir daqiqada tayyor: kiyimlaringizni qo‘shing va birinchi obrazni oling.',
       children: [
         if (_error != null) AuthNotice(message: _error!),
         Form(
@@ -101,7 +102,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   autofillHints: const [AutofillHints.name],
                   textCapitalization: TextCapitalization.words,
                   textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(labelText: 'Ism (ixtiyoriy)'),
+                  decoration: const InputDecoration(
+                    labelText: 'Ism (ixtiyoriy)',
+                    prefixIcon: Icon(Icons.person_outline_rounded),
+                  ),
                   validator: AuthValidators.name,
                 ),
                 const SizedBox(height: AtlasSpacing.md),
@@ -113,19 +117,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   autofillHints: const [AutofillHints.email],
                   autocorrect: false,
                   textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(labelText: 'Email'),
+                  decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.mail_outline_rounded)),
                   validator: AuthValidators.email,
                 ),
                 const SizedBox(height: AtlasSpacing.md),
-                TextFormField(
+                PasswordFormField(
                   key: const Key('register.password'),
                   controller: _password,
                   enabled: !busy,
-                  obscureText: true,
                   autofillHints: const [AutofillHints.newPassword],
-                  textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _submit(),
-                  decoration: const InputDecoration(labelText: 'Parol', helperText: 'Kamida 8 belgi'),
+                  helperText: 'Kamida 8 belgi',
                   validator: AuthValidators.newPassword,
                 ),
                 const SizedBox(height: AtlasSpacing.sm),
@@ -141,21 +143,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   child: ConsentCheckboxField(
                     key: _consent,
                     label: 'Foydalanish shartlari va Maxfiylik siyosatiga roziman',
+                    title: LegalConsentLabel(
+                      keyPrefix: 'register',
+                      onOpen: (kind) => context.push(AtlasRoutes.legal(kind)),
+                    ),
                     requiredMessage:
                         'Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.',
                     enabled: !busy,
                   ),
-                ),
-                Wrap(
-                  spacing: AtlasSpacing.xs,
-                  children: [
-                    for (final kind in LegalDocumentKind.values)
-                      TextButton(
-                        key: Key('register.${kind.name}'),
-                        onPressed: () => context.push(AtlasRoutes.legal(kind)),
-                        child: Text(kind.label),
-                      ),
-                  ],
                 ),
               ],
             ),
@@ -163,11 +158,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         ),
         const SizedBox(height: AtlasSpacing.lg),
         AtlasButton(key: const Key('register.submit'), label: 'Ro‘yxatdan o‘tish', loading: busy, onPressed: _submit),
-        const SizedBox(height: AtlasSpacing.sm),
-        AtlasButton(
-          key: const Key('register.toLogin'),
-          label: 'Hisobim bor — kirish',
-          variant: AtlasButtonVariant.ghost,
+        const SizedBox(height: AtlasSpacing.xs),
+        AuthSwitchLink(
+          actionKey: const Key('register.toLogin'),
+          question: 'Hisobingiz bormi?',
+          action: 'Kirish',
           onPressed: busy ? null : () => context.go(AtlasRoutes.login),
         ),
       ],

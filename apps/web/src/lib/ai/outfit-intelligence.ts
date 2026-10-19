@@ -51,7 +51,7 @@ const BAND_LABEL: Record<TemperatureBand, string> = {
   hot: 'issiq',
 }
 
-/** "… mos keladi" phrases per occasion (the UI labels are not all Uzbek words, e.g. "Casual"). */
+/** "… mos keladi" phrases per occasion (own phrases: a label is not always the right word form). */
 const OCCASION_PHRASE: Record<Occasion, string | null> = {
   work: 'ishga',
   wedding: 'to‘yga',

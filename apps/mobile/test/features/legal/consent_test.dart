@@ -157,8 +157,9 @@ void main() {
   testWidgets('a CONSENT_REQUIRED answer while using the app opens the consent screen', (tester) async {
     final (h, c) = await pumpSignedIn(tester, consentRequired: false);
     expect(path(c), AtlasRoutes.home);
-    h.backend.script(P.wardrobe, [JsonReply(403, errorBody('CONSENT_REQUIRED'))]);
-    await tap(tester, find.descendant(of: find.byType(NavigationBar), matching: find.text('Garderob')));
+    // Home already loaded the wardrobe; the stylist tab asks the server next.
+    h.backend.script(P.conversations, [JsonReply(403, errorBody('CONSENT_REQUIRED'))]);
+    await tap(tester, find.descendant(of: find.byType(NavigationBar), matching: find.text('Stilist')));
     expect(path(c), AtlasRoutes.consent);
   });
 }

@@ -96,18 +96,33 @@ class AttributeReviewList extends StatelessWidget {
               style: const TextStyle(color: AtlasColors.warning),
             ),
           ),
-        for (final a in ItemAttribute.values)
-          _Row(
-            key: Key('review.${a.field}'),
-            name: attributeName(a),
-            value: attributeValue(draft, a),
-            level: levels[a],
-            corrected: corrected.contains(a),
-            needsReview: toReview.contains(a),
-            onAcknowledge: () => onAcknowledge(a),
-            onEdit: onEdit,
-            text: text,
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: AtlasColors.surface,
+            borderRadius: AtlasRadii.card,
+            border: Border.all(color: AtlasColors.hairline),
           ),
+          child: ClipRRect(
+            borderRadius: AtlasRadii.card,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final a in ItemAttribute.values)
+                  _Row(
+                    key: Key('review.${a.field}'),
+                    name: attributeName(a),
+                    value: attributeValue(draft, a),
+                    level: levels[a],
+                    corrected: corrected.contains(a),
+                    needsReview: toReview.contains(a),
+                    onAcknowledge: () => onAcknowledge(a),
+                    onEdit: onEdit,
+                    text: text,
+                  ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -137,33 +152,44 @@ class _Row extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Only what asks for attention is tagged: a high confidence says nothing new.
+    final tag = corrected
+        ? const _Tag(label: 'Siz tuzatgansiz')
+        : (level == null || level == ConfidenceLevel.high ? null : ConfidenceChip(level: level!));
     return Container(
-      margin: const EdgeInsets.only(bottom: AtlasSpacing.xs),
-      padding: const EdgeInsets.symmetric(horizontal: AtlasSpacing.sm, vertical: AtlasSpacing.xs),
+      padding: const EdgeInsets.symmetric(horizontal: AtlasSpacing.md, vertical: AtlasSpacing.sm),
       decoration: BoxDecoration(
         color: needsReview ? AtlasColors.warningSoft : Colors.transparent,
-        borderRadius: AtlasRadii.field,
+        border: const Border(bottom: BorderSide(color: AtlasColors.hairline)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Wrap(
-            spacing: AtlasSpacing.xs,
-            runSpacing: AtlasSpacing.xxs,
-            crossAxisAlignment: WrapCrossAlignment.center,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(name, style: text.bodyMedium),
-              if (corrected) const _Tag(label: 'Siz tuzatgansiz') else if (level != null) ConfidenceChip(level: level!),
+              Expanded(flex: 2, child: Text(name, style: text.bodyMedium)),
+              const SizedBox(width: AtlasSpacing.sm),
+              Expanded(
+                flex: 3,
+                child: Text(value, textAlign: TextAlign.end, style: text.titleMedium),
+              ),
             ],
           ),
-          Text(value, style: text.bodyLarge),
+          if (tag != null) ...[
+            const SizedBox(height: AtlasSpacing.xxs),
+            Align(alignment: Alignment.centerRight, child: tag),
+          ],
           if (needsReview)
-            Wrap(
-              spacing: AtlasSpacing.xs,
-              children: [
-                TextButton(onPressed: onAcknowledge, child: const Text('To‘g‘ri')),
-                if (onEdit != null) TextButton(onPressed: onEdit, child: const Text('Tuzatish')),
-              ],
+            Align(
+              alignment: Alignment.centerRight,
+              child: Wrap(
+                spacing: AtlasSpacing.xs,
+                children: [
+                  TextButton(onPressed: onAcknowledge, child: const Text('To‘g‘ri')),
+                  if (onEdit != null) TextButton(onPressed: onEdit, child: const Text('Tuzatish')),
+                ],
+              ),
             ),
         ],
       ),

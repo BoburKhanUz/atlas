@@ -64,6 +64,7 @@ void main() {
       h.backend.script(P.login, [JsonReply(200, pairJson(1))]);
       final router = await pumpWithSession(tester, h);
 
+      await tester.ensureVisible(find.byKey(const Key('login.submit')));
       await tester.tap(find.byKey(const Key('login.submit')));
       await tester.pumpAndSettle();
       expect(find.text('Emailni kiriting'), findsOneWidget);
@@ -96,9 +97,30 @@ void main() {
       expect(location(router), AtlasRoutes.login);
     });
 
+    testWidgets('the password can be shown and hidden again', (tester) async {
+      final h = SessionHarness();
+      await pumpWithSession(tester, h);
+      EditableText field() => tester.widget<EditableText>(
+        find.descendant(of: find.byKey(const Key('login.password')), matching: find.byType(EditableText)),
+      );
+      final toggle = find.descendant(
+        of: find.byKey(const Key('login.password')),
+        matching: find.byKey(const Key('password.visibility')),
+      );
+      expect(field().obscureText, isTrue);
+      await tester.tap(toggle);
+      await tester.pump();
+      expect(field().obscureText, isFalse);
+      expect(find.byTooltip('Parolni yashirish'), findsOneWidget);
+      await tester.tap(toggle);
+      await tester.pump();
+      expect(field().obscureText, isTrue);
+    });
+
     testWidgets('register link and back', (tester) async {
       final h = SessionHarness();
       final router = await pumpWithSession(tester, h);
+      await tester.ensureVisible(find.byKey(const Key('login.toRegister')));
       await tester.tap(find.byKey(const Key('login.toRegister')));
       await tester.pumpAndSettle();
       expect(location(router), AtlasRoutes.register);

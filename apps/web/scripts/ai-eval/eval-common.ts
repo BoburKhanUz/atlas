@@ -134,12 +134,20 @@ const ALL_CATALOGS = [...POLICY_CATALOGS, SEASONS, GENDERS, OCCASIONS]
 const POLICY_EXEMPT: Readonly<Record<string, string>> = {
   tan: 'Uzbek word "tan" (body; "tan olmoq") — the colour id cannot be told apart lexically',
 }
+/**
+ * Ids whose labels are Uzbek now, but whose English word stays a review item:
+ * the evaluator's verdicts change only with a new rubric version (catalog
+ * terminology plan, stage 4), which is approved separately.
+ */
+const POLICY_REVIEW: Readonly<Record<string, string>> = {
+  casual: 'labels are "Kundalik" since decision D3 (2026-10-19); English "casual" in prose is still reviewed, not failed',
+}
 
 /**
  * - uzbek_label: every label is Uzbek wording without the English word, so the English word in prose violates the policy;
  * - loanword: every label contains the word (Polo, Chinos, Formal…), so the app itself shows it;
- * - review: the user-facing labels disagree (web "Bleyzer" vs Flutter "Blazer"; "Kasual" / "Casual" / "Kundalik")
- *   or show the word only in parentheses ("Ko‘k (navy)"): reported for human review, not penalised;
+ * - review: the user-facing labels disagree (web "Bleyzer" vs Flutter "Blazer"), show the word only in
+ *   parentheses ("Ko‘k (navy)"), or the id is listed in POLICY_REVIEW: reported for human review, not penalised;
  * - exempt: see POLICY_EXEMPT.
  */
 export type CatalogTermStatus = 'uzbek_label' | 'loanword' | 'review' | 'exempt'
@@ -169,6 +177,7 @@ export const CATALOG_TERMS: readonly CatalogTerm[] = [...new Set(POLICY_CATALOGS
     const outsideParens = labels.map((l) => containsSeq(uzbekTokens(l.replace(/\([^)]*\)/g, ' ')), words))
     const status: CatalogTermStatus =
       id in POLICY_EXEMPT ? 'exempt'
+      : id in POLICY_REVIEW ? 'review'
       : inLabel.every(Boolean) && outsideParens.every(Boolean) ? 'loanword'
       : inLabel.some(Boolean) ? 'review'
       : 'uzbek_label'

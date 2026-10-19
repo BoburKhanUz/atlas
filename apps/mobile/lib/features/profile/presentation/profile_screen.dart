@@ -29,7 +29,6 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(profileProvider);
     final auth = ref.watch(authStateProvider);
-    final text = Theme.of(context).textTheme;
     final p = s.profile;
 
     return AtlasPage(
@@ -57,32 +56,15 @@ class ProfileScreen extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: AtlasSpacing.screen),
             sliver: SliverList.list(
               children: [
-                AtlasCard(
-                  key: const Key('profile.card'),
-                  onTap: () => context.push(AtlasRoutes.profileEdit),
-                  child: Row(
-                    children: [
-                      const CircleAvatar(
-                        backgroundColor: AtlasColors.accentSoft,
-                        child: Icon(Icons.person_outline_rounded, color: AtlasColors.accent),
-                      ),
-                      const SizedBox(width: AtlasSpacing.sm),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              p.name ?? 'Ismingizni kiriting',
-                              key: const Key('profile.name'),
-                              style: text.titleMedium,
-                            ),
-                            Text(p.email, key: const Key('profile.email'), style: text.bodySmall),
-                          ],
-                        ),
-                      ),
-                      const Icon(Icons.chevron_right_rounded),
-                    ],
-                  ),
+                _ProfileHeader(name: p.name, email: p.email, onTap: () => context.push(AtlasRoutes.profileEdit)),
+                const SizedBox(height: AtlasSpacing.md),
+                _Completion(
+                  steps: [
+                    p.name != null && p.name!.trim().isNotEmpty,
+                    p.preferredStyles.isNotEmpty,
+                    p.favoriteColors.isNotEmpty,
+                    ref.watch(colorProfileProvider.select((c) => c.current is Analysed)),
+                  ],
                 ),
                 const SizedBox(height: AtlasSpacing.md),
                 _Preferences(
@@ -95,6 +77,7 @@ class ProfileScreen extends ConsumerWidget {
                     for (final o in StyleOption.values)
                       if (p.dislikedStyles.contains(o)) o.label,
                   ],
+                  onEdit: () => context.push(AtlasRoutes.profileEdit),
                 ),
                 const SizedBox(height: AtlasSpacing.sm),
                 _Preferences(
@@ -107,6 +90,8 @@ class ProfileScreen extends ConsumerWidget {
                     for (final o in ColorOption.values)
                       if (p.dislikedColors.contains(o)) o.label,
                   ],
+                  swatches: {for (final o in ColorOption.values) o.label: o.swatch},
+                  onEdit: () => context.push(AtlasRoutes.profileEdit),
                 ),
                 const SizedBox(height: AtlasSpacing.xs),
                 Align(
@@ -115,14 +100,13 @@ class ProfileScreen extends ConsumerWidget {
                     key: const Key('profile.edit'),
                     onPressed: () => context.push(AtlasRoutes.profileEdit),
                     icon: const Icon(Icons.edit_outlined),
-                    label: const Text('Tahrirlash'),
+                    label: const Text('Afzalliklarni tahrirlash'),
                   ),
                 ),
                 const SizedBox(height: AtlasSpacing.md),
                 const _ColorProfileCard(),
                 const SizedBox(height: AtlasSpacing.lg),
-                Text('Hisob', style: text.titleSmall),
-                const SizedBox(height: AtlasSpacing.xs),
+                const SectionHeader('Hisob'),
                 AtlasButton(
                   key: const Key('profile.logout'),
                   label: 'Chiqish',
@@ -139,16 +123,22 @@ class ProfileScreen extends ConsumerWidget {
                   label: const Text('Hisobni o‘chirish', style: TextStyle(color: AtlasColors.error)),
                 ),
                 const SizedBox(height: AtlasSpacing.lg),
-                Text('Huquqiy hujjatlar', style: text.titleSmall),
-                for (final kind in LegalDocumentKind.values)
-                  ListTile(
-                    key: Key('profile.${kind.name}'),
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.description_outlined),
-                    title: Text(kind.label),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => context.push(AtlasRoutes.legal(kind)),
+                const SectionHeader('Huquqiy hujjatlar'),
+                AtlasCard(
+                  padding: EdgeInsets.zero,
+                  child: Column(
+                    children: [
+                      for (final kind in LegalDocumentKind.values)
+                        ListTile(
+                          key: Key('profile.${kind.name}'),
+                          leading: const Icon(Icons.description_outlined),
+                          title: Text(kind.label),
+                          trailing: const Icon(Icons.chevron_right_rounded),
+                          onTap: () => context.push(AtlasRoutes.legal(kind)),
+                        ),
+                    ],
                   ),
+                ),
                 const SizedBox(height: AtlasSpacing.xl),
               ],
             ),
@@ -158,26 +148,197 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
-class _Preferences extends StatelessWidget {
-  const _Preferences({required this.title, required this.liked, required this.disliked});
-  final String title;
-  final List<String> liked;
-  final List<String> disliked;
+class _ProfileHeader extends StatelessWidget {
+  const _ProfileHeader({required this.name, required this.email, required this.onTap});
+  final String? name;
+  final String email;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    Widget row(String label, List<String> values) => Padding(
-      padding: const EdgeInsets.only(top: AtlasSpacing.xxs),
-      child: Text('$label: ${values.isEmpty ? 'tanlanmagan' : values.join(', ')}', style: text.bodyMedium),
+    final trimmed = name?.trim();
+    final hasName = trimmed != null && trimmed.isNotEmpty;
+    return Material(
+      key: const Key('profile.card'),
+      color: Colors.transparent,
+      child: Ink(
+        decoration: const BoxDecoration(gradient: AtlasColors.heroGradient, borderRadius: AtlasRadii.card),
+        child: InkWell(
+          borderRadius: AtlasRadii.card,
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(AtlasSpacing.md),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: AtlasColors.onAccent.withValues(alpha: 0.16),
+                  foregroundColor: AtlasColors.onAccent,
+                  child: hasName
+                      ? Text(
+                          trimmed.characters.first.toUpperCase(),
+                          style: text.headlineMedium?.copyWith(color: AtlasColors.onAccent),
+                        )
+                      : const Icon(Icons.person_outline_rounded, size: 30),
+                ),
+                const SizedBox(width: AtlasSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        hasName ? trimmed : 'Ismingizni kiriting',
+                        key: const Key('profile.name'),
+                        style: text.titleLarge?.copyWith(color: AtlasColors.onAccent),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        email,
+                        key: const Key('profile.email'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: text.bodyMedium?.copyWith(color: AtlasColors.onInkMuted),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right_rounded, color: AtlasColors.onAccent),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
+  }
+}
+
+/// How much of the profile is filled in, and why it matters.
+class _Completion extends StatelessWidget {
+  const _Completion({required this.steps});
+  final List<bool> steps;
+
+  @override
+  Widget build(BuildContext context) {
+    final done = steps.where((s) => s).length;
+    if (done == steps.length) return const SizedBox.shrink();
+    final text = Theme.of(context).textTheme;
+    final percent = (done * 100 / steps.length).round();
+    return AtlasCard(
+      key: const Key('profile.completion'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text('Profil $percent% to‘ldirilgan', style: text.titleMedium)),
+              Text('$done / ${steps.length}', style: text.labelLarge?.copyWith(color: AtlasColors.accent)),
+            ],
+          ),
+          const SizedBox(height: AtlasSpacing.xs),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AtlasRadii.pill),
+            child: LinearProgressIndicator(value: done / steps.length, minHeight: 8),
+          ),
+          const SizedBox(height: AtlasSpacing.xs),
+          Text('Ism, uslub, ranglar va rang profilini to‘ldiring — tavsiyalar aniqroq bo‘ladi.', style: text.bodySmall),
+        ],
+      ),
+    );
+  }
+}
+
+class _Preferences extends StatelessWidget {
+  const _Preferences({
+    required this.title,
+    required this.liked,
+    required this.disliked,
+    required this.onEdit,
+    this.swatches = const {},
+  });
+  final String title;
+  final List<String> liked;
+  final List<String> disliked;
+  final Map<String, Color> swatches;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    Widget pill(String label, {required bool liked}) {
+      final swatch = swatches[label];
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: AtlasSpacing.sm, vertical: AtlasSpacing.xxs + 2),
+        decoration: BoxDecoration(
+          color: liked ? AtlasColors.accentSoft : AtlasColors.surface,
+          borderRadius: BorderRadius.circular(AtlasRadii.pill),
+          border: Border.all(color: liked ? AtlasColors.accentSoft : AtlasColors.hairline),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (swatch != null) ...[
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: swatch,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AtlasColors.hairline),
+                ),
+              ),
+              const SizedBox(width: AtlasSpacing.xxs + 2),
+            ] else if (!liked) ...[
+              const Icon(Icons.block_rounded, size: 14, color: AtlasColors.textSecondary),
+              const SizedBox(width: AtlasSpacing.xxs),
+            ],
+            Flexible(
+              child: Text(
+                label,
+                style: text.labelLarge?.copyWith(
+                  color: liked ? AtlasColors.accentStrong : AtlasColors.textSecondary,
+                  decoration: liked ? null : TextDecoration.lineThrough,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    Widget group(String label, List<String> values, {required bool liked}) => Padding(
+      padding: const EdgeInsets.only(top: AtlasSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: text.bodySmall),
+          const SizedBox(height: AtlasSpacing.xxs),
+          if (values.isEmpty)
+            InkWell(
+              onTap: onEdit,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: AtlasSpacing.xxs),
+                child: Text('Hali tanlanmagan — tanlash', style: text.labelLarge?.copyWith(color: AtlasColors.accent)),
+              ),
+            )
+          else
+            Wrap(
+              spacing: AtlasSpacing.xs,
+              runSpacing: AtlasSpacing.xs,
+              children: [for (final v in values) pill(v, liked: liked)],
+            ),
+        ],
+      ),
+    );
+
     return AtlasCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: text.titleSmall),
-          row('Yoqadi', liked),
-          row('Yoqmaydi', disliked),
+          Text(title, style: text.titleMedium),
+          group('Yoqadi', liked, liked: true),
+          // Dislikes are optional: shown only once there are some.
+          if (disliked.isNotEmpty) group('Yoqmaydi', disliked, liked: false),
         ],
       ),
     );
@@ -203,13 +364,18 @@ class _ColorProfileCard extends ConsumerWidget {
       onTap: () => context.push(AtlasRoutes.profileColor),
       child: Row(
         children: [
-          const Icon(Icons.palette_outlined, color: AtlasColors.accent),
-          const SizedBox(width: AtlasSpacing.sm),
+          Container(
+            width: 44,
+            height: 44,
+            decoration: const BoxDecoration(color: AtlasColors.sand, shape: BoxShape.circle),
+            child: const Icon(Icons.palette_outlined, color: AtlasColors.ink),
+          ),
+          const SizedBox(width: AtlasSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Rang profili', style: text.titleSmall),
+                Text('Rang profili', style: text.titleMedium),
                 Text(subtitle, style: text.bodySmall),
               ],
             ),

@@ -20,13 +20,13 @@ test.describe('outfits', () => {
     // "Boshqa" also exists as an unrelated occasion chip; scope to the feedback bar.
     const feedbackBar = page.locator('div.grid-cols-4')
     await expect(feedbackBar.getByRole('button', { name: 'Boshqa' })).toBeVisible()
-    await expect(page.getByText('Saqlangan outfitlar')).toHaveCount(0)
+    await expect(page.getByText('Saqlangan obrazlar')).toHaveCount(0)
 
     await page.getByRole('button', { name: 'Saqlash' }).click()
-    await expect(page.getByText('Saqlangan outfitlar')).toBeVisible()
+    await expect(page.getByText('Saqlangan obrazlar')).toBeVisible()
 
     await page.goto('/outfits')
-    await expect(page.getByRole('heading', { name: 'Saqlangan outfitlar' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Saqlangan obrazlar' })).toBeVisible()
     await expect(page.getByText('(1)')).toBeVisible()
   })
 
@@ -44,7 +44,7 @@ test.describe('outfits', () => {
     await registerViaApi(page.request)
     await page.goto('/outfits?occasion=work')
     await expect(page.getByText('Bugungi eng yaxshi variant')).toHaveCount(0)
-    await expect(page.getByRole('heading', { name: 'Outfitlar', level: 1 })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Obrazlar', level: 1 })).toBeVisible()
     await page.waitForTimeout(1500)
     await expect(page.getByText('Bugungi eng yaxshi variant')).toHaveCount(0)
   })

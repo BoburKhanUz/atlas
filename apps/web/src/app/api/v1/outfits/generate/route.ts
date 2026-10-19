@@ -16,7 +16,7 @@ const FEEDBACK_DAYS = 30
 
 /** Why no outfit could be made, for the user. */
 const PROBLEM_MESSAGES: Record<GenerateProblem, string> = {
-  empty_wardrobe: 'Garderobingiz bo‘sh. Avval kiyim qo‘shing — keyin sizga mos outfitlarni tavsiya qilamiz.',
+  empty_wardrobe: 'Garderobingiz bo‘sh. Avval kiyim qo‘shing — keyin sizga mos obrazlarni tavsiya qilamiz.',
   no_footwear: 'Outfit uchun oyoq kiyim kerak. Garderobingizga kamida bitta oyoq kiyim qo‘shing.',
   no_main_pieces: 'Outfit tuzish uchun yetarli kiyim yo‘q: ustki va pastki kiyim (yoki ko‘ylak-ayol) hamda oyoq kiyim qo‘shing.',
   nothing_suitable: 'Garderobingizdagi kiyimlar bugungi ob-havo yoki tadbirga mos kelmadi. Boshqa kiyimlar qo‘shib ko‘ring.',

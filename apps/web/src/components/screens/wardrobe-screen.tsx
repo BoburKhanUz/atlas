@@ -74,10 +74,10 @@ export function WardrobeScreen() {
     try {
       await api(`/api/v1/wardrobe/items/${id}`, { method: 'DELETE' })
       setItems((prev) => prev.filter((i) => i.id !== id))
-      toast({ title: "O'chirildi", description: "Kiyim garderobdan o'chirildi" })
+      toast({ title: "O‘chirildi", description: "Kiyim garderobdan o‘chirildi" })
       return true
     } catch (err) {
-      const msg = err instanceof ApiError ? err.message : "O'chirib bo'lmadi"
+      const msg = err instanceof ApiError ? err.message : "O‘chirib bo‘lmadi"
       toast({ title: 'Xato', description: msg, variant: 'destructive' })
       return false
     }
@@ -153,9 +153,9 @@ export function WardrobeScreen() {
       <ConfirmDialog
         open={pendingDeleteId !== null}
         onOpenChange={(o) => !o && setPendingDeleteId(null)}
-        title="Kiyimni o'chirish"
-        description="Bu kiyimni o'chirib tashlaysizmi? Bu amalni qaytarib bo'lmaydi."
-        confirmLabel="O'chirish"
+        title="Kiyimni o‘chirish"
+        description="Bu kiyimni o‘chirib tashlaysizmi? Bu amalni qaytarib bo‘lmaydi."
+        confirmLabel="O‘chirish"
         onConfirm={() => (pendingDeleteId ? handleDelete(pendingDeleteId) : true)}
       />
     </div>
@@ -264,7 +264,7 @@ function WardrobeCard({
                     }}
                     className="w-full text-left text-sm px-2.5 py-2 rounded-md hover:bg-destructive/5 text-destructive flex items-center gap-2"
                   >
-                    <Trash2 className="w-3.5 h-3.5" /> O'chirish
+                    <Trash2 className="w-3.5 h-3.5" /> O‘chirish
                   </button>
                 </motion.div>
               )}
@@ -290,7 +290,7 @@ function EmptyWardrobe() {
       <p className="text-sm text-muted-foreground leading-relaxed mb-5 max-w-xs mx-auto">
         Kiyimingizning rasmini oling — AI uni avtomatik tahlil qiladi va
         garderobingizga qo‘shadi. Bir nechta kiyim qo‘shib, AI stilistdan
-        outfit so‘rang.
+        obraz so‘rang.
       </p>
       <Button asChild className="h-11 px-5">
         <Link href={routes.wardrobeNew()}>

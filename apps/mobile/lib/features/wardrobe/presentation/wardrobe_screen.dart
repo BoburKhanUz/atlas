@@ -143,9 +143,8 @@ class _ItemTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final thumb = thumbnailOf(item);
-    final label = item.subcategory != null
-        ? WardrobeLabels.subcategory(item.subcategory!)
-        : WardrobeLabels.category(item.category);
+    final label = WardrobeLabels.itemName(category: item.category, subcategory: item.subcategory, colors: item.colors);
+    final swatches = [for (final c in item.colors.take(3)) ?WardrobeLabels.swatch(c)];
     return Semantics(
       button: true,
       label: label,
@@ -159,16 +158,54 @@ class _ItemTile extends StatelessWidget {
             Expanded(
               child: ClipRRect(
                 borderRadius: AtlasRadii.card,
-                child: SizedBox.expand(
-                  child: thumb == null
-                      ? const ColoredBox(color: AtlasColors.skeleton, child: Icon(Icons.checkroom_outlined))
-                      : SignedImage(image: thumb, onExpired: onExpired),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    thumb == null
+                        ? const ColoredBox(color: AtlasColors.skeleton, child: Icon(Icons.checkroom_outlined))
+                        : SignedImage(image: thumb, onExpired: onExpired),
+                    if (needsReview(item))
+                      Positioned(
+                        left: AtlasSpacing.xs,
+                        top: AtlasSpacing.xs,
+                        right: AtlasSpacing.xs,
+                        child: Align(
+                          alignment: Alignment.topLeft,
+                          child: Container(
+                            key: Key('wardrobe.review.${item.id}'),
+                            padding: const EdgeInsets.symmetric(horizontal: AtlasSpacing.xs, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AtlasColors.warningSoft,
+                              borderRadius: BorderRadius.circular(AtlasRadii.pill),
+                            ),
+                            child: Text(
+                              'Tekshiring',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AtlasColors.warning),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(height: AtlasSpacing.xxs),
+            const SizedBox(height: AtlasSpacing.xs),
             Row(
               children: [
+                for (final c in swatches)
+                  Container(
+                    width: 12,
+                    height: 12,
+                    margin: const EdgeInsets.only(right: AtlasSpacing.xxs),
+                    decoration: BoxDecoration(
+                      color: c,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AtlasColors.hairline),
+                    ),
+                  ),
+                if (swatches.isNotEmpty) const SizedBox(width: AtlasSpacing.xxs),
                 Expanded(
                   child: Text(
                     label,
@@ -177,19 +214,6 @@ class _ItemTile extends StatelessWidget {
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                 ),
-                if (needsReview(item))
-                  Container(
-                    key: Key('wardrobe.review.${item.id}'),
-                    padding: const EdgeInsets.symmetric(horizontal: AtlasSpacing.xs, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: AtlasColors.warningSoft,
-                      borderRadius: BorderRadius.circular(AtlasRadii.pill),
-                    ),
-                    child: Text(
-                      'Tekshiring',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AtlasColors.warning),
-                    ),
-                  ),
               ],
             ),
           ],

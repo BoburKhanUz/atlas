@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:atlas_mobile/core/network/api_error_code.dart';
 import 'package:atlas_mobile/core/network/api_failure.dart';
 import 'package:atlas_mobile/core/session/auth_state.dart';
+import 'package:atlas_mobile/features/wardrobe/data/background_remover.dart';
 import 'package:atlas_mobile/features/wardrobe/data/image_preparer.dart';
 import 'package:atlas_mobile/features/wardrobe/data/jpeg_sanitizer.dart';
 import 'package:atlas_mobile/features/wardrobe/data/photo_picker.dart';
@@ -20,8 +22,21 @@ import 'wardrobe_fixtures.dart';
 
 final _keyPattern = RegExp(r'^[A-Za-z0-9_-]{8,128}$');
 
+/// Background removal on the phone: answers [result] and records its input.
+class FakeRemover implements BackgroundRemover {
+  FakeRemover(this.result);
+  final Uint8List? result;
+  final inputs = <Uint8List>[];
+
+  @override
+  Future<Uint8List?> cutout(Uint8List photo) async {
+    inputs.add(photo);
+    return result;
+  }
+}
+
 class Setup {
-  Setup({FakePicker? picker}) : picker = picker ?? FakePicker(result: photo()) {
+  Setup({FakePicker? picker, BackgroundRemover? remover}) : picker = picker ?? FakePicker(result: photo()) {
     h = SessionHarness(stored: pair(1));
     container = ProviderContainer(
       overrides: [
@@ -29,6 +44,7 @@ class Setup {
         photoPickerProvider.overrideWithValue(this.picker),
         imagePreparerProvider.overrideWithValue(ImagePreparer(StubCompressor())),
         uploadSleepProvider.overrideWithValue((d) async => sleeps.add(d)),
+        if (remover != null) backgroundRemoverProvider.overrideWithValue(remover),
       ],
     );
     addTearDown(container.dispose);
@@ -108,6 +124,67 @@ void main() {
       expect(s.state.job, isNull);
       await s.c.pick(PhotoSource.camera);
       expect(s.state.job!.idempotencyKey, isNot(first));
+    });
+  });
+
+  group('background removal (on the phone)', () {
+    test('removed: the cut-out photo is prepared and uploaded; the remover got the prepared photo', () async {
+      final remover = FakeRemover(fixtureBytes('plain_landscape.jpg'));
+      final s = Setup(remover: remover);
+      await s.ready();
+      expect(s.state.phase, AddPhase.preview);
+      expect(remover.inputs.single, same(s.state.original!.bytes), reason: 'prepared bytes: oriented, no metadata');
+      expect(s.state.cutout, isNotNull);
+      expect(s.state.usesCutout, isTrue);
+      expect(s.state.job!.image, same(s.state.cutout));
+      expect(s.state.job!.image.filename, 'IMG_0042.jpg');
+      expect(JpegSanitizer.hasMetadata(s.state.job!.image.bytes), isFalse);
+
+      s.replies([JsonReply(201, uploadJson('new-1'))]);
+      await s.c.upload();
+      expect(containsBytes(s.uploads.single.body, s.state.job!.image.bytes), isTrue);
+    });
+
+    test('the user can keep the original instead; each version is its own upload key', () async {
+      final s = Setup(remover: FakeRemover(fixtureBytes('plain_landscape.jpg')));
+      await s.ready();
+      final cutKey = s.state.job!.idempotencyKey;
+      await s.c.chooseCutout(false);
+      expect(s.state.usesCutout, isFalse);
+      expect(s.state.job!.image, same(s.state.original));
+      expect(s.state.job!.idempotencyKey, isNot(cutKey));
+      await s.c.chooseCutout(true);
+      expect(s.state.usesCutout, isTrue);
+
+      await s.c.chooseCutout(false);
+      final original = s.state.original!;
+      s.replies([JsonReply(201, uploadJson('new-1'))]);
+      await s.c.upload();
+      expect(containsBytes(s.uploads.single.body, original.bytes), isTrue);
+      expect(s.uploads, hasLength(1));
+    });
+
+    test('not available or nothing found: the original photo, no choice offered', () async {
+      final s = Setup(remover: FakeRemover(null));
+      await s.ready();
+      expect(s.state.phase, AddPhase.preview);
+      expect(s.state.cutout, isNull);
+      expect(s.state.usesCutout, isFalse);
+      expect(s.state.job!.image, same(s.state.original));
+      await s.c.chooseCutout(true);
+      expect(s.state.job!.image, same(s.state.original), reason: 'nothing to switch to');
+    });
+
+    test('an unusable cut-out is ignored and the original is used', () async {
+      final s = Setup(remover: FakeRemover(Uint8List.fromList([1, 2, 3, 4])));
+      await s.ready();
+      expect(s.state.phase, AddPhase.preview);
+      expect(s.state.cutout, isNull);
+      expect(s.state.job!.image, same(s.state.original));
+    });
+
+    test('the platform remover answers null off Android (tests run on the host)', () async {
+      expect(await const PlatformBackgroundRemover().cutout(fixtureBytes('plain_landscape.jpg')), isNull);
     });
   });
 

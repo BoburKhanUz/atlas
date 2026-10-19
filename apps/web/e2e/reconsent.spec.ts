@@ -37,7 +37,7 @@ test.describe('re-consent after the legal texts change', () => {
     await expect(page).toHaveURL(/\/wardrobe$/)
     outdateConsent(user.email)
     // A client-side navigation keeps the layout: the new page's API call meets the refusal.
-    await page.getByRole('link', { name: 'Outfitlar' }).first().click()
+    await page.getByRole('link', { name: 'Obrazlar' }).first().click()
     await expect(page).toHaveURL(/\/consent\?next=%2Foutfits/)
     await acceptOnConsentPage(page)
     await expect(page).toHaveURL(/\/outfits$/)

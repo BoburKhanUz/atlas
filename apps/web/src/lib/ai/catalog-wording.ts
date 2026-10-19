@@ -29,6 +29,8 @@ const EXEMPT = new Set(['tan'])
  * review instead of failing them, and so does this check.
  */
 const SHOWN_BY_MOBILE = new Set(['blazer', 'denim', 'navy', 'teal', 'rust'])
+/** Uzbek labels now ("Kundalik"), but still a review item for the evaluator (POLICY_REVIEW there). */
+const REVIEW_ONLY = new Set(['casual'])
 
 const containsSeq = (hay: readonly string[], needle: readonly string[]) => hay.some((_, i) => needle.every((w, j) => hay[i + j] === w))
 
@@ -37,7 +39,7 @@ export const PROSE_FORBIDDEN_TERMS: readonly (readonly string[])[] = [...new Set
   .map((id) => ({ id, words: tokens(id.replace(/_/g, ' ')) }))
   .filter(({ id, words }) => {
     const joined = words.join(' ')
-    if (EXEMPT.has(joined) || SHOWN_BY_MOBILE.has(joined)) return false
+    if (EXEMPT.has(joined) || SHOWN_BY_MOBILE.has(joined) || REVIEW_ONLY.has(joined)) return false
     const labels = ALL_CATALOGS.flat().filter((e) => e.id === id).map((e) => e.label)
     return !labels.some((l) => containsSeq(tokens(l), words))
   })

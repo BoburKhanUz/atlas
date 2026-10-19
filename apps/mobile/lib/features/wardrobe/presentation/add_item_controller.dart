@@ -67,6 +67,8 @@ class AddItemState {
     this.deniedSource,
     this.recovered = false,
     this.acknowledged = const {},
+    this.original,
+    this.cutout,
   });
 
   final AddPhase phase;
@@ -90,6 +92,15 @@ class AddItemState {
   /// "This is correct" — for this review session only; never sent.
   final Set<ItemAttribute> acknowledged;
 
+  /// The prepared photo as taken, and the same photo with its background
+  /// removed (null when removal was not possible). Kept while previewing, so
+  /// the user can choose; the job holds the chosen one.
+  final PreparedImage? original;
+  final PreparedImage? cutout;
+
+  /// The job uploads the photo without its background.
+  bool get usesCutout => cutout != null && identical(job?.image, cutout);
+
   WardrobeItem? get item => result?.item;
 
   /// Low-confidence attributes still to look at.
@@ -110,6 +121,8 @@ class AddItemState {
     deniedSource: deniedSource,
     recovered: recovered,
     acknowledged: acknowledged ?? this.acknowledged,
+    original: original,
+    cutout: cutout,
   );
 }
 
@@ -162,21 +175,26 @@ class AddItemController extends Notifier<AddItemState> {
         state = const AddItemState();
         return;
       }
-      final prepared = await ref.read(imagePreparerProvider).prepare(picked.bytes, originalName: picked.name);
+      final preparer = ref.read(imagePreparerProvider);
+      final prepared = await preparer.prepare(picked.bytes, originalName: picked.name);
       if (!ref.mounted) return;
-      final hash = sha256Hex(prepared.bytes);
-      // A new key only for a new payload. The same prepared bytes AND file
-      // name as an interrupted upload reuse its key (duplicate-safe).
-      final userId = _userId;
-      final pending = userId == null ? null : await _store.read(userId);
+      // The background is removed on the phone when possible; otherwise the
+      // photo stays as it is.
+      PreparedImage? cutout;
+      final cut = await ref.read(backgroundRemoverProvider).cutout(prepared.bytes);
       if (!ref.mounted) return;
-      final reuse = pending != null && pending.matches(hash, prepared.filename);
-      _hash = hash;
-      state = AddItemState(
-        phase: AddPhase.preview,
-        job: reuse ? UploadJob.recovered(prepared, pending.idempotencyKey) : UploadJob.create(prepared),
-        recovered: reuse,
-      );
+      if (cut != null) {
+        try {
+          cutout = await preparer.prepare(cut, originalName: prepared.filename);
+        } on ImagePreparationException catch (e) {
+          AppLog.info('cut-out photo not usable: ${e.error.name}');
+        }
+        if (!ref.mounted) return;
+      }
+      final chosen = cutout ?? prepared;
+      final (job, recovered) = await _jobFor(chosen);
+      if (!ref.mounted) return;
+      state = AddItemState(phase: AddPhase.preview, job: job, recovered: recovered, original: prepared, cutout: cutout);
     } on PhotoAccessDenied catch (e) {
       if (ref.mounted) {
         state = AddItemState(phase: AddPhase.rejected, reject: RejectReason.accessDenied, deniedSource: e.source);
@@ -188,6 +206,34 @@ class AddItemController extends Notifier<AddItemState> {
       AppLog.warn('photo could not be picked (${e.runtimeType})');
       if (ref.mounted) state = const AddItemState(phase: AddPhase.rejected, reject: RejectReason.unreadable);
     }
+  }
+
+  /// A job for [image]: the key of an interrupted upload of exactly this
+  /// payload (same bytes AND file name: duplicate-safe), otherwise a new one.
+  Future<(UploadJob, bool)> _jobFor(PreparedImage image) async {
+    final hash = sha256Hex(image.bytes);
+    final userId = _userId;
+    final pending = userId == null ? null : await _store.read(userId);
+    final reuse = pending != null && pending.matches(hash, image.filename);
+    _hash = hash;
+    return (reuse ? UploadJob.recovered(image, pending.idempotencyKey) : UploadJob.create(image), reuse);
+  }
+
+  /// In the preview: upload the photo with ([withoutBackground]) or without
+  /// the background removed. Each version is its own upload (its own key).
+  Future<void> chooseCutout(bool withoutBackground) async {
+    final s = state;
+    final target = withoutBackground ? s.cutout : s.original;
+    if (s.phase != AddPhase.preview || target == null || identical(s.job?.image, target)) return;
+    final (job, recovered) = await _jobFor(target);
+    if (!ref.mounted || state.phase != AddPhase.preview) return;
+    state = AddItemState(
+      phase: AddPhase.preview,
+      job: job,
+      recovered: recovered,
+      original: s.original,
+      cutout: s.cutout,
+    );
   }
 
   /// Upload the job; also the Retry action (same job: same key, same bytes,

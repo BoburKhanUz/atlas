@@ -42,6 +42,7 @@ abstract final class AtlasTheme {
 
     return ThemeData(
       useMaterial3: true,
+      fontFamily: AtlasType.family,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AtlasColors.background,
       canvasColor: AtlasColors.background,
@@ -105,8 +106,8 @@ abstract final class AtlasTheme {
         filled: true,
         fillColor: AtlasColors.surface,
         contentPadding: EdgeInsets.symmetric(horizontal: AtlasSpacing.md, vertical: AtlasSpacing.md),
-        hintStyle: TextStyle(color: AtlasColors.textSecondary),
-        labelStyle: TextStyle(color: AtlasColors.textSecondary),
+        hintStyle: TextStyle(fontFamily: AtlasType.family, color: AtlasColors.textSecondary),
+        labelStyle: TextStyle(fontFamily: AtlasType.family, color: AtlasColors.textSecondary),
         border: OutlineInputBorder(
           borderRadius: AtlasRadii.field,
           borderSide: BorderSide(color: AtlasColors.hairline),
@@ -136,6 +137,17 @@ abstract final class AtlasTheme {
         labelStyle: AtlasType.label.copyWith(fontWeight: FontWeight.w500),
         padding: const EdgeInsets.symmetric(horizontal: AtlasSpacing.xs, vertical: AtlasSpacing.xxs),
         showCheckmark: false,
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: SegmentedButton.styleFrom(
+          backgroundColor: AtlasColors.surface,
+          foregroundColor: AtlasColors.textSecondary,
+          selectedBackgroundColor: AtlasColors.accentSoft,
+          selectedForegroundColor: AtlasColors.accentStrong,
+          side: const BorderSide(color: AtlasColors.hairline),
+          minimumSize: const Size.fromHeight(44),
+          textStyle: AtlasType.label,
+        ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AtlasColors.surface,

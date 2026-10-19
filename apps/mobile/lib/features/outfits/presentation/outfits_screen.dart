@@ -41,13 +41,9 @@ class OutfitsScreen extends ConsumerWidget {
               key: const Key('outfits.tabs'),
               showSelectedIcon: false,
               segments: const [
-                ButtonSegment(
-                  value: OutfitsTab.suggest,
-                  label: Text('Tavsiya'),
-                  icon: Icon(Icons.auto_awesome_outlined),
-                ),
-                ButtonSegment(value: OutfitsTab.saved, label: Text('Saqlangan'), icon: Icon(Icons.bookmark_outline)),
-                ButtonSegment(value: OutfitsTab.recent, label: Text('So‘nggi'), icon: Icon(Icons.history_rounded)),
+                ButtonSegment(value: OutfitsTab.suggest, label: Text('Tavsiya')),
+                ButtonSegment(value: OutfitsTab.saved, label: Text('Saqlangan')),
+                ButtonSegment(value: OutfitsTab.recent, label: Text('So‘nggi')),
               ],
               selected: {tab},
               onSelectionChanged: (s) => ref.read(outfitsTabProvider.notifier).show(s.single),
@@ -155,8 +151,8 @@ class _Suggestions extends ConsumerWidget {
                 ),
               )
             else
-              for (final o in result.outfits) ...[
-                CandidateCard(key: ValueKey(o.tempId), candidate: o),
+              for (final (i, o) in result.outfits.indexed) ...[
+                CandidateCard(key: ValueKey(o.tempId), candidate: o, index: i + 1),
                 const SizedBox(height: AtlasSpacing.md),
               ],
           ],

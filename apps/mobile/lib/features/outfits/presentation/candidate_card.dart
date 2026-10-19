@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../app/router.dart';
 import '../../../core/design/tokens.dart';
+import '../../../core/widgets/atlas_button.dart';
 import '../../../core/widgets/atlas_card.dart';
 import '../../wardrobe/presentation/wardrobe_labels.dart';
 import '../data/generated_outfits.dart';
@@ -17,8 +18,11 @@ import 'outfit_labels.dart';
 /// One generated suggestion: items, score, reasons, "Nega?", like/dislike
 /// and save, with the honest save status (D4).
 class CandidateCard extends ConsumerStatefulWidget {
-  const CandidateCard({super.key, required this.candidate});
+  const CandidateCard({super.key, required this.candidate, this.index});
   final OutfitGenerateResponseOutfitsInner candidate;
+
+  /// Position in the suggestions (1-based), for the title.
+  final int? index;
 
   @override
   ConsumerState<CandidateCard> createState() => _CandidateCardState();
@@ -37,53 +41,92 @@ class _CandidateCardState extends ConsumerState<CandidateCard> {
     final explanation = o.explanation.text;
     final reasons = readableReasons(o);
 
+    final canFeedback = !(c.busy || c.save == SaveStatus.unknown);
     return AtlasCard(
       key: Key('candidate.$id'),
+      padding: const EdgeInsets.all(AtlasSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Expanded(child: Text('Moslik: ${o.score.round()}%', style: text.titleMedium)),
-              if (c.isSaved) const Icon(Icons.bookmark_rounded, color: AtlasColors.accent, semanticLabel: 'Saqlangan'),
+              Expanded(child: Text(widget.index == null ? 'Obraz' : '${widget.index}-variant', style: text.titleLarge)),
+              if (c.isSaved) ...[
+                const Icon(Icons.bookmark_rounded, color: AtlasColors.accent, semanticLabel: 'Saqlangan'),
+                const SizedBox(width: AtlasSpacing.xs),
+              ],
+              _ScoreBadge(score: o.score.round()),
             ],
           ),
-          const SizedBox(height: AtlasSpacing.sm),
-          SizedBox(
-            // Image + two label lines, which grow with the text size.
-            height: 96 + AtlasSpacing.xxs + MediaQuery.textScalerOf(context).scale(18) * 2 + 4,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: o.items.length,
-              separatorBuilder: (_, _) => const SizedBox(width: AtlasSpacing.xs),
-              itemBuilder: (context, i) {
-                final item = o.items[i];
-                final name = WardrobeLabels.subcategory(item.subcategory.text ?? item.category);
-                return SizedBox(
-                  width: 96,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ClipRRect(
-                        borderRadius: AtlasRadii.field,
-                        child: SizedBox.square(
-                          dimension: 96,
-                          // Decorative: the name is the text just below.
-                          child: GeneratedItemImage(itemId: item.id, imageUrl: item.imageUrl.text),
-                        ),
+          const SizedBox(height: AtlasSpacing.md),
+          LayoutBuilder(
+            builder: (context, box) {
+              // Up to three tiles across; more scroll sideways.
+              const gap = AtlasSpacing.xs;
+              final across = o.items.length.clamp(1, 3);
+              final tile = (box.maxWidth - gap * (across - 1)) / across;
+              return SizedBox(
+                // Image + two label lines, which grow with the text size.
+                height: tile + AtlasSpacing.xs + MediaQuery.textScalerOf(context).scale(17) * 2 + 4,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: o.items.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: gap),
+                  itemBuilder: (context, i) {
+                    final item = o.items[i];
+                    final name = WardrobeLabels.subcategory(item.subcategory.text ?? item.category);
+                    return SizedBox(
+                      width: tile,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ClipRRect(
+                            borderRadius: AtlasRadii.field,
+                            child: ColoredBox(
+                              color: AtlasColors.sand,
+                              child: SizedBox.square(
+                                dimension: tile,
+                                // Decorative: the name is the text just below.
+                                child: GeneratedItemImage(itemId: item.id, imageUrl: item.imageUrl.text),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: AtlasSpacing.xs),
+                          Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: text.labelLarge),
+                          Text(
+                            OutfitLabels.role(item.layeringRole.name),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: text.bodySmall,
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: AtlasSpacing.xxs),
-                      Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: text.labelMedium),
-                      Text(
-                        OutfitLabels.role(item.layeringRole.name),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: text.labelSmall,
-                      ),
-                    ],
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: AtlasSpacing.md),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AtlasSpacing.sm),
+            decoration: const BoxDecoration(color: AtlasColors.background, borderRadius: AtlasRadii.field),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.auto_awesome_rounded, size: 18, color: AtlasColors.accent),
+                const SizedBox(width: AtlasSpacing.xs),
+                Expanded(
+                  child: Text(
+                    explanation ?? 'Bu obraz ob-havo, tadbir va uslubingizga qarab tanlandi.',
+                    key: Key('candidate.$id.explanation'),
+                    maxLines: _why ? null : 3,
+                    overflow: _why ? null : TextOverflow.ellipsis,
+                    style: text.bodyMedium?.copyWith(color: AtlasColors.textPrimary),
                   ),
-                );
-              },
+                ),
+              ],
             ),
           ),
           if (reasons.isNotEmpty) ...[
@@ -91,67 +134,142 @@ class _CandidateCardState extends ConsumerState<CandidateCard> {
             Wrap(
               spacing: AtlasSpacing.xs,
               runSpacing: AtlasSpacing.xs,
-              children: [
-                for (final r in reasons.take(_why ? reasons.length : 3))
-                  Chip(label: Text(r), visualDensity: VisualDensity.compact),
-              ],
+              children: [for (final r in reasons.take(_why ? reasons.length : 3)) _Reason(label: r)],
             ),
           ],
           TextButton.icon(
             key: Key('candidate.$id.why'),
             onPressed: () => setState(() => _why = !_why),
             icon: Icon(_why ? Icons.expand_less_rounded : Icons.expand_more_rounded),
-            label: const Text('Nega?'),
+            label: Text(_why ? 'Qisqaroq' : 'Nega aynan shu?'),
           ),
-          if (_why)
-            Text(
-              explanation ?? 'Bu obraz ob-havo, tadbir va uslubingizga qarab tanlandi.',
-              key: Key('candidate.$id.explanation'),
-              style: text.bodyMedium,
-            ),
-          const SizedBox(height: AtlasSpacing.xs),
           _Status(tempId: id, state: c),
-          Wrap(
-            spacing: AtlasSpacing.xs,
-            runSpacing: AtlasSpacing.xs,
-            crossAxisAlignment: WrapCrossAlignment.center,
+          Row(
             children: [
-              IconButton(
-                key: Key('candidate.$id.like'),
-                tooltip: 'Yoqdi',
-                isSelected: c.feedback == OutfitFeedback.liked,
-                onPressed: c.busy || c.save == SaveStatus.unknown ? null : () => ctl.feedback(id, OutfitFeedback.liked),
-                icon: const Icon(Icons.thumb_up_outlined),
-                selectedIcon: const Icon(Icons.thumb_up_rounded, color: AtlasColors.accent),
-              ),
-              IconButton(
-                key: Key('candidate.$id.dislike'),
-                tooltip: 'Yoqmadi',
-                isSelected: c.feedback == OutfitFeedback.disliked,
-                onPressed: c.busy || c.save == SaveStatus.unknown
-                    ? null
-                    : () => ctl.feedback(id, OutfitFeedback.disliked),
-                icon: const Icon(Icons.thumb_down_outlined),
-                selectedIcon: const Icon(Icons.thumb_down_rounded, color: AtlasColors.accent),
-              ),
-              if (c.isSaved && c.outfitId != null)
-                TextButton(
-                  key: Key('candidate.$id.open'),
-                  onPressed: () => context.push(AtlasRoutes.outfitDetail(c.outfitId!)),
-                  child: const Text('Ochish'),
-                )
-              else if (c.save != SaveStatus.unknown)
-                FilledButton.tonalIcon(
-                  key: Key('candidate.$id.save'),
-                  onPressed: c.busy ? null : () => ctl.save(id),
-                  icon: c.save == SaveStatus.saving || c.save == SaveStatus.checking
-                      ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.bookmark_add_outlined),
-                  label: Text(c.save == SaveStatus.failed ? 'Qayta saqlash' : 'Saqlash'),
+              Expanded(
+                child: _FeedbackButton(
+                  key: Key('candidate.$id.like'),
+                  label: 'Yoqdi',
+                  icon: Icons.thumb_up_outlined,
+                  selectedIcon: Icons.thumb_up_rounded,
+                  selected: c.feedback == OutfitFeedback.liked,
+                  onPressed: canFeedback ? () => ctl.feedback(id, OutfitFeedback.liked) : null,
                 ),
+              ),
+              const SizedBox(width: AtlasSpacing.xs),
+              Expanded(
+                child: _FeedbackButton(
+                  key: Key('candidate.$id.dislike'),
+                  label: 'Yoqmadi',
+                  icon: Icons.thumb_down_outlined,
+                  selectedIcon: Icons.thumb_down_rounded,
+                  selected: c.feedback == OutfitFeedback.disliked,
+                  onPressed: canFeedback ? () => ctl.feedback(id, OutfitFeedback.disliked) : null,
+                ),
+              ),
             ],
           ),
+          if (c.isSaved && c.outfitId != null) ...[
+            const SizedBox(height: AtlasSpacing.xs),
+            AtlasButton(
+              key: Key('candidate.$id.open'),
+              label: 'Saqlangan obrazni ochish',
+              icon: Icons.open_in_new_rounded,
+              variant: AtlasButtonVariant.secondary,
+              onPressed: () => context.push(AtlasRoutes.outfitDetail(c.outfitId!)),
+            ),
+          ] else if (c.save != SaveStatus.unknown) ...[
+            const SizedBox(height: AtlasSpacing.xs),
+            AtlasButton(
+              key: Key('candidate.$id.save'),
+              label: c.save == SaveStatus.failed ? 'Qayta saqlash' : 'Saqlash',
+              icon: Icons.bookmark_add_outlined,
+              loading: c.save == SaveStatus.saving || c.save == SaveStatus.checking,
+              onPressed: c.busy ? null : () => ctl.save(id),
+            ),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+class _ScoreBadge extends StatelessWidget {
+  const _ScoreBadge({required this.score});
+  final int score;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'Moslik $score foiz',
+      excludeSemantics: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: AtlasSpacing.sm, vertical: AtlasSpacing.xxs + 2),
+        decoration: BoxDecoration(color: AtlasColors.accentSoft, borderRadius: BorderRadius.circular(AtlasRadii.pill)),
+        child: Text(
+          '$score% mos',
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AtlasColors.accentStrong),
+        ),
+      ),
+    );
+  }
+}
+
+class _Reason extends StatelessWidget {
+  const _Reason({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: AtlasSpacing.sm, vertical: AtlasSpacing.xxs + 2),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AtlasRadii.pill),
+        border: Border.all(color: AtlasColors.hairline),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.check_rounded, size: 16, color: AtlasColors.accent),
+          const SizedBox(width: AtlasSpacing.xxs),
+          Flexible(child: Text(label, style: Theme.of(context).textTheme.labelMedium)),
+        ],
+      ),
+    );
+  }
+}
+
+class _FeedbackButton extends StatelessWidget {
+  const _FeedbackButton({
+    super.key,
+    required this.label,
+    required this.icon,
+    required this.selectedIcon,
+    required this.selected,
+    required this.onPressed,
+  });
+
+  final String label;
+  final IconData icon;
+  final IconData selectedIcon;
+  final bool selected;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      selected: selected,
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size.fromHeight(44),
+          padding: const EdgeInsets.symmetric(horizontal: AtlasSpacing.sm),
+          backgroundColor: selected ? AtlasColors.accentSoft : null,
+          foregroundColor: selected ? AtlasColors.accentStrong : AtlasColors.textPrimary,
+          side: BorderSide(color: selected ? AtlasColors.accent : AtlasColors.hairline),
+        ),
+        icon: Icon(selected ? selectedIcon : icon, size: 18),
+        label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
       ),
     );
   }

@@ -59,7 +59,8 @@ void main() {
     expect(find.byKey(const Key('add.needsCorrection')), findsOneWidget);
     expect(find.byKey(const Key('review.banner')), findsOneWidget);
     expect(inRow('fit', 'Past ishonch'), findsOneWidget);
-    expect(inRow('category', 'Yuqori ishonch'), findsOneWidget);
+    // A high confidence is not tagged: only what needs attention is.
+    expect(inRow('category', 'Yuqori ishonch'), findsNothing);
     final sent = app.h.backend.sent.length;
     await app.tap(inRow('fit', 'To‘g‘ri'));
     await app.tap(inRow('gender', 'To‘g‘ri'));

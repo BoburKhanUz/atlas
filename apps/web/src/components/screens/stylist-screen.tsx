@@ -27,7 +27,7 @@ interface ChatResponse {
 const QUICK_PROMPTS = [
   'Bugun nima kiyaman?',
   "Ertaga ishga nima kiyganim yaxshi?",
-  "To'yga boraman.",
+  "To‘yga boraman.",
   'Bugun juda issiq.',
   'Shu ko‘ylagim bilan nima kiysam bo‘ladi?',
 ]
@@ -58,7 +58,7 @@ export function StylistScreen() {
         {
           role: 'assistant',
           content:
-            "Salom! Men sizning shaxsiy AI stilistingizman. Garderobingizdagi kiyimlardan mos outfit tavsiya qilaman. Nima so'rashingizni bilmoqchiman?",
+            "Salom! Men sizning shaxsiy AI stilistingizman. Garderobingizdagi kiyimlardan mos obraz tavsiya qilaman. Nima so‘rashingizni bilmoqchiman?",
         },
       ])
     }
@@ -125,7 +125,7 @@ export function StylistScreen() {
           <div className="flex-1">
             <h1 className="font-semibold leading-tight">AI Stilist</h1>
             <p className="text-xs text-muted-foreground">
-              Garderobingizdan outfit tavsiya qiladi
+              Garderobingizdan obraz tavsiya qiladi
             </p>
           </div>
         </div>
@@ -223,7 +223,7 @@ export function StylistScreen() {
                 }
               }}
               rows={1}
-              placeholder=" Stilistingizdan so'rang…"
+              placeholder=" Stilistingizdan so‘rang…"
               className="flex-1 resize-none bg-transparent outline-none text-sm leading-relaxed max-h-24 placeholder:text-muted-foreground"
               style={{ minHeight: '24px' }}
             />

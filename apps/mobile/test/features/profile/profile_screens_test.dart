@@ -94,6 +94,11 @@ void main() {
     expect(find.text('Aziza'), findsOneWidget);
     expect(find.text('a@test.local'), findsOneWidget);
     expect(find.textContaining('To‘q ko‘k'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('profile.color')),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.textContaining('Hali aniqlanmagan'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.byKey(const Key('profile.delete')),
@@ -114,6 +119,11 @@ void main() {
       return JsonReply(200, patched ? profileJson(name: 'Dilnoza') : profileJson());
     };
     await app.start();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('profile.edit')),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await app.open(find.byKey(const Key('profile.edit')));
     expect(find.byType(ProfileEditScreen), findsOneWidget);
     await tester.enterText(find.byKey(const Key('profileEdit.name')), 'Dilnoza');
@@ -142,6 +152,11 @@ void main() {
     app.h.backend.handlers[P.profile] = (r) =>
         r.method == 'PATCH' ? TransportFailure(DioExceptionType.connectionError) : JsonReply(200, profileJson());
     await app.start();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('profile.edit')),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await app.open(find.byKey(const Key('profile.edit')));
     await tester.enterText(find.byKey(const Key('profileEdit.name')), 'Dilnoza');
     await app.settle();

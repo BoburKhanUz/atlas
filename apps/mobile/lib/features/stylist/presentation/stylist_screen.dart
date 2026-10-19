@@ -5,7 +5,6 @@ import 'package:material_ui/material_ui.dart';
 import '../../../app/router.dart';
 import '../../../core/design/tokens.dart';
 import '../../../core/network/api_failure.dart';
-import '../../../core/widgets/atlas_button.dart';
 import '../../../core/widgets/atlas_card.dart';
 import '../../../core/widgets/atlas_page.dart';
 import '../../../core/widgets/skeleton.dart' show LoadingView;
@@ -52,13 +51,52 @@ class StylistScreen extends ConsumerWidget {
           _ => SliverPadding(
             padding: const EdgeInsets.fromLTRB(AtlasSpacing.screen, 0, AtlasSpacing.screen, 96),
             sliver: SliverList.separated(
-              itemCount: s.conversations.length,
-              separatorBuilder: (_, _) => const SizedBox(height: AtlasSpacing.sm),
-              itemBuilder: (context, i) => _ConversationRow(conversation: s.conversations[i]),
+              itemCount: s.conversations.length + 1,
+              separatorBuilder: (_, i) => SizedBox(height: i == 0 ? AtlasSpacing.lg : AtlasSpacing.sm),
+              itemBuilder: (context, i) =>
+                  i == 0 ? const _Intro() : _ConversationRow(conversation: s.conversations[i - 1]),
             ),
           ),
         },
       ],
+    );
+  }
+}
+
+/// What the stylist does, above the conversations.
+class _Intro extends StatelessWidget {
+  const _Intro();
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Container(
+      padding: const EdgeInsets.all(AtlasSpacing.md),
+      decoration: const BoxDecoration(gradient: AtlasColors.heroGradient, borderRadius: AtlasRadii.card),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(color: AtlasColors.onAccent.withValues(alpha: 0.14), shape: BoxShape.circle),
+            child: const Icon(Icons.auto_awesome_rounded, color: AtlasColors.onAccent),
+          ),
+          const SizedBox(width: AtlasSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Shaxsiy stilistingiz', style: text.titleMedium?.copyWith(color: AtlasColors.onAccent)),
+                const SizedBox(height: 2),
+                Text(
+                  'Garderobingiz va ob-havoni biladi. Tadbir, ranglar yoki xarid haqida so‘rang.',
+                  style: text.bodySmall?.copyWith(color: AtlasColors.onInkMuted),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -76,8 +114,9 @@ class _ConversationRow extends StatelessWidget {
       child: Row(
         children: [
           const CircleAvatar(
+            radius: 22,
             backgroundColor: AtlasColors.accentSoft,
-            child: Icon(Icons.auto_awesome_outlined, color: AtlasColors.accent),
+            child: Icon(Icons.chat_bubble_outline_rounded, color: AtlasColors.accent, size: 20),
           ),
           const SizedBox(width: AtlasSpacing.sm),
           Expanded(
@@ -88,7 +127,7 @@ class _ConversationRow extends StatelessWidget {
                   conversation.title ?? 'Suhbat',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: text.titleSmall,
+                  style: text.titleMedium,
                 ),
                 if (conversation.lastMessage != null)
                   Text(conversation.lastMessage!, maxLines: 2, overflow: TextOverflow.ellipsis, style: text.bodySmall),
@@ -112,18 +151,4 @@ String relativeTime(DateTime t, DateTime now) {
   if (d.inDays < 2) return 'kecha';
   final l = t.toLocal();
   return '${l.day.toString().padLeft(2, '0')}.${l.month.toString().padLeft(2, '0')}';
-}
-
-/// The Home entry point.
-class AskStylistButton extends StatelessWidget {
-  const AskStylistButton({super.key});
-
-  @override
-  Widget build(BuildContext context) => AtlasButton(
-    key: const Key('home.stylist'),
-    label: 'Stilistdan so‘rash',
-    icon: Icons.chat_bubble_outline_rounded,
-    variant: AtlasButtonVariant.secondary,
-    onPressed: () => context.push(AtlasRoutes.stylistNew),
-  );
 }

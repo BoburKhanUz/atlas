@@ -134,23 +134,42 @@ class _Details extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final image = item.primaryImage ?? item.images.firstOrNull;
+    final name = WardrobeLabels.itemName(category: item.category, subcategory: item.subcategory, colors: item.colors);
     return ListView(
-      padding: const EdgeInsets.all(AtlasSpacing.screen),
+      padding: const EdgeInsets.fromLTRB(AtlasSpacing.screen, AtlasSpacing.xs, AtlasSpacing.screen, AtlasSpacing.xl),
       children: [
         if (image != null)
           ClipRRect(
             borderRadius: AtlasRadii.card,
-            child: AspectRatio(
-              aspectRatio: (image.width ?? 3) / (image.height ?? 4),
-              child: SignedImage(
-                image: SignedImageRef(imageId: image.id, url: image.url, expiresAt: image.urlExpiresAt),
-                onExpired: onExpired,
-                fit: BoxFit.contain,
-                semanticLabel: 'Kiyim surati',
+            child: ColoredBox(
+              color: AtlasColors.sand,
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: SignedImage(
+                  image: SignedImageRef(imageId: image.id, url: image.url, expiresAt: image.urlExpiresAt),
+                  onExpired: onExpired,
+                  fit: BoxFit.contain,
+                  semanticLabel: 'Kiyim surati',
+                ),
               ),
             ),
           ),
         const SizedBox(height: AtlasSpacing.lg),
+        Text(name, key: const Key('item.name'), style: text.headlineMedium),
+        const SizedBox(height: AtlasSpacing.xs),
+        Wrap(
+          spacing: AtlasSpacing.xs,
+          runSpacing: AtlasSpacing.xs,
+          children: [
+            for (final c in item.colors)
+              _Pill(label: WardrobeLabels.color(c), swatch: WardrobeLabels.swatch(c) ?? AtlasColors.skeleton),
+            if (item.formality case final f?) _Pill(label: WardrobeLabels.formality(f)),
+            for (final season in item.season) _Pill(label: WardrobeLabels.season(season)),
+          ],
+        ),
+        const SizedBox(height: AtlasSpacing.lg),
+        Text('Xususiyatlar', style: text.titleLarge),
+        const SizedBox(height: AtlasSpacing.sm),
         AttributeReviewList(item: item, acknowledged: acknowledged, onAcknowledge: onAcknowledge, onEdit: onEdit),
         if (item.wasCorrected) ...[
           const SizedBox(height: AtlasSpacing.md),
@@ -164,6 +183,43 @@ class _Details extends StatelessWidget {
             ),
         ],
       ],
+    );
+  }
+}
+
+/// A small rounded label under the item name (colour, formality, season).
+class _Pill extends StatelessWidget {
+  const _Pill({required this.label, this.swatch});
+  final String label;
+  final Color? swatch;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: AtlasSpacing.sm, vertical: AtlasSpacing.xxs + 2),
+      decoration: BoxDecoration(
+        color: AtlasColors.surface,
+        borderRadius: BorderRadius.circular(AtlasRadii.pill),
+        border: Border.all(color: AtlasColors.hairline),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (swatch != null) ...[
+            Container(
+              width: 14,
+              height: 14,
+              decoration: BoxDecoration(
+                color: swatch,
+                shape: BoxShape.circle,
+                border: Border.all(color: AtlasColors.hairline),
+              ),
+            ),
+            const SizedBox(width: AtlasSpacing.xs),
+          ],
+          Flexible(child: Text(label, style: Theme.of(context).textTheme.labelLarge)),
+        ],
+      ),
     );
   }
 }

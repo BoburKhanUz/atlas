@@ -124,7 +124,7 @@ export function ProfileScreen() {
       router.refresh()
       return true
     } catch (err) {
-      const msg = err instanceof ApiError ? err.message : "O'chirib bo'lmadi"
+      const msg = err instanceof ApiError ? err.message : "O‘chirib bo‘lmadi"
       toast({ title: 'Xato', description: msg, variant: 'destructive' })
       setBusy(false)
       return false
@@ -166,7 +166,7 @@ export function ProfileScreen() {
           </div>
         </div>
         <div className="text-xs text-muted-foreground mt-4 pt-4 border-t">
-          A'zo bo'lgan sana:{' '}
+          A’zo bo‘lgan sana:{' '}
           {u ? new Date(u.createdAt).toLocaleDateString('uz') : '—'}
         </div>
       </motion.div>
@@ -178,13 +178,13 @@ export function ProfileScreen() {
         transition={{ duration: 0.5, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
         className="surface-card overflow-hidden mb-4"
       >
-        <SectionHeader icon={UserIcon} title="Shaxsiy ma'lumotlar" subtitle="Ko'pchilik ixtiyoriy" />
+        <SectionHeader icon={UserIcon} title="Shaxsiy ma’lumotlar" subtitle="Ko‘pchilik ixtiyoriy" />
         <AttributeRow label="Jins" value={profile_?.gender ?? null} />
         <AttributeRow label="Tana shakli" value={profile_?.bodyShape ?? null} />
         <AttributeRow label="Teri ohangi" value={profile_?.skinTone ?? null} />
         <AttributeRow label="Teri osti ohangi" value={profile_?.skinUndertone ?? null} />
         <AttributeRow label="Soch rangi" value={profile_?.hairColor ?? null} />
-        <AttributeRow label="Ko'z rangi" value={profile_?.eyeColor ?? null} />
+        <AttributeRow label="Ko‘z rangi" value={profile_?.eyeColor ?? null} />
         <AttributeRow label="Afzallikdagi kesim" value={profile_?.preferredFit ?? null} last />
       </motion.div>
 
@@ -286,9 +286,9 @@ export function ProfileScreen() {
             )}
           </div>
           <div className="flex-1">
-            <p className="font-medium text-sm text-destructive">Hisobni o'chirish</p>
+            <p className="font-medium text-sm text-destructive">Hisobni o‘chirish</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Barcha ma'lumotlaringiz o'chiriladi
+              Barcha ma’lumotlaringiz o‘chiriladi
             </p>
           </div>
           <ChevronRight className="w-4 h-4 text-muted-foreground" />
@@ -300,8 +300,8 @@ export function ProfileScreen() {
         <Shield className="w-3.5 h-3.5 mt-0.5 text-primary shrink-0" />
         <div className="space-y-1.5">
           <p>
-            Ma'lumotlaringiz shaxsiy saqlanadi. Rasmlaringiz modelni
-            o'rgatish uchun ishlatilmaydi.
+            Ma’lumotlaringiz shaxsiy saqlanadi. Rasmlaringiz modelni
+            o‘rgatish uchun ishlatilmaydi.
           </p>
           <p>
             <Link href={routes.privacy()} className="underline underline-offset-2 hover:text-foreground">
@@ -318,15 +318,15 @@ export function ProfileScreen() {
       <ConfirmDialog
         open={confirmDeleteOpen}
         onOpenChange={setConfirmDeleteOpen}
-        title="Hisobni o'chirish"
+        title="Hisobni o‘chirish"
         description={
           <>
-            Hisobingiz va barcha ma'lumotlaringiz (garderob, outfitlar,
-            suhbatlar, rang tahlili) butunlay o'chiriladi. Bu amalni qaytarib
-            bo'lmaydi.
+            Hisobingiz va barcha ma’lumotlaringiz (garderob, obrazlar,
+            suhbatlar, rang tahlili) butunlay o‘chiriladi. Bu amalni qaytarib
+            bo‘lmaydi.
           </>
         }
-        confirmLabel="Hisobni o'chirish"
+        confirmLabel="Hisobni o‘chirish"
         confirmWord="O'CHIRISH"
         onConfirm={handleDeleteAccount}
       />
@@ -374,7 +374,7 @@ function AttributeRow({
     >
       <span className="text-sm text-muted-foreground">{label}</span>
       <span className={cn('text-sm font-medium text-right', !value && 'text-muted-foreground/60')}>
-        {value ?? "Ko'rsatilmagan"}
+        {value ?? "Ko‘rsatilmagan"}
       </span>
     </div>
   )
@@ -401,7 +401,7 @@ function PrefRow({
         <span className="text-sm font-medium text-right">{value}</span>
       ) : (
         <span className="text-sm text-muted-foreground/60 flex items-center gap-1">
-          <AlertCircle className="w-3 h-3" /> Hali yo'q
+          <AlertCircle className="w-3 h-3" /> Hali yo‘q
         </span>
       )}
     </div>

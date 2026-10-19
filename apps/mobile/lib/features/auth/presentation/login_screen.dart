@@ -63,7 +63,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         : UserMessages.forSignedOut(reason);
     return AuthFormScaffold(
       title: 'Xush kelibsiz',
-      subtitle: 'Garderobingiz va uslubingiz bilan davom eting.',
+      subtitle: 'Hisobingizga kiring — garderobingiz va obrazlaringiz sizni kutmoqda.',
       children: [
         if (_error != null)
           AuthNotice(message: _error!)
@@ -83,19 +83,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   autofillHints: const [AutofillHints.email],
                   autocorrect: false,
                   textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(labelText: 'Email'),
+                  decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.mail_outline_rounded)),
                   validator: AuthValidators.email,
                 ),
                 const SizedBox(height: AtlasSpacing.md),
-                TextFormField(
+                PasswordFormField(
                   key: const Key('login.password'),
                   controller: _password,
                   enabled: !busy,
-                  obscureText: true,
                   autofillHints: const [AutofillHints.password],
-                  textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _submit(),
-                  decoration: const InputDecoration(labelText: 'Parol'),
                   validator: AuthValidators.loginPassword,
                 ),
               ],
@@ -110,13 +107,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: const Text('Parolni unutdingizmi?'),
           ),
         ),
-        const SizedBox(height: AtlasSpacing.sm),
+        const SizedBox(height: AtlasSpacing.xxs),
         AtlasButton(key: const Key('login.submit'), label: 'Kirish', loading: busy, onPressed: _submit),
-        const SizedBox(height: AtlasSpacing.sm),
-        AtlasButton(
-          key: const Key('login.toRegister'),
-          label: 'Hisob yaratish',
-          variant: AtlasButtonVariant.ghost,
+        const SizedBox(height: AtlasSpacing.xs),
+        AuthSwitchLink(
+          actionKey: const Key('login.toRegister'),
+          question: 'Hisobingiz yo‘qmi?',
+          action: 'Ro‘yxatdan o‘ting',
           onPressed: busy ? null : () => context.go(AtlasRoutes.register),
         ),
       ],

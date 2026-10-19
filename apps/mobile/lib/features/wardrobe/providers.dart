@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/network/providers.dart';
 import '../../core/session/providers.dart';
+import 'data/background_remover.dart';
 import 'data/image_preparer.dart';
 import 'data/pending_upload_store.dart';
 import 'data/photo_picker.dart';
@@ -18,6 +19,8 @@ final wardrobeRepositoryProvider = Provider<WardrobeRepository>(
 final photoPickerProvider = Provider<PhotoPicker>((ref) => PlatformPhotoPicker());
 
 final imagePreparerProvider = Provider<ImagePreparer>((ref) => const ImagePreparer(PlatformImageCompressor()));
+
+final backgroundRemoverProvider = Provider<BackgroundRemover>((ref) => const PlatformBackgroundRemover());
 
 /// Waits used by the upload flow (IDEMPOTENCY_IN_PROGRESS); tests replace it.
 final uploadSleepProvider = Provider<Future<void> Function(Duration)>((ref) => Future<void>.delayed);

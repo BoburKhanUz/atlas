@@ -7,5 +7,6 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         CrashRecords.attach(flutterEngine.dartExecutor.binaryMessenger, applicationContext)
+        SubjectCutout.attach(flutterEngine.dartExecutor.binaryMessenger)
     }
 }

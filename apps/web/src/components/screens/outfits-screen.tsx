@@ -130,7 +130,7 @@ export function OutfitsScreen() {
       setSavedOutfits(res.outfits)
     } catch (err) {
       setSavedError(
-        err instanceof ApiError ? err.message : 'Saqlangan outfitlar yuklanmadi',
+        err instanceof ApiError ? err.message : 'Saqlangan obrazlar yuklanmadi',
       )
     }
   }, [])
@@ -298,7 +298,7 @@ export function OutfitsScreen() {
         title: kind === 'liked' ? 'Yaxshi 👍' : 'Tushundim 👎',
         description:
           kind === 'liked'
-            ? 'Fikringiz saqlandi — bundan keyin shu kabi outfitlarni tavsiya qilamiz'
+            ? 'Fikringiz saqlandi — bundan keyin shu kabi obrazlarni tavsiya qilamiz'
             : 'Fikringiz saqlandi — bunday kombinatsiyani kam tavsiya qilamiz',
       })
     } catch (err) {
@@ -311,7 +311,7 @@ export function OutfitsScreen() {
   return (
     <div className="px-5 pt-12 pb-6">
       <div className="mb-6">
-        <h1 className="display-lg">Outfitlar</h1>
+        <h1 className="display-lg">Obrazlar</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Garderobingizdan avtomatik kombinatsiya
         </p>
@@ -449,7 +449,7 @@ export function OutfitsScreen() {
         <div className="mt-8">
           <div className="flex items-center gap-2 mb-3">
             <Heart className="w-4 h-4 text-primary" />
-            <h2 className="font-semibold text-sm">Saqlangan outfitlar</h2>
+            <h2 className="font-semibold text-sm">Saqlangan obrazlar</h2>
             <span className="text-xs text-muted-foreground">({savedOutfits.length})</span>
           </div>
           <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
@@ -568,7 +568,7 @@ function WeatherContext({
       <div className="flex-1 text-xs text-muted-foreground">
         {weather && (
           <span>
-            {weather.temperature}° · hisdagi {weather.feelsLike}° · yomg'ir {weather.precipitationProbability}%
+            {weather.temperature}° · hisdagi {weather.feelsLike}° · yomg‘ir {weather.precipitationProbability}%
           </span>
         )}
         {weather && occasion && <span className="mx-1.5">·</span>}
@@ -687,7 +687,7 @@ function OutfitCard({
           onClick={onToggleExpand}
           className="w-full flex items-center justify-between text-sm font-medium text-foreground py-2"
         >
-          <span>Nega shu outfit?</span>
+          <span>Nega shu obraz?</span>
           {expanded ? (
             <ChevronUp className="w-4 h-4 text-muted-foreground" />
           ) : (
@@ -713,7 +713,7 @@ function OutfitCard({
                 <FactorRow label="Sizning afzalligingiz" value={outfit.factors.preference} />
               </ul>
               <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
-                Kontrast darajasi: {outfit.contrastLevel === 'low' ? 'past' : outfit.contrastLevel === 'medium' ? "o'rta" : 'yuqori'}
+                Kontrast darajasi: {outfit.contrastLevel === 'low' ? 'past' : outfit.contrastLevel === 'medium' ? "o‘rta" : 'yuqori'}
               </p>
             </motion.div>
           )}

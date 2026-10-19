@@ -198,7 +198,7 @@ export function HomeScreen() {
           <div className="flex-1">
             <p className="font-semibold text-foreground">AI stilistdan so‘rash</p>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Tabiiy tilda so‘rang — javob gardarobingizdan
+              Tabiiy tilda so‘rang — javob garderobingizdan
             </p>
           </div>
           <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
@@ -219,7 +219,7 @@ export function HomeScreen() {
           <Layers className="w-6 h-6 text-foreground" />
         </div>
         <div className="flex-1">
-          <p className="font-semibold text-foreground">Garderobdan outfit</p>
+          <p className="font-semibold text-foreground">Garderobdan obraz</p>
           <p className="text-sm text-muted-foreground mt-0.5">
             {wardrobeCountError
               ? 'Garderob ma’lumoti yuklanmadi'
@@ -246,10 +246,10 @@ export function HomeScreen() {
 
 function greeting(): string {
   const h = new Date().getHours()
-  if (h < 5) return 'Tongi momingiz'
+  if (h < 5) return 'Xayrli tun'
   if (h < 12) return 'Xayrli tong'
-  if (h < 17) return 'Xayrli kun'
-  if (h < 22) return 'Xayrli kech'
+  if (h < 18) return 'Xayrli kun'
+  if (h < 23) return 'Xayrli kech'
   return 'Xayrli tun'
 }
 
@@ -289,7 +289,7 @@ function WeatherCard({
 
   // Show today's weather naturally. Spec example:
   // "35° · Qisman bulutli · Yomg'ir ehtimoli 70%"
-  const summary = `${weather.temperature}° · ${weather.conditionLabel} · Yomg'ir ehtimoli ${weather.precipitationProbability}%`
+  const summary = `${weather.temperature}° · ${weather.conditionLabel} · Yomg‘ir ehtimoli ${weather.precipitationProbability}%`
   return (
     <div className="surface-card p-5">
       <div className="flex items-start justify-between mb-3">

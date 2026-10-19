@@ -22,15 +22,15 @@ export const metadata: Metadata = {
     template: "%s — AI Stilist",
   },
   description:
-    "Garderobingizdagi kiyimlardan avtomatik outfit tavsiya qiluvchi AI stilist. Faqat sizniki — xarid yo'q.",
-  keywords: ["AI stylist", "fashion", "wardrobe", "outfit", "O'zbek"],
+    "Garderobingizdagi kiyimlardan avtomatik obraz tavsiya qiluvchi AI stilist. Faqat sizniki — xarid yo‘q.",
+  keywords: ["AI stylist", "fashion", "wardrobe", "outfit", "O‘zbek"],
   authors: [{ name: "AI Fashion Stylist" }],
   icons: {
     icon: "/logo.svg",
   },
   openGraph: {
     title: "AI Stylist",
-    description: "Shaxsiy AI stilistingiz — garderobingizdan outfit",
+    description: "Shaxsiy AI stilistingiz — garderobingizdan obraz",
     siteName: "AI Stylist",
     type: "website",
   },

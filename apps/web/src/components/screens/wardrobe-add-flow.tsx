@@ -235,7 +235,7 @@ function CapturePhase({
         <div className="aspect-[3/4] bg-muted rounded-xl overflow-hidden flex items-center justify-center mb-6">
           {previewUrl ? (
              
-            <img src={previewUrl} alt="oldin ko'rish" className="w-full h-full object-cover" />
+            <img src={previewUrl} alt="oldin ko‘rish" className="w-full h-full object-cover" />
           ) : (
             <div className="text-center text-muted-foreground">
               <Camera className="w-10 h-10 mx-auto mb-2 opacity-50" />
@@ -434,7 +434,7 @@ function DetectionRow({
   // Spec rule: "AI must never pretend certainty when confidence is low."
   // Show confidence explicitly so the user knows what to trust.
   const confidenceLabel =
-    confidence >= 0.7 ? 'Yuqori ishonch' : confidence >= 0.4 ? "O'rta ishonch" : 'Past ishonch'
+    confidence >= 0.7 ? 'Yuqori ishonch' : confidence >= 0.4 ? "O‘rta ishonch" : 'Past ishonch'
   return (
     <div className="flex items-baseline justify-between gap-3">
       <dt className="text-muted-foreground shrink-0">{label}</dt>

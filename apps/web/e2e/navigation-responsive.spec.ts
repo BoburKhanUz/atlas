@@ -10,7 +10,7 @@ const VIEWPORTS = [
 const LINKS = [
   { label: 'Garderob', path: '/wardrobe' },
   { label: 'AI Stilist', path: '/stylist' },
-  { label: 'Outfitlar', path: '/outfits' },
+  { label: 'Obrazlar', path: '/outfits' },
   { label: 'Profil', path: '/profile' },
   { label: 'Bosh sahifa', path: '/' },
 ]

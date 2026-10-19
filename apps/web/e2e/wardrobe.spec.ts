@@ -55,13 +55,13 @@ test.describe('wardrobe', () => {
 
     // Delete via dialog from the detail page
     await page.locator('a[href^="/wardrobe/"]:not([href="/wardrobe/new"])').first().click()
-    await page.getByRole('button', { name: "O'chirish" }).click()
+    await page.getByRole('button', { name: 'O‘chirish' }).click()
     const dialog = page.getByRole('alertdialog')
     await expect(dialog).toBeVisible()
     await dialog.getByRole('button', { name: 'Bekor qilish' }).click()
     await expect(dialog).toBeHidden()
-    await page.getByRole('button', { name: "O'chirish" }).click()
-    await page.getByRole('alertdialog').getByRole('button', { name: "O'chirish" }).click()
+    await page.getByRole('button', { name: 'O‘chirish' }).click()
+    await page.getByRole('alertdialog').getByRole('button', { name: 'O‘chirish' }).click()
     await expect(page).toHaveURL(/\/wardrobe$/)
     await expect(page.getByText('2 ta kiyim')).toBeVisible()
     await expect(page.locator('a[href^="/wardrobe/"]:not([href="/wardrobe/new"])')).toHaveCount(2)

@@ -32,19 +32,26 @@ class WeatherCard extends ConsumerWidget {
         children: [
           Row(
             children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: const BoxDecoration(color: AtlasColors.sand, shape: BoxShape.circle),
+                child: Icon(weatherIcon(weather.condition), color: AtlasColors.ink, size: 28),
+              ),
+              const SizedBox(width: AtlasSpacing.md),
               Text(
                 OutfitLabels.temperature(weather.temperature),
                 key: const Key('weather.temp'),
-                style: text.displaySmall,
+                style: text.displaySmall?.copyWith(fontSize: 36),
               ),
-              const SizedBox(width: AtlasSpacing.md),
+              const SizedBox(width: AtlasSpacing.sm),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(weather.conditionLabel, style: text.titleMedium),
                     Text(
-                      'His etiladi ${OutfitLabels.temperature(weather.feelsLike)} · Yog‘ingarchilik ${weather.precipitationProbability.round()}%',
+                      'Sezilishi ${OutfitLabels.temperature(weather.feelsLike)} · Yog‘in ${weather.precipitationProbability.round()}%',
                       style: text.bodySmall,
                     ),
                   ],
@@ -83,16 +90,21 @@ class WeatherCard extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.wb_sunny_outlined, size: 18, color: AtlasColors.accent),
-              const SizedBox(width: AtlasSpacing.xs),
-              Expanded(child: Text(where == null ? 'Ob-havo' : 'Ob-havo · $where', style: text.labelLarge)),
+              const Icon(Icons.place_outlined, size: 16, color: AtlasColors.textSecondary),
+              const SizedBox(width: AtlasSpacing.xxs),
+              Expanded(
+                child: Text(
+                  where == null ? 'Ob-havo' : 'Ob-havo · $where',
+                  style: text.labelLarge?.copyWith(color: AtlasColors.textSecondary),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: AtlasSpacing.sm),
           body,
-          const SizedBox(height: AtlasSpacing.sm),
+          const SizedBox(height: AtlasSpacing.xs),
           Wrap(
-            spacing: AtlasSpacing.xs,
+            spacing: AtlasSpacing.xxs,
             runSpacing: AtlasSpacing.xs,
             children: [
               if (weather == null && !busy && s.status != WeatherStatus.noLocation)
@@ -151,6 +163,18 @@ class WeatherCard extends ConsumerWidget {
     null => 'Obrazlar ob-havoga mos bo‘lishi uchun joylashuvingiz yoki shahringiz kerak. Joylashuv faqat siz ruxsat berganda bir marta olinadi.',
   };
 }
+
+/// An icon for the backend's canonical weather condition.
+IconData weatherIcon(String condition) => switch (condition) {
+  'clear' => Icons.wb_sunny_outlined,
+  'partly_cloudy' => Icons.wb_cloudy_outlined,
+  'cloudy' => Icons.cloud_outlined,
+  'rain' => Icons.umbrella_outlined,
+  'thunderstorm' => Icons.thunderstorm_outlined,
+  'snow' => Icons.ac_unit_rounded,
+  'fog' => Icons.foggy,
+  _ => Icons.thermostat_rounded,
+};
 
 /// The manual city list (no geocoding service).
 Future<void> showCityPicker(BuildContext context, WidgetRef ref) async {

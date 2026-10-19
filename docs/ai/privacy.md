@@ -102,3 +102,13 @@ Source: [Your data](https://developers.openai.com/api/docs/guides/your-data).
 1. Tests can no longer reach a real provider because of the developer's shell: the mock is pinned, keys and models are removed, and a network guard refuses the provider hosts (`tests/ai-test-env.ts`, `tests/setup.ts`, integration config; `test-isolation.test.ts`).
 2. Outfit-AI context values are catalog ids only. Free text from a legacy or tampered row is never forwarded (`ai-prompt-injection.test.ts`).
 3. Weather coordinates are rounded to 2 decimals before the third-party call (`weather-privacy.test.ts`).
+
+## On-device background removal (Android)
+
+Before upload, the Android app removes the background of a garment photo on the phone, with ML Kit subject segmentation from Google Play services (`android/…/SubjectCutout.kt`, `lib/features/wardrobe/data/background_remover.dart`).
+
+- The photo is processed only on the device; no photo or result goes to Google or to us before the user taps "Yuklash". Our server then receives the version the user chose (the cut-out or the original), with no metadata, as before.
+- Play services downloads the segmentation model with the app (`com.google.mlkit.vision.DEPENDENCIES` = `subject_segment`). The library adds the `ACCESS_NETWORK_STATE` permission for that download.
+- ML Kit, like other Play services APIs, may send Google anonymous diagnostic and usage data about the API calls (no images); see Google's ML Kit terms. **REQUIRES LEGAL REVIEW:** whether the privacy policy should mention this; the legal texts are unchanged.
+- iOS has no background removal yet: the original photo is uploaded.
+

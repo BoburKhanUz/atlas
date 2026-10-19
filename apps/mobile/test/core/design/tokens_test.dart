@@ -43,6 +43,10 @@ void main() {
       'error on surface': (AtlasColors.error, AtlasColors.surface, 4.5),
       'warning on warning-soft': (AtlasColors.warning, AtlasColors.warningSoft, 4.5),
       'surface on primary text (snackbar)': (AtlasColors.surface, AtlasColors.textPrimary, 7),
+      'white on ink (hero cards)': (AtlasColors.onAccent, AtlasColors.ink, 7),
+      'muted text on ink (hero cards)': (AtlasColors.onInkMuted, AtlasColors.ink, 4.5),
+      'primary text on sand (photo backdrop)': (AtlasColors.textPrimary, AtlasColors.sand, 7),
+      'white on the light end of the hero gradient': (AtlasColors.onAccent, AtlasColors.accent, 4.5),
     };
     cases.forEach((name, c) {
       test('$name ≥ ${c.$3}:1', () {

@@ -83,7 +83,7 @@ void main() {
     expect(bar.destinations.length, 5);
     expect(atlasTabs.map((t) => t.label), ['Bosh sahifa', 'Garderob', 'Obrazlar', 'Stilist', 'Profil']);
     expect(bar.selectedIndex, 0);
-    expect(find.text('Bugun'), findsWidgets);
+    expect(find.byKey(const Key('home.greeting')), findsOneWidget);
   });
 
   testWidgets('each tab opens its screen and route', (tester) async {
@@ -92,8 +92,8 @@ void main() {
       'Garderob': (AtlasRoutes.wardrobe, 'Garderob bo‘sh'),
       'Obrazlar': (AtlasRoutes.outfits, 'Saqlangan'),
       'Stilist': (AtlasRoutes.stylist, 'Stilistingiz bilan gaplashing'),
-      'Profil': (AtlasRoutes.profile, 'Rang profili'),
-      'Bosh sahifa': (AtlasRoutes.home, 'Bugun nima kiyaman?'),
+      'Profil': (AtlasRoutes.profile, 'Uslub'),
+      'Bosh sahifa': (AtlasRoutes.home, 'Bugun nima kiyamiz?'),
     };
     for (final MapEntry(key: tab, value: (route, text)) in expected.entries) {
       await tester.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text(tab)));

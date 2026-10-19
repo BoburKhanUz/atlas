@@ -90,7 +90,6 @@ const KNOWN_LABEL_DIFFERENCES: Record<string, [string, string]> = {
   'subcategory:jeans': ['Jins', 'Jinsi'],
   'subcategory:trousers': ['Shim (klasik)', 'Klassik shim'],
   'subcategory:shorts': ['Shorts', 'Shorti'],
-  'subcategory:casual_dress': ['Kasual ko‘ylak', 'Kundalik ko‘ylak'],
   'subcategory:loafers': ['Mokasin', 'Lofer'],
   'subcategory:oxford_shoes': ['Oksford', 'Oksford tufli'],
   'subcategory:sandals': ['Sandalli', 'Sandal'],
@@ -117,13 +116,11 @@ const KNOWN_LABEL_DIFFERENCES: Record<string, [string, string]> = {
   'fit.onboarding:regular': ['Regular', 'O‘rtacha'],
   'fit.onboarding:relaxed': ['Relaxed', 'Erkin'],
   'fit.onboarding:oversized': ['Oversize', 'Keng (oversize)'],
-  'formality:casual': ['Kasual', 'Kundalik'],
   'formality:formal': ['Formal', 'Rasmiy'],
   'formality:black_tie': ['Black tie', 'Tantanali'],
   'gender:male': ['Erkak', 'Erkaklar'],
   'gender:female': ['Ayol', 'Ayollar'],
   'gender:unisex': ['Unisex', 'Uniseks'],
-  'style:casual': ['Kasual', 'Kundalik'],
   'style:formal': ['Formal', 'Rasmiy'],
   'style:bohemian': ['Bohemian', 'Bogema'],
   'style:minimal': ['Minimal', 'Minimalist'],
@@ -135,7 +132,6 @@ const KNOWN_LABEL_DIFFERENCES: Record<string, [string, string]> = {
   'color:teal': ['Zavorq (teal)', 'Feruza'],
   'color:ivory': ['Och krem', 'Fil suyagi'],
   'color:rust': ['Zang (rust)', 'Zang rang'],
-  'occasion:casual': ['Casual', 'Kundalik'],
 }
 
 /** Colour id → [web hex, mobile swatch], lower-case RGB, as they are today. */
