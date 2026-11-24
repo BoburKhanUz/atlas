@@ -107,7 +107,6 @@ const KNOWN_LABEL_DIFFERENCES: Record<string, [string, string]> = {
   'material:cashmere': ['Kashmir', 'Kashemir'],
   'material:leather': ['Teri', 'Charm'],
   'sleeve:short': ['Qisqa yeng', 'Kalta yeng'],
-  'sleeve:three_quarter': ['3/4 yeng', 'Uchdan to‘rt yeng'],
   'fit:slim': ['Slim', 'Tor'],
   'fit:regular': ['Regular', 'O‘rtacha'],
   'fit:relaxed': ['Relaxed', 'Erkin'],

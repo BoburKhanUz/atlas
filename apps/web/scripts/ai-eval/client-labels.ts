@@ -29,7 +29,7 @@ export const MOBILE_LABELS: Readonly<Record<string, readonly string[]>> = {
   color_block: ['Rang bloklari'], denim: ['Denim'], cotton: ['Paxta'], linen: ['Zig‘ir'], wool: ['Jun'], cashmere: ['Kashemir'],
   silk: ['Ipak'], polyester: ['Poliester'], nylon: ['Neylon'], leather: ['Charm'], suede: ['Zamsh'], blend: ['Aralash'],
   // _sleeves, _fits + FitOption, _formality + StyleOption (+ the occasion "casual")
-  short: ['Kalta yeng'], long: ['Uzun yeng'], sleeveless: ['Yengsiz'], three_quarter: ['Uchdan to‘rt yeng'],
+  short: ['Kalta yeng'], long: ['Uzun yeng'], sleeveless: ['Yengsiz'], three_quarter: ['3/4 yeng'],
   slim: ['Tor'], regular: ['O‘rtacha'], relaxed: ['Erkin'], oversized: ['Keng', 'Keng (oversize)'],
   casual: ['Kundalik'], smart_casual: ['Smart-casual'], formal: ['Rasmiy'], black_tie: ['Tantanali'],
   sporty: ['Sport'], bohemian: ['Bogema'], minimal: ['Minimalist'], streetwear: ['Ko‘cha uslubi'], classic: ['Klassik'], preppy: ['Preppi'],

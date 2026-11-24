@@ -18,7 +18,8 @@
 | Evaluator after D3 | English "casual" in prose stays a *review* term (`POLICY_REVIEW` in `scripts/ai-eval/eval-common.ts`, `REVIEW_ONLY` in `src/lib/ai/catalog-wording.ts`). Making it a violation is a rubric change (stage 4) and needs its own approval. |
 | Owner-approved colour names for stylist answers | In code: `APPROVED_COLOR_NAMES` in `src/lib/ai/stylist.ts` (navy "To‘q ko‘k", teal "Ko‘k-yashil", rust "Zang rang", brown "Jigarrang"). The catalog labels themselves are unchanged. |
 | Stage 1 (canonical `docs/catalog/catalog.json`, generators) | **Not started.** |
-| Every other label difference | **Open.** 54 differences remain, recorded in `tests/unit/catalog-drift.test.ts` and listed in the proposal. |
+| `three_quarter` sleeve label | **Done.** Flutter showed "Uchdan to‘rt yeng" (four thirds); both clients now show "3/4 yeng". |
+| Every other label difference | **Open.** 53 differences remain, recorded in `tests/unit/catalog-drift.test.ts` and listed in the proposal. |
 
 ## 1. Owner decisions
 

@@ -79,7 +79,7 @@ abstract final class WardrobeLabels {
     'short': 'Kalta yeng',
     'long': 'Uzun yeng',
     'sleeveless': 'Yengsiz',
-    'three_quarter': 'Uchdan to‘rt yeng',
+    'three_quarter': '3/4 yeng',
   };
 
   static const _fits = {'slim': 'Tor', 'regular': 'O‘rtacha', 'relaxed': 'Erkin', 'oversized': 'Keng'};

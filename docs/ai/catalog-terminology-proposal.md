@@ -12,7 +12,7 @@
 The clothing catalog (categories, subcategories, colours, patterns, materials, styles, sleeves, fits, seasons,
 formality, gender, occasions) is one list of ids, shared by the API, the database and both clients. The
 **labels** shown to people are written twice: once in the web catalog and once in the Flutter app. They
-disagree for 50 of the 114 entries, so the same garment is named differently on the phone, on the web and in
+disagree for 49 of the 114 entries, so the same garment is named differently on the phone, on the web and in
 the stylist's answers. Several web labels are English ("Slim", "Formal", "Streetwear") or carry an English
 word in parentheses ("Ko‘k (navy)").
 
@@ -37,7 +37,7 @@ The first two columns of the two outfit rows are the original text (section 6); 
 
 ## 3. Every label difference today
 
-From `KNOWN_LABEL_DIFFERENCES` in the drift test (54 rows: 50 entries, four of them shown on two Flutter
+From `KNOWN_LABEL_DIFFERENCES` in the drift test (53 rows: 49 entries, four of them shown on two Flutter
 screens). "Plain fix" means a spelling, formatting or plainly wrong label; the others are a choice between
 valid forms and belong to an open question of section 4.
 
@@ -72,7 +72,6 @@ valid forms and belong to an open question of section 4.
 | material | `cashmere` | Kashmir | Kashemir | **Kashemir** | alternative loan spellings | **R5** (open) |
 | material | `leather` | Teri | Charm | **Charm** | "charm" is the material; "teri" is skin or hide | **R5** (open) |
 | sleeve | `short` | Qisqa yeng | Kalta yeng | **Kalta yeng** | both are Uzbek | **R6** (open) |
-| sleeve | `three_quarter` | 3/4 yeng | Uchdan to‘rt yeng | **3/4 yeng** | **the Flutter label is wrong**: "uchdan to‘rt" reads as four thirds (three quarters is "to‘rtdan uch") | plain fix |
 | fit | `slim` | Slim | Tor | **Tor** | the web shows the English word | **R7** (open) |
 | fit | `regular` | Regular | O‘rtacha | **O‘rtacha** | the web shows the English word | **R7** (open) |
 | fit | `relaxed` | Relaxed | Erkin | **Erkin** | the web shows the English word | **R7** (open) |
@@ -101,6 +100,9 @@ valid forms and belong to an open question of section 4.
 Colour swatches also differ for 17 colours (`KNOWN_HEX_DIFFERENCES` in the same test). The proposal is one
 hex per colour in the canonical catalog; which of the two values to keep is a design choice, not a wording
 one, and is not decided here.
+
+Fixed since the reconstruction: `three_quarter` was "Uchdan to‘rt yeng" in Flutter, which reads as four
+thirds; both clients now show "3/4 yeng" (2026-11-24).
 
 `smart_casual` is "Smart-casual" in both clients. It is identical, but still English; whether to keep it is an
 owner decision (D10). *(original sentence)*
@@ -157,6 +159,7 @@ described in the migration plan, section 3.
 172:| D3 | **casual: "Kundalik", "Kasual" or "Casual"** for style, formality and occasion | It is also an API input (`event` label) and is in spec section 16 |
 ```
 
-The original counted 59 identical entries before D3. Today 64 of the 114 entries are identical; D3 made four
-more agree (`casual` in three lists and `casual_dress`), so the same count before D3 gives 60. Why the original
+The original counted 59 identical entries before D3. Today 65 of the 114 entries are identical; D3 made four
+more agree (`casual` in three lists and `casual_dress`) and the `three_quarter` fix one more, so the same count
+before D3 gives 60. Why the original
 says 59 cannot be checked against the lost text.
