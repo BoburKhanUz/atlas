@@ -45,51 +45,47 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* ─── Premium minimal palette — spec section 21 ────────────────────────────
-   Background  #F8F8F6   (warm off-white, not pure white — calmer)
-   Surface     #FFFFFF   (cards, surfaces)
-   Primary Text #111111  (near-black, not pure black — softer)
-   Secondary    #6B7280  (gray-500 — neutral)
-   Accent       #0F766E  (teal-700 — premium, not neon)
-   Success      #22C55E  (green-500)
-   No dark mode in MVP — calm, light-only premium aesthetic.
-─────────────────────────────────────────────────────────────────────────── */
+/* ─── Palette (spec section 21): warm off-white ground, near-black text, one
+   accent. No dark mode in the MVP. ──────────────────────────────────────── */
 :root {
   --radius: 0.875rem;
+  /* Brand colours: written by `bun run brand:write` from the mobile design
+     tokens (apps/mobile/lib/core/design/tokens.dart). Change them there. */
   --background: #F8F8F6;
   --foreground: #111111;
   --card: #FFFFFF;
-  --card-foreground: #111111;
-  --popover: #FFFFFF;
-  --popover-foreground: #111111;
-  --primary: #0F766E;        /* accent teal */
+  --primary: #0F766E;
+  --muted-foreground: #6B7280;
+  --success: #22C55E;
+  /* Everything below follows the brand colours or is a web-only tone. */
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
   --primary-foreground: #FFFFFF;
   --secondary: #F4F4F2;
-  --secondary-foreground: #111111;
+  --secondary-foreground: var(--foreground);
   --muted: #F4F4F2;
-  --muted-foreground: #6B7280;
   --accent: #F4F4F2;
-  --accent-foreground: #0F766E;
+  --accent-foreground: var(--primary);
   --destructive: #DC2626;
   --destructive-foreground: #FFFFFF;
-  --success: #22C55E;
   --success-foreground: #FFFFFF;
   --border: #E7E5E4;        /* stone-200 — softer than gray */
   --input: #E7E5E4;
-  --ring: #0F766E;
-  --chart-1: #0F766E;
-  --chart-2: #6B7280;
+  --ring: var(--primary);
+  --chart-1: var(--primary);
+  --chart-2: var(--muted-foreground);
   --chart-3: #D2B48C;
-  --chart-4: #111111;
-  --chart-5: #22C55E;
-  --sidebar: #FFFFFF;
-  --sidebar-foreground: #111111;
-  --sidebar-primary: #0F766E;
+  --chart-4: var(--foreground);
+  --chart-5: var(--success);
+  --sidebar: var(--card);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: #F4F4F2;
-  --sidebar-accent-foreground: #0F766E;
+  --sidebar-accent-foreground: var(--primary);
   --sidebar-border: #E7E5E4;
-  --sidebar-ring: #0F766E;
+  --sidebar-ring: var(--primary);
 }
 
 /* Dark mode intentionally disabled — premium light-only aesthetic in MVP */

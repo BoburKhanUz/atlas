@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { BRAND } from '@/lib/brand-colors'
 import { reportClientError } from '@/lib/client-errors'
 
 /**
@@ -20,8 +21,8 @@ export default function GlobalError({ error, reset }: { error: Error; reset: () 
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#F8F8F6',
-          color: '#111111',
+          background: BRAND.background,
+          color: BRAND.textPrimary,
           fontFamily: 'system-ui, sans-serif',
           padding: 24,
           textAlign: 'center',
@@ -31,14 +32,14 @@ export default function GlobalError({ error, reset }: { error: Error; reset: () 
           <h1 style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>
             Nimadir noto&apos;g&apos;ri ketdi
           </h1>
-          <p style={{ color: '#6B7280', fontSize: 14, marginBottom: 20 }}>
+          <p style={{ color: BRAND.textSecondary, fontSize: 14, marginBottom: 20 }}>
             Sahifani yuklashda xatolik yuz berdi. Qayta urinib ko&apos;ring.
           </p>
           <button
             onClick={reset}
             style={{
-              background: '#0F766E',
-              color: '#fff',
+              background: BRAND.accent,
+              color: BRAND.onAccent,
               border: 0,
               borderRadius: 10,
               padding: '10px 20px',

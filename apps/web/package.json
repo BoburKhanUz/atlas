@@ -14,6 +14,8 @@
     "test:e2e": "playwright test",
     "test:integration": "vitest run -c vitest.integration.config.ts",
     "demo:seed": "bun scripts/demo-seed.ts",
+    "brand:write": "bun scripts/brand.ts --write",
+    "brand:check": "bun scripts/brand.ts --check",
     "openapi:write": "bun scripts/openapi.ts --write",
     "openapi:check": "bun scripts/openapi.ts --check",
     "openapi:validate": "bun scripts/openapi.ts --validate",

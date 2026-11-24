@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:atlas_mobile/core/design/theme.dart';
@@ -85,6 +86,16 @@ void main() {
     expect(t.colorScheme.primary, AtlasColors.accent);
     expect(t.navigationBarTheme.indicatorColor, AtlasColors.accentSoft);
     expect(t.textTheme.displaySmall!.color, AtlasColors.textPrimary);
+  });
+
+  test('Android launcher and launch-screen colours are the brand tokens (bun run brand:write)', () {
+    // values/colors.xml is generated from tokens.dart by apps/web/scripts/brand.ts.
+    final xml = File('android/app/src/main/res/values/colors.xml').readAsStringSync();
+    String hex(Color c) => '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
+    expect(xml, contains('<color name="brand_ink">${hex(AtlasColors.ink)}</color>'));
+    expect(xml, contains('<color name="brand_accent">${hex(AtlasColors.accent)}</color>'));
+    final background = File('android/app/src/main/res/drawable/ic_launcher_background.xml').readAsStringSync();
+    expect(background, isNot(contains('#')), reason: 'colours come from values/colors.xml');
   });
 
   test('spacing is a 4-pt scale and touch targets are at least 48', () {

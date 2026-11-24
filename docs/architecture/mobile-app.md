@@ -525,6 +525,7 @@ flutter build apk --release --dart-define=ATLAS_ENV=production --dart-define=ATL
 | success | `#22C55E` |
 
   Plus derived hairline, soft-accent, warning and error tones; brand tones for hero surfaces (`ink` `#0B3B37`, the `ink → accent` hero gradient, `onInkMuted` for secondary text on it, and a warm `sand` `#F1ECE4` behind clothing photos); a soft card shadow; a 4-pt spacing scale; restrained radii (8/12/16/24, cards 20); and motion durations (150/250/400 ms).
+- **One source for brand colours:** `tokens.dart`. `bun run brand:write` (`apps/web/scripts/brand.ts`) carries them to the web palette's base variables (`globals.css`; the other variables follow with `var()`), `src/lib/brand-colors.ts`, the web logo, Android's `values/colors.xml` (launcher and launch screen) and the Android and iOS icons. To change a colour: edit `tokens.dart`, run it, commit the result. A web test (`brand-assets.test.ts`) and a mobile test fail when a generated text file is out of date.
 - **Contrast is tested in code:**
 
 | Combination | Contrast | Rule |
