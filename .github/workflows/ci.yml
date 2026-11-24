@@ -44,7 +44,11 @@ jobs:
 
   e2e:
     name: e2e (playwright)
-    runs-on: ubuntu-latest
+    # Pinned: Playwright installs browsers and their system packages per
+    # Ubuntu release, and the pinned @playwright/test has none for a release
+    # newer than it (ubuntu-latest moved to 26.04 and the install failed).
+    # Raise this together with @playwright/test.
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     defaults:
       run:
