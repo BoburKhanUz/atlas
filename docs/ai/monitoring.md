@@ -181,7 +181,7 @@ Watch for a new `errorType` after a release, or one `appVersion` producing most 
 
 ### Android crashes outside Dart
 
-A crash in Java/Kotlin code (the Android embedding, a plugin), in native code (the Flutter engine, a plugin's library) or an ANR ends the app before Dart can report it. `android/app/src/main/kotlin/uz/atlas/app/CrashRecords.kt` keeps it, and `lib/core/logging/android_crashes.dart` sends it at the next start:
+A crash in Java/Kotlin code (the Android embedding, a plugin), in native code (the Flutter engine, a plugin's library) or an ANR ends the app before Dart can report it. `android/app/src/main/kotlin/uz/lookly/app/CrashRecords.kt` keeps it, and `lib/core/logging/android_crashes.dart` sends it at the next start:
 
 | `kind` | Kept by | Android | Report |
 |---|---|---|---|

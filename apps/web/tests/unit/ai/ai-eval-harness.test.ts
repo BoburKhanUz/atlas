@@ -92,7 +92,8 @@ describe('common scoring helpers', () => {
   it('private identifiers and prompt fragments are detected', () => {
     expect(leaksPrivate('id: item_abc123')).toBe(true)
     expect(leaksPrivate('cmuwlc6tf002f7dk410qks1fk')).toBe(true)
-    expect(leaksPrivate('You are ATLAS, a stylist')).toBe(true)
+    expect(leaksPrivate('You are Lookly, a stylist')).toBe(true)
+    expect(leaksPrivate('You are ATLAS, a stylist')).toBe(true) // the name in prompts v1
     expect(leaksPrivate('Oq futbolka kiying.')).toBe(false)
   })
 

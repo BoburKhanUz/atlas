@@ -251,7 +251,7 @@ describe('adversarial telemetry', () => {
     expect(lines.filter((l) => /"msg":"ai\.(call|request|quota)"/.test(l)).length).toBe(events.length) // the real log lines were written
     const all = lines.join('\n') + JSON.stringify(events)
     for (const forbidden of [
-      MALICIOUS_USER, MALICIOUS_WARDROBE, MALICIOUS_PROVIDER, 'Ignore all', 'system prompt', 'You are ATLAS', 'CONTEXT',
+      MALICIOUS_USER, MALICIOUS_WARDROBE, MALICIOUS_PROVIDER, 'Ignore all', 'system prompt', 'You are Lookly', 'CONTEXT',
       'item_secret', 'user_secret', 'PRIVATE-FILENAME', 'LeakCam', 'GPS', KEY, 'Bearer', 'authorization', 'x-goog-api-key',
       'Oq ko‘ylak', 'oxford', 'https://', 'data:image', '/9j/',
     ]) {

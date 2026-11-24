@@ -68,7 +68,7 @@ describe('stylist through Gemini (generateContent)', () => {
     expect(interpretStylistOutput(parseStylistText(r.text), ctx.refs).referencedItems).toEqual(['W1'])
     expect(r.metadata.usage).toEqual({ inputTokens: 900, outputTokens: 52, totalTokens: 952 })
     const body = calls[0].body as any
-    expect(body.systemInstruction.parts[0].text).toContain('You are ATLAS')
+    expect(body.systemInstruction.parts[0].text).toContain('You are Lookly')
     expect(body.systemInstruction.parts[0].text).toContain('"ref":"W1"')
     expect(body.contents.map((c: { role: string }) => c.role)).toEqual(['user', 'model', 'user'])
     expect(JSON.parse(body.contents[2].parts[0].text)).toEqual({ message: 'Bugun nima kiyay?', occasion: null })

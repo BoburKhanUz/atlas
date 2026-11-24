@@ -34,7 +34,7 @@ There is no fake answer any more: the old "Kechirasiz…" apology is never store
 
 Three kinds of messages, never concatenated:
 
-1. **SYSTEM** — the trusted, versioned prompt (`STYLIST_SYSTEM_PROMPT`, `STYLIST_PROMPT_VERSION = "v1"`).
+1. **SYSTEM** — the trusted, versioned prompt (`STYLIST_SYSTEM_PROMPT`, `STYLIST_PROMPT_VERSION = "v2"`). `v2` (2026-11-24) only renames the product in the first line (ATLAS → Lookly) and in the context preamble; no rule changed. Results recorded before that date were measured with `v1`. The outfit ranking prompt (`OUTFIT_PROMPT_VERSION`) moved to `v2` the same way.
 2. **CONTEXT** (system role) — JSON built only from stored data, each value reduced to a catalog id:
    - `wardrobe`: at most 40 items, each `{ref: "W1"…, category, subcategory, colors, pattern, material, style, season, fit, gender, formality}`. No database ids, image bytes or URLs.
    - `wardrobeTotal`, `outfitCandidates` (the engine's top 3 as references, score, contrast).

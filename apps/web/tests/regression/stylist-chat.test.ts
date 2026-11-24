@@ -121,7 +121,7 @@ describe('success', () => {
     expect(created[0].content).toBe('Bugun nima kiyay?') // trimmed
     expect((created[1].createdAt as Date).getTime()).toBeGreaterThan((created[0].createdAt as Date).getTime())
     const meta = JSON.parse(assistant()!.metadataJson as string)
-    expect(meta).toMatchObject({ provider: 'gemini', model: 'gemini-test', promptVersion: 'v1', needsMoreInfo: false, wardrobeItemCount: 3 })
+    expect(meta).toMatchObject({ provider: 'gemini', model: 'gemini-test', promptVersion: 'v2', needsMoreInfo: false, wardrobeItemCount: 3 })
     expect(meta.referencedItemIds).toHaveLength(2)
     expect(meta.referencedItemIds.every((id: string) => id.startsWith('item_'))).toBe(true)
     expect(quota.consumeAiQuota).toHaveBeenCalledTimes(1)
@@ -378,6 +378,6 @@ describe('privacy', () => {
     await chat({ message: SECRET_TEXT, conversationId: 'conv_private_9' })
     const all = lines.join('\n')
     expect(all).toContain('"msg":"ai.call"')
-    for (const leak of [SECRET_TEXT, 'conv_private_9', 'You are ATLAS', 'oxford_shirt', 'item_shirt_db1', 'W55']) expect(all).not.toContain(leak)
+    for (const leak of [SECRET_TEXT, 'conv_private_9', 'You are Lookly', 'oxford_shirt', 'item_shirt_db1', 'W55']) expect(all).not.toContain(leak)
   })
 })

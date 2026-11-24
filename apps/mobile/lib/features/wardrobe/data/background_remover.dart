@@ -18,7 +18,7 @@ abstract interface class BackgroundRemover {
 class PlatformBackgroundRemover implements BackgroundRemover {
   const PlatformBackgroundRemover();
 
-  static const _channel = MethodChannel('uz.atlas.app/subject_cutout');
+  static const _channel = MethodChannel('uz.lookly.app/subject_cutout');
 
   /// The native side has its own 20 s limit; this one covers a stuck channel.
   static const timeout = Duration(seconds: 25);

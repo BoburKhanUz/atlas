@@ -344,7 +344,7 @@ export const PRIVATE_PATTERNS = [
   /\bc[a-z0-9]{20,}\b/,
   /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i,
   /[a-z0-9._%+-]+@[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}/i,
-  /You are ATLAS/i,
+  /You are (?:Lookly|ATLAS)/i,
   /CONTEXT \(JSON/i,
 ]
 /** A phone number: at least 9 digits in one run of digits, spaces, dots, dashes and brackets. */

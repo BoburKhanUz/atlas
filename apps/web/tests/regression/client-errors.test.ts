@@ -52,7 +52,7 @@ describe('POST /api/v1/client-errors', () => {
     const frames = '#00 pc 000000000004ca1c  libc.so (abort+168)\n#01 pc 00000000016a3d4c  libflutter.so'
     const res = await post({
       reports: [
-        report({ kind: 'android_java', fatal: true, errorType: 'java.lang.IllegalStateException', stack: 'at uz.atlas.app.MainActivity.onCreate(MainActivity.kt:12)' }),
+        report({ kind: 'android_java', fatal: true, errorType: 'java.lang.IllegalStateException', stack: 'at uz.lookly.app.MainActivity.onCreate(MainActivity.kt:12)' }),
         report({ kind: 'android_native', fatal: true, errorType: 'SIGSEGV', message: 'signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0x0000000000000000', stack: frames }),
         report({ kind: 'android_anr', fatal: true, errorType: 'ANR', message: 'Input dispatching timed out' }),
       ],

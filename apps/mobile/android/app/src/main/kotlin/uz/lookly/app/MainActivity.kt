@@ -1,4 +1,4 @@
-package uz.atlas.app
+package uz.lookly.app
 
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine

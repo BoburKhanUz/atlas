@@ -73,7 +73,7 @@ describe.skipIf(!enabled)('STY: stylist chat (real PostgreSQL + quota)', () => {
       ['assistant', a.assistantMessage],
     ])
     const meta = JSON.parse(stored[1].metadataJson)
-    expect(meta).toMatchObject({ provider: 'openai', model: 'openai-test-llm', promptVersion: 'v1' })
+    expect(meta).toMatchObject({ provider: 'openai', model: 'openai-test-llm', promptVersion: 'v2' })
     expect(meta.referencedItemIds.every((id: string) => id.startsWith(u.id))).toBe(true)
     expect(await usage(u.id)).toBe(1)
 

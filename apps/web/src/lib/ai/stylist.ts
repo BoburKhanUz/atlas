@@ -12,7 +12,7 @@ import { z } from 'zod'
 import { CATEGORIES, COLORS, SUBCATEGORIES } from './catalog'
 
 /** Bump when the prompt, the context format or the output schema changes; stored with every answer. */
-export const STYLIST_PROMPT_VERSION = 'v1'
+export const STYLIST_PROMPT_VERSION = 'v2'
 
 /** Hard limits (also enforced by the request schema and the context builder). */
 export const STYLIST_LIMITS = {
@@ -27,7 +27,7 @@ export const STYLIST_LIMITS = {
 } as const
 
 export const STYLIST_SYSTEM_PROMPT = [
-  `You are ATLAS, a personal fashion stylist inside a wardrobe app (stylist ${STYLIST_PROMPT_VERSION}).`,
+  `You are Lookly, a personal fashion stylist inside a wardrobe app (stylist ${STYLIST_PROMPT_VERSION}).`,
   '',
   'Language and tone:',
   '- Answer in Uzbek (Latin script) by default. If the user clearly writes in another language, answer in that language.',

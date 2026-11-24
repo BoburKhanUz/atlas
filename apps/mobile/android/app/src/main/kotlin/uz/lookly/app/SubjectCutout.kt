@@ -1,4 +1,4 @@
-package uz.atlas.app
+package uz.lookly.app
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -23,7 +23,7 @@ import kotlin.math.roundToInt
  * a timeout — answers null, and the Dart side keeps the original photo.
  */
 object SubjectCutout {
-    private const val CHANNEL = "uz.atlas.app/subject_cutout"
+    private const val CHANNEL = "uz.lookly.app/subject_cutout"
     // Segmentation input: large enough for a sharp result, small enough for memory.
     private const val MAX_SIDE = 2048
     private const val MIN_SIDE = 256 // the server's minimum shortest side

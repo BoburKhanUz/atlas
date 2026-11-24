@@ -1,4 +1,4 @@
-package uz.atlas.app
+package uz.lookly.app
 
 import android.app.ActivityManager
 import android.app.ApplicationExitInfo
@@ -22,7 +22,7 @@ import kotlin.system.exitProcess
  * them to our own server and acknowledges what the server took.
  */
 object CrashRecords {
-    private const val CHANNEL = "uz.atlas.app/crash_records"
+    private const val CHANNEL = "uz.lookly.app/crash_records"
     private const val DIR = "crash_records"
     private const val PREFS = "crash_records"
     // Exits up to this time (ms) were sent already.

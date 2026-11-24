@@ -57,7 +57,7 @@ Verified in 3.10 (automated tests, the release APK and static inspection):
 - `-PallowDebugSigning=true` is for local test builds only. Such a build must never be uploaded or distributed: it is signed with the machine's debug key, and the build prints a warning.
 
 **iOS** (not done; needs a Mac)
-- Apple Developer team, App ID `uz.atlas.app`, distribution certificate and provisioning profile, and an App Store Connect app record.
+- Apple Developer team, App ID `uz.lookly.app`, distribution certificate and provisioning profile, and an App Store Connect app record.
 
 ## CI status
 

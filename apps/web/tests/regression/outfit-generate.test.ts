@@ -253,7 +253,7 @@ describe('AI reranking', () => {
     await generate()
     const out = lines.join('\n')
     expect(out).toContain('ai.outfit.fallback')
-    for (const s of ['MAXFIY', SECRET, 'item_', 'oxford', 'You are ATLAS', TEST_USER.sub]) expect(out).not.toContain(s)
+    for (const s of ['MAXFIY', SECRET, 'item_', 'oxford', 'You are Lookly', TEST_USER.sub]) expect(out).not.toContain(s)
   })
 
   it('the outfit_explanation limit is dedicated and conservative', () => {

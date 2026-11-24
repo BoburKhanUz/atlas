@@ -28,10 +28,10 @@ import { OUTFIT_AI_BUDGET_MS, OUTFIT_AI_TIMEOUT_MS, OUTFIT_EXPLANATION_MAX_CHARS
 import type { ColorProfileInput, OutfitCandidate, WeatherContext } from './outfit-engine'
 
 /** Bump when the prompt or the output schema changes. */
-export const OUTFIT_PROMPT_VERSION = 'v1'
+export const OUTFIT_PROMPT_VERSION = 'v2'
 
 export const OUTFIT_SYSTEM_PROMPT = [
-  `You are ATLAS, a personal fashion stylist (outfit ranking ${OUTFIT_PROMPT_VERSION}).`,
+  `You are Lookly, a personal fashion stylist (outfit ranking ${OUTFIT_PROMPT_VERSION}).`,
   'The application already chose the candidate outfits from the user\'s own wardrobe. They are listed as O1, O2, … in the context message.',
   'Task: rank ALL candidates from best to worst for this user and context, select the best one, and explain the selected one.',
   'Rules:',

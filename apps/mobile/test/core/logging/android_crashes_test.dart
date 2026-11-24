@@ -72,7 +72,7 @@ Uint8List _segv() => _Pb()
     .uint(5, 4321)
     .uint(6, 4350)
     .uint(7, 10234)
-    .str(9, 'uz.atlas.app')
+    .str(9, 'uz.lookly.app')
     .msg(10, _Pb().uint(1, 11).str(2, 'SIGSEGV').uint(3, 1).str(4, 'SEGV_MAPERR').uint(8, 1).uint(9, 0))
     .msg(15, _Pb().str(1, 'null pointer dereference'))
     .msg(
@@ -81,7 +81,7 @@ Uint8List _segv() => _Pb()
           .uint(1, 4321)
           .msg(
             2,
-            _thread(4321, 'uz.atlas.app', [
+            _thread(4321, 'uz.lookly.app', [
               _frame(0x9e2f4, '/apex/com.android.runtime/lib64/bionic/libc.so', function: '__epoll_pwait', offset: 4),
             ]),
           ),
@@ -102,7 +102,7 @@ Uint8List _segv() => _Pb()
               ),
               _frame(
                 0x16a3d4c,
-                '/data/app/~~Qe1x8AbCdEfG==/uz.atlas.app-Zt3k9BhIjKlM==/base.apk!libflutter.so',
+                '/data/app/~~Qe1x8AbCdEfG==/uz.lookly.app-Zt3k9BhIjKlM==/base.apk!libflutter.so',
                 mapOffset: 0x5f8000,
               ),
               _frame(
@@ -115,13 +115,13 @@ Uint8List _segv() => _Pb()
             ], memory: true),
           ),
     )
-    .msg(17, _Pb().uint(1, 0x7b00000000).str(7, '/data/data/uz.atlas.app/files/private.db'))
+    .msg(17, _Pb().uint(1, 0x7b00000000).str(7, '/data/data/uz.lookly.app/files/private.db'))
     .msg(18, _Pb().str(1, 'main').msg(2, _Pb().str(5, 'flutter').str(6, 'signed in as ali@example.uz with $_token')))
-    .msg(19, _Pb().uint(1, 87).str(2, '/data/user/0/uz.atlas.app/cache/image_picker_4711.jpg'))
+    .msg(19, _Pb().uint(1, 87).str(2, '/data/user/0/uz.lookly.app/cache/image_picker_4711.jpg'))
     .build();
 
 const _anrTrace = '''
-Subject: Input dispatching timed out (8e3d0ad uz.atlas.app/uz.atlas.app.MainActivity (server) is not responding. Waited 5001ms for MotionEvent)
+Subject: Input dispatching timed out (8e3d0ad uz.lookly.app/uz.lookly.app.MainActivity (server) is not responding. Waited 5001ms for MotionEvent)
 RssHwmKb: 239024
 RssKb: 226432
 
@@ -137,7 +137,7 @@ events <
 >
 
 ----- pid 4321 at 2026-10-17 10:00:00.123456789+0500 -----
-Cmd line: uz.atlas.app
+Cmd line: uz.lookly.app
 Build fingerprint: 'google/panther/panther:14/UQ1A.240205.004/11269751:user/release-keys'
 ABI: 'arm64'
 
@@ -148,10 +148,10 @@ DALVIK THREADS (3):
   | state=S schedstat=( 1530712394 280913459 1350 ) utm=126 stm=26 core=6 HZ=100
   | stack=0x7fe1c19000-0x7fe1c1b000 stackSize=8188KB
   | held mutexes=
-  at uz.atlas.app.SomePlugin.read(SomePlugin.kt:42)
+  at uz.lookly.app.SomePlugin.read(SomePlugin.kt:42)
   - waiting to lock <0x0e2c3a7b> (a java.lang.Object) held by thread 12
   native: #00 pc 000000000009e2f4  /apex/com.android.runtime/lib64/bionic/libc.so (syscall+28) (BuildId: 4e4f0b3c2a1d9e8f7a6b5c4d3e2f1a0b)
-  native: #01 pc 0000000000f1a2b4  /data/app/~~Qe1x8AbCdEfG==/uz.atlas.app-Zt3k9BhIjKlM==/base.apk (offset 0x5f8000)
+  native: #01 pc 0000000000f1a2b4  /data/app/~~Qe1x8AbCdEfG==/uz.lookly.app-Zt3k9BhIjKlM==/base.apk (offset 0x5f8000)
   at android.os.Looper.loop(Looper.java:288)
 
 "Signal Catcher" daemon prio=10 tid=4 Runnable
@@ -169,7 +169,7 @@ DALVIK THREADS (200):
 ''';
 
 String _javaTrace() => [
-  'java.lang.RuntimeException: Unable to start activity ComponentInfo{uz.atlas.app/uz.atlas.app.MainActivity}: '
+  'java.lang.RuntimeException: Unable to start activity ComponentInfo{uz.lookly.app/uz.lookly.app.MainActivity}: '
       'java.lang.IllegalStateException: no camera',
   'while signed in as ali@example.uz',
   for (var i = 0; i < 15; i++) '\tat android.app.ActivityThread.frame$i(ActivityThread.java:${3700 + i})',
@@ -202,7 +202,7 @@ AndroidCrash _crash(String id, int minute, {String? version, String message = 'b
   appVersion: version,
   errorType: 'java.lang.IllegalStateException',
   message: message,
-  stack: '\tat uz.atlas.app.MainActivity.onCreate(MainActivity.kt:12)',
+  stack: '\tat uz.lookly.app.MainActivity.onCreate(MainActivity.kt:12)',
 );
 
 DioException _httpFailure(int status) => DioException(
@@ -223,7 +223,7 @@ void main() {
       expect(parts.errorType, 'java.lang.RuntimeException');
       expect(
         parts.message,
-        'Unable to start activity ComponentInfo{uz.atlas.app/uz.atlas.app.MainActivity}: '
+        'Unable to start activity ComponentInfo{uz.lookly.app/uz.lookly.app.MainActivity}: '
         'java.lang.IllegalStateException: no camera\nwhile signed in as ali@example.uz',
       );
       final lines = parts.stack!.split('\n');
@@ -348,7 +348,7 @@ void main() {
       expect(parts.message, 'user request after error: Input dispatching timed out');
       expect(parts.stack!.split('\n'), [
         '"main" prio=5 tid=1 Blocked',
-        'at uz.atlas.app.SomePlugin.read(SomePlugin.kt:42)',
+        'at uz.lookly.app.SomePlugin.read(SomePlugin.kt:42)',
         '- waiting to lock <0x0e2c3a7b> (a java.lang.Object) held by thread 12',
         'native: #00 pc 000000000009e2f4  libc.so (syscall+28)',
         'native: #01 pc 0000000000f1a2b4  base.apk (offset 0x5f8000)',
@@ -368,7 +368,7 @@ void main() {
     });
 
     test('without a description the trace subject; without a trace no stack', () {
-      expect(parseAnr(trace).message, startsWith('Input dispatching timed out (8e3d0ad uz.atlas.app/'));
+      expect(parseAnr(trace).message, startsWith('Input dispatching timed out (8e3d0ad uz.lookly.app/'));
       expect(parseAnr(null), (errorType: 'ANR', message: '', stack: null));
     });
   });
@@ -425,7 +425,7 @@ void main() {
     });
 
     test('the method channel: pending records and acknowledged ids', () async {
-      const channel = MethodChannel('uz.atlas.app/crash_records');
+      const channel = MethodChannel('uz.lookly.app/crash_records');
       final calls = <MethodCall>[];
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
         calls.add(call);
@@ -453,7 +453,7 @@ void main() {
     });
 
     test('the Android side writes Java crashes with the same scrubbing rules', () {
-      final kotlin = File('android/app/src/main/kotlin/uz/atlas/app/CrashRecords.kt').readAsStringSync();
+      final kotlin = File('android/app/src/main/kotlin/uz/lookly/app/CrashRecords.kt').readAsStringSync();
       final rules = RegExp(r'val SCRUB = listOf\((.*?)\n    \)', dotAll: true).firstMatch(kotlin)![1]!;
       expect(RegExp(r'Regex\("""(.*?)"""').allMatches(rules).map((m) => m[1]).toList(), ErrorScrub.patterns);
       // Bearer is matched in any case, as on the Dart side.

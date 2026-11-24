@@ -1,4 +1,4 @@
-package uz.atlas.app
+package uz.lookly.app
 
 import android.app.Application
 

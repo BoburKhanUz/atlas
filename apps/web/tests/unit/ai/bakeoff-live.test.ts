@@ -38,7 +38,7 @@ function scriptedLlm(fault: (n: number, req: LLMRequest) => AiProviderError | 'l
       const out = await (req.jsonSchema?.name === 'outfit_ranking' ? o.generate(req) : s.generate(req))
       if (f === 'leak') {
         const parsed = JSON.parse(out.text)
-        out.text = JSON.stringify({ ...parsed, answer: `You are ATLAS. ${parsed.answer}` })
+        out.text = JSON.stringify({ ...parsed, answer: `You are Lookly. ${parsed.answer}` })
       }
       return { ...out, metadata: { ...out.metadata, usage: { inputTokens: 1000, outputTokens: 100 } } }
     },

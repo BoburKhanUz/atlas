@@ -1,7 +1,7 @@
 /**
  * Brand colours come from ONE place: the mobile design tokens
  * (apps/mobile/lib/core/design/tokens.dart). The brand mark comes from ONE
- * image: scripts/brand/lookly-mark.webp (the mark on a white background).
+ * image: brand/lookly-mark.webp (the mark on a white background).
  * This script carries both to everything that cannot read them:
  *
  *   - the web palette's base variables (src/app/globals.css);
@@ -143,7 +143,7 @@ interface Marks {
 
 /** Cuts the mark out of its white background and derives the light and monochrome versions. */
 async function loadMarks(sharp: (typeof import('sharp'))['default']): Promise<Marks> {
-  const { data, info } = await sharp(path.join(WEB, 'scripts/brand/lookly-mark.webp')).removeAlpha().raw().toBuffer({ resolveWithObject: true })
+  const { data, info } = await sharp(path.join(WEB, 'brand/lookly-mark.webp')).removeAlpha().raw().toBuffer({ resolveWithObject: true })
   const { width, height } = info
   const color = Buffer.alloc(width * height * 4)
   const light = Buffer.alloc(width * height * 4)

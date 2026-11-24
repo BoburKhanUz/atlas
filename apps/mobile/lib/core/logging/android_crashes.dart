@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 
 /// Crashes that ended an earlier run before Dart could report them, kept by
-/// the Android side (android/app/src/main/kotlin/uz/atlas/app/CrashRecords.kt):
+/// the Android side (android/app/src/main/kotlin/uz/lookly/app/CrashRecords.kt):
 /// uncaught Java/Kotlin exceptions, and on Android 11+ native crashes and
 /// ANRs from the system's exit history.
 abstract interface class AndroidCrashRecords {
@@ -19,7 +19,7 @@ abstract interface class AndroidCrashRecords {
 class MethodChannelAndroidCrashRecords implements AndroidCrashRecords {
   const MethodChannelAndroidCrashRecords();
 
-  static const _channel = MethodChannel('uz.atlas.app/crash_records');
+  static const _channel = MethodChannel('uz.lookly.app/crash_records');
 
   @override
   Future<List<AndroidCrash>> pending() async {

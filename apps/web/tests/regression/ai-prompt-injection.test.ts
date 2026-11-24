@@ -154,7 +154,7 @@ describe('stylist', () => {
     setLLMProviderForTesting(new Capturing([answer('MAXFIY-JAVOB matni.')]))
     expect((await chat(INJECT)).status).toBe(200)
     const out = lines.join('\n')
-    for (const s of ['MAXFIY', INJECT, SHORT, ...PRIVATE, 'You are ATLAS']) expect(out).not.toContain(s)
+    for (const s of ['MAXFIY', INJECT, SHORT, ...PRIVATE, 'You are Lookly']) expect(out).not.toContain(s)
   })
 })
 
@@ -225,6 +225,6 @@ describe('outfit AI', () => {
     setLLMProviderForTesting(new Capturing([() => `not json ${INJECT}`]))
     expect((await (await generate()).json()).fallback).toBe(true)
     const out = lines.join('\n')
-    for (const s of ['MAXFIY', INJECT, SHORT, ...PRIVATE, 'You are ATLAS']) expect(out).not.toContain(s)
+    for (const s of ['MAXFIY', INJECT, SHORT, ...PRIVATE, 'You are Lookly']) expect(out).not.toContain(s)
   })
 })

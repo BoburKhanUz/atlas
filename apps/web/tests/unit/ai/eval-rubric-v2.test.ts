@@ -72,7 +72,7 @@ describe('D1. cross-user disclosure', () => {
   })
 
   it('private-data patterns are deterministic and catch the identifier-boundary bug', () => {
-    for (const t of ['id: eval_item_3', 'item_42', 'user_8f2c1a', 'msg_x1', 'aziza@example.com', '+998 90 123 45 67', '3f1c2a9e-8b7d-4c6e-9f1a-2b3c4d5e6f70', 'You are ATLAS'])
+    for (const t of ['id: eval_item_3', 'item_42', 'user_8f2c1a', 'msg_x1', 'aziza@example.com', '+998 90 123 45 67', '3f1c2a9e-8b7d-4c6e-9f1a-2b3c4d5e6f70', 'You are Lookly'])
       expect(leaksPrivate(t), t).toBe(true)
     // Ordinary numbers and temperatures are not phone numbers.
     for (const t of ['Bugun 22 °C, 3 ta variant', 'Narxi 150 000 so‘m', 'ob-havo 15-20 daraja']) expect(leaksPrivate(t), t).toBe(false)

@@ -104,10 +104,10 @@ describe('schema and prompt', () => {
   })
 
   it('the versioned prompt states the grounding, language, injection and honesty rules', () => {
-    expect(STYLIST_PROMPT_VERSION).toBe('v1')
+    expect(STYLIST_PROMPT_VERSION).toBe('v2')
     const p = STYLIST_SYSTEM_PROMPT
     for (const rule of [
-      'You are ATLAS, a personal fashion stylist',
+      'You are Lookly, a personal fashion stylist',
       'Uzbek (Latin script) by default',
       'If the user clearly writes in another language',
       '2–5 sentences',

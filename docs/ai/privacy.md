@@ -24,7 +24,7 @@ Tests: `tests/regression/wardrobe-vision.test.ts` checks that the request has no
 
 | Sent | Not sent |
 |---|---|
-| The fixed system prompt (`stylist.ts`, `v1`). | Database ids (items are `W1…Wn`), user id, conversation id. |
+| The fixed system prompt (`stylist.ts`, `v2`). | Database ids (items are `W1…Wn`), user id, conversation id. |
 | Wardrobe: at most 40 items, **catalog ids only** (category, subcategory, colours, pattern, material, style, season, fit, gender, formality). A value outside the catalog becomes `null`. | Images, image URLs, storage keys. (Wardrobe items have no name, notes or brand columns; the only free text a row can hold is in the attribute columns, and those are filtered to catalog ids.) |
 | Up to 3 engine outfit candidates (W references, score, contrast). | |
 | Weather: temperature, feels-like, precipitation probability, wind, humidity and UV, rounded; the condition from a fixed list. | Coordinates or any location. |
@@ -38,7 +38,7 @@ Tests: `tests/regression/wardrobe-vision.test.ts` checks that the request has no
 
 | Sent | Not sent |
 |---|---|
-| The fixed system prompt (`outfit-intelligence.ts`, `v1`). | Database ids (candidates are `O1…On`), user id. |
+| The fixed system prompt (`outfit-intelligence.ts`, `v2`). | Database ids (candidates are `O1…On`), user id. |
 | Only the top-K engine candidates (≤ 5): score, reason codes, and per item: slot, category, subcategory, colours (≤ 5), pattern, material, style, formality, sleeves. **Catalog ids only** (Phase 4.5); anything else becomes `null` or is dropped. | Images, image URLs, fit/gender, other wardrobe items, anything outside the catalog. |
 | Occasion id; weather derived values (band, rounded feels-like, rain, snow and wind categories). | Coordinates, the raw weather text. |
 | Colour profile: season and undertone, and only when confidence ≥ 0.3. | Palettes, contrast, the selfie. |
