@@ -1,34 +1,38 @@
 import 'package:material_ui/material_ui.dart';
 
-/// ATLAS colour palette. The six brand values are fixed; the rest are
-/// derived tones used for borders, soft fills and status messages.
+/// Lookly colour palette (brand specification, November 2026). This file is
+/// the one source of the brand colours: `bun run brand:write` (apps/web)
+/// carries them to the web palette, the icons and Android's resources.
 ///
 /// Contrast rules (tested in test/core/design/tokens_test.dart):
 /// text on [background]/[surface] uses [textPrimary] or [textSecondary];
-/// text on [accent] is white; [success] is never a text background
-/// (white on it is ~2:1) — use it for icons and indicators only.
+/// text on [accent], [ink] and [success] is white.
 abstract final class AtlasColors {
-  static const background = Color(0xFFF8F8F6);
+  static const background = Color(0xFFFAF9FF);
   static const surface = Color(0xFFFFFFFF);
-  static const textPrimary = Color(0xFF111111);
-  static const textSecondary = Color(0xFF6B7280);
-  static const accent = Color(0xFF0F766E);
-  static const success = Color(0xFF22C55E);
+  static const textPrimary = Color(0xFF17112B);
+  static const textSecondary = Color(0xFF5D586B);
+  static const accent = Color(0xFF5B21B6);
+  static const success = Color(0xFF166534);
 
-  /// Pressed / hovered accent.
-  static const accentStrong = Color(0xFF0B5F58);
+  /// Pressed / hovered accent; the dark end of the app icon.
+  static const accentStrong = Color(0xFF4C1D95);
+
+  /// The bright end of the app icon gradient (not for text backgrounds
+  /// under small text).
+  static const accentBright = Color(0xFF7C3AED);
 
   /// Selected-state fills (navigation indicator, chips).
-  static const accentSoft = Color(0xFFE3F1EF);
+  static const accentSoft = Color(0xFFEEE7FF);
 
   /// 1 px borders and dividers.
-  static const hairline = Color(0xFFE7E5E1);
+  static const hairline = Color(0xFFE5E0EF);
 
   /// Skeleton base colour.
-  static const skeleton = Color(0xFFECEBE7);
+  static const skeleton = Color(0xFFECE9F3);
 
   /// Disabled text and icons (decorative only, not for body text).
-  static const textDisabled = Color(0xFFA8A29E);
+  static const textDisabled = Color(0xFFA7A2B5);
 
   static const error = Color(0xFFB42318);
   static const errorSoft = Color(0xFFFDECEA);
@@ -39,14 +43,14 @@ abstract final class AtlasColors {
   /// Text placed on the accent colour.
   static const onAccent = Color(0xFFFFFFFF);
 
-  /// Warm backdrop behind clothing photos and the brand hero.
-  static const sand = Color(0xFFF1ECE4);
+  /// Warm backdrop behind clothing photos.
+  static const sand = Color(0xFFF3EBDD);
 
   /// Deep brand tone for hero cards (white text on it, see tokens_test).
-  static const ink = Color(0xFF0B3B37);
+  static const ink = Color(0xFF1F1147);
 
   /// Muted text on [ink].
-  static const onInkMuted = Color(0xFFB9D6D2);
+  static const onInkMuted = Color(0xFFD8CFF0);
 
   /// Hero cards: from [ink] to [accent].
   static const heroGradient = LinearGradient(
@@ -59,8 +63,8 @@ abstract final class AtlasColors {
 /// Soft shadows for raised surfaces (cards that hold the main action).
 abstract final class AtlasShadows {
   static const card = [
-    BoxShadow(color: Color(0x0F1C1917), blurRadius: 24, offset: Offset(0, 8)),
-    BoxShadow(color: Color(0x0A1C1917), blurRadius: 4, offset: Offset(0, 1)),
+    BoxShadow(color: Color(0x141F1147), blurRadius: 24, offset: Offset(0, 8)),
+    BoxShadow(color: Color(0x0A1F1147), blurRadius: 4, offset: Offset(0, 1)),
   ];
 }
 

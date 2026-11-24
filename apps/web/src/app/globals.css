@@ -51,27 +51,27 @@
   --radius: 0.875rem;
   /* Brand colours: written by `bun run brand:write` from the mobile design
      tokens (apps/mobile/lib/core/design/tokens.dart). Change them there. */
-  --background: #F8F8F6;
-  --foreground: #111111;
+  --background: #FAF9FF;
+  --foreground: #17112B;
   --card: #FFFFFF;
-  --primary: #0F766E;
-  --muted-foreground: #6B7280;
-  --success: #22C55E;
+  --primary: #5B21B6;
+  --muted-foreground: #5D586B;
+  --success: #166534;
+  --secondary: #EEE7FF;
+  --border: #E5E0EF;
+  --destructive: #B42318;
   /* Everything below follows the brand colours or is a web-only tone. */
   --card-foreground: var(--foreground);
   --popover: var(--card);
   --popover-foreground: var(--foreground);
   --primary-foreground: #FFFFFF;
-  --secondary: #F4F4F2;
   --secondary-foreground: var(--foreground);
-  --muted: #F4F4F2;
-  --accent: #F4F4F2;
+  --muted: var(--secondary);
+  --accent: var(--secondary);
   --accent-foreground: var(--primary);
-  --destructive: #DC2626;
   --destructive-foreground: #FFFFFF;
   --success-foreground: #FFFFFF;
-  --border: #E7E5E4;        /* stone-200 — softer than gray */
-  --input: #E7E5E4;
+  --input: var(--border);
   --ring: var(--primary);
   --chart-1: var(--primary);
   --chart-2: var(--muted-foreground);
@@ -82,9 +82,9 @@
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F4F4F2;
+  --sidebar-accent: var(--secondary);
   --sidebar-accent-foreground: var(--primary);
-  --sidebar-border: #E7E5E4;
+  --sidebar-border: var(--border);
   --sidebar-ring: var(--primary);
 }
 

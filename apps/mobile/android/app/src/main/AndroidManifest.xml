@@ -11,7 +11,7 @@
          device-bound (Keystore-encrypted) and must never leave the device.
          AtlasApplication keeps crash records for the next start (CrashRecords.kt). -->
     <application
-        android:label="ATLAS"
+        android:label="Lookly"
         android:name=".AtlasApplication"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="false"

@@ -33,16 +33,16 @@ const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt
 export function resetEmail(to: string, link: string): MailMessage {
   const lines = [
     'Salom!',
-    'ATLAS hisobingiz uchun parolni tiklash so‘raldi. Yangi parol o‘rnatish uchun havolani oching:',
+    'Lookly hisobingiz uchun parolni tiklash so‘raldi. Yangi parol o‘rnatish uchun havolani oching:',
     link,
     `Havola ${RESET_TOKEN_TTL_MINUTES} daqiqa amal qiladi va faqat bir marta ishlaydi. Yangi parol o‘rnatilgach, barcha qurilmalardagi kirishlar yakunlanadi.`,
     'Agar buni siz so‘ramagan bo‘lsangiz, xatni e’tiborsiz qoldiring: parolingiz o‘zgarmaydi.',
-    'ATLAS',
+    'Lookly',
   ]
   const html = lines
     .map((l) => (l === link ? `<p><a href="${escapeHtml(link)}">Yangi parol o‘rnatish</a></p>` : `<p>${escapeHtml(l)}</p>`))
     .join('\n')
-  return { to, subject: 'ATLAS: parolni tiklash', text: lines.join('\n\n'), html }
+  return { to, subject: 'Lookly: parolni tiklash', text: lines.join('\n\n'), html }
 }
 
 /** Makes a link for the account of `email` (already normalised), if there is one, and e-mails it. */

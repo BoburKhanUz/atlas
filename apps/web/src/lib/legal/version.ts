@@ -5,7 +5,7 @@
  * Format `YYYY-MM-DD.N`, with `-draft` while counsel has not approved the texts.
  * Kept apart from the texts so client components can import it cheaply.
  */
-export const LEGAL_VERSION = '2026-10-17.2-draft'
+export const LEGAL_VERSION = '2026-11-24.1-draft'
 
 /**
  * The oldest accepted version that still counts. A user whose consents are all
@@ -40,7 +40,7 @@ export function consentStillValid(accepted: string): boolean {
 }
 
 /** Date the documents take effect (YYYY-MM-DD). */
-export const LEGAL_EFFECTIVE_DATE = '2026-10-17'
+export const LEGAL_EFFECTIVE_DATE = '2026-11-24'
 
 /**
  * True until counsel approves the texts. Clients show a draft notice while it

@@ -56,7 +56,7 @@ class _Choose extends StatelessWidget {
           Text('Kiyimni suratga oling', style: text.headlineMedium),
           const SizedBox(height: AtlasSpacing.xs),
           Text(
-            'Kiyimni yorug‘ joyda, tekis fonda bitta o‘zini suratga oling. ATLAS turini, rangini va materialini aniqlaydi.',
+            'Kiyimni yorug‘ joyda, tekis fonda bitta o‘zini suratga oling. Lookly turini, rangini va materialini aniqlaydi.',
             style: text.bodyMedium,
           ),
           const SizedBox(height: AtlasSpacing.xl),

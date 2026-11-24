@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Shown until Flutter draws its first frame: the brand colour and the mark, as on the splash screen. -->
+<!-- Shown until Flutter draws its first frame: the app's background and the mark, as on the splash screen. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@drawable/ic_launcher_background" />
+    <item android:drawable="@color/brand_background" />
     <item>
         <bitmap
             android:gravity="center"
-            android:src="@mipmap/ic_launcher_foreground" />
+            android:src="@mipmap/launch_mark" />
     </item>
 </layer-list>

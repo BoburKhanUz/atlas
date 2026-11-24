@@ -22,7 +22,7 @@ afterEach(() => {
 describe('parseMailConfig', () => {
   it('defaults: outbox in development, disabled in production', () => {
     env({ NODE_ENV: 'development' })
-    expect(parseMailConfig()).toMatchObject({ transport: 'outbox', from: 'ATLAS <no-reply@localhost>' })
+    expect(parseMailConfig()).toMatchObject({ transport: 'outbox', from: 'Lookly <no-reply@localhost>' })
     expect(mailEnabled()).toBe(true)
     env({ NODE_ENV: 'production' })
     expect(parseMailConfig()).toEqual({ transport: 'disabled' })

@@ -16,7 +16,7 @@ abstract final class AtlasTheme {
     secondary: AtlasColors.textPrimary,
     onSecondary: AtlasColors.surface,
     tertiary: AtlasColors.success,
-    onTertiary: AtlasColors.textPrimary,
+    onTertiary: AtlasColors.onAccent,
     error: AtlasColors.error,
     onError: AtlasColors.surface,
     errorContainer: AtlasColors.errorSoft,

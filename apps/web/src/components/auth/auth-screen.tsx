@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -124,9 +125,7 @@ export function AuthScreen({ mode }: { mode: AuthMode }) {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="text-center mb-12"
         >
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 mb-6">
-            <SparkleIcon className="w-7 h-7 text-primary" />
-          </div>
+          <Image src="/logo.png" alt="" width={64} height={64} priority className="inline-block w-16 h-16 mb-6" />
           <h1 className="display-xl text-foreground mb-3">
             {tCommon('appName')}
           </h1>
@@ -328,22 +327,5 @@ function LegalLink({ href, children }: { href: string; children: React.ReactNode
     >
       {children}
     </Link>
-  )
-}
-
-function SparkleIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 3 L13.5 9 L19 10.5 L13.5 12 L12 18 L10.5 12 L5 10.5 L10.5 9 Z" />
-      <path d="M19 3 L19.7 5.3 L22 6 L19.7 6.7 L19 9 L18.3 6.7 L16 6 L18.3 5.3 Z" opacity="0.5" />
-    </svg>
   )
 }

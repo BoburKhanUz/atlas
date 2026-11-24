@@ -12,19 +12,24 @@ describe('brand colours come from the mobile design tokens', () => {
   })
 
   it('reads the opaque brand colours and refuses a tokens file without one', () => {
-    expect(parseTokens(dart)).toMatchObject({ accent: '#0F766E', ink: '#0B3B37', background: '#F8F8F6', textPrimary: '#111111' })
+    expect(parseTokens(dart)).toMatchObject({ accent: '#5B21B6', accentStrong: '#4C1D95', ink: '#1F1147', background: '#FAF9FF' })
     expect(() => parseTokens(dart.replace('static const ink =', 'static const inkOld ='))).toThrow(/ink/)
   })
 
-  it('one changed token reaches every output; nothing else changes', () => {
-    const changed = dart.replace('static const accent = Color(0xFF0F766E);', 'static const accent = Color(0xFF7C3AED);')
-    expect(changed).not.toBe(dart)
-    const before = textOutputs(dart, css)
-    const after = textOutputs(changed, css)
-    for (const [file, content] of Object.entries(after)) {
-      expect(content, file).toContain('#7C3AED')
-      expect(content, file).not.toContain('#0F766E')
-      expect(content.replaceAll('#7C3AED', '#0F766E'), file).toBe(before[file])
+  it('one changed token reaches every output that uses it; nothing else changes', () => {
+    const outputs = (source: string) =>
+      Object.fromEntries(Object.entries(textOutputs(source, css)).map(([file, content]) => [path.basename(file), content]))
+    const before = outputs(dart)
+    for (const [token, hex, files] of [
+      ['accent', '5B21B6', ['globals.css', 'brand-colors.ts']],
+      ['accentStrong', '4C1D95', ['colors.xml', 'brand-colors.ts']],
+      ['background', 'FAF9FF', ['globals.css', 'colors.xml', 'brand-colors.ts']],
+    ] as const) {
+      const changed = dart.replace(`static const ${token} = Color(0xFF${hex});`, `static const ${token} = Color(0xFF123456);`)
+      expect(changed, token).not.toBe(dart)
+      const after = outputs(changed)
+      expect(Object.keys(after).filter((f) => after[f] !== before[f]).sort(), token).toEqual([...files].sort())
+      for (const f of files) expect(after[f].replaceAll('#123456', `#${hex}`), `${token} in ${f}`).toBe(before[f])
     }
   })
 

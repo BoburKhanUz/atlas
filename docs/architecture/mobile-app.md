@@ -1,6 +1,6 @@
-# ATLAS mobile app (Flutter): architecture
+# Lookly mobile app (Flutter): architecture
 
-The native app in `apps/mobile` is the primary ATLAS product UI for Android and iOS. The Next.js app (`apps/web`) stays the backend and the web reference client.
+The native app in `apps/mobile` is the primary Lookly product UI for Android and iOS. The Next.js app (`apps/web`) stays the backend and the web reference client.
 
 The app consumes the backend only through the published contract:
 - `docs/api/openapi.json`: OpenAPI 3.1 for the 29 operations, request and response schemas, and error codes per status (`x-error-codes`).
@@ -497,7 +497,7 @@ flutter build apk --release --dart-define=ATLAS_ENV=production --dart-define=ATL
 
 ## Android and iOS configuration
 
-- **IDs:** application ID and bundle identifier `uz.atlas.app`; display name "ATLAS".
+- **IDs:** application ID and bundle identifier `uz.atlas.app`; display name "Lookly". The application ID still carries the working name; change it before the first store release if the brand should show there (it is permanent once published).
 - **Android:**
   - minSdk 24, target and compile SDK 36. `INTERNET` permission in the main manifest.
   - Network security: release builds forbid cleartext. The debug variant allows cleartext only to `10.0.2.2`, `localhost` and `127.0.0.1` for the local backend.
@@ -513,19 +513,25 @@ flutter build apk --release --dart-define=ATLAS_ENV=production --dart-define=ATL
 
 ## Design system
 
+The product's name is **Lookly** (the repository, packages and internal identifiers keep the earlier working name, `atlas`). The brand specification (November 2026) fixes the palette, the mark and the typeface.
+
 - **Tokens** (`core/design/tokens.dart`):
 
 | Token | Value |
 |---|---|
-| background | `#F8F8F6` |
+| background | `#FAF9FF` |
 | surface | `#FFFFFF` |
-| text primary | `#111111` |
-| text secondary | `#6B7280` |
-| accent | `#0F766E` |
-| success | `#22C55E` |
+| text primary | `#17112B` |
+| text secondary | `#5D586B` |
+| accent | `#5B21B6` |
+| accent strong / bright (app icon gradient) | `#4C1D95` / `#7C3AED` |
+| accent soft | `#EEE7FF` |
+| ink (hero surfaces) | `#1F1147` |
+| sand (behind clothing photos) | `#F3EBDD` |
+| success | `#166534` |
 
-  Plus derived hairline, soft-accent, warning and error tones; brand tones for hero surfaces (`ink` `#0B3B37`, the `ink → accent` hero gradient, `onInkMuted` for secondary text on it, and a warm `sand` `#F1ECE4` behind clothing photos); a soft card shadow; a 4-pt spacing scale; restrained radii (8/12/16/24, cards 20); and motion durations (150/250/400 ms).
-- **One source for brand colours:** `tokens.dart`. `bun run brand:write` (`apps/web/scripts/brand.ts`) carries them to the web palette's base variables (`globals.css`; the other variables follow with `var()`), `src/lib/brand-colors.ts`, the web logo, Android's `values/colors.xml` (launcher and launch screen) and the Android and iOS icons. To change a colour: edit `tokens.dart`, run it, commit the result. A web test (`brand-assets.test.ts`) and a mobile test fail when a generated text file is out of date.
+  Plus hairline, skeleton, warning and error tones; `onInkMuted` for secondary text on ink; the `ink → accent` hero gradient; a soft card shadow; a 4-pt spacing scale; restrained radii (8/12/16/24, cards 20); and motion durations (150/250/400 ms).
+- **One source for brand colours:** `tokens.dart`. `bun run brand:write` (`apps/web/scripts/brand.ts`) carries them to the web palette's base variables (`globals.css`; the other variables follow with `var()`), `src/lib/brand-colors.ts`, and Android's `values/colors.xml` (launcher and launch screen). To change a colour: edit `tokens.dart`, run it, commit the result. A web test (`brand-assets.test.ts`) and a mobile test fail when a generated text file is out of date.
 - **Contrast is tested in code:**
 
 | Combination | Contrast | Rule |
@@ -536,10 +542,10 @@ flutter build apk --release --dart-define=ATLAS_ENV=production --dart-define=ATL
 | white on ink | ≥ 7:1 | |
 | `onInkMuted` on ink | ≥ 4.5:1 | |
 | primary text on sand | ≥ 7:1 | |
-| text on success green | low (≈ 2:1) | never used; success is used only for icons and indicators |
+| white on success | ≥ 4.5:1 | |
 
 - **Typography:** Manrope, bundled in `assets/fonts` (SIL Open Font License, registered with the licence page at start-up). Every style names the family, so the app looks the same on every phone. Scale: display 30/800, headline 24/800, title 18/700, body 16/500, caption 12/600; `labelSmall` is a readable small style, and the spaced uppercase overline (`AtlasType.overline`) is used only for short section labels.
-- **Brand:** `AtlasLogo` (a hanger mark and the ATLAS wordmark) on the splash and the sign-in hero. Sign-in, registration, password reset and the re-consent screen share one layout: a brand hero and the form on a raised card; password fields have a show/hide button; the consent checkbox carries the two documents as inline links.
+- **Brand mark:** one image, `apps/web/scripts/brand/lookly-mark.webp` (the mark on white). `bun run brand:write` cuts it out and writes the Android icons (legacy, adaptive and themed), the Android launch mark, the iOS icons, the web icon (`public/logo.png`) and the two marks the app shows (`assets/brand/mark.png`, `mark_light.png` for dark grounds). To change the mark: replace the image and run it. `AtlasLogo` shows the mark with the "Lookly" wordmark (Manrope 800, −0.04em). The native launch screen and the Flutter splash share the same light ground and mark. Sign-in, registration, password reset and the re-consent screen share one layout: a brand hero and the form on a raised card; password fields have a show/hide button; the consent checkbox carries the two documents as inline links.
 - **Home:** a time-of-day greeting with the user's first name and the date; the "today's outfit" hero card (weather advice, opens suggestions); the weather card; occasion tiles that open suggestions for that occasion and generate once; the wardrobe card (item count and main categories, add item); and the stylist card.
 - **Shared widgets:** primary, secondary and ghost buttons with a loading state; cards with a hairline border; skeleton loaders that respect reduced motion; and empty, error and offline states.
 - **Navigation:** a Material 3 `NavigationBar` sized for one-handed use.

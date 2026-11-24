@@ -6,7 +6,7 @@ import 'api_failure.dart';
 /// URLs or tokens.
 abstract final class UserMessages {
   static const noNetwork = 'Internet aloqasi yo‘q. Ulanishni tekshirib, qayta urinib ko‘ring.';
-  static const apiUnreachable = 'ATLAS serveriga ulanib bo‘lmadi. Birozdan so‘ng qayta urinib ko‘ring.';
+  static const apiUnreachable = 'Lookly serveriga ulanib bo‘lmadi. Birozdan so‘ng qayta urinib ko‘ring.';
   static const timeout = 'Server javobi kechikdi. Qayta urinib ko‘ring.';
   static const insecure = 'Xavfsiz ulanish o‘rnatilmadi. Boshqa tarmoqdan urinib ko‘ring.';
   static const cancelled = 'So‘rov bekor qilindi.';

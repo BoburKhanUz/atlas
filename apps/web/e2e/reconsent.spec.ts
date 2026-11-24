@@ -35,6 +35,8 @@ test.describe('re-consent after the legal texts change', () => {
     const user = await registerViaUi(page)
     await page.goto('/wardrobe')
     await expect(page).toHaveURL(/\/wardrobe$/)
+    // The page's own first requests are answered before the consent goes out of date.
+    await page.waitForLoadState('networkidle')
     outdateConsent(user.email)
     // A client-side navigation keeps the layout: the new page's API call meets the refusal.
     await page.getByRole('link', { name: 'Obrazlar' }).first().click()

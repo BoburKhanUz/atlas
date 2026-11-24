@@ -19,7 +19,7 @@ abstract final class WardrobeMessages {
       'Bugungi AI tahlil limiti tugadi (kuniga 50 ta). Limit Toshkent vaqti bilan yarim tunda yangilanadi.',
     RejectReason.accessDenied =>
       source == PhotoSource.camera
-          ? 'Kameraga ruxsat berilmagan. Sozlamalardan ATLAS uchun kamerani yoqing.'
-          : 'Rasmlarga ruxsat berilmagan. Sozlamalardan ATLAS uchun rasmlarga ruxsat bering.',
+          ? 'Kameraga ruxsat berilmagan. Sozlamalardan Lookly uchun kamerani yoqing.'
+          : 'Rasmlarga ruxsat berilmagan. Sozlamalardan Lookly uchun rasmlarga ruxsat bering.',
   };
 }

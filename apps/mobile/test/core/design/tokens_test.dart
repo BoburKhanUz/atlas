@@ -18,14 +18,16 @@ double contrast(Color a, Color b) {
 }
 
 void main() {
-  group('brand palette is exactly the ATLAS values', () {
-    test('six fixed colours', () {
-      expect(AtlasColors.background, const Color(0xFFF8F8F6));
+  group('brand palette is exactly the Lookly specification', () {
+    test('fixed colours', () {
+      expect(AtlasColors.background, const Color(0xFFFAF9FF));
       expect(AtlasColors.surface, const Color(0xFFFFFFFF));
-      expect(AtlasColors.textPrimary, const Color(0xFF111111));
-      expect(AtlasColors.textSecondary, const Color(0xFF6B7280));
-      expect(AtlasColors.accent, const Color(0xFF0F766E));
-      expect(AtlasColors.success, const Color(0xFF22C55E));
+      expect(AtlasColors.textPrimary, const Color(0xFF17112B));
+      expect(AtlasColors.textSecondary, const Color(0xFF5D586B));
+      expect(AtlasColors.accent, const Color(0xFF5B21B6));
+      expect(AtlasColors.accentStrong, const Color(0xFF4C1D95));
+      expect(AtlasColors.ink, const Color(0xFF1F1147));
+      expect(AtlasColors.success, const Color(0xFF166534));
     });
   });
 
@@ -56,9 +58,8 @@ void main() {
       });
     });
 
-    test('success green is too light for white text, so it is never used as a text background', () {
-      expect(contrast(AtlasColors.onAccent, AtlasColors.success), lessThan(3));
-      // The theme pairs it with dark text where it appears as a container colour.
+    test('white text on success (the theme pairs them where success is a container colour)', () {
+      expect(contrast(AtlasColors.onAccent, AtlasColors.success), greaterThanOrEqualTo(4.5));
       expect(contrast(AtlasTheme.colorScheme.onTertiary, AtlasTheme.colorScheme.tertiary), greaterThanOrEqualTo(4.5));
     });
   });
@@ -92,8 +93,9 @@ void main() {
     // values/colors.xml is generated from tokens.dart by apps/web/scripts/brand.ts.
     final xml = File('android/app/src/main/res/values/colors.xml').readAsStringSync();
     String hex(Color c) => '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
-    expect(xml, contains('<color name="brand_ink">${hex(AtlasColors.ink)}</color>'));
-    expect(xml, contains('<color name="brand_accent">${hex(AtlasColors.accent)}</color>'));
+    expect(xml, contains('<color name="brand_background">${hex(AtlasColors.background)}</color>'));
+    expect(xml, contains('<color name="brand_icon_start">${hex(AtlasColors.accentStrong)}</color>'));
+    expect(xml, contains('<color name="brand_icon_end">${hex(AtlasColors.accentBright)}</color>'));
     final background = File('android/app/src/main/res/drawable/ic_launcher_background.xml').readAsStringSync();
     expect(background, isNot(contains('#')), reason: 'colours come from values/colors.xml');
   });

@@ -100,7 +100,7 @@ describe('the reset e-mail', () => {
     expect(link).toBe('https://atlas.example.uz/reset-password?token=abc_DEF-123')
     const mail = resetEmail('ali@example.uz', link)
     expect(mail.to).toBe('ali@example.uz')
-    expect(mail.subject).toBe('ATLAS: parolni tiklash')
+    expect(mail.subject).toBe('Lookly: parolni tiklash')
     expect(mail.text.split(link)).toHaveLength(2)
     expect(mail.text).toMatch(/60 daqiqa/)
     expect(mail.html).toContain(`href="${link}"`)

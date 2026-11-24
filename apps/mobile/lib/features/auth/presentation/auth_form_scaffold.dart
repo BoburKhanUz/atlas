@@ -68,7 +68,7 @@ class AuthFormScaffold extends StatelessWidget {
                                 if (!compactHero) ...[
                                   SizedBox(height: short ? AtlasSpacing.lg : AtlasSpacing.xl),
                                   Text(
-                                    'Har kuni nima kiyishni\nATLAS biladi.',
+                                    'Har kuni yangi obraz.\nO‘z garderobingizdan.',
                                     style: text.displaySmall?.copyWith(color: AtlasColors.onAccent),
                                   ),
                                   if (!short) ...[

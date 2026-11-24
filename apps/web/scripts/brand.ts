@@ -1,22 +1,23 @@
 /**
  * Brand colours come from ONE place: the mobile design tokens
- * (apps/mobile/lib/core/design/tokens.dart). This script carries them to
- * everything that cannot read that file:
+ * (apps/mobile/lib/core/design/tokens.dart). The brand mark comes from ONE
+ * image: scripts/brand/lookly-mark.webp (the mark on a white background).
+ * This script carries both to everything that cannot read them:
  *
  *   - the web palette's base variables (src/app/globals.css);
  *   - src/lib/brand-colors.ts (pages that render without the global CSS);
- *   - the web logo (public/logo.svg);
  *   - Android's launcher and launch-screen colours (res/values/colors.xml);
- *   - the Android and iOS app icons (PNG).
+ *   - the Android and iOS app icons, the Android launch mark, the web icon
+ *     (public/logo.png) and the marks the Flutter app shows (assets/brand).
  *
  *   bun scripts/brand.ts --write    regenerate all of them
  *   bun scripts/brand.ts --check    fail if a text file is out of date
  *
  * To change a brand colour: edit tokens.dart, run --write, commit the result.
- * The icons are drawn here too (the mark below); they are written only by
- * --write, and --check covers the text files.
+ * To change the mark: replace the image, run --write, commit the result.
+ * The images are written only by --write; --check covers the text files.
  */
-import { readFileSync, readdirSync, writeFileSync } from 'fs'
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'fs'
 import path from 'path'
 
 const WEB = path.resolve(__dirname, '..')
@@ -32,11 +33,30 @@ export interface BrandColors {
   textPrimary: string
   textSecondary: string
   accent: string
+  accentStrong: string
+  accentBright: string
+  accentSoft: string
+  hairline: string
   success: string
+  error: string
   ink: string
   onAccent: string
 }
-const NAMES: (keyof BrandColors)[] = ['background', 'surface', 'textPrimary', 'textSecondary', 'accent', 'success', 'ink', 'onAccent']
+const NAMES: (keyof BrandColors)[] = [
+  'background',
+  'surface',
+  'textPrimary',
+  'textSecondary',
+  'accent',
+  'accentStrong',
+  'accentBright',
+  'accentSoft',
+  'hairline',
+  'success',
+  'error',
+  'ink',
+  'onAccent',
+]
 
 /** Reads `static const name = Color(0xFFRRGGBB);` (opaque colours only). */
 export function parseTokens(dart: string): BrandColors {
@@ -49,24 +69,6 @@ export function parseTokens(dart: string): BrandColors {
   return Object.fromEntries(NAMES.map((n) => [n, found[n]])) as unknown as BrandColors
 }
 
-// ─── The mark: an "A" that is also a clothes hanger, in a 1024 box ───────────
-// The same drawing as AtlasMarkPainter (apps/mobile/lib/core/widgets/atlas_brand.dart).
-const mark = (stroke: string) => `<g fill="none" stroke="${stroke}" stroke-linecap="round" stroke-linejoin="round">
-<path d="M512 352 V318 C512 288 566 276 572 238 C578 200 548 170 512 170 C478 170 452 194 452 226" stroke-width="46"/>
-<path d="M512 352 L254 694 C246 706 254 720 268 720 H756 C770 720 778 706 770 694 Z" stroke-width="50"/>
-<path d="M358 574 H666" stroke-width="44"/>
-</g>`
-const gradient = (c: BrandColors) =>
-  `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c.ink}"/><stop offset="1" stop-color="${c.accent}"/></linearGradient></defs>`
-const scaled = (k: number, body: string) => `<g transform="translate(512 512) scale(${k}) translate(-512 -512)">${body}</g>`
-const svg = (body: string, attrs = '') => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"${attrs}>${body}</svg>`
-
-/** The mark on the brand gradient; `rx` rounds the tile (0 for iOS, which masks icons itself). */
-const tile = (c: BrandColors, rx: number, attrs = '') =>
-  svg(`${gradient(c)}<rect width="1024" height="1024" rx="${rx}" fill="url(#g)"/>${scaled(0.86, mark(c.onAccent))}`, attrs)
-/** Android adaptive-icon layers: a 108dp canvas with the mark inside the 66dp safe zone. */
-const foreground = (color: string) => svg(scaled(0.56, mark(color)))
-
 // ─── Text outputs ────────────────────────────────────────────────────────────
 
 /** globals.css variables that carry a brand colour; every other variable follows them. */
@@ -77,6 +79,9 @@ const CSS_VARIABLES: Record<string, keyof BrandColors> = {
   '--primary': 'accent',
   '--muted-foreground': 'textSecondary',
   '--success': 'success',
+  '--secondary': 'accentSoft',
+  '--border': 'hairline',
+  '--destructive': 'error',
 }
 
 export function withBrandVariables(css: string, c: BrandColors): string {
@@ -100,10 +105,10 @@ export function textOutputs(dart: string, globalsCss: string): Record<string, st
       `// ${GENERATED}\n` +
       `/** Brand colours for pages that render without the global CSS (global-error.tsx). */\n` +
       `export const BRAND = ${JSON.stringify(c, null, 2).replace(/"(\w+)":/g, '$1:').replace(/"/g, "'")} as const\n`,
-    [path.join(WEB, 'public/logo.svg')]: `<!-- ${GENERATED} -->\n${tile(c, 230, ' role="img" aria-label="ATLAS"')}\n`,
     [path.join(ANDROID_RES, 'values/colors.xml')]:
       `<?xml version="1.0" encoding="utf-8"?>\n<!-- ${GENERATED} -->\n<resources>\n` +
-      `    <color name="brand_ink">${c.ink}</color>\n    <color name="brand_accent">${c.accent}</color>\n</resources>\n`,
+      `    <color name="brand_background">${c.background}</color>\n` +
+      `    <color name="brand_icon_start">${c.accentStrong}</color>\n    <color name="brand_icon_end">${c.accentBright}</color>\n</resources>\n`,
   }
 }
 
@@ -125,25 +130,116 @@ export function staleFiles(): string[] {
     .map(([file]) => path.relative(path.resolve(WEB, '../..'), file))
 }
 
+// ─── The mark ────────────────────────────────────────────────────────────────
+
+interface Marks {
+  /** The mark in its own colours on a transparent square. */
+  color: Buffer
+  /** The same mark in white for dark grounds; its fold stays visible as a lighter and a fuller white. */
+  light: Buffer
+  /** Black with the light mark's alpha: Android's themed (monochrome) icon. */
+  mono: Buffer
+}
+
+/** Cuts the mark out of its white background and derives the light and monochrome versions. */
+async function loadMarks(sharp: (typeof import('sharp'))['default']): Promise<Marks> {
+  const { data, info } = await sharp(path.join(WEB, 'scripts/brand/lookly-mark.webp')).removeAlpha().raw().toBuffer({ resolveWithObject: true })
+  const { width, height } = info
+  const color = Buffer.alloc(width * height * 4)
+  const light = Buffer.alloc(width * height * 4)
+  const mono = Buffer.alloc(width * height * 4)
+  let left = width
+  let top = height
+  let right = -1
+  let bottom = -1
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 3
+      const o = (y * width + x) * 4
+      const [r, g, b] = [data[i], data[i + 1], data[i + 2]]
+      // How far the pixel is from the white ground; the edge is a soft ramp.
+      const a = Math.min(1, Math.max(0, (250 - Math.min(r, g, b)) / 24))
+      if (a === 0) continue
+      // The colour without the white it was blended with.
+      const un = (v: number) => Math.min(255, Math.max(0, Math.round((v - 255 * (1 - a)) / a)))
+      const [ur, ug, ub] = [un(r), un(g), un(b)]
+      color.set([ur, ug, ub, Math.round(a * 255)], o)
+      const luminance = (0.2126 * ur + 0.7152 * ug + 0.0722 * ub) / 255
+      const shade = 0.55 + 0.45 * Math.min(1, Math.max(0, (luminance - 0.1) / 0.5))
+      const la = Math.round(a * shade * 255)
+      light.set([255, 255, 255, la], o)
+      mono.set([0, 0, 0, la], o)
+      if (a > 0.5) {
+        left = Math.min(left, x)
+        right = Math.max(right, x)
+        top = Math.min(top, y)
+        bottom = Math.max(bottom, y)
+      }
+    }
+  }
+  if (right < 0) throw new Error('lookly-mark.webp: no mark found on the white background')
+  const side = Math.max(right - left, bottom - top) + 1
+  const square = (raw: Buffer) =>
+    sharp(raw, { raw: { width, height, channels: 4 } })
+      .extract({ left, top, width: right - left + 1, height: bottom - top + 1 })
+      .extend({
+        top: Math.floor((side - (bottom - top + 1)) / 2),
+        bottom: Math.ceil((side - (bottom - top + 1)) / 2),
+        left: Math.floor((side - (right - left + 1)) / 2),
+        right: Math.ceil((side - (right - left + 1)) / 2),
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      })
+      .png()
+      .toBuffer()
+  return { color: await square(color), light: await square(light), mono: await square(mono) }
+}
+
 async function writeAll(): Promise<void> {
   const { dart, css } = readInputs()
   for (const [file, content] of Object.entries(textOutputs(dart, css))) writeFileSync(file, content)
   const c = parseTokens(dart)
   const sharp = (await import('sharp')).default
-  const png = (source: string, size: number) => sharp(Buffer.from(source)).resize(size, size).png()
+  const marks = await loadMarks(sharp)
+
+  /** [mark] centred on a square canvas of [size] px, filling [fill] of its side, over [ground] (transparent when omitted). */
+  const compose = async (mark: Buffer, size: number, fill: number, ground?: Buffer) => {
+    const inner = Math.round(size * fill)
+    const scaled = await sharp(mark).resize(inner, inner, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).toBuffer()
+    const base = ground
+      ? sharp(ground).resize(size, size)
+      : sharp({ create: { width: size, height: size, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
+    return base.composite([{ input: scaled, gravity: 'centre' }]).png()
+  }
+  /** The app icon ground: accentStrong → accentBright, top-left to bottom-right; `rx` rounds it. */
+  const ground = (rx: number) =>
+    Buffer.from(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">` +
+        `<stop offset="0" stop-color="${c.accentStrong}"/><stop offset="1" stop-color="${c.accentBright}"/></linearGradient></defs>` +
+        `<rect width="1024" height="1024" rx="${rx}" fill="url(#g)"/></svg>`,
+    )
+
   const densities: Record<string, number> = { mdpi: 1, hdpi: 1.5, xhdpi: 2, xxhdpi: 3, xxxhdpi: 4 }
   for (const [density, k] of Object.entries(densities)) {
     const dir = path.join(ANDROID_RES, `mipmap-${density}`)
-    await png(tile(c, 230), Math.round(48 * k)).toFile(path.join(dir, 'ic_launcher.png'))
-    await png(foreground(c.onAccent), Math.round(108 * k)).toFile(path.join(dir, 'ic_launcher_foreground.png'))
-    await png(foreground('#000000'), Math.round(108 * k)).toFile(path.join(dir, 'ic_launcher_monochrome.png'))
+    await (await compose(marks.light, Math.round(48 * k), 0.6, ground(230))).toFile(path.join(dir, 'ic_launcher.png'))
+    // Adaptive-icon layers: a 108dp canvas with the mark inside the 66dp safe zone.
+    await (await compose(marks.light, Math.round(108 * k), 0.4)).toFile(path.join(dir, 'ic_launcher_foreground.png'))
+    await (await compose(marks.mono, Math.round(108 * k), 0.4)).toFile(path.join(dir, 'ic_launcher_monochrome.png'))
+    // Shown centred on the launch screen, at its own size.
+    await (await compose(marks.color, Math.round(112 * k), 1)).toFile(path.join(dir, 'launch_mark.png'))
   }
   for (const file of readdirSync(IOS_ICONS).filter((f) => f.endsWith('.png'))) {
     const m = file.match(/Icon-App-([\d.]+)x[\d.]+@(\d)x\.png/)
     if (!m) throw new Error(`unexpected iOS icon name ${file}`)
-    // No transparency on iOS.
-    await png(tile(c, 0), Math.round(parseFloat(m[1]) * Number(m[2]))).flatten({ background: c.ink }).toFile(path.join(IOS_ICONS, file))
+    // iOS masks the corners itself and allows no transparency: a full square.
+    const icon = await compose(marks.light, Math.round(parseFloat(m[1]) * Number(m[2])), 0.6, ground(0))
+    await icon.flatten({ background: c.accentStrong }).toFile(path.join(IOS_ICONS, file))
   }
+  await (await compose(marks.light, 512, 0.6, ground(230))).toFile(path.join(WEB, 'public/logo.png'))
+  const flutter = path.join(MOBILE, 'assets/brand')
+  mkdirSync(flutter, { recursive: true })
+  await (await compose(marks.color, 384, 1)).toFile(path.join(flutter, 'mark.png'))
+  await (await compose(marks.light, 384, 1)).toFile(path.join(flutter, 'mark_light.png'))
 }
 
 if (import.meta.main) {

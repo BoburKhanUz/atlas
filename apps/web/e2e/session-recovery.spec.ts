@@ -16,6 +16,8 @@ async function signedInWithoutAccessCookie(page: Page) {
   await registerViaUi(page)
   await page.goto('/outfits')
   await expect(page.getByRole('button', { name: /Boshlash/ })).toBeVisible()
+  // The page's own first requests are answered while the access cookie is still there.
+  await page.waitForLoadState('networkidle')
   // keep the proxy from renewing the session first: isolate the client-side path
   await page.route('**/*', (route) => {
     const h = route.request().headers()

@@ -52,7 +52,7 @@ class WardrobeScreen extends ConsumerWidget {
       WardrobeListState(items: []) => EmptyStateView(
         icon: Icons.checkroom_outlined,
         title: s.category == 'all' ? 'Garderob bo‘sh' : 'Bu toifada kiyim yo‘q',
-        message: 'Kiyimingizni suratga oling — ATLAS uni tahlil qilib, garderobingizga qo‘shadi.',
+        message: 'Kiyimingizni suratga oling — Lookly uni tahlil qilib, garderobingizga qo‘shadi.',
         actionLabel: 'Kiyim qo‘shish',
         onAction: add,
       ),

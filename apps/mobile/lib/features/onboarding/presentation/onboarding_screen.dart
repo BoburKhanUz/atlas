@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../app/router.dart';
 import '../../../core/design/tokens.dart';
+import '../../../core/widgets/atlas_brand.dart';
 import '../../../core/widgets/atlas_button.dart';
 import '../../profile/data/profile_data.dart' show ProfileLimits;
 import '../data/options.dart';
@@ -131,7 +132,7 @@ class _StepBody extends ConsumerWidget {
       OnboardingStep.welcome => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('ATLAS', style: text.titleMedium?.copyWith(letterSpacing: 4, color: AtlasColors.accent)),
+          const Align(alignment: Alignment.centerLeft, child: AtlasLogo(size: 36)),
           const SizedBox(height: AtlasSpacing.lg),
           header(
             'Shaxsiy stilistingizga xush kelibsiz',

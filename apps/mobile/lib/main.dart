@@ -31,7 +31,7 @@ void main() {
   )..install();
   // Crashes outside Dart that ended an earlier run.
   if (Platform.isAndroid) unawaited(crashes.reportAndroidCrashes(const MethodChannelAndroidCrashRecords()));
-  AppLog.info('ATLAS starting (${config.environment.name})');
+  AppLog.info('Lookly starting (${config.environment.name})');
   runApp(
     ProviderScope(
       overrides: [

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Brand gradient, ink → accent (values/colors.xml, generated from the design tokens). -->
+<!-- App icon ground, accentStrong → accentBright (values/colors.xml, generated from the design tokens). -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
     <gradient
         android:angle="315"
-        android:endColor="@color/brand_accent"
-        android:startColor="@color/brand_ink"
+        android:endColor="@color/brand_icon_end"
+        android:startColor="@color/brand_icon_start"
         android:type="linear" />
 </shape>

@@ -10,7 +10,7 @@ class AtlasApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp.router(
-      title: 'ATLAS',
+      title: 'Lookly',
       debugShowCheckedModeBanner: false,
       theme: AtlasTheme.light(),
       themeMode: ThemeMode.light,

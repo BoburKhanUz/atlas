@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -82,9 +83,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           )}
           aria-label={tCommon('appName')}
         >
-          <span className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-            <Sparkle className="w-5 h-5 text-primary" />
-          </span>
+          <Image src="/logo.png" alt="" width={40} height={40} className="w-10 h-10 shrink-0" />
           <span className="hidden lg:inline font-semibold tracking-tight text-foreground">
             {tCommon('appName')}
           </span>

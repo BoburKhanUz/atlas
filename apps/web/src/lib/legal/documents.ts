@@ -31,7 +31,7 @@ const PRIVACY: LegalDocument = {
     {
       heading: 'Kim ma’lumotlaringizni qayta ishlaydi',
       paragraphs: [
-        'ATLAS ilovasi va xizmatini [Kompaniya nomi] (keyingi o‘rinlarda “biz”) taqdim etadi. Ushbu siyosat ATLAS ilovasi va veb-saytida shaxsga doir ma’lumotlaringiz qanday yig‘ilishi, ishlatilishi va himoyalanishini tushuntiradi.',
+        'Lookly ilovasi va xizmatini [Kompaniya nomi] (keyingi o‘rinlarda “biz”) taqdim etadi. Ushbu siyosat Lookly ilovasi va veb-saytida shaxsga doir ma’lumotlaringiz qanday yig‘ilishi, ishlatilishi va himoyalanishini tushuntiradi.',
         'Savol va so‘rovlar uchun: [aloqa email manzili].',
       ],
     },
@@ -88,7 +88,7 @@ const PRIVACY: LegalDocument = {
     },
     {
       heading: 'Yosh chegarasi',
-      paragraphs: ['ATLAS faqat 18 yoshdan katta foydalanuvchilar uchun. 18 yoshga to‘lmagan bo‘lsangiz, ilovadan foydalanmang.'],
+      paragraphs: ['Lookly faqat 18 yoshdan katta foydalanuvchilar uchun. 18 yoshga to‘lmagan bo‘lsangiz, ilovadan foydalanmang.'],
     },
     {
       heading: 'Xavfsizlik',
@@ -117,13 +117,13 @@ const TERMS: LegalDocument = {
     {
       heading: 'Xizmat haqida',
       paragraphs: [
-        'ATLAS — garderobingizdagi kiyimlar asosida obraz tavsiya qiluvchi va AI stilist bilan suhbatlashish imkonini beruvchi ilova. Tavsiyalar maslahat xarakterida.',
+        'Lookly — garderobingizdagi kiyimlar asosida obraz tavsiya qiluvchi va AI stilist bilan suhbatlashish imkonini beruvchi ilova. Tavsiyalar maslahat xarakterida.',
       ],
     },
     {
       heading: 'Kim foydalanishi mumkin',
       paragraphs: [
-        'ATLAS’dan faqat 18 yoshdan katta shaxslar foydalanishi mumkin. Ro‘yxatdan o‘tishda to‘g‘ri email kiriting va parolingizni hech kimga bermang. Hisobingizdagi harakatlar uchun o‘zingiz javobgarsiz.',
+        'Lookly’dan faqat 18 yoshdan katta shaxslar foydalanishi mumkin. Ro‘yxatdan o‘tishda to‘g‘ri email kiriting va parolingizni hech kimga bermang. Hisobingizdagi harakatlar uchun o‘zingiz javobgarsiz.',
       ],
     },
     {

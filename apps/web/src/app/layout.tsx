@@ -18,20 +18,20 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "AI Stylist — Shaxsiy garderobingizdagi kelajak",
-    template: "%s — AI Stilist",
+    default: "Lookly — shaxsiy AI stilist",
+    template: "%s — Lookly",
   },
   description:
     "Garderobingizdagi kiyimlardan avtomatik obraz tavsiya qiluvchi AI stilist. Faqat sizniki — xarid yo‘q.",
   keywords: ["AI stylist", "fashion", "wardrobe", "outfit", "O‘zbek"],
-  authors: [{ name: "AI Fashion Stylist" }],
+  authors: [{ name: "Lookly" }],
   icons: {
-    icon: "/logo.svg",
+    icon: "/logo.png",
   },
   openGraph: {
-    title: "AI Stylist",
+    title: "Lookly",
     description: "Shaxsiy AI stilistingiz — garderobingizdan obraz",
-    siteName: "AI Stylist",
+    siteName: "Lookly",
     type: "website",
   },
 };

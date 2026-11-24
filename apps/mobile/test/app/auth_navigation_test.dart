@@ -88,6 +88,7 @@ void main() {
       final router = await pumpWithSession(tester, h);
       await tester.enterText(find.byKey(const Key('login.email')), 'a@test.local');
       await tester.enterText(find.byKey(const Key('login.password')), 'wrong');
+      await tester.ensureVisible(find.byKey(const Key('login.submit')));
       await tester.runAsync(() async {
         await tester.tap(find.byKey(const Key('login.submit')));
         await waitFor(() => h.backend.calls(P.login) == 1 && h.session.state is! Authenticating);

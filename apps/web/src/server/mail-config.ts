@@ -33,18 +33,18 @@ export type MailConfig =
   | { transport: 'disabled' }
 
 const TRANSPORTS = ['smtp', 'outbox', 'disabled'] as const
-const DEFAULT_OUTBOX_FROM = 'ATLAS <no-reply@localhost>'
+const DEFAULT_OUTBOX_FROM = 'Lookly <no-reply@localhost>'
 const LOCAL_SMTP_HOSTS = new Set(['localhost', '127.0.0.1', '::1'])
 const ADDRESS = /^[^\s@<>"]+@[^\s@<>"]+$/
 const DEV_ORIGIN = 'http://localhost:3000'
 
 function parseFrom(raw: string | undefined): string {
   const value = raw?.trim() ?? ''
-  if (!value) throw new ConfigError('MAIL_FROM is not set (for example: ATLAS <no-reply@example.uz>)')
+  if (!value) throw new ConfigError('MAIL_FROM is not set (for example: Lookly <no-reply@example.uz>)')
   if (value.length > 200 || /[\r\n]/.test(value)) throw new ConfigError('MAIL_FROM must be one line of at most 200 characters')
   const named = value.match(/^[^<>]*<([^<>]+)>$/)
   if (!ADDRESS.test((named ? named[1] : value).trim())) {
-    throw new ConfigError('MAIL_FROM must be an address or "Name <address>" (for example: ATLAS <no-reply@example.uz>)')
+    throw new ConfigError('MAIL_FROM must be an address or "Name <address>" (for example: Lookly <no-reply@example.uz>)')
   }
   return value
 }
