@@ -5,6 +5,12 @@ decision table), `successor-crypto.ts`, `maintenance.ts`; route glue in
 `src/lib/session.ts`. Database: `SessionFamily`, `Session`, `SystemMarker`,
 function `atlas_now()` (migration `20261006000300_session_families`).
 
+The Go backend runs the same protocol on the same tables (stage B2):
+`apps/api/internal/session` (`service.go`, `classify.go`, `successor.go`) and
+`apps/api/internal/auth`, with queries in `apps/api/internal/store/queries/sessions.sql`.
+Golden vectors recorded from the TypeScript code keep the two equal
+(`docs/architecture/backend.md`, *Tokens, passwords and session encryption*).
+
 ## Model
 
 - **Session family** = one login on one device. `clientType` (`web` |

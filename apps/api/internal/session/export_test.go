@@ -4,3 +4,6 @@ package session
 func EncryptSuccessorWithNonce(token, aad string, keys Keys, nonce []byte) string {
 	return encryptSuccessor(token, aad, keys, nonce)
 }
+
+// IsBusy exposes the mapping of store errors to SESSION_BUSY.
+var IsBusy = isBusy

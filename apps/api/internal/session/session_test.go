@@ -1,9 +1,14 @@
 package session_test
 
 import (
+	"context"
 	"encoding/base64"
+	"errors"
+	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"lookly/internal/golden"
 	"lookly/internal/session"
@@ -196,4 +201,32 @@ func FuzzDecryptSuccessor(f *testing.F) {
 		}
 		t.Fatalf("accepted a forged ciphertext %q (aad %q) as %q", value, aad, got)
 	})
+}
+
+// Which store errors mean "try again" (503 SESSION_BUSY) and which are
+// failures to report.
+func TestBusyErrors(t *testing.T) {
+	t.Parallel()
+	for state, busy := range map[string]bool{
+		"55P03": true,  // lock_not_available: the lock timeout
+		"57014": true,  // query_canceled: the statement timeout
+		"40P01": true,  // deadlock_detected
+		"40001": true,  // serialization_failure
+		"23505": false, // unique_violation
+		"23503": false, // foreign_key_violation
+		"42P01": false, // undefined_table
+		"53300": false, // too_many_connections
+		"08006": false, // connection_failure
+	} {
+		err := fmt.Errorf("lock session family: %w", &pgconn.PgError{Code: state})
+		if got := session.IsBusy(err); got != busy {
+			t.Errorf("SQLSTATE %s: busy %v, want %v", state, got, busy)
+		}
+	}
+	if !session.IsBusy(fmt.Errorf("begin: %w", context.DeadlineExceeded)) {
+		t.Error("a transaction that ran out of time is not busy")
+	}
+	if session.IsBusy(errors.New("something else")) || session.IsBusy(context.Canceled) {
+		t.Error("an unrelated error is busy")
+	}
 }

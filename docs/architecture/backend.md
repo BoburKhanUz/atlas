@@ -121,6 +121,27 @@ the cutover (`docs/plan/B2.md`).
 - **Refresh classification** (`session.Classify`): the pure decision table of
   `docs/architecture/sessions.md`, equal to the TypeScript one on 672 recorded cases
   around every boundary.
+- **Session protocol** (`session.Service`, queries in `store/queries/sessions.sql`): the
+  protocol of `docs/architecture/sessions.md` on the shared tables.
+  - One read-committed transaction per request, with `lock_timeout` 5 s and
+    `statement_timeout` 10 s. The request time is read from the database clock before
+    any lock wait. The family is locked first, then the session, then its successor.
+  - `Start` (sign-in), `Refresh` (rotation, grace replay, or a refusal with the contract's
+    code) and `End` (sign-out, idempotent). `InTransaction` and `RevokeUserFamilies` are
+    the building blocks of the password reset (B3).
+  - A refusal that changes data (reuse, expiry) commits. A lock, statement or pool
+    timeout, or a deadlock, rolls everything back and answers `SESSION_BUSY`. A request
+    that was cancelled, or ran out of its own time, gets its context's error instead.
+  - A session or family deleted while the request waited (account deletion, the
+    cleanup) is `INVALID_TOKEN`. A replay whose ciphertext is gone or does not match is
+    `SESSION_RACE`, and nothing is revoked.
+  - Ids are generated in Go until B7 (`platform.NewID`: `c` and 24 characters of
+    `[a-z0-9]`, the shape of Prisma's cuid). Stored client details (user agent 200,
+    device name 100) are cut as the Next.js API cut them and cleaned of bytes
+    PostgreSQL refuses.
+  - Tested against a real PostgreSQL with the settable database clock, in a non-UTC
+    server time zone, with two pools standing in for two instances: the 24 cases of
+    `session-protocol.itest.ts` ported one by one, and the cases the B1 review named.
 - **Passwords**: bcrypt. New hashes use cost 12 and refuse more than 72 bytes (bcrypt
   would ignore the rest). Hashes from the Next.js server (cost 10) verify, including
   passwords over 72 bytes compared by their first 72 as before, and `NeedsRehash` marks
