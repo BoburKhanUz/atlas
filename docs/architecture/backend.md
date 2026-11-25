@@ -69,13 +69,62 @@ before listening. Values that hold credentials are never printed.
 | `LOOKLY_DB_MAX_CONNS` | `10` | 1–100 |
 | `LOOKLY_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error`; `debug` is refused in production |
 | `LOOKLY_SHUTDOWN_GRACE` | `20s` | 1 s – 2 min |
+| `JWT_SECRET` | none (required) | at least 32 characters; not one of the known shipped defaults; no white space at its ends (it is used exactly as given, as the Next.js server uses it) |
+| `SESSION_ENC_KEY` | none (required) | standard base64 of exactly 32 bytes (`openssl rand -base64 32`); neither the text nor the bytes of `JWT_SECRET` or `MEDIA_SIGNING_SECRET` |
+| `SESSION_ENC_DECRYPT_KEYS` | none | up to 2 older keys, comma-separated, same rules; they decrypt only (staged key rotation) |
+| `ACCESS_TOKEN_TTL_SECONDS` | `900` | whole number, 10 – 86 400 |
+| `REFRESH_TOKEN_TTL_DAYS` | `30` | whole number, 1 – 365 |
+| `COOKIE_SECURE` | on in production and staging, off in development and test | `0` or `1`; `0` is refused in production |
+| `TRUST_PROXY` | `0` | `0` or `1`; `1` only behind the reverse proxy that sets the forwarding headers |
 
-Later stages add their settings (session keys, media secret, AI, mail) to the same check.
+The session variables are shared with the Next.js server and follow its rules, with two
+differences: Go refuses a value out of range or malformed, where the Next.js server
+silently used the default or the nearest limit; and Go refuses `COOKIE_SECURE=0` in
+production. Every command (`serve`, `worker`, `migrate river`, `health`) validates the
+whole configuration, so all of them need the secrets.
+
+Later stages add their settings (media secret, AI, mail) to the same check.
 
 The PostgreSQL driver (pgx) also reads `PG*` variables (`PGPASSWORD`, `PGSSLMODE`, …),
 `~/.pgpass` and the service file for anything the URL leaves out. The URL is required to
 name the host and database, and in production `sslmode`. The container sets no `PG*`
 variables; keep it that way.
+
+## Tokens, passwords and session encryption
+
+`internal/auth` and `internal/session` hold the pure parts of sign-in, ported from the
+TypeScript code with exact parity: both servers must accept each other's sessions until
+the cutover (`docs/plan/B2.md`).
+
+- **Golden vectors** (`apps/api/testdata/golden/auth.json`) are inputs and outputs
+  recorded from the real TypeScript functions by `apps/web/scripts/golden-auth.ts`
+  (`bun scripts/golden-auth.ts ../api/testdata/golden/auth.json` in `apps/web`). The Go
+  tests load every record. A mismatch is investigated, never regenerated away. The
+  vectors use fixed test secrets that exist nowhere else; `.gitleaks.toml` exempts that
+  directory, and only it, from the secret scan.
+- **Access token**: JWT, HS256, issuer `ai-fashion-stylist`, claims `sub`, `email`,
+  `sid`. Go signs byte for byte what the TypeScript signer (jose) signs. The verifier is
+  hand-written on the standard library: it reads member names exactly (a general JSON
+  decoder would take `"Sub"` for `"sub"`), accepts only `HS256`, and refuses a `crit`
+  header. It accepts what jose accepts, except four things our signers never produce:
+  - a token without `exp` (jose would accept it for ever);
+  - an empty `sub`;
+  - any part that is not strict, unpadded base64url (so a token has one spelling);
+  - characters around the token.
+- **Authorization header**: `Bearer`, in any letter case, then spaces or tabs, then the
+  token. Node also took the byte `0xA0` for a separator; Go does not.
+- **Refresh token**: 32 random bytes as base64url; the database stores its SHA-256.
+- **Successor ciphertext**: `v1.<keyId>.<nonce>.<ciphertext>.<tag>`, AES-256-GCM, bound to
+  its two session rows by the additional data. Go produces the TypeScript bytes for the
+  same key and nonce, and reads only the canonical form (12-byte nonce, 16-byte tag,
+  strict base64url).
+- **Refresh classification** (`session.Classify`): the pure decision table of
+  `docs/architecture/sessions.md`, equal to the TypeScript one on 672 recorded cases
+  around every boundary.
+- **Passwords**: bcrypt. New hashes use cost 12 and refuse more than 72 bytes (bcrypt
+  would ignore the rest). Hashes from the Next.js server (cost 10) verify, including
+  passwords over 72 bytes compared by their first 72 as before, and `NeedsRehash` marks
+  them for replacement after a successful sign-in.
 
 ## Process
 

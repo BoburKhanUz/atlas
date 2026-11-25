@@ -1,0 +1,50 @@
+package auth
+
+import (
+	"errors"
+
+	"golang.org/x/crypto/bcrypt"
+)
+
+// PasswordCost is the bcrypt cost of new hashes (owner decision, 2026-11-25).
+// The Next.js API used 10; those hashes still verify, and NeedsRehash asks
+// for their replacement after a successful sign-in.
+const PasswordCost = 12
+
+// MaxPasswordBytes is the most bcrypt reads: anything after byte 72 would
+// be ignored silently, so a longer password is refused when it is set.
+const MaxPasswordBytes = 72
+
+// ErrPasswordTooLong is returned when a new password is over MaxPasswordBytes.
+var ErrPasswordTooLong = errors.New("password is longer than 72 bytes")
+
+// HashPassword hashes a new password. The length is counted in bytes of
+// UTF-8, not characters.
+func HashPassword(plain string) (string, error) {
+	if len(plain) > MaxPasswordBytes {
+		return "", ErrPasswordTooLong
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(plain), PasswordCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hash), nil
+}
+
+// VerifyPassword reports whether plain matches a stored bcrypt hash. A
+// password longer than 72 bytes is compared by its first 72, as the Next.js
+// API (bcryptjs) did when it stored the hash: a user who registered with a
+// long password keeps signing in. Anything that is not a bcrypt hash
+// matches nothing.
+func VerifyPassword(plain, hash string) bool {
+	// bcrypt itself reads only the first 72 bytes; the golden vectors fail
+	// if a library update ever changes that.
+	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(plain)) == nil
+}
+
+// NeedsRehash reports whether a stored hash is weaker than PasswordCost (or
+// not a bcrypt hash at all) and is to be replaced after a successful sign-in.
+func NeedsRehash(hash string) bool {
+	cost, err := bcrypt.Cost([]byte(hash))
+	return err != nil || cost < PasswordCost
+}

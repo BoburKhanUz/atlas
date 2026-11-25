@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"lookly/internal/config"
+	"lookly/internal/config/configtest"
 	"lookly/internal/database"
 )
 
@@ -14,9 +15,7 @@ func TestADriverRejectionNeverQuotesTheURL(t *testing.T) {
 	t.Parallel()
 	// The URL form is valid (config accepts it), the option is not.
 	url := "postgresql://atlas:s3cret-pass@db.internal:5432/atlas?connect_timeout=soon"
-	cfg, err := config.Load(func(k string) (string, bool) {
-		return map[string]string{"LOOKLY_ENV": "test", "DATABASE_URL": url}[k], true
-	})
+	cfg, err := config.Load(configtest.Getenv(map[string]string{"DATABASE_URL": url}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -31,10 +30,7 @@ func TestADriverRejectionNeverQuotesTheURL(t *testing.T) {
 
 func TestThePoolUsesTheConfiguredSize(t *testing.T) {
 	t.Parallel()
-	cfg, err := config.Load(func(k string) (string, bool) {
-		v, ok := map[string]string{"LOOKLY_ENV": "test", "DATABASE_URL": "postgresql://u@127.0.0.1:1/db", "LOOKLY_DB_MAX_CONNS": "7"}[k]
-		return v, ok
-	})
+	cfg, err := config.Load(configtest.Getenv(map[string]string{"DATABASE_URL": "postgresql://u@127.0.0.1:1/db", "LOOKLY_DB_MAX_CONNS": "7"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,10 +49,7 @@ func TestThePoolUsesTheConfiguredSize(t *testing.T) {
 
 func TestDescribeNeverShowsConnectionDetails(t *testing.T) {
 	t.Parallel()
-	cfg, err := config.Load(func(k string) (string, bool) {
-		v, ok := map[string]string{"LOOKLY_ENV": "test", "DATABASE_URL": "postgresql://secretuser:s3cret-pass@127.0.0.1:1/proddb"}[k]
-		return v, ok
-	})
+	cfg, err := config.Load(configtest.Getenv(map[string]string{"DATABASE_URL": "postgresql://secretuser:s3cret-pass@127.0.0.1:1/proddb"}))
 	if err != nil {
 		t.Fatal(err)
 	}

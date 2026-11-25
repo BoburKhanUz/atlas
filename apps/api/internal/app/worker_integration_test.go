@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"lookly/internal/app"
+	"lookly/internal/config/configtest"
 	"lookly/internal/dbtest"
 	"lookly/migrations"
 )
@@ -29,11 +30,10 @@ func schemaDB(t *testing.T) *pgxpool.Pool {
 }
 
 func appEnv(pool *pgxpool.Pool, extra map[string]string) func(string) (string, bool) {
-	vars := map[string]string{
-		"LOOKLY_ENV":            "test",
+	vars := configtest.Env(map[string]string{
 		"DATABASE_URL":          dbtest.URL(pool),
 		"LOOKLY_SHUTDOWN_GRACE": "5s",
-	}
+	})
 	for k, v := range extra {
 		vars[k] = v
 	}
@@ -256,7 +256,7 @@ func TestWorkerSaysWhyTheDatabaseRefusedWithoutConnectionDetails(t *testing.T) {
 	u.Path = "/lookly_no_such_database"
 	var stderr bytes.Buffer
 	code := app.Run(context.Background(), []string{"worker"},
-		env(map[string]string{"LOOKLY_ENV": "test", "DATABASE_URL": u.String()}), &bytes.Buffer{}, &stderr)
+		configtest.Getenv(map[string]string{"DATABASE_URL": u.String()}), &bytes.Buffer{}, &stderr)
 	msg := stderr.String()
 	if code != 1 || !strings.Contains(msg, "cannot reach the database") || !strings.Contains(msg, "SQLSTATE 3D000") {
 		t.Fatalf("exit %d, stderr %q", code, msg)

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"lookly/internal/app"
+	"lookly/internal/config/configtest"
 )
 
 // syncBuffer is written by the server goroutine and read by the test.
@@ -132,8 +133,7 @@ func serve(t *testing.T, databaseHost, grace string) started {
 	ctx, cancel := context.WithCancel(context.Background())
 	s := started{addr: addr, stdout: &syncBuffer{}, cancel: cancel, done: make(chan int, 1)}
 	go func() {
-		s.done <- app.Run(ctx, []string{"serve"}, env(map[string]string{
-			"LOOKLY_ENV":            "test",
+		s.done <- app.Run(ctx, []string{"serve"}, configtest.Getenv(map[string]string{
 			"LOOKLY_HTTP_ADDR":      addr,
 			"DATABASE_URL":          "postgresql://lookly@" + databaseHost + "/lookly",
 			"LOOKLY_SHUTDOWN_GRACE": grace,
@@ -269,8 +269,7 @@ func TestWorkerAndMigrateRiverReportAnUnreachableDatabaseAsSuch(t *testing.T) {
 	t.Parallel()
 	for _, args := range [][]string{{"worker"}, {"migrate", "river"}} {
 		var stderr bytes.Buffer
-		code := app.Run(context.Background(), args, env(map[string]string{
-			"LOOKLY_ENV":   "test",
+		code := app.Run(context.Background(), args, configtest.Getenv(map[string]string{
 			"DATABASE_URL": "postgresql://secretuser@127.0.0.1:1/proddb",
 		}), &bytes.Buffer{}, &stderr)
 		msg := stderr.String()

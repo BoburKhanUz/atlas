@@ -13,6 +13,7 @@ require (
 	github.com/pressly/goose/v3 v3.30.0
 	github.com/riverqueue/river v0.51.2
 	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.51.2
+	golang.org/x/crypto v0.59.0
 )
 
 require (

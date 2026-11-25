@@ -1,0 +1,10 @@
+# gitleaks configuration (CI job "secret-scan"). The default rules apply
+# everywhere; this file only names what is known not to be a secret.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Golden vectors: tokens and keys recorded from the TypeScript backend with fixed test secrets that are used nowhere else (apps/web/scripts/golden-auth.ts). Nothing else is exempt."
+paths = [
+  '''^apps/api/testdata/golden/[^/]+\.json$''',
+]

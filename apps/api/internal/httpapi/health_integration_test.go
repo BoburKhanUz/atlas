@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"lookly/internal/config"
+	"lookly/internal/config/configtest"
 	"lookly/internal/database"
 	"lookly/internal/health"
 	"lookly/internal/httpapi"
@@ -22,15 +23,7 @@ import (
 
 func testConfig(t *testing.T, url string) config.Config {
 	t.Helper()
-	cfg, err := config.Load(func(k string) (string, bool) {
-		switch k {
-		case "LOOKLY_ENV":
-			return "test", true
-		case "DATABASE_URL":
-			return url, true
-		}
-		return "", false
-	})
+	cfg, err := config.Load(configtest.Getenv(map[string]string{"DATABASE_URL": url}))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -3,12 +3,16 @@
 // invalid value stops the server with a message naming the variable. There
 // are no default secrets and no development fallbacks.
 //
-// Variables shared with the Next.js server keep their names (DATABASE_URL);
-// Go-only variables use the LOOKLY_ prefix. Later stages add their settings
-// (JWT and session keys, media secret, AI, mail) here with the same checks.
+// Variables shared with the Next.js server keep their names (DATABASE_URL,
+// JWT_SECRET, SESSION_ENC_KEY, ...) and its rules, so one environment file
+// serves both until the cutover; Go-only variables use the LOOKLY_ prefix.
+// Later stages add their settings (media secret, AI, mail) here with the
+// same checks.
 package config
 
 import (
+	"bytes"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -17,6 +21,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 )
 
 // Env is the deployment environment. It has no default: a server never runs
@@ -38,6 +44,14 @@ type Config struct {
 	DBMaxConns    int32
 	LogLevel      slog.Level
 	ShutdownGrace time.Duration
+
+	JWTSecret          []byte   // secret: signs access tokens
+	SessionEncKey      []byte   // secret: 32 bytes, encrypts successor refresh tokens
+	SessionDecryptKeys [][]byte // secret: older keys during a staged rotation, decrypt only
+	AccessTokenTTL     time.Duration
+	RefreshTokenTTL    time.Duration
+	CookieSecure       bool // auth cookies carry the Secure attribute
+	TrustProxy         bool // the client address comes from the reverse proxy's headers
 }
 
 const (
@@ -47,7 +61,25 @@ const (
 	defaultShutdownGrace = 20 * time.Second
 	minShutdownGrace     = time.Second
 	maxShutdownGrace     = 2 * time.Minute
+
+	minSecretChars       = 32
+	sessionKeyBytes      = 32
+	maxDecryptOnlyKeys   = 2
+	defaultAccessTTL     = 15 * time.Minute
+	minAccessTTLSeconds  = 10
+	maxAccessTTLSeconds  = 24 * 60 * 60
+	defaultRefreshDays   = 30
+	maxRefreshDays       = 365
+	generateSecretHint   = "generate one with: openssl rand -base64 48"
+	generateSessionKHint = "generate one with: openssl rand -base64 32"
 )
+
+// Values that shipped as defaults in the project's first export. Never
+// accepted (the Next.js server refuses the same two).
+var knownInsecureSecrets = map[string]bool{
+	"dev-secret-change-in-production-please-use-env":         true,
+	"dev-refresh-secret-change-in-production-please-use-env": true,
+}
 
 // Load reads and validates the configuration. getenv is os.LookupEnv in
 // production; every problem is reported, joined, in one error.
@@ -130,10 +162,133 @@ func Load(getenv func(string) (string, bool)) (Config, error) {
 		}
 	}
 
+	// Secrets: only the reason is ever reported, never the value.
+	//
+	// JWT_SECRET is used exactly as given, as the Next.js server uses it:
+	// both sign with the same bytes. A value with white space at its ends
+	// is refused, so nothing depends on who trims what.
+	jwtSecret, _ := getenv("JWT_SECRET")
+	switch {
+	case jwtSecret == "":
+		fail("JWT_SECRET", "is not set (%s)", generateSecretHint)
+	case strings.TrimSpace(jwtSecret) != jwtSecret:
+		fail("JWT_SECRET", "must not start or end with white space")
+	case utf8.RuneCountInString(jwtSecret) < minSecretChars:
+		fail("JWT_SECRET", "must be at least %d characters long", minSecretChars)
+	case knownInsecureSecrets[jwtSecret]:
+		fail("JWT_SECRET", "uses a known insecure default value")
+	default:
+		c.JWTSecret = []byte(jwtSecret)
+	}
+
+	// The session key must not be derived from, or equal to, another secret.
+	otherSecrets := map[string]string{}
+	for _, name := range []string{"JWT_SECRET", "MEDIA_SIGNING_SECRET"} {
+		if v, _ := getenv(name); v != "" {
+			otherSecrets[name] = v
+		}
+	}
+	sessionKey := func(name, raw string) []byte {
+		key, err := decodeSessionKey(raw, otherSecrets)
+		if err != nil {
+			fail(name, "%v", err)
+		}
+		return key
+	}
+	if v, ok := value("SESSION_ENC_KEY"); !ok {
+		fail("SESSION_ENC_KEY", "is not set (%s)", generateSessionKHint)
+	} else {
+		c.SessionEncKey = sessionKey("SESSION_ENC_KEY", v)
+	}
+	if v, ok := value("SESSION_ENC_DECRYPT_KEYS"); ok {
+		var list []string
+		for _, item := range strings.Split(v, ",") {
+			if item = strings.TrimSpace(item); item != "" {
+				list = append(list, item)
+			}
+		}
+		if len(list) > maxDecryptOnlyKeys {
+			fail("SESSION_ENC_DECRYPT_KEYS", "accepts at most %d keys", maxDecryptOnlyKeys)
+		} else {
+			for _, item := range list {
+				// The active key listed again adds nothing.
+				if key := sessionKey("SESSION_ENC_DECRYPT_KEYS", item); key != nil && !bytes.Equal(key, c.SessionEncKey) {
+					c.SessionDecryptKeys = append(c.SessionDecryptKeys, key)
+				}
+			}
+		}
+	}
+
+	c.AccessTokenTTL = defaultAccessTTL
+	if v, ok := value("ACCESS_TOKEN_TTL_SECONDS"); ok {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < minAccessTTLSeconds || n > maxAccessTTLSeconds {
+			fail("ACCESS_TOKEN_TTL_SECONDS", "must be a whole number of seconds from %d to %d", minAccessTTLSeconds, maxAccessTTLSeconds)
+		} else {
+			c.AccessTokenTTL = time.Duration(n) * time.Second
+		}
+	}
+
+	c.RefreshTokenTTL = defaultRefreshDays * 24 * time.Hour
+	if v, ok := value("REFRESH_TOKEN_TTL_DAYS"); ok {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < 1 || n > maxRefreshDays {
+			fail("REFRESH_TOKEN_TTL_DAYS", "must be a whole number of days from 1 to %d", maxRefreshDays)
+		} else {
+			c.RefreshTokenTTL = time.Duration(n) * 24 * time.Hour
+		}
+	}
+
+	// Cookies are Secure wherever the server is deployed. Plain http is for
+	// local and test runs; production never allows it.
+	c.CookieSecure = c.Env == Production || c.Env == Staging
+	if v, ok := value("COOKIE_SECURE"); ok {
+		switch {
+		case v != "0" && v != "1":
+			fail("COOKIE_SECURE", "must be 0 or 1")
+		case v == "0" && c.Env == Production:
+			fail("COOKIE_SECURE", "0 (cookies over plain http) is not allowed in production")
+		default:
+			c.CookieSecure = v == "1"
+		}
+	}
+
+	if v, ok := value("TRUST_PROXY"); ok {
+		if v != "0" && v != "1" {
+			fail("TRUST_PROXY", "must be 0 or 1")
+		} else {
+			c.TrustProxy = v == "1"
+		}
+	}
+
 	if len(errs) > 0 {
 		return Config{}, fmt.Errorf("invalid configuration:\n%w", errors.Join(errs...))
 	}
 	return c, nil
+}
+
+// decodeSessionKey reads a session key as the Next.js server does: standard
+// base64, padded or not, of exactly 32 bytes, and independent of the other
+// secrets (neither the same text nor the same bytes).
+func decodeSessionKey(value string, otherSecrets map[string]string) ([]byte, error) {
+	body := strings.TrimRight(value, "=")
+	if body == "" || len(value)-len(body) > 2 || strings.ContainsFunc(body, notBase64) {
+		return nil, fmt.Errorf("must be base64 (%s)", generateSessionKHint)
+	}
+	key, err := base64.RawStdEncoding.DecodeString(body)
+	if err != nil || len(key) != sessionKeyBytes {
+		return nil, fmt.Errorf("must decode to exactly %d bytes (%s)", sessionKeyBytes, generateSessionKHint)
+	}
+	for _, name := range []string{"JWT_SECRET", "MEDIA_SIGNING_SECRET"} {
+		if other, set := otherSecrets[name]; set && (strings.TrimSpace(other) == value || bytes.Equal([]byte(other), key)) {
+			return nil, fmt.Errorf("must be independent of %s", name)
+		}
+	}
+	return key, nil
+}
+
+func notBase64(r rune) bool {
+	return r > unicode.MaxASCII || !(unicode.IsLetter(r) || unicode.IsDigit(r) || r == '+' || r == '/')
 }
 
 func checkListenAddr(addr string) error {
@@ -186,7 +341,8 @@ func checkDatabaseURL(raw string, env Env) error {
 	return nil
 }
 
-// LogValue keeps the database URL out of logs.
+// LogValue keeps the secrets out of logs: the database URL, the signing
+// secret and the session keys are shown as set, never as values.
 func (c Config) LogValue() slog.Value {
 	return slog.GroupValue(
 		slog.String("env", string(c.Env)),
@@ -195,14 +351,23 @@ func (c Config) LogValue() slog.Value {
 		slog.Int("dbMaxConns", int(c.DBMaxConns)),
 		slog.String("logLevel", c.LogLevel.String()),
 		slog.Duration("shutdownGrace", c.ShutdownGrace),
+		slog.String("jwtSecret", "[set]"),
+		slog.String("sessionEncKey", "[set]"),
+		slog.Int("decryptOnlyKeys", len(c.SessionDecryptKeys)),
+		slog.Duration("accessTokenTTL", c.AccessTokenTTL),
+		slog.Duration("refreshTokenTTL", c.RefreshTokenTTL),
+		slog.Bool("cookieSecure", c.CookieSecure),
+		slog.Bool("trustProxy", c.TrustProxy),
 	)
 }
 
-// String keeps the database URL out of fmt output.
+// String keeps the secrets out of fmt output.
 func (c Config) String() string {
-	return fmt.Sprintf("Config{Env:%s HTTPAddr:%s DatabaseURL:[set] DBMaxConns:%d LogLevel:%s ShutdownGrace:%s}",
-		c.Env, c.HTTPAddr, c.DBMaxConns, c.LogLevel, c.ShutdownGrace)
+	return fmt.Sprintf("Config{Env:%s HTTPAddr:%s DatabaseURL:[set] DBMaxConns:%d LogLevel:%s ShutdownGrace:%s "+
+		"JWTSecret:[set] SessionEncKey:[set] DecryptOnlyKeys:%d AccessTokenTTL:%s RefreshTokenTTL:%s CookieSecure:%t TrustProxy:%t}",
+		c.Env, c.HTTPAddr, c.DBMaxConns, c.LogLevel, c.ShutdownGrace,
+		len(c.SessionDecryptKeys), c.AccessTokenTTL, c.RefreshTokenTTL, c.CookieSecure, c.TrustProxy)
 }
 
-// GoString keeps the database URL out of %#v.
+// GoString keeps the secrets out of %#v.
 func (c Config) GoString() string { return c.String() }

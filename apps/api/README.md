@@ -10,15 +10,19 @@ The Go toolchain switches itself to the version pinned in `go.mod` (Go 1.26).
 
 ```bash
 cd apps/api
-LOOKLY_ENV=development DATABASE_URL=postgresql://user@localhost:5432/lookly go run ./cmd/lookly serve
+export LOOKLY_ENV=development
+export DATABASE_URL=postgresql://user@localhost:5432/lookly
+export JWT_SECRET="$(openssl rand -base64 48)"        # the same values as the Next.js server,
+export SESSION_ENC_KEY="$(openssl rand -base64 32)"   # when both run on one database
+go run ./cmd/lookly serve
 curl -s localhost:8080/api/health
 ```
 
-Background jobs (needs River's tables once per database):
+Background jobs (needs River's tables once per database), with the same environment:
 
 ```bash
-LOOKLY_ENV=development DATABASE_URL=... go run ./cmd/lookly migrate river
-LOOKLY_ENV=development DATABASE_URL=... go run ./cmd/lookly worker
+go run ./cmd/lookly migrate river
+go run ./cmd/lookly worker
 ```
 
 Configuration variables and their rules: `docs/architecture/backend.md#configuration`.
@@ -42,6 +46,19 @@ go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
 - The schema, until B7: change Prisma (`apps/web/prisma`), then rebuild the Go baseline
   with `PATH=/usr/lib/postgresql/16/bin:$PATH scripts/make-baseline.sh <admin URL>`. The
   schema-equality test fails until the two match.
+
+## Golden vectors
+
+`testdata/golden/*.json` are inputs and outputs recorded from the TypeScript backend;
+the Go code must reproduce them (`.claude/skills/lookly-testing/references/parity.md`).
+To add cases, extend the script and run it again, in `apps/web`:
+
+```bash
+bun scripts/golden-auth.ts ../api/testdata/golden/auth.json
+```
+
+A Go test that fails on a recorded case is a difference to investigate, not a reason to
+regenerate. A deliberate difference is listed by name in the test, with its reason.
 
 ## Change the contract
 
