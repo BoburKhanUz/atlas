@@ -90,7 +90,7 @@ The folders marked with a phase are created in that phase, not as empty placehol
 
 - **Who sees it (`OnboardingGate`):** decided once per signed-in user.
   - A local `completed`/`skipped` marker for this user means no.
-  - Otherwise, `GET /api/v1/profile` with no style or colour preferences means yes. It is asked only once `ConsentGate` lets the user in: until changed legal texts are accepted the server refuses it, and that refusal must not read as "no onboarding".
+  - Otherwise, `GET /api/v1/profile` with no style or colour preferences means yes. It is asked only once `ConsentGate` lets the user in: until changed legal texts are accepted the server refuses it, and that refusal must not read as "no onboarding". A restored session is let in before the consent check answers, so a `CONSENT_REQUIRED` answer here leaves the decision open and it is asked again after acceptance.
   - Any failure or a 6 s timeout means no, so the user is never blocked.
   - A token refresh never re-decides; only a different user or the end of the session does.
 - **Steps:** welcome → style (liked/disliked) → profile (`gender`, `preferredFit`) → colours (favourite/disliked) → finish.
@@ -158,6 +158,9 @@ The folders marked with a phase are created in that phase, not as empty placehol
 | `CancelledFailure` | The request was cancelled |
 | `UnexpectedResponseFailure` | Non-contract response: HTML from a proxy, or a body that fails the schema |
 | `ApiHttpFailure` | A documented error response (details below) |
+| `UnexpectedErrorFailure` | Anything else a request or state update threw (a bug, not an API answer); retryable |
+
+**Controllers catch everything** through `failureOf(error, stack)`: an `ApiFailure` passes through; anything else is logged by type (never its message), reported to the crash reporter (`UnexpectedErrors.report`, wired in `main.dart`) and becomes `UnexpectedErrorFailure`. No screen is left on "loading" by an error nobody expected. Device steps (camera, gallery, image preparation) use `logDeviceFailure`: a `PlatformException` is expected and only logged with its code; anything else is reported the same way.
 
 **`ApiHttpFailure` fields:**
 - `statusCode`
@@ -284,7 +287,9 @@ Three distinct situations:
 - **Signed images (`SignedImage`):**
   - Fetched with the shared Dio. The media operation has no security requirement, so no Bearer and no cookie are sent; relative URLs resolve against the API origin.
   - Cached in memory only, under `imageId + variant`, never the URL or signature.
-  - An expired URL (60 s margin) is not fetched. It, or a 400/403/404 answer, asks the owner to reload the item or list for fresh URLs.
+  - An expired URL (60 s margin, judged on the server's clock: `serverClockOffset` from the `Date` header at sign-in and refresh) is not fetched. It, or a 400/403/404 answer, asks the owner to reload the item or list for fresh URLs, once per URL.
+  - A new URL gets a new `Image` (keyed by the URL's hash): the provider compares by image id, so the same `Image` would neither fetch a fresh URL after a rejection nor drop the old URL's error.
+  - Owners reload through `RefreshThrottle` (`core/time`): at most once per 30 s on a monotonic clock; a report inside the interval is done when it is over, never dropped (a tile reports a URL only once). The wardrobe reloads the loaded range (every loaded page), re-applies uploads and deletions made meanwhile, and shows a failed reload as a refresh failure with a retry.
   - Errors never carry the URL, and logs show the path only.
 - **Permissions:**
   - Android: none added. image_picker's camera intent and picker need no `CAMERA` or storage permission; this is checked in the merged release manifest.
@@ -364,7 +369,7 @@ Three distinct situations:
   - One request per action. 404 means the outfit is gone. Lists refresh after every change.
 - **Images (D5):**
   - Generated items only carry a bare signed `imageUrl` (no image id, no expiry). It is cached in memory under `item:<wardrobe item id>` plus the thumbnail variant (`SignedImageRef.expiresAt` may be null), never under the URL.
-  - On 400/403/404 the wardrobe item is reloaded (at most every 30 s) for a fresh signed URL. Expiry is never parsed from the URL.
+  - On 400/403/404 the wardrobe item is reloaded (through `RefreshThrottle`) for a fresh signed URL. Expiry is never parsed from the URL.
   - Stored outfits use their `ImageObject`s, and a rejected image reloads the list or detail.
 - **Contract follow-ups (backend, not done here):**
   - Name the `weatherUsed` schema, or otherwise make it generator-safe, so D1 can be removed.

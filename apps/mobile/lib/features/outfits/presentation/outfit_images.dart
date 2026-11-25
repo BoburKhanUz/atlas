@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:atlas_api/atlas_api.dart' show ImageObject, WardrobeItem;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -5,6 +7,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../../core/design/tokens.dart';
 import '../../../core/logging/app_log.dart';
 import '../../../core/network/api_failure.dart';
+import '../../../core/time/refresh_throttle.dart';
 import '../../../core/widgets/signed_image.dart';
 import '../../wardrobe/presentation/wardrobe_screen.dart' show thumbnailOf;
 import '../../wardrobe/providers.dart';
@@ -34,14 +37,28 @@ class GeneratedItemImage extends ConsumerStatefulWidget {
 class _GeneratedItemImageState extends ConsumerState<GeneratedItemImage> {
   WardrobeItem? _fresh;
   bool _gone = false;
-  bool _reloading = false;
-  DateTime? _lastReload;
+  RefreshThrottle? _imagesThrottle; // made on first use (reads ref)
 
-  Future<void> _reload() async {
-    final last = _lastReload;
-    if (_reloading || (last != null && DateTime.now().difference(last) < const Duration(seconds: 30))) return;
-    _reloading = true;
-    _lastReload = DateTime.now();
+  RefreshThrottle get _images => _imagesThrottle ??= RefreshThrottle(
+    interval: signedUrlRefreshInterval,
+    now: ref.read(monotonicClockProvider),
+    delay: ref.read(delayProvider),
+  );
+
+  @override
+  void dispose() {
+    _imagesThrottle?.dispose();
+    super.dispose();
+  }
+
+  /// The signed URL expired: reload the item, at most once per
+  /// [signedUrlRefreshInterval] (a report inside it is done when it is over).
+  void _reload() {
+    if (!mounted) return;
+    unawaited(_images.run(_load, later: _reload));
+  }
+
+  Future<void> _load() async {
     try {
       final item = await ref.read(wardrobeRepositoryProvider).get(widget.itemId);
       if (mounted) setState(() => _fresh = item);
@@ -49,8 +66,6 @@ class _GeneratedItemImageState extends ConsumerState<GeneratedItemImage> {
       final f = failureOf(error, stack);
       AppLog.info('outfit item image not refreshed: ${f.describe()}');
       if (mounted && f is ApiHttpFailure && f.statusCode == 404) setState(() => _gone = true);
-    } finally {
-      _reloading = false;
     }
   }
 

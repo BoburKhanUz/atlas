@@ -144,6 +144,43 @@ void main() {
     });
   }
 
+  testWidgets('a rejected URL replaced by a fresh one: the fresh one loads and is not reported', (tester) async {
+    var expired = 0;
+    final h = SessionHarness(stored: pair(1));
+    final c = ProviderContainer(overrides: appOverrides(h));
+    addTearDown(c.dispose);
+    await tester.runAsync(h.session.restore);
+    var rejected = true; // the first URL was revoked on the server
+    h.backend.handlers['${mediaPrefix}f_display.webp'] = (r) =>
+        rejected ? JsonReply(403, errorBody('FORBIDDEN')) : BytesReply(200, fixtureBytes('plain_landscape.jpg'));
+    final shown = ValueNotifier(ref('f', sig: 'old'));
+    addTearDown(shown.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: c,
+        child: MaterialApp(
+          home: SizedBox(
+            width: 200,
+            height: 200,
+            child: ValueListenableBuilder<SignedImageRef>(
+              valueListenable: shown,
+              builder: (_, image, _) => SignedImage(image: image, onExpired: () => expired++),
+            ),
+          ),
+        ),
+      ),
+    );
+    await settleIo(tester);
+    expect(expired, 1);
+    // The owner reloaded the item: same image, a fresh signature.
+    rejected = false;
+    shown.value = ref('f', sig: 'fresh');
+    await settleIo(tester);
+    expect(h.backend.to('${mediaPrefix}f_display.webp').last.uri.queryParameters['sig'], 'fresh');
+    expect(find.byType(RawImage), findsOneWidget);
+    expect(expired, 1, reason: 'the old URL\'s error is not a failure of the fresh one');
+  });
+
   testWidgets('signed URLs and signatures never reach the log', (tester) async {
     final lines = <String>[];
     final sink = AppLog.sink;

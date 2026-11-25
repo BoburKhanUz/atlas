@@ -57,10 +57,13 @@ class SelfieAnalysisScreen extends ConsumerWidget {
           Text('Maslahat: kunduzgi yorug‘likda, yuzingiz to‘liq ko‘rinadigan selfi oling.', style: text.bodySmall),
           if (s.pickFailed) ...[
             const SizedBox(height: AtlasSpacing.sm),
-            const Text(
-              'Rasmni olib bo‘lmadi. Qayta urinib ko‘ring yoki boshqa usulni tanlang.',
-              key: Key('selfie.pickFailed'),
-              style: TextStyle(color: AtlasColors.error),
+            Semantics(
+              liveRegion: true, // announced: the camera or gallery closed with nothing
+              child: const Text(
+                'Rasmni olib bo‘lmadi. Qayta urinib ko‘ring yoki boshqa usulni tanlang.',
+                key: Key('selfie.pickFailed'),
+                style: TextStyle(color: AtlasColors.error),
+              ),
             ),
           ],
           if (s.denied != null) ...[

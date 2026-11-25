@@ -97,10 +97,10 @@ class SelfieAnalysisController extends Notifier<SelfieAnalysisState> {
       if (!ref.mounted) return;
       state = SelfieAnalysisState(phase: SelfiePhase.consent, denied: e.source);
       return;
-    } catch (e) {
+    } catch (error, stack) {
       // Any other failure must not leave the screen on "picking" (back is
       // blocked while busy).
-      AppLog.warn('selfie: the photo could not be picked (${e.runtimeType})');
+      logDeviceFailure('selfie: picking the photo', error, stack);
       if (ref.mounted) state = const SelfieAnalysisState(pickFailed: true);
       return;
     }
@@ -119,8 +119,8 @@ class SelfieAnalysisController extends Notifier<SelfieAnalysisState> {
       _image = null;
       state = SelfieAnalysisState(phase: SelfiePhase.rejected, rejection: e.error);
       return;
-    } catch (e) {
-      AppLog.warn('selfie: the photo could not be prepared (${e.runtimeType})');
+    } catch (error, stack) {
+      logDeviceFailure('selfie: preparing the photo', error, stack);
       _image = null;
       if (ref.mounted) state = const SelfieAnalysisState(pickFailed: true);
       return;

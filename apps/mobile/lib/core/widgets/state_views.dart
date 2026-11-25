@@ -166,10 +166,7 @@ class RefreshFailedBanner extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Padding(
-                  padding: EdgeInsets.only(top: 2),
-                  child: Icon(Icons.error_outline_rounded, size: 20, color: AtlasColors.error),
-                ),
+                const Icon(Icons.error_outline_rounded, color: AtlasColors.error),
                 const SizedBox(width: AtlasSpacing.sm),
                 Expanded(child: Text('Yangilab bo‘lmadi. $message', style: text.bodyMedium)),
               ],

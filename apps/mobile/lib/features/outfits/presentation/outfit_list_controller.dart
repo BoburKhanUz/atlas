@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:atlas_api/atlas_api.dart' show OutfitSummary;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/logging/app_log.dart';
 import '../../../core/network/api_failure.dart';
+import '../../../core/time/refresh_throttle.dart';
 import '../providers.dart';
 
 enum OutfitListStatus { loading, ready, refreshing, failed }
@@ -24,10 +27,21 @@ class OutfitListController extends Notifier<OutfitListState> {
   OutfitListController(this.savedOnly);
   final bool savedOnly;
 
+  late RefreshThrottle _images;
+
   @override
   OutfitListState build() {
+    _images = RefreshThrottle.forSignedUrls(ref);
     Future.microtask(_load);
     return const OutfitListState();
+  }
+
+  /// A row's signed image URL expired: reload the list, at most once per
+  /// [signedUrlRefreshInterval] (a report inside it is done when it is over).
+  Future<void> refreshImages() => _images.run(refresh, later: _refreshImagesLater);
+
+  void _refreshImagesLater() {
+    if (ref.mounted) unawaited(refreshImages());
   }
 
   Future<void> refresh() async {

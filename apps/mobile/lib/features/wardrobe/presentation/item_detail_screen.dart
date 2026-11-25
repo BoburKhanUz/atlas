@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:atlas_api/atlas_api.dart' show WardrobeItem;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +9,7 @@ import '../../../app/router.dart';
 import '../../../core/design/tokens.dart';
 import '../../../core/network/api_error_code.dart';
 import '../../../core/network/api_failure.dart';
+import '../../../core/time/refresh_throttle.dart';
 import '../../../core/widgets/signed_image.dart';
 import '../../../core/widgets/skeleton.dart' show LoadingView;
 import '../../../core/widgets/state_views.dart';
@@ -26,6 +29,26 @@ class ItemDetailScreen extends ConsumerStatefulWidget {
 
 class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   bool _deleting = false;
+  RefreshThrottle? _imagesThrottle; // made on first use (reads ref)
+
+  RefreshThrottle get _images => _imagesThrottle ??= RefreshThrottle(
+    interval: signedUrlRefreshInterval,
+    now: ref.read(monotonicClockProvider),
+    delay: ref.read(delayProvider),
+  );
+
+  @override
+  void dispose() {
+    _imagesThrottle?.dispose();
+    super.dispose();
+  }
+
+  /// The photo's signed URL expired: reload the item, at most once per
+  /// [signedUrlRefreshInterval] (a report inside it is done when it is over).
+  void _refreshImage() {
+    if (!mounted) return;
+    unawaited(_images.run(() async => ref.invalidate(wardrobeItemProvider(widget.id)), later: _refreshImage));
+  }
 
   /// "This is correct" for this screen visit only (never sent).
   final _acknowledged = <ItemAttribute>{};
@@ -49,9 +72,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     if (confirmed != true || !mounted) return;
     setState(() => _deleting = true);
     final messenger = ScaffoldMessenger.of(context);
-    // Read before the await: the user may leave while the delete runs, and
-    // the list must still drop the item when it succeeds.
-    final list = ref.read(wardrobeListProvider.notifier);
+    // The container outlives this screen: the user may leave while the
+    // delete runs, and the list must still drop the item when it succeeds.
+    final container = ProviderScope.containerOf(context, listen: false);
     try {
       await ref.read(wardrobeRepositoryProvider).delete(widget.id);
     } catch (error, stack) {
@@ -64,7 +87,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         return;
       }
     }
-    list.remove(widget.id);
+    container.read(wardrobeListProvider.notifier).remove(widget.id);
     if (mounted) context.pop();
     messenger.showSnackBar(const SnackBar(content: Text('Kiyim o‘chirildi')));
   }
@@ -100,7 +123,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
           acknowledged: _acknowledged,
           onAcknowledge: (a) => setState(() => _acknowledged.add(a)),
           onEdit: () => context.push(AtlasRoutes.wardrobeItemEdit(widget.id)),
-          onExpired: () => ref.invalidate(wardrobeItemProvider(widget.id)),
+          onExpired: _refreshImage,
         ),
         AsyncError(error: NoNetworkFailure()) => OfflineStateView(
           onRetry: () => ref.invalidate(wardrobeItemProvider(widget.id)),

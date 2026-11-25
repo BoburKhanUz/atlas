@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:atlas_api/atlas_api.dart' show OutfitDetail, OutfitRow;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/logging/app_log.dart';
 import '../../../core/network/api_error_code.dart';
 import '../../../core/network/api_failure.dart';
+import '../../../core/time/refresh_throttle.dart';
 import '../data/outfits_repository.dart';
 import '../providers.dart';
 
@@ -52,10 +55,21 @@ class OutfitDetailController extends Notifier<OutfitDetailState> {
   OutfitDetailController(this.id);
   final String id;
 
+  late RefreshThrottle _images;
+
   @override
   OutfitDetailState build() {
+    _images = RefreshThrottle.forSignedUrls(ref);
     Future.microtask(_load);
     return const OutfitDetailState();
+  }
+
+  /// An image's signed URL expired: reload, at most once per
+  /// [signedUrlRefreshInterval] (a report inside it is done when it is over).
+  Future<void> refreshImages() => _images.run(reload, later: _refreshImagesLater);
+
+  void _refreshImagesLater() {
+    if (ref.mounted) unawaited(refreshImages());
   }
 
   Future<void> reload() async {

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:atlas_api/atlas_api.dart' show WardrobeItem, standardSerializers;
 import 'package:atlas_mobile/core/network/api_failure.dart';
+import 'package:atlas_mobile/core/time/refresh_throttle.dart';
 import 'package:atlas_mobile/features/wardrobe/presentation/wardrobe_list_controller.dart';
 import 'package:atlas_mobile/features/wardrobe/providers.dart';
 import 'package:dio/dio.dart';
@@ -29,8 +30,8 @@ Future<(ProviderContainer, SessionHarness)> start(FakeReply Function(SentRequest
   final c = ProviderContainer(
     overrides: [
       ...appOverrides(h),
-      if (clock != null) wardrobeClockProvider.overrideWithValue(() => clock.now),
-      if (clock != null) wardrobeDelayProvider.overrideWithValue(clock.wait),
+      if (clock != null) monotonicClockProvider.overrideWithValue(() => clock.now),
+      if (clock != null) delayProvider.overrideWithValue(clock.wait),
     ],
   );
   addTearDown(c.dispose);

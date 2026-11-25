@@ -215,6 +215,14 @@ void main() {
     await app.open(find.text('Selfi orqali aniqlash'));
     await app.tap(find.byKey(const Key('selfie.camera')));
     expect(find.byKey(const Key('selfie.pickFailed')), findsOneWidget);
+    expect(
+      find.ancestor(
+        of: find.byKey(const Key('selfie.pickFailed')),
+        matching: find.byWidgetPredicate((w) => w is Semantics && w.properties.liveRegion == true),
+      ),
+      findsOneWidget,
+      reason: 'announced to screen readers',
+    );
     expect(find.byKey(const Key('selfie.consent')), findsOneWidget);
     expect(tester.widget<AtlasButton>(find.byKey(const Key('selfie.gallery'))).onPressed, isNotNull);
     expect(app.h.backend.calls(P.analyze), 0);

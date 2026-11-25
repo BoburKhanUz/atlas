@@ -1,5 +1,6 @@
 import 'package:atlas_mobile/core/logging/app_log.dart';
 import 'package:atlas_mobile/core/network/api_failure.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -36,5 +37,19 @@ void main() {
     expect(reported, [error]);
     expect(log.join('\n'), contains('StateError'));
     expect(log.join('\n'), isNot(contains('a@b.uz')), reason: 'the log carries the type, not the message');
+  });
+
+  test('a device step: a platform refusal is logged with its code only; anything else is reported', () {
+    logDeviceFailure(
+      'picking the photo',
+      PlatformException(code: 'camera_unavailable', message: 'a@b.uz'),
+      StackTrace.current,
+    );
+    expect(reported, isEmpty, reason: 'expected on devices without a camera, not a bug');
+    expect(log.join('\n'), contains('camera_unavailable'));
+    expect(log.join('\n'), isNot(contains('a@b.uz')));
+    final bug = StateError('broken');
+    logDeviceFailure('preparing the photo', bug, StackTrace.current);
+    expect(reported, [bug]);
   });
 }

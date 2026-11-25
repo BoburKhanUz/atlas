@@ -210,8 +210,8 @@ class AddItemController extends Notifier<AddItemState> {
     } on ImagePreparationException catch (e) {
       AppLog.info('photo rejected before upload: ${e.error.name}');
       if (ref.mounted) state = AddItemState(phase: AddPhase.rejected, reject: _fromPreparation(e.error));
-    } on Object catch (e) {
-      AppLog.warn('photo could not be picked (${e.runtimeType})');
+    } catch (error, stack) {
+      logDeviceFailure('add item: picking or preparing the photo', error, stack);
       if (ref.mounted) state = const AddItemState(phase: AddPhase.rejected, reject: RejectReason.unreadable);
     }
   }

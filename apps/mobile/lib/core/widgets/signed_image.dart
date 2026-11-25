@@ -179,6 +179,11 @@ class _SignedImageState extends ConsumerState<SignedImage> {
       return const _Placeholder(loading: true);
     }
     return Image(
+      // A new URL is a new Image: the provider compares by image id (one
+      // cache entry per image), so the same Image would neither fetch a fresh
+      // URL after a rejection nor drop the old URL's error. A hash, never the
+      // signed URL, so it cannot show up in widget dumps.
+      key: ValueKey(widget.image.url.hashCode),
       image: provider,
       fit: widget.fit,
       semanticLabel: widget.semanticLabel,

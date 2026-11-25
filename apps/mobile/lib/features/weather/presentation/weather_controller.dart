@@ -195,12 +195,17 @@ class WeatherController extends Notifier<WeatherState> {
     final running = _running;
     if (running == null) return _start(task);
     _queued = task;
-    return running.then((_) => _drainQueued());
+    return _after(running);
   }
+
+  /// The queued choice runs after [running] however that ends: a failure of
+  /// the running task belongs to its own caller (who receives it), not to
+  /// this one.
+  Future<void> _after(Future<void> running) => running.then((_) {}, onError: (Object _) {}).then((_) => _drainQueued());
 
   Future<void> _drainQueued() {
     final running = _running;
-    if (running != null) return running.then((_) => _drainQueued());
+    if (running != null) return _after(running);
     final next = _queued;
     _queued = null;
     return next == null ? Future.value() : _start(next);

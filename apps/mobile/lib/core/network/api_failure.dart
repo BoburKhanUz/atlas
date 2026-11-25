@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show PlatformException;
 
 import '../logging/app_log.dart';
 import '../session/signed_out_reason.dart';
@@ -216,4 +217,17 @@ ApiFailure failureOf(Object error, StackTrace stack) {
   AppLog.error('unexpected error', error);
   UnexpectedErrors.report(error, stack);
   return UnexpectedErrorFailure(error.runtimeType.toString());
+}
+
+/// A step on the device (camera, gallery, image preparation) failed. A
+/// platform refusal (no camera, an unreadable file) is expected and only
+/// logged with its code; anything else is a bug and is logged and reported
+/// like [failureOf].
+void logDeviceFailure(String step, Object error, StackTrace stack) {
+  if (error is PlatformException) {
+    AppLog.warn('$step failed (platform: ${error.code})');
+  } else {
+    AppLog.warn('$step failed');
+    failureOf(error, stack);
+  }
 }

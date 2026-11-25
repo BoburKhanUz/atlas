@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_failure.dart';
 import '../../../core/session/providers.dart';
+import '../../../core/time/refresh_throttle.dart';
 import '../data/wardrobe_repository.dart';
 import '../providers.dart';
 
@@ -68,10 +69,8 @@ class WardrobeListController extends Notifier<WardrobeListState> {
   /// expiry at once, and a wrong device clock must not cause a request loop.
   /// A report inside the interval is done when it is over (never dropped: a
   /// tile reports an expired URL only once).
-  static const urlRefreshInterval = Duration(seconds: 30);
-  Future<void>? _urlRefresh;
-  Duration? _urlsRefreshedAt; // on [wardrobeClockProvider]
-  bool _urlRefreshDeferred = false;
+  static const urlRefreshInterval = signedUrlRefreshInterval;
+  late RefreshThrottle _urlRefresh;
 
   /// An expiry reported while a page was loading: reload when it is done.
   bool _urlRefreshWanted = false;
@@ -83,15 +82,12 @@ class WardrobeListController extends Notifier<WardrobeListState> {
   @override
   WardrobeListState build() {
     ref.watch(authStateProvider.select((s) => s.user?.id)); // new user → new list
-    _urlRefresh = null;
-    _urlsRefreshedAt = null;
+    _urlRefresh = RefreshThrottle.forSignedUrls(ref);
     _urlRefreshWanted = false;
     _edits = null;
     Future.microtask(_loadFirst);
     return const WardrobeListState();
   }
-
-  Duration get _now => ref.read(wardrobeClockProvider)();
 
   List<WardrobeItem> _withEdits(List<WardrobeItem> items) {
     var result = items;
@@ -180,35 +176,24 @@ class WardrobeListController extends Notifier<WardrobeListState> {
   /// further pages only beyond that. [retry] (the banner's button) skips the
   /// interval.
   Future<void> refreshUrls({bool retry = false}) {
-    final running = _urlRefresh;
-    if (running != null) return running;
+    if (_urlRefresh.running) return _urlRefresh.run(_reloadLoadedRange, later: _refreshUrlsLater);
     if (state.items.isEmpty) return Future.value();
     if (state.status != ListStatus.ready) {
       _urlRefreshWanted = true;
       return Future.value();
     }
-    final last = _urlsRefreshedAt;
-    if (!retry && last != null) {
-      final rest = urlRefreshInterval - (_now - last);
-      if (rest > Duration.zero) {
-        _deferUrlRefresh(rest);
-        return Future.value();
-      }
-    }
-    _urlRefreshWanted = false;
-    return _urlRefresh = _reloadLoadedRange().whenComplete(() => _urlRefresh = null);
+    return _urlRefresh.run(
+      () {
+        _urlRefreshWanted = false;
+        return _reloadLoadedRange();
+      },
+      later: _refreshUrlsLater,
+      force: retry,
+    );
   }
 
-  void _deferUrlRefresh(Duration wait) {
-    if (_urlRefreshDeferred) return;
-    _urlRefreshDeferred = true;
-    final generation = _generation;
-    unawaited(
-      ref.read(wardrobeDelayProvider)(wait).then((_) {
-        _urlRefreshDeferred = false;
-        if (ref.mounted && generation == _generation) unawaited(refreshUrls());
-      }),
-    );
+  void _refreshUrlsLater() {
+    if (ref.mounted) unawaited(refreshUrls());
   }
 
   Future<void> _reloadLoadedRange() async {
@@ -232,7 +217,6 @@ class WardrobeListController extends Notifier<WardrobeListState> {
         items.addAll(page.items.where((i) => seen.add(i.id)));
         cursor = page.nextCursor;
       } while (cursor != null && items.length < wanted);
-      _urlsRefreshedAt = _now;
       state = state.copyWith(
         items: _withEdits(items),
         nextCursor: () => cursor,
@@ -243,7 +227,6 @@ class WardrobeListController extends Notifier<WardrobeListState> {
     } catch (error, stack) {
       final f = failureOf(error, stack);
       if (generation != _generation || !ref.mounted) return;
-      _urlsRefreshedAt = _now;
       state = state.copyWith(status: ListStatus.ready, refreshFailure: () => f);
     } finally {
       if (generation == _generation) _edits = null;

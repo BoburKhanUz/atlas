@@ -73,7 +73,7 @@ class OutfitDetailScreen extends ConsumerWidget {
                       dimension: 72,
                       child: StoredItemImage(
                         image: i.item.images.where((im) => im.isPrimary).firstOrNull ?? i.item.images.firstOrNull,
-                        onExpired: c.reload,
+                        onExpired: c.refreshImages,
                       ),
                     ),
                   ),

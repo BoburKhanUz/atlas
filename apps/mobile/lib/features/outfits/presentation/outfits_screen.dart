@@ -200,7 +200,7 @@ class _OutfitList extends ConsumerWidget {
           SliverList.separated(
             itemCount: s.outfits.length,
             separatorBuilder: (_, _) => const SizedBox(height: AtlasSpacing.sm),
-            itemBuilder: (context, i) => _OutfitRow(outfit: s.outfits[i], onExpired: c.refresh),
+            itemBuilder: (context, i) => _OutfitRow(outfit: s.outfits[i], onExpired: c.refreshImages),
           ),
         ],
       ),
