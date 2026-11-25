@@ -22,9 +22,9 @@ The Go backend must behave like the current Next.js API where clients depend on 
 ## Traps that break exact parity
 
 - `Math.round` rounds half up (towards +∞); Go's `math.Round` rounds half away from zero.
-  Use `math.Floor(x + 0.5)` where the TypeScript code used `Math.round`, and test
-  `0.49999999999999994` and negative halves (`-2.5` gives `-2` in JavaScript), where the
-  naive formula differs.
+  Reproduce it as `r := math.Floor(x); if x-r >= 0.5 { r++ }` — not `math.Floor(x+0.5)`,
+  which returns 1 for `0.49999999999999994` where JavaScript returns 0. Test that value and
+  negative halves (`-2.5` gives `-2` in JavaScript).
 - JavaScript sorts are stable; use `sort.SliceStable` / `slices.SortStableFunc`.
 - Number-to-string conversions (`String(seed)`) feed hashes: reproduce JavaScript's
   shortest round-trip formatting (`strconv.FormatFloat(f, 'g', -1, 64)` differs for some

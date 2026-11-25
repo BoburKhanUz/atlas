@@ -10,6 +10,9 @@ on the same PostgreSQL database. Read `docs/adr/` first; the decisions there are
 
 ## Shape
 
+The Go module and binary are named `lookly`; existing wire names (`atlas_at`,
+`X-Atlas-Client`, `ATLAS_*` variables the deployment already uses) stay as they are.
+
 ```
 apps/api/
   cmd/lookly/            main: `serve`, `worker`, `migrate`, `eval` subcommands
@@ -40,8 +43,13 @@ apps/api/
 
 - The server interface and request/response types are generated from
   `docs/api/openapi.json` (oapi-codegen, strict server). Never hand-write a route.
-- A contract change starts in `openapi.json`, then regeneration, then code. The mobile
-  client is regenerated in the same change; CI fails if either is stale.
+  The document is OpenAPI 3.1; how the generator copes with 3.1 is settled by the B0
+  spike and recorded in an ADR.
+- **Until B7 the document is generated** from `apps/web/src/server/openapi/registry.ts`:
+  a contract change starts there, then `bun run openapi:write`, then
+  `apps/mobile/tool/openapi/generate_api.sh`, then the Go code. Never edit the JSON by
+  hand before B7 (CI's `openapi:check` rejects it). From B7 the JSON is hand-owned
+  (ADR 0003).
 - Error responses always use the envelope `{error, code, details?, requestId}` with the
   codes and HTTP statuses listed in the contract. The Uzbek `error` text comes from one
   table; codes never change meaning.
@@ -51,9 +59,12 @@ apps/api/
 - SQL lives in `store/queries/*.sql`; sqlc generates typed code. No string-built SQL.
 - Every multi-statement write runs in one transaction with an explicit isolation level;
   lock order matches `docs/architecture/sessions.md` where sessions are involved.
-- Migrations are plain SQL with a down file, applied by `lookly migrate`. The first
-  migration is the exact current schema; later ones improve it (jsonb, CHECK, indexes,
-  database-side ids and timestamps). Never edit an applied migration.
+- Migrations follow ADR 0007: until B7 Prisma alone changes the shared schema and the
+  Go service runs no migrations against it. The Go baseline equals the Prisma schema, is
+  recorded as applied rather than run, and has no down file. Improvement migrations
+  (jsonb, CHECK, indexes, database-side ids and timestamps) start at B7. Never edit an
+  applied migration; never run a down migration in production without a backup and the
+  owner's approval.
 - Every list endpoint is paginated with a bounded page size; no unbounded `SELECT`.
 - Times are stored and compared in UTC; "day" for quotas means the Asia/Tashkent day.
 
@@ -90,8 +101,18 @@ apps/api/
 - Goroutines always have a way to stop (context); no fire-and-forget without tracking.
 - Integer sizes: check overflow in size and dimension arithmetic on untrusted input.
 - Compare secrets with `crypto/subtle.ConstantTimeCompare`.
-- bcrypt reads at most 72 bytes: reject longer passwords explicitly (owner decision).
+- bcrypt reads at most 72 bytes: reject longer passwords when a password is set or
+  changed (owner decision), never at login (existing hashes were made from the first 72
+  bytes). Re-hash cost-10 hashes at cost 12 after a successful login.
 - Always set timeouts: server read/write/idle, every outbound HTTP client, every DB query.
+
+## AI prompts and paid calls
+
+- Port prompts byte-for-byte with their version constants (`STYLIST_PROMPT_VERSION`,
+  `OUTFIT_PROMPT_VERSION`, `VISION_ANALYSIS_VERSION`). Any wording change needs the
+  owner's approval and a version bump (CLAUDE.md rule 6).
+- Tests and CI use mock providers only. The `eval` subcommand and anything else that
+  calls a real provider runs only with the owner's approval and an explicit call cap.
 
 ## Porting from the Next.js API
 

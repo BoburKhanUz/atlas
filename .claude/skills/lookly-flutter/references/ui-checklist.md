@@ -10,7 +10,7 @@ https://github.com/nextlevelbuilder/ui-ux-pro-max-skill (v2.15.0).
 
 ## Visual
 
-- [ ] Icons from one family (Material Symbols, one style per hierarchy level), sizes from tokens.
+- [ ] Icons from one family (Material Icons `Icons.*`, one style per hierarchy level), sizes from tokens.
 - [ ] No emoji as an icon; the Lookly mark only from `assets/brand/`.
 - [ ] Colours only from tokens; no per-screen hex values.
 - [ ] Pressed states change colour, opacity or elevation without moving the layout.
@@ -47,5 +47,5 @@ https://github.com/nextlevelbuilder/ui-ux-pro-max-skill (v2.15.0).
 
 ## AI content
 
-- [ ] AI-generated text and suggestions are labelled as such.
+- [ ] AI-generated text and outfit recommendations are labelled as such.
 - [ ] Long AI operations show progress and offer cancel; failures say what happened and what to do.

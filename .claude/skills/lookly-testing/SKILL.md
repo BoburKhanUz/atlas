@@ -62,11 +62,15 @@ dart format --set-exit-if-changed lib test && flutter analyze && flutter test
   `test/support/fake_session.dart` (`SessionHarness`, `appOverrides`).
 - `pump()` for one frame, `pumpAndSettle()` only when no infinite animation runs
   (skeletons and spinners never settle: pump a fixed duration instead).
-- Golden tests for main screens: light and dark, 360×800 logical size, text scale 1.0
-  and 2.0. Generate with `--update-goldens` only when the change is intended, and look
-  at the image before committing it.
-- `integration_test/` covers the main journeys on an emulator or simulator: sign up,
-  add an item, generate an outfit, chat, delete the account.
+- Golden tests (from stage M4, when the dark theme and the 2.0 text scale exist):
+  main screens in light and dark, 360×800 logical size, text scale 1.0 and 2.0. Until
+  then, widget tests at 320×568 and the current 1.6 cap. Generate goldens with
+  `--update-goldens` only for an intended change, and look at the image before committing.
+- `integration_test/` (from stage M6) covers the main journeys on an emulator or
+  simulator: sign up, add an item, generate an outfit, chat, delete the account.
+- `test/integration/` talks to a real backend and skips itself unless
+  `ATLAS_ITEST_BASE_URL` is set. That skip is by design, not a skipped test in the sense
+  of rule 6; run them against staging when the stage touches the API client.
 - Test the keyboard-real inputs: apostrophes `'` `’` `ʻ` in Uzbek text, pasted text,
   empty and very long input.
 

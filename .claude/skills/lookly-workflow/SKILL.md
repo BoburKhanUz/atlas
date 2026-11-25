@@ -21,7 +21,8 @@ step until it holds.
    only what is theirs to decide (see "Asking the owner").
    *Done when:* every decision is answered or has a recorded default.
 3. **Spec** (features and stages; skip for a contained bug fix). Write it with
-   `references/spec-template.md` into the stage's plan file or the PR description.
+   `references/spec-template.md` into `docs/plan/<stage>.md` (stage list and exit
+   criteria: `docs/plan/README.md`). When a stage starts, record its start commit there.
    *Done when:* behaviour, out-of-scope and test seams are written down.
 4. **Plan.** Break the work into thin vertical slices (see "Slices"). For each slice:
    files touched, the test that proves it, the "done when".
@@ -29,7 +30,9 @@ step until it holds.
 5. **Build slice by slice** with `lookly-testing`: failing test, code, passing test,
    whole suite. Use `lookly-go-backend`, `lookly-flutter`, `mobile-design` and
    `lookly-security` for their areas.
-   *Done when:* the slice's tests and the full suite pass in this session.
+   *Done when:* the slice's tests and the full suite pass in this session. Then commit
+   and push the slice to the session branch (owner rule 2a), so nothing is lost if the
+   session ends.
 6. **Review** each finished slice with `lookly-code-review`. Fix every blocking finding.
    *Done when:* no blocking finding is open.
 7. **Gate, report, commit** (see "Stage gate").
@@ -71,7 +74,8 @@ decision replaces it.
 
 ## Stage gate
 
-A stage (or a self-contained piece of work) is finished only when all of these hold,
+A stage, or a self-contained piece of work such as a bug fix, is finished only when all
+of these hold,
 each with evidence from this session:
 
 - [ ] All tests and CI checks for the touched apps pass locally (commands in `CLAUDE.md`).
@@ -82,8 +86,8 @@ each with evidence from this session:
 - [ ] Nothing was claimed that was not verified; unverified parts are listed for the owner.
 
 Then commit (English message, why before what) and push to the session branch — the
-owner pre-approved this for gated stages. After the push, check CI on that commit; red CI
-is the next task, before anything else.
+owner pre-approved this (rule 2b), update the stage's status in `docs/plan/README.md`,
+and check CI on that commit; red CI is the next task, before anything else.
 
 ## Reporting to the owner
 

@@ -4,7 +4,7 @@ Answer each item yes/no for the areas a change touches. A "no" is a finding.
 
 ## Sessions and authentication
 
-- [ ] Passwords hashed with bcrypt cost ≥ 12; passwords over 72 bytes rejected with a clear error.
+- [ ] Passwords hashed with bcrypt cost ≥ 12 (older hashes re-hashed after login); passwords over 72 bytes rejected when set or changed, never at login.
 - [ ] Login and reset answers do not reveal whether an email exists (same message, similar timing).
 - [ ] Rate limits are per IP and per account, counted on failures, stored durably, and cannot lock out other users.
 - [ ] Access tokens: fixed algorithm (HS256), issuer and expiry checked, `none` refused; the session row is checked on every request so logout and deletion take effect at once.

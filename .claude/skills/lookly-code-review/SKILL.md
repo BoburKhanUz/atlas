@@ -16,8 +16,9 @@ subagents that see the diff and the requirements, not your reasoning.
 
 ## How
 
-1. Fix the base: `BASE=$(git merge-base HEAD origin/<base branch>)` or the commit the
-   stage started from. Review `git diff $BASE...HEAD` plus untracked files you created.
+1. Fix the base: for a stage, its "Started at" commit in `docs/plan/README.md`; for a
+   slice, the commit before the slice's first change. Review `git diff $BASE...HEAD` plus
+   untracked files you created.
 2. Start **two subagents in parallel**, each with only the diff, the paths to read and its
    axis below. Do not pass your conclusions.
 3. Read both reports. Verify every finding against the code before acting; a finding can

@@ -9,12 +9,15 @@ A release is a promise to real users. Nothing in this checklist is marked done w
 evidence from this release; items that need the owner (accounts, signing keys, store
 consoles) are listed for them in Uzbek, with exact steps.
 
+Deploying to production, running migrations there, moving or restoring backups and
+changing storage each need the owner's go-ahead for that release (CLAUDE.md rule 8).
+
 ## Before any release
 
 - [ ] CI green on the exact commit being released.
 - [ ] `lookly-security` release gate done: `insecure-defaults`, dependency audit,
       static analysis; open findings fixed or accepted by the owner in writing.
-- [ ] Version bumped (`pubspec.yaml` `version: x.y.z+build`; server image tag = git SHA).
+- [ ] Version bumped (`pubspec.yaml` `version: x.y.z+build`); the server release commit recorded in the release notes.
 - [ ] `docs/release/mobile-device-test-plan.md` items run on real devices and recorded.
 - [ ] Release notes in Uzbek: what changed for users.
 
@@ -23,15 +26,19 @@ consoles) are listed for them in Uzbek, with exact steps.
 1. Deploy the commit to **staging** (same compose files, separate database, mock AI).
 2. Run migrations; run the Playwright smoke suite against staging; open the app on a phone
    against staging.
-3. Back up production (`deploy/backup.sh`) and copy the backup off the server.
-4. Deploy to production; run the smoke checks; watch errors and latency for 30 minutes.
-5. Rollback plan, written before deploying: previous image tag, and for migrations either
-   a tested down migration or a forward fix. Never deploy a migration you cannot undo or
-   fix forward.
+3. With the owner's go-ahead: back up production (`deploy/backup.sh` covers the database
+   and local uploads; R2 objects need their own versioning or copy) and move the backup,
+   encrypted, to the off-server destination the owner approved. Backups contain personal
+   photos and password hashes: never to a personal device, chat or public bucket.
+4. With the owner's go-ahead: deploy to production; run the smoke checks; watch errors
+   and latency for 30 minutes.
+5. Rollback plan, written before deploying. Images are built on the server today, so a
+   rollback redeploys the previous release commit; for migrations, a tested forward fix
+   (down migrations only with a fresh backup and the owner's approval).
 
 ## Android (Google Play)
 
-- [ ] `minSdk`, `targetSdk` (≥ the Play requirement of the day, at least 35), `compileSdk` pinned.
+- [ ] `minSdk`, `targetSdk` (at least the current Google Play requirement — check it at release time), `compileSdk` pinned.
 - [ ] Signed with the upload key kept outside the repository; release build fails closed without it.
 - [ ] R8 on; platform channel classes kept; the release build tested on a device.
 - [ ] Data safety form matches what the binary and SDKs collect (photos, account, crash data).

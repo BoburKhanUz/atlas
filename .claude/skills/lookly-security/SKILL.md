@@ -1,6 +1,6 @@
 ---
 name: lookly-security
-description: Security gates and checklists for Lookly — authentication and sessions, file uploads and signed media URLs, AI provider calls with untrusted text and images, quotas and rate limits, the admin panel, secrets, dependencies and CI. Use whenever a change touches any of these, at architecture time for those areas, after a bug is confirmed, and before every release. Do NOT use for purely visual changes.
+description: Security gates and checklists for Lookly — authentication and sessions, file uploads and signed media URLs, AI provider calls with untrusted text and images, quotas and rate limits, the admin panel, secrets, dependencies and CI. Use whenever a change touches any of these, at architecture time for those areas, after a security-relevant bug is confirmed, and before every release. Do NOT use for purely visual changes or bugs unrelated to these areas.
 ---
 
 # Lookly security
@@ -17,10 +17,10 @@ results are written down.
 | Once the Go skeleton exists, and before the release audit | Map trust boundaries and assumptions that nothing enforces | `audit-context-building` |
 | A diff touches auth, sessions, uploads, media, AI, quotas, admin or CI | Risk review of the change: removed checks, blast radius, missing tests | `differential-review` |
 | Every PR / stage | Static analysis with a fixed rule set, report new findings only | `static-analysis` (semgrep; CodeQL before release) |
-| A bug is confirmed | Find the same mistake elsewhere and add a rule or test | `variant-analysis` |
+| A security-relevant bug is confirmed | Find the same mistake elsewhere and add a rule or test | `variant-analysis` |
 | Before every release | Fail-open settings, default secrets, debug leaks, permissive access | `insecure-defaults` |
 | Before every release and on dependency changes | Known vulnerabilities and risky packages | `supply-chain-risk-auditor`, `govulncheck`, `npm audit`, OSV |
-| Every stage | The Lookly checklists below for the touched areas | this skill |
+| Every stage that touches the areas above | The Lookly checklists below for the touched areas | this skill |
 
 The Trail of Bits plugins are enabled in `.claude/settings.json`. If one is not
 available in the session, run the underlying tool directly (semgrep, govulncheck) and
@@ -46,6 +46,12 @@ question with the place to check.
   crash reports, client bundles or chat. Compare secrets in constant time.
 - **Least data:** AI providers receive catalog ids and the user's own message, never ids,
   emails or other users' data; selfies are not stored.
+
+## Done when
+
+- Every gate that applies to the change has run, or its absence is stated with the reason.
+- Every checklist item for the touched areas is answered; each "no" is fixed or accepted
+  by the owner.
 
 ## Reporting
 

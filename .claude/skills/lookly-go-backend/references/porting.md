@@ -35,10 +35,16 @@ Re-read the source before porting a part; this file is a map, not the specificat
   `account` deletion answers 403 `CONSENT_REQUIRED` when the user's consent is older
   than the minimum legal version.
 - Idempotency-Key on `POST wardrobe/items` and `POST stylist/chat`: unique on
-  user + route + key, 24 h, a replay answers 201 with `Idempotent-Replayed: true`.
+  user + route + key, 24 h. A replay returns the original status (201 for wardrobe items,
+  200 for stylist chat) with `Idempotent-Replayed: true`. The same key with a different
+  body → 409 `IDEMPOTENCY_KEY_MISMATCH`; a request still running → 409
+  `IDEMPOTENCY_IN_PROGRESS`.
 - AI quotas per user per Tashkent day: stylist 50, vision 50, outfit explanation 30.
   Charge before the provider call; refund on provider error or invalid output; a
-  content-filtered or not-a-garment result stays charged.
+  content-filtered or not-a-garment result stays charged. Quotas apply only when a real
+  provider is used; when the outfit-explanation quota is spent the endpoint falls back to
+  the deterministic explanation instead of answering 429. A `color_analysis` quota (10)
+  is defined but not used yet (see defects).
 
 **Media**
 - Accept JPEG, PNG, WebP by decoded content (HEIC/AVIF → 415); ≤ 8 MB; shortest side
@@ -65,7 +71,7 @@ Re-read the source before porting a part; this file is a map, not the specificat
 | Weather: failure → undocumented 500; missing fields cached as 0; "next 6 hours" is hours 00–05; generate bypasses the cache | Typed error code; reject incomplete data; real next-6-hours window; one cached path |
 | Unguarded parse of JSON stored as text | `jsonb` columns and typed decoding |
 | No scheduled cleanup | River periodic jobs |
-| bcrypt cost 10, silent 72-byte truncation | Cost 12; reject > 72 bytes |
+| bcrypt cost 10, silent 72-byte truncation | Cost 12, re-hash on login; reject > 72 bytes when setting or changing a password (not at login) |
 
 ## Web coupling to remove at cutover
 

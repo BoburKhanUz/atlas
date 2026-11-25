@@ -7,7 +7,31 @@ description: Architecture, state, testing, accessibility and performance rules f
 
 The app is kept, not rewritten: networking (`lib/core/network`) and navigation
 (`lib/app/router.dart`) are solid. New work follows these rules; existing code is moved
-towards them stage by stage, never in one big rewrite.
+towards them stage by stage (M1–M7 in `docs/plan/README.md`), never in one big rewrite.
+
+Where `mobile-design` and this skill disagree, this skill and the design tokens win:
+one Material-based brand UI on both platforms (no `CupertinoApp`, no
+`ColorScheme.fromSeed` or wallpaper colours, Manrope only), `TextScaler` instead of the
+deprecated `textScaleFactor`, and haptics as listed in `references/ui-checklist.md`.
+
+## Current state and targets
+
+Several rules below describe the target. Until the named stage lands, do not invent the
+missing piece inside an unrelated change; apply the rule from that stage on.
+
+| Rule | Today | Target from |
+|---|---|---|
+| Dark theme | Light only (`app.dart` forces `ThemeMode.light`) | M4 |
+| Text scale 2.0 | Capped at 1.6 in `app.dart` | M4 |
+| Golden tests | None | M4 |
+| Strings in ARB (`gen_l10n`) | Literal Uzbek strings in code | M3 |
+| No cross-feature imports | 49 cross-feature imports | M2 |
+| Portrait only, iPhone only, privacy manifest | Landscape allowed, iPad enabled, no manifest | M4 / M7 |
+| `integration_test/`, iOS CI job | None | M6 |
+
+Until then, a change must not make any of these worse (no new literal strings in a file
+already moved to ARB, no new cross-feature import, no new fixed height that breaks large
+text).
 
 ## Structure
 
@@ -100,7 +124,9 @@ Use `lookly-testing`. Area-specific: the fake backend harness is
 
 ## Done when
 
-- `dart format --set-exit-if-changed lib test`, `flutter analyze` (no issues) and
-  `flutter test` pass.
-- Changed screens have golden tests in both themes and at 2.0 text scale.
-- No cross-feature import, literal colour or literal user-facing string was added.
+- `dart format --output=none --set-exit-if-changed lib test tool`, `flutter analyze`
+  (no issues) and `flutter test` pass.
+- From M4: changed screens have golden tests in both themes and at 2.0 text scale.
+  Before M4: changed screens have widget tests at 320×568 and the current text cap.
+- No literal colour and no new cross-feature import was added; from M3, no literal
+  user-facing string.
