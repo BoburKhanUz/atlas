@@ -1,0 +1,26 @@
+# Typed queries from SQL (sqlc). The schema is the migrations directory;
+# generated code goes to internal/store and is committed. Run
+# scripts/generate.sh (CI fails when it is stale).
+version: "2"
+sql:
+  - engine: postgresql
+    schema: migrations
+    queries: internal/store/queries
+    gen:
+      go:
+        package: store
+        out: internal/store
+        sql_package: pgx/v5
+        emit_interface: false
+        emit_pointers_for_null_types: true
+        emit_exact_table_names: true
+        overrides:
+          # Prisma stores UTC in timestamp(3) without time zone; Go passes and
+          # reads time.Time in UTC.
+          - db_type: pg_catalog.timestamp
+            go_type: time.Time
+          - db_type: pg_catalog.timestamp
+            nullable: true
+            go_type:
+              type: time.Time
+              pointer: true

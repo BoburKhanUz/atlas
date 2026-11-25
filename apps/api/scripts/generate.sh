@@ -1,23 +1,43 @@
 #!/usr/bin/env bash
-# Regenerates code derived from the API contract (docs/api/openapi.json).
+# Regenerates the code derived from the API contract (docs/api/openapi.json,
+# oapi-codegen) and from the SQL (migrations/ and internal/store/queries/,
+# sqlc).
 #   scripts/generate.sh          write the generated files
 #   scripts/generate.sh --check  fail if a generated file is stale (CI)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-dir=internal/httpapi/contract
+sqlc_version=v1.31.1
+generated=(internal/httpapi/contract/contract.gen.go internal/store)
+
+generate() {
+  (cd internal/httpapi/contract && go generate ./...)
+  go run "github.com/sqlc-dev/sqlc/cmd/sqlc@${sqlc_version}" generate
+}
+
 if [[ "${1:-}" == "--check" ]]; then
-  tmp=$(mktemp -d)
-  trap 'rm -rf "$tmp"' EXIT
-  cp "$dir/contract.gen.go" "$tmp/before.go"
-  (cd "$dir" && go generate ./...)
-  if ! cmp -s "$tmp/before.go" "$dir/contract.gen.go"; then
-    cp "$tmp/before.go" "$dir/contract.gen.go"
-    echo "contract.gen.go is stale: run apps/api/scripts/generate.sh and commit the result" >&2
+  before=$(mktemp -d)
+  trap 'rm -rf "$before"' EXIT
+  for path in "${generated[@]}"; do
+    mkdir -p "$before/$(dirname "$path")"
+    cp -r "$path" "$before/$path"
+  done
+  generate
+  stale=0
+  for path in "${generated[@]}"; do
+    if ! diff -r -q "$before/$path" "$path" >/dev/null; then
+      echo "stale: $path" >&2
+      stale=1
+    fi
+    rm -rf "$path"
+    cp -r "$before/$path" "$path"
+  done
+  if [[ $stale == 1 ]]; then
+    echo "generated code is stale: run apps/api/scripts/generate.sh and commit the result" >&2
     exit 1
   fi
   echo "generated code is current"
   exit 0
 fi
-(cd "$dir" && go generate ./...)
-echo "wrote $dir/contract.gen.go"
+generate
+echo "wrote ${generated[*]}"
