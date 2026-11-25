@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:atlas_mobile/features/outfits/presentation/outfit_detail_controller.dart';
@@ -61,6 +62,28 @@ void main() {
     ]);
     expect(d.state.outfit!.name, 'Juma');
     expect(OutfitName.valid('x' * 80), hasLength(80));
+  });
+
+  test('an image that expires during a save is reloaded when the save ends, not dropped', () async {
+    final d = Detail();
+    final hold = Completer<void>();
+    d.h.backend.handlers[path] = (r) async {
+      if (r.method == 'PATCH') {
+        await hold.future;
+        return JsonReply(200, rowJson('o1', isSaved: false));
+      }
+      return JsonReply(200, detailJson('o1'));
+    };
+    await d.open();
+    final gets = d.h.backend.to(path).where((r) => r.method == 'GET').length;
+    final save = d.ctl.setSaved(saved: false);
+    await pumpEventQueue();
+    await d.ctl.refreshImages(); // a photo's URL expired meanwhile
+    expect(d.h.backend.to(path).where((r) => r.method == 'GET'), hasLength(gets), reason: 'not during the save');
+    hold.complete();
+    await save;
+    await pumpEventQueue();
+    expect(d.h.backend.to(path).where((r) => r.method == 'GET'), hasLength(gets + 1), reason: 'reloaded after it');
   });
 
   test('unsave / save: PATCH {isSaved}', () async {

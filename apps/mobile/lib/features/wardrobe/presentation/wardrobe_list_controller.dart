@@ -75,8 +75,8 @@ class WardrobeListController extends Notifier<WardrobeListState> {
   /// An expiry reported while a page was loading: reload when it is done.
   bool _urlRefreshWanted = false;
 
-  /// Inserts and removals made while a reload is running, re-applied to its
-  /// result (it was read from the server before them).
+  /// Inserts and removals made while a load or reload is running, re-applied
+  /// to its result (it was read from the server before them).
   List<List<WardrobeItem> Function(List<WardrobeItem>)>? _edits;
 
   @override
@@ -84,7 +84,7 @@ class WardrobeListController extends Notifier<WardrobeListState> {
     ref.watch(authStateProvider.select((s) => s.user?.id)); // new user → new list
     _urlRefresh = RefreshThrottle.forSignedUrls(ref);
     _urlRefreshWanted = false;
-    _edits = null;
+    _edits = []; // the first load was read before any insert or removal
     Future.microtask(_loadFirst);
     return const WardrobeListState();
   }
@@ -126,7 +126,7 @@ class WardrobeListController extends Notifier<WardrobeListState> {
   Future<void> setCategory(String category) async {
     if (category == state.category && state.failure == null) return;
     _urlRefreshWanted = false;
-    _edits = null; // a new list: edits of the old one do not apply
+    _edits = []; // a new list: only edits made from now on apply
     state = WardrobeListState(category: category);
     await _loadFirst();
   }

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:atlas_mobile/app/app.dart';
 import 'package:atlas_mobile/app/router.dart';
+import 'package:atlas_mobile/core/time/refresh_throttle.dart';
 import 'package:atlas_mobile/core/widgets/signed_image.dart';
 import 'package:atlas_mobile/features/home/presentation/home_screen.dart' show greetingFor, uzbekDate;
 import 'package:atlas_mobile/features/outfits/presentation/outfit_detail_screen.dart';
@@ -11,6 +12,7 @@ import 'package:atlas_mobile/features/weather/data/device_locator.dart';
 import 'package:atlas_mobile/features/weather/providers.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -31,12 +33,13 @@ class OutfitsApp {
   /// Media requests by path (403 first where [rejectFirst] says so).
   final media = <String, int>{};
   final rejectFirst = <String>{};
+  final rejectAll = <String>{};
 
   FakeReply Function(SentRequest r) outfitsReply = (r) => r.method == 'POST'
       ? JsonReply(201, saveResponseJson('o1'))
       : JsonReply(200, listJson([summaryJson('o1', name: 'Juma ofis')]));
 
-  Future<void> start({String at = AtlasRoutes.home}) async {
+  Future<void> start({String at = AtlasRoutes.home, List<Override> overrides = const []}) async {
     // Decoded images are cached app-wide by (id, variant); start clean.
     PaintingBinding.instance.imageCache
       ..clear()
@@ -63,13 +66,19 @@ class OutfitsApp {
         final path = '/api/v1/media/users/u1/${id}_$variant.webp';
         h.backend.handlers[path] = (r) {
           final n = media[path] = (media[path] ?? 0) + 1;
-          if (n == 1 && rejectFirst.contains(path)) return JsonReply(403, errorBody('FORBIDDEN'));
+          if ((n == 1 && rejectFirst.contains(path)) || rejectAll.contains(path)) {
+            return JsonReply(403, errorBody('FORBIDDEN'));
+          }
           return BytesReply(200, fixtureBytes('plain_landscape.jpg'));
         };
       }
     }
     container = ProviderContainer(
-      overrides: [...appOverrides(h), weatherClockProvider.overrideWithValue(() => DateTime.now().toUtc())],
+      overrides: [
+        ...appOverrides(h),
+        weatherClockProvider.overrideWithValue(() => DateTime.now().toUtc()),
+        ...overrides,
+      ],
     );
     addTearDown(container.dispose);
     unawaited(h.session.restore());
@@ -253,6 +262,44 @@ void main() {
     expect(cache.containsKey(const SignedImageKey('item:bottom1', ImageVariant.thumbnail)), isTrue);
     expect(cache.containsKey(const SignedImageKey('img-top1', ImageVariant.thumbnail)), isTrue, reason: 'refreshed');
     expect(app.h.backend.calls('${P.wardrobe}/bottom1'), 0, reason: 'only the rejected one is reloaded');
+  });
+
+  testWidgets('Generated item image rejected every time: one reload, then reloads back off (never a loop)', (
+    tester,
+  ) async {
+    final app = OutfitsApp(tester);
+    final waits = <(Duration, Completer<void>)>[];
+    var now = Duration.zero;
+    app.rejectAll.add('/api/v1/media/users/u1/top1_thumb.webp');
+    await app.start(
+      at: AtlasRoutes.outfits,
+      overrides: [
+        monotonicClockProvider.overrideWithValue(() => now),
+        delayProvider.overrideWithValue((d) {
+          final done = Completer<void>();
+          waits.add((d, done));
+          return done.future;
+        }),
+      ],
+    );
+    // Like the server, every answer is signed afresh.
+    var signed = 0;
+    app.h.backend.handlers['${P.wardrobe}/top1'] = (r) =>
+        JsonReply(200, {'item': jsonDecode(jsonEncode(itemJson('top1')).replaceAll('-zz', '-zz${++signed}'))});
+    await app.reveal(find.byKey(const Key('outfits.generate')));
+    for (var i = 0; i < 5; i++) {
+      await app.settle();
+    }
+    expect(app.h.backend.calls('${P.wardrobe}/top1'), 1, reason: 'one reload for the rejected URL');
+    expect(waits.map((w) => w.$1), [const Duration(seconds: 30)], reason: 'the fresh URL failed too: wait');
+    final (wait, done) = waits.removeAt(0);
+    now += wait;
+    done.complete();
+    for (var i = 0; i < 5; i++) {
+      await app.settle();
+    }
+    expect(app.h.backend.calls('${P.wardrobe}/top1'), 2);
+    expect(waits.single.$1, const Duration(seconds: 60), reason: 'backed off');
   });
 
   testWidgets('Saved list: a failed refresh keeps the outfits and says so, with a retry', (tester) async {

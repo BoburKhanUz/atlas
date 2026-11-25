@@ -20,10 +20,20 @@ const signedUrlRefreshInterval = Duration(seconds: 30);
 /// called once when the interval is over (the caller decides then whether a
 /// refresh is still wanted).
 ///
+/// Fresh URLs that are reported again before the interval is over (the
+/// server keeps rejecting them, or the clock is far off) back off: each such
+/// round doubles the interval, up to [maxInterval]. Once a whole interval
+/// passes without a report, it is back to [interval].
+///
 /// Used for expired signed image URLs: many tiles report at once, a tile
 /// reports a given URL only once, and a wrong clock must not cause a loop.
 class RefreshThrottle {
-  RefreshThrottle({required this.interval, required this.now, required this.delay});
+  RefreshThrottle({
+    required this.interval,
+    required this.now,
+    required this.delay,
+    this.maxInterval = const Duration(minutes: 10),
+  }) : _gap = interval;
 
   /// A throttle for expired signed image URLs, on [ref]'s clock; disposed with [ref].
   factory RefreshThrottle.forSignedUrls(Ref ref) {
@@ -37,12 +47,15 @@ class RefreshThrottle {
   }
 
   final Duration interval;
+  final Duration maxInterval;
 
   /// Monotonic time ([monotonicClockProvider]).
   final Duration Function() now;
   final Future<void> Function(Duration) delay;
   Future<void>? _running;
   Duration? _last;
+  Duration _gap; // the current interval (backs off)
+  bool _reportedTooSoon = false;
   bool _deferred = false;
   bool _disposed = false;
 
@@ -56,11 +69,19 @@ class RefreshThrottle {
     if (running != null) return running;
     final last = _last;
     if (!force && last != null) {
-      final rest = interval - (now() - last);
+      final rest = _gap - (now() - last);
       if (rest > Duration.zero) {
+        _reportedTooSoon = true;
         _defer(rest, later);
         return Future.value();
       }
+      if (_reportedTooSoon) {
+        final doubled = _gap * 2;
+        _gap = doubled > maxInterval ? maxInterval : doubled;
+      } else {
+        _gap = interval; // the last URLs lasted a whole interval
+      }
+      _reportedTooSoon = false;
     }
     return _running = action().whenComplete(() {
       _running = null;

@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:atlas_mobile/core/time/refresh_throttle.dart';
 import 'package:atlas_mobile/features/wardrobe/data/background_remover.dart';
 import 'package:atlas_mobile/features/wardrobe/presentation/add_item_controller.dart';
 import 'package:atlas_mobile/features/wardrobe/presentation/add_item_screen.dart';
@@ -40,6 +42,34 @@ void main() {
     app.h.network.online = false;
     await app.start(wardrobe: (r) => TransportFailure(DioExceptionType.connectionError));
     expect(find.text('Internet aloqasi yo‘q', skipOffstage: false), findsWidgets);
+  });
+
+  testWidgets('item detail: an expired photo reloads the item at most once per interval (no loop)', (tester) async {
+    final app = App(tester);
+    final waits = <(Duration, Completer<void>)>[];
+    var gets = 0;
+    // Every answer is freshly signed but already expired (a clock far off).
+    app.item = (id, r) {
+      if (id != 'a' || r.method != 'GET') return null;
+      gets++;
+      final json = itemJson('a', expiresAt: DateTime.now().toUtc().subtract(const Duration(minutes: 5)));
+      return JsonReply(200, {'item': jsonDecode(jsonEncode(json).replaceAll('-zz', '-zz$gets'))});
+    };
+    await app.start(
+      overrides: [
+        delayProvider.overrideWithValue((d) {
+          final done = Completer<void>();
+          waits.add((d, done));
+          return done.future;
+        }),
+      ],
+    );
+    await app.tap(find.byKey(const Key('wardrobe.item.a')));
+    for (var i = 0; i < 5; i++) {
+      await app.settle();
+    }
+    expect(gets, 2, reason: 'the detail load + one reload, not one per report');
+    expect(waits, hasLength(1), reason: 'the next report waits for the interval');
   });
 
   testWidgets('a failed next page: the footer retry loads that page', (tester) async {

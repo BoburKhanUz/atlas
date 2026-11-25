@@ -83,4 +83,50 @@ void main() {
     await pumpEventQueue();
     expect(laters, 0);
   });
+
+  test(
+    'fresh URLs that keep failing back off (30 s, 60 s, 120 s … at most 10 min); a quiet interval resets it',
+    () async {
+      Future<void> reportSoonAndWait(Duration expected) async {
+        now += const Duration(seconds: 1); // the fresh URL failed right away
+        await throttle.run(action, later: later);
+        final (wait, done) = waits.removeLast();
+        expect(wait, expected - const Duration(seconds: 1));
+        now += wait;
+        done.complete();
+        await pumpEventQueue();
+        await throttle.run(action, later: later); // what [later] does
+      }
+
+      await throttle.run(action, later: later);
+      await reportSoonAndWait(const Duration(seconds: 30));
+      await reportSoonAndWait(const Duration(seconds: 60));
+      await reportSoonAndWait(const Duration(seconds: 120));
+      for (var i = 0; i < 6; i++) {
+        now += const Duration(seconds: 1);
+        await throttle.run(action, later: later);
+        final (wait, done) = waits.removeLast();
+        now += wait;
+        done.complete();
+        await pumpEventQueue();
+        await throttle.run(action, later: later);
+      }
+      now += const Duration(seconds: 1);
+      await throttle.run(action, later: later);
+      final (capped, cappedDone) = waits.removeLast();
+      expect(capped, const Duration(minutes: 10) - const Duration(seconds: 1), reason: 'capped');
+      cappedDone.complete();
+      await pumpEventQueue();
+      // The URLs then work for a whole interval: back to 30 s.
+      final runsBefore = runs;
+      now += const Duration(minutes: 11);
+      await throttle.run(action, later: later);
+      expect(runs, runsBefore + 1);
+      now += const Duration(minutes: 11);
+      await throttle.run(action, later: later);
+      now += const Duration(seconds: 1);
+      await throttle.run(action, later: later);
+      expect(waits.removeLast().$1, const Duration(seconds: 29));
+    },
+  );
 }

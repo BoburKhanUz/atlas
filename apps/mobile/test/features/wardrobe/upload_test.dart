@@ -434,6 +434,36 @@ void main() {
       expect(s.uploads, hasLength(1), reason: 'no request after the cancel');
     });
 
+    test('a cancelled upload still reloads the wardrobe on leaving, even after another photo was added', () async {
+      final s = Setup();
+      await s.ready();
+      final hold = Completer<void>();
+      var posts = 0;
+      s.h.backend.handlers[P.wardrobe] = (r) async {
+        if (r.method != 'POST') return JsonReply(200, pageJson(const []));
+        if (++posts == 1) await hold.future; // upload A hangs, then is cancelled
+        return JsonReply(201, uploadJson('new-$posts'));
+      };
+      final a = s.c.upload();
+      await pumpEventQueue();
+      s.c.cancel();
+      await a;
+      expect(s.state.failure, isA<CancelledFailure>());
+      s.c.reset(); // "Boshqa rasm tanlash"
+      await s.c.pick(PhotoSource.gallery);
+      await s.c.upload(); // upload B succeeds
+      expect(s.state.phase, isNot(AddPhase.failed));
+      final lists = s.h.backend.to(P.wardrobe).where((r) => r.method == 'GET').length;
+      s.c.closed();
+      await pumpEventQueue();
+      expect(
+        s.h.backend.to(P.wardrobe).where((r) => r.method == 'GET').length,
+        lists + 1,
+        reason: 'A may be stored on the server: the wardrobe reloads',
+      );
+      hold.complete();
+    });
+
     test('cancel is ignored when nothing is running', () async {
       final s = Setup();
       await s.ready();

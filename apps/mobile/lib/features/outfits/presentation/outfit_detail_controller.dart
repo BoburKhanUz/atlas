@@ -57,6 +57,10 @@ class OutfitDetailController extends Notifier<OutfitDetailState> {
 
   late RefreshThrottle _images;
 
+  /// An image expired while an action ran (a reload would be ignored then):
+  /// reload when the action ends.
+  bool _imagesWanted = false;
+
   @override
   OutfitDetailState build() {
     _images = RefreshThrottle.forSignedUrls(ref);
@@ -66,7 +70,23 @@ class OutfitDetailController extends Notifier<OutfitDetailState> {
 
   /// An image's signed URL expired: reload, at most once per
   /// [signedUrlRefreshInterval] (a report inside it is done when it is over).
-  Future<void> refreshImages() => _images.run(reload, later: _refreshImagesLater);
+  Future<void> refreshImages() => _images.run(_reloadImages, later: _refreshImagesLater);
+
+  Future<void> _reloadImages() async {
+    if (state.running != null) {
+      _imagesWanted = true;
+      return;
+    }
+    await reload();
+  }
+
+  /// After an action: the reload an expired image asked for meanwhile
+  /// (forced: the report was not served).
+  void _afterAction() {
+    if (!_imagesWanted || !ref.mounted || state.status == OutfitDetailStatus.deleted) return;
+    _imagesWanted = false;
+    unawaited(_images.run(_reloadImages, later: _refreshImagesLater, force: true));
+  }
 
   void _refreshImagesLater() {
     if (ref.mounted) unawaited(refreshImages());
@@ -111,6 +131,14 @@ class OutfitDetailController extends Notifier<OutfitDetailState> {
     if (outfit == null || state.running != null) return;
     state = state.copyWith(running: () => OutfitAction.delete, failure: () => null);
     try {
+      await _delete();
+    } finally {
+      _afterAction();
+    }
+  }
+
+  Future<void> _delete() async {
+    try {
       await ref.read(outfitsRepositoryProvider).delete(id);
       if (!ref.mounted) return;
       ref.invalidate(outfitListProvider);
@@ -132,6 +160,18 @@ class OutfitDetailController extends Notifier<OutfitDetailState> {
     final outfit = state.outfit;
     if (outfit == null || state.running != null) return;
     state = state.copyWith(running: () => action, failure: () => null);
+    try {
+      await _action(action, outfit, call);
+    } finally {
+      _afterAction();
+    }
+  }
+
+  Future<void> _action(
+    OutfitAction action,
+    OutfitDetail outfit,
+    Future<OutfitRow> Function(OutfitsRepository repo) call,
+  ) async {
     try {
       final row = await call(ref.read(outfitsRepositoryProvider));
       if (!ref.mounted) return;

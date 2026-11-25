@@ -138,9 +138,10 @@ class AddItemController extends Notifier<AddItemState> {
   /// The running upload's cancel token (null when nothing is sent).
   CancelToken? _cancel;
 
-  /// An upload was cancelled after it started: the server may have stored
-  /// the item, so the wardrobe reloads when this flow closes ([closed]).
-  bool _maybeStored = false;
+  /// Uploads (idempotency keys) cancelled after they started: the server may
+  /// have stored them, so the wardrobe reloads when this flow closes
+  /// ([closed]). A key leaves only when that same upload later succeeds.
+  final _maybeStored = <String>{};
 
   @override
   AddItemState build() {
@@ -266,15 +267,15 @@ class AddItemController extends Notifier<AddItemState> {
   void cancel() {
     final cancel = _cancel;
     if (cancel == null || (state.phase != AddPhase.uploading && state.phase != AddPhase.analysing)) return;
-    _maybeStored = true;
+    if (state.job case final job?) _maybeStored.add(job.idempotencyKey);
     cancel.cancel();
   }
 
   /// The screen was left. After a cancelled upload the wardrobe reloads, so
   /// an item the server stored anyway is shown.
   void closed() {
-    if (!_maybeStored) return;
-    _maybeStored = false;
+    if (_maybeStored.isEmpty) return;
+    _maybeStored.clear();
     unawaited(ref.read(wardrobeListProvider.notifier).refresh());
   }
 
@@ -301,7 +302,7 @@ class AddItemController extends Notifier<AddItemState> {
             );
         await _forget();
         if (!ref.mounted) return;
-        _maybeStored = false;
+        _maybeStored.remove(job.idempotencyKey); // that one is shown now
         ref.read(wardrobeListProvider.notifier).insert(result.item);
         state = _settled(AddItemState(job: job, progress: 1, result: result, recovered: recovered));
         return;

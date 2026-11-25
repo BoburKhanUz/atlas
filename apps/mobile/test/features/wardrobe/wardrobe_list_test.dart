@@ -246,6 +246,31 @@ void main() {
     expect(h.backend.calls(P.wardrobe), 3, reason: 'the reported expiry is not lost');
   });
 
+  test('a delete during the first load or a pull-to-refresh is kept', () async {
+    final h = SessionHarness(stored: pair(1));
+    final gate = h.backend.gates[P.wardrobe] = Gate();
+    h.backend.handlers[P.wardrobe] = (r) => JsonReply(200, pageJson(['a', 'b']));
+    final c = ProviderContainer(overrides: appOverrides(h));
+    addTearDown(c.dispose);
+    await h.session.restore();
+    c.listen(wardrobeListProvider, (_, _) {});
+    await pumpEventQueue();
+    final list = c.read(wardrobeListProvider.notifier);
+    list.remove('a'); // a delete finished while the first page loads
+    gate.open();
+    h.backend.gates.remove(P.wardrobe);
+    await settle(c);
+    expect(c.read(wardrobeListProvider).items.map((i) => i.id), ['b']);
+
+    final again = h.backend.gates[P.wardrobe] = Gate();
+    final refresh = list.refresh();
+    await pumpEventQueue();
+    list.remove('b');
+    again.open();
+    await refresh;
+    expect(c.read(wardrobeListProvider).items.map((i) => i.id), ['a'], reason: 'the server page, minus the delete');
+  });
+
   test('an upload or a delete during a URL reload is kept', () async {
     final (c, h) = await start((r) => JsonReply(200, pageJson(['a', 'b'])));
     final list = c.read(wardrobeListProvider.notifier);
