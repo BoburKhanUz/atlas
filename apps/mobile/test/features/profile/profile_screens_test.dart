@@ -8,6 +8,7 @@ import 'package:atlas_mobile/core/widgets/atlas_button.dart';
 import 'package:atlas_mobile/features/auth/presentation/login_screen.dart';
 import 'package:atlas_mobile/features/profile/presentation/profile_edit_screen.dart';
 import 'package:atlas_mobile/features/profile/presentation/selfie_analysis_screen.dart';
+import 'package:atlas_mobile/features/profile/providers.dart';
 import 'package:atlas_mobile/features/wardrobe/data/image_preparer.dart';
 import 'package:atlas_mobile/features/wardrobe/providers.dart';
 import 'package:dio/dio.dart';
@@ -90,6 +91,21 @@ class ProfileApp {
 }
 
 void main() {
+  testWidgets('profile: a failed refresh keeps the profile and says so, with a retry', (tester) async {
+    final app = ProfileApp(tester);
+    await app.start();
+    expect(find.text('Aziza'), findsOneWidget);
+    final ok = app.h.backend.handlers[P.profile]!;
+    app.h.backend.handlers[P.profile] = (_) => JsonReply(500, errorBody('INTERNAL'));
+    unawaited(app.container.read(profileProvider.notifier).refresh());
+    await app.settle();
+    expect(find.text('Aziza'), findsOneWidget);
+    expect(find.byKey(const Key('refreshFailed')), findsOneWidget);
+    app.h.backend.handlers[P.profile] = ok;
+    await app.tap(find.byKey(const Key('refreshFailed.retry')));
+    expect(find.byKey(const Key('refreshFailed')), findsNothing);
+  });
+
   testWidgets('profile: name, email, preferences, colour card, logout and delete entries', (tester) async {
     final app = ProfileApp(tester);
     await app.start();

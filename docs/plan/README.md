@@ -32,7 +32,7 @@ Every stage ends with the stage gate in `.claude/skills/lookly-workflow/SKILL.md
 
 | Stage | Goal | Exit criteria |
 |---|---|---|
-| M1 | Fix the audited defects (2 high, 9 medium) — details in `M1.md`; started at `523e6af`, in progress | Each defect has a failing-then-passing test |
+| M1 | Fix the audited defects (2 high, 7 medium, 2 low) — details in `M1.md`; started at `523e6af`, in progress | Each defect has a failing-then-passing test |
 | M2 | Structure: shared code to `core`, no cross-feature imports, logic out of widgets, domain models | Cross-feature import check in CI; all tests green |
 | M3 | Localization: `gen_l10n`, Uzbek Material localizations, strings to ARB | No literal user-facing strings (CI check) |
 | M4 | Design system: dark theme tokens, haptics, transitions, text scale to 2.0, portrait lock | Golden tests: main screens light and dark, 360dp, text scale 1.0 and 2.0 |

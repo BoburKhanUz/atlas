@@ -255,6 +255,22 @@ void main() {
     expect(app.h.backend.calls('${P.wardrobe}/bottom1'), 0, reason: 'only the rejected one is reloaded');
   });
 
+  testWidgets('Saved list: a failed refresh keeps the outfits and says so, with a retry', (tester) async {
+    final app = OutfitsApp(tester);
+    await app.start(at: AtlasRoutes.outfits);
+    await app.tap(find.text('Saqlangan'));
+    expect(find.byKey(const Key('outfit.list.o1')), findsOneWidget);
+    final ok = app.outfitsReply;
+    app.outfitsReply = (r) => JsonReply(500, errorBody('INTERNAL'));
+    unawaited(app.container.read(outfitListProvider(true).notifier).refresh());
+    await app.settle();
+    expect(find.byKey(const Key('outfit.list.o1')), findsOneWidget);
+    expect(find.byKey(const Key('refreshFailed')), findsOneWidget);
+    app.outfitsReply = ok;
+    await app.tap(find.byKey(const Key('refreshFailed.retry')));
+    expect(find.byKey(const Key('refreshFailed')), findsNothing);
+  });
+
   testWidgets('Saved list → detail → rename, unsave, delete', (tester) async {
     final app = OutfitsApp(tester);
     await app.start(at: AtlasRoutes.outfits);

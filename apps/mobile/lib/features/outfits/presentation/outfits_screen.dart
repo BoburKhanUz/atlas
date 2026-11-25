@@ -191,10 +191,18 @@ class _OutfitList extends ConsumerWidget {
     }
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: AtlasSpacing.screen),
-      sliver: SliverList.separated(
-        itemCount: s.outfits.length,
-        separatorBuilder: (_, _) => const SizedBox(height: AtlasSpacing.sm),
-        itemBuilder: (context, i) => _OutfitRow(outfit: s.outfits[i], onExpired: c.refresh),
+      sliver: SliverMainAxisGroup(
+        slivers: [
+          if (s.failure case final failure?)
+            SliverToBoxAdapter(
+              child: RefreshFailedBanner(message: failure.userMessage, onRetry: c.refresh),
+            ),
+          SliverList.separated(
+            itemCount: s.outfits.length,
+            separatorBuilder: (_, _) => const SizedBox(height: AtlasSpacing.sm),
+            itemBuilder: (context, i) => _OutfitRow(outfit: s.outfits[i], onExpired: c.refresh),
+          ),
+        ],
       ),
     );
   }

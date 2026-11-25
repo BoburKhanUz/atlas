@@ -5,6 +5,7 @@ import 'package:atlas_mobile/app/app.dart';
 import 'package:atlas_mobile/app/router.dart';
 import 'package:atlas_mobile/features/stylist/presentation/chat_screen.dart';
 import 'package:atlas_mobile/features/stylist/presentation/stylist_screen.dart';
+import 'package:atlas_mobile/features/stylist/providers.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -79,6 +80,20 @@ void main() {
     await app.settle();
     expect(find.byType(ChatScreen), findsOneWidget);
     expect(find.text('Assalomu alaykum!'), findsOneWidget);
+  });
+
+  testWidgets('list: a failed refresh keeps the conversations and says so, with a retry', (tester) async {
+    final app = StylistApp(tester);
+    await app.start();
+    final ok = app.h.backend.handlers[P.conversations]!;
+    app.h.backend.handlers[P.conversations] = (_) => JsonReply(500, errorBody('INTERNAL'));
+    unawaited(app.container.read(conversationListProvider.notifier).refresh());
+    await app.settle();
+    expect(find.byKey(const Key('stylist.conversation.c1')), findsOneWidget);
+    expect(find.byKey(const Key('refreshFailed')), findsOneWidget);
+    app.h.backend.handlers[P.conversations] = ok;
+    await app.tap(find.byKey(const Key('refreshFailed.retry')));
+    expect(find.byKey(const Key('refreshFailed')), findsNothing);
   });
 
   testWidgets('list: empty state with a start action', (tester) async {

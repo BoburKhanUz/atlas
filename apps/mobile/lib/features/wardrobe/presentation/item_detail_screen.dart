@@ -49,6 +49,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     if (confirmed != true || !mounted) return;
     setState(() => _deleting = true);
     final messenger = ScaffoldMessenger.of(context);
+    // Read before the await: the user may leave while the delete runs, and
+    // the list must still drop the item when it succeeds.
+    final list = ref.read(wardrobeListProvider.notifier);
     try {
       await ref.read(wardrobeRepositoryProvider).delete(widget.id);
     } catch (error, stack) {
@@ -61,7 +64,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         return;
       }
     }
-    ref.read(wardrobeListProvider.notifier).remove(widget.id);
+    list.remove(widget.id);
     if (mounted) context.pop();
     messenger.showSnackBar(const SnackBar(content: Text('Kiyim o‘chirildi')));
   }
@@ -178,7 +181,8 @@ class _Details extends StatelessWidget {
           const SizedBox(height: AtlasSpacing.xs),
           for (final c in item.correctionLog)
             Text(
-              '${WardrobeLabels.field(c.field)}: ${c.from} → ${c.to}',
+              '${WardrobeLabels.field(c.field)}: '
+              '${WardrobeLabels.correctionValue(c.field, c.from)} → ${WardrobeLabels.correctionValue(c.field, c.to)}',
               key: const Key('item.correction'),
               style: text.bodyMedium,
             ),

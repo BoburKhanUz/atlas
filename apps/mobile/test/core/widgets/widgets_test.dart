@@ -80,6 +80,30 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text('Internet aloqasi yo‘q'), findsOneWidget);
     });
+
+    testWidgets('refresh-failed banner fits a small screen at 200% text and retries', (tester) async {
+      tester.view.physicalSize = const Size(320 * 2, 480 * 2);
+      tester.view.devicePixelRatio = 2;
+      addTearDown(tester.view.reset);
+      var retries = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AtlasTheme.light(),
+          home: MediaQuery(
+            data: const MediaQueryData(size: Size(320, 480), textScaler: TextScaler.linear(2)),
+            child: Scaffold(
+              body: ListView(
+                children: [RefreshFailedBanner(message: 'Internet aloqasi yo‘q.', onRetry: () => retries++)],
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      expect(find.textContaining('Yangilab bo‘lmadi.'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('refreshFailed.retry')));
+      expect(retries, 1);
+    });
   });
 
   group('Skeleton', () {

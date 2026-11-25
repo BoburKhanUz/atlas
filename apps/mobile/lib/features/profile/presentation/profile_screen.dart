@@ -56,6 +56,11 @@ class ProfileScreen extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: AtlasSpacing.screen),
             sliver: SliverList.list(
               children: [
+                if (s.failure case final failure?)
+                  RefreshFailedBanner(
+                    message: failure.userMessage,
+                    onRetry: ref.read(profileProvider.notifier).refresh,
+                  ),
                 _ProfileHeader(name: p.name, email: p.email, onTap: () => context.push(AtlasRoutes.profileEdit)),
                 const SizedBox(height: AtlasSpacing.md),
                 _Completion(

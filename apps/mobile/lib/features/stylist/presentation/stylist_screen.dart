@@ -50,11 +50,19 @@ class StylistScreen extends ConsumerWidget {
           ),
           _ => SliverPadding(
             padding: const EdgeInsets.fromLTRB(AtlasSpacing.screen, 0, AtlasSpacing.screen, 96),
-            sliver: SliverList.separated(
-              itemCount: s.conversations.length + 1,
-              separatorBuilder: (_, i) => SizedBox(height: i == 0 ? AtlasSpacing.lg : AtlasSpacing.sm),
-              itemBuilder: (context, i) =>
-                  i == 0 ? const _Intro() : _ConversationRow(conversation: s.conversations[i - 1]),
+            sliver: SliverMainAxisGroup(
+              slivers: [
+                if (s.failure case final failure?)
+                  SliverToBoxAdapter(
+                    child: RefreshFailedBanner(message: failure.userMessage, onRetry: c.refresh),
+                  ),
+                SliverList.separated(
+                  itemCount: s.conversations.length + 1,
+                  separatorBuilder: (_, i) => SizedBox(height: i == 0 ? AtlasSpacing.lg : AtlasSpacing.sm),
+                  itemBuilder: (context, i) =>
+                      i == 0 ? const _Intro() : _ConversationRow(conversation: s.conversations[i - 1]),
+                ),
+              ],
             ),
           ),
         },

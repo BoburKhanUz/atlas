@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:material_ui/material_ui.dart' show Color;
 
 import '../../onboarding/data/options.dart';
@@ -126,6 +128,41 @@ abstract final class WardrobeLabels {
     if (known == null) return type;
     return '${known.label} ${type.toLowerCase()}';
   }
+
+  /// A `correctionLog` value as the user reads it. The server records list
+  /// fields as JSON text (`["white","navy"]`) and an empty value as `''`.
+  /// Values the app does not know are shown as sent.
+  static String correctionValue(String field, String raw) {
+    final label = _fieldValueLabels[field];
+    if (label == null) return raw.isEmpty ? '—' : raw;
+    final List<String> values;
+    if (raw.startsWith('[')) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is! List || decoded.any((v) => v is! String)) return raw;
+        values = decoded.cast<String>();
+      } on FormatException {
+        return raw;
+      }
+    } else {
+      values = [if (raw.isNotEmpty) raw];
+    }
+    return values.isEmpty ? '—' : values.map(label).join(', ');
+  }
+
+  static const Map<String, String Function(String)> _fieldValueLabels = {
+    'category': category,
+    'subcategory': subcategory,
+    'colors': color,
+    'pattern': pattern,
+    'material': material,
+    'sleeveLength': sleeve,
+    'fit': fit,
+    'style': style,
+    'season': season,
+    'gender': gender,
+    'formality': formality,
+  };
 
   /// Field names of `correctionLog` entries.
   static String field(String v) =>

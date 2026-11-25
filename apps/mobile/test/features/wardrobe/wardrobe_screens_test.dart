@@ -39,6 +39,27 @@ void main() {
     expect(find.text('Internet aloqasi yo‘q', skipOffstage: false), findsWidgets);
   });
 
+  testWidgets('item detail: leaving while the delete is in flight still removes the item from the list', (
+    tester,
+  ) async {
+    final app = App(tester);
+    await app.start();
+    await app.tap(find.byKey(const Key('wardrobe.item.a')));
+    final gate = app.h.backend.gates['${P.wardrobe}/a'] = Gate();
+    await app.tap(find.byKey(const Key('item.delete')));
+    await app.tap(find.byKey(const Key('item.confirmDelete')));
+    expect(app.h.backend.to('${P.wardrobe}/a').where((r) => r.method == 'DELETE'), hasLength(1));
+    await tester.pageBack();
+    await app.settle();
+    await tester.pump(const Duration(seconds: 1)); // route transition done
+    expect(find.byType(ItemDetailScreen), findsNothing);
+    gate.open();
+    await app.settle();
+    expect(tester.takeException(), isNull);
+    expect(find.byKey(const Key('wardrobe.item.a')), findsNothing);
+    expect(find.byKey(const Key('wardrobe.item.b')), findsOneWidget);
+  });
+
   testWidgets('item detail: attributes, corrections, delete with confirmation', (tester) async {
     final app = App(tester);
     await app.start();
@@ -50,6 +71,7 @@ void main() {
     expect(find.descendant(of: detail, matching: find.text('Futbolka')), findsOneWidget);
     expect(find.descendant(of: detail, matching: find.text('Oq, To‘q ko‘k')), findsOneWidget);
     expect(find.byKey(const Key('item.correction')), findsOneWidget);
+    expect(find.text('Ranglar: Oq → Oq, To‘q ko‘k'), findsOneWidget);
     await app.tap(find.byKey(const Key('item.delete')));
     expect(find.text('Kiyimni o‘chirasizmi?'), findsOneWidget);
     await app.tap(find.byKey(const Key('item.confirmDelete')));

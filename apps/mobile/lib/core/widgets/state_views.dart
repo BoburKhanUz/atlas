@@ -140,3 +140,51 @@ class OfflineStateView extends StatelessWidget {
         : AtlasButton(label: 'Qayta urinish', variant: AtlasButtonVariant.secondary, onPressed: onRetry),
   );
 }
+
+/// Shown above content that is still on screen when a refresh failed: the
+/// old data stays, and this says it may be out of date, with a retry.
+/// [message] must already be a friendly text (e.g. `ApiFailure.userMessage`).
+class RefreshFailedBanner extends StatelessWidget {
+  const RefreshFailedBanner({super.key = const Key('refreshFailed'), required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Semantics(
+      liveRegion: true,
+      container: true,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AtlasSpacing.md),
+        padding: const EdgeInsets.fromLTRB(AtlasSpacing.md, AtlasSpacing.sm, AtlasSpacing.xs, AtlasSpacing.xs),
+        decoration: const BoxDecoration(color: AtlasColors.errorSoft, borderRadius: AtlasRadii.control),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(top: 2),
+                  child: Icon(Icons.error_outline_rounded, size: 20, color: AtlasColors.error),
+                ),
+                const SizedBox(width: AtlasSpacing.sm),
+                Expanded(child: Text('Yangilab bo‘lmadi. $message', style: text.bodyMedium)),
+              ],
+            ),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: TextButton(
+                key: const Key('refreshFailed.retry'),
+                onPressed: onRetry,
+                child: const Text('Qayta urinish'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
