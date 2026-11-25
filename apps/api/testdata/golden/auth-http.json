@@ -1,0 +1,1384 @@
+{
+ "generatedBy": "apps/web/scripts/golden-auth-http.ts",
+ "sourceCommit": "a4587fea44016fe9f2b9e06b8b775fadf5fd37eb",
+ "note": "Headers are [name, value] pairs in the order sent. Generated once and committed; a Go mismatch is investigated, never regenerated away.",
+ "generatedAtSeconds": 1795624922,
+ "jwtSecret": "golden-vector-jwt-secret-not-used-anywhere-else",
+ "csrf": [
+  {
+   "name": "GET from another site, with a cookie",
+   "method": "GET",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "https://evil.example"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": false
+  },
+  {
+   "name": "HEAD from another site, with a cookie",
+   "method": "HEAD",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "https://evil.example"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": false
+  },
+  {
+   "name": "OPTIONS from another site, with a cookie",
+   "method": "OPTIONS",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "https://evil.example"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": false
+  },
+  {
+   "name": "POST from another site, with a cookie",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "https://evil.example"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": true
+  },
+  {
+   "name": "PUT from another site, with a cookie",
+   "method": "PUT",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "https://evil.example"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": true
+  },
+  {
+   "name": "PATCH from another site, with a cookie",
+   "method": "PATCH",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "https://evil.example"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": true
+  },
+  {
+   "name": "DELETE from another site, with a cookie",
+   "method": "DELETE",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "https://evil.example"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": true
+  },
+  {
+   "name": "same origin",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "https://app.example.uz"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": false
+  },
+  {
+   "name": "same host over http (only the host is compared)",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "http://app.example.uz"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": false
+  },
+  {
+   "name": "no Origin header",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": false
+  },
+  {
+   "name": "empty Origin header",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     ""
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": false
+  },
+  {
+   "name": "Origin null",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "null"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": true
+  },
+  {
+   "name": "Origin is not a URL",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "app.example.uz"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": true
+  },
+  {
+   "name": "Origin with another port",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "https://app.example.uz:8443"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": true
+  },
+  {
+   "name": "Origin with the default https port",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "https://app.example.uz:443"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": false
+  },
+  {
+   "name": "Origin with the default http port",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "http://app.example.uz:80"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": false
+  },
+  {
+   "name": "Origin in upper case",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "HTTPS://APP.EXAMPLE.UZ"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": false
+  },
+  {
+   "name": "Host in upper case",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "APP.EXAMPLE.UZ"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "https://app.example.uz"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": false
+  },
+  {
+   "name": "Origin with a path",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "https://app.example.uz/some/path?x=1"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": false
+  },
+  {
+   "name": "Origin with a trailing slash",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "https://app.example.uz/"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": false
+  },
+  {
+   "name": "Origin is a subdomain",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "https://evil.app.example.uz"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": true
+  },
+  {
+   "name": "Origin is a parent domain",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "https://example.uz"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": true
+  },
+  {
+   "name": "Origin has the host as a prefix",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "https://app.example.uz.evil.example"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": true
+  },
+  {
+   "name": "Origin with user info",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "https://app.example.uz@evil.example"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": true
+  },
+  {
+   "name": "Origin with a trailing dot",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "https://app.example.uz."
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": true
+  },
+  {
+   "name": "Origin without a host",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "file:///etc/passwd"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": true
+  },
+  {
+   "name": "Host with a port, same origin",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "localhost:3100"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "http://localhost:3100"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": false
+  },
+  {
+   "name": "Host with a port, Origin without it",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "localhost:3100"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "http://localhost"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": true
+  },
+  {
+   "name": "Host with a port, Origin with another",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "localhost:3100"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "http://localhost:3101"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": true
+  },
+  {
+   "name": "IPv6 host, same origin",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "[::1]:3100"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "http://[::1]:3100"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": false
+  },
+  {
+   "name": "two Origin headers",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "https://app.example.uz"
+    ],
+    [
+     "origin",
+     "https://app.example.uz"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": true
+  },
+  {
+   "name": "another site, no cookie",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "origin",
+     "https://evil.example"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": false
+  },
+  {
+   "name": "another site, an unrelated cookie",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "theme=dark"
+    ],
+    [
+     "origin",
+     "https://evil.example"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": false
+  },
+  {
+   "name": "another site, the refresh cookie only",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_rt=r"
+    ],
+    [
+     "origin",
+     "https://evil.example"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": true
+  },
+  {
+   "name": "another site, both cookies among others",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "theme=dark; atlas_rt=r; atlas_at=a"
+    ],
+    [
+     "origin",
+     "https://evil.example"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": true
+  },
+  {
+   "name": "another site, an empty access cookie",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at="
+    ],
+    [
+     "origin",
+     "https://evil.example"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": true
+  },
+  {
+   "name": "another site, a cookie whose name only starts alike",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at2=a"
+    ],
+    [
+     "origin",
+     "https://evil.example"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": false
+  },
+  {
+   "name": "another site, with an Authorization header",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "https://evil.example"
+    ],
+    [
+     "authorization",
+     "Bearer x"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": false
+  },
+  {
+   "name": "another site, with an empty Authorization header",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "https://evil.example"
+    ],
+    [
+     "authorization",
+     ""
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": false
+  },
+  {
+   "name": "another site, Authorization of another scheme",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "https://evil.example"
+    ],
+    [
+     "authorization",
+     "Basic eDp5"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": false
+  },
+  {
+   "name": "proxied, trusted: the forwarded host is compared",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "api:3000"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "x-forwarded-host",
+     "app.example.uz"
+    ],
+    [
+     "origin",
+     "https://app.example.uz"
+    ]
+   ],
+   "trustProxy": true,
+   "crossOrigin": false
+  },
+  {
+   "name": "proxied, trusted: the internal host is not the origin",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "api:3000"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "x-forwarded-host",
+     "app.example.uz"
+    ],
+    [
+     "origin",
+     "http://api:3000"
+    ]
+   ],
+   "trustProxy": true,
+   "crossOrigin": true
+  },
+  {
+   "name": "proxied, not trusted: the forwarded host is ignored",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "api:3000"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "x-forwarded-host",
+     "app.example.uz"
+    ],
+    [
+     "origin",
+     "https://app.example.uz"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": true
+  },
+  {
+   "name": "proxied, not trusted: the Host header is compared",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "api:3000"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "x-forwarded-host",
+     "app.example.uz"
+    ],
+    [
+     "origin",
+     "http://api:3000"
+    ]
+   ],
+   "trustProxy": false,
+   "crossOrigin": false
+  },
+  {
+   "name": "proxied, trusted: the first forwarded host counts",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "api:3000"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "x-forwarded-host",
+     "app.example.uz, evil.example"
+    ],
+    [
+     "origin",
+     "https://app.example.uz"
+    ]
+   ],
+   "trustProxy": true,
+   "crossOrigin": false
+  },
+  {
+   "name": "proxied, trusted: a later forwarded host does not count",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "api:3000"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "x-forwarded-host",
+     "app.example.uz, evil.example"
+    ],
+    [
+     "origin",
+     "https://evil.example"
+    ]
+   ],
+   "trustProxy": true,
+   "crossOrigin": true
+  },
+  {
+   "name": "proxied, trusted: an empty forwarded host falls back to Host",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "x-forwarded-host",
+     ""
+    ],
+    [
+     "origin",
+     "https://app.example.uz"
+    ]
+   ],
+   "trustProxy": true,
+   "crossOrigin": false
+  },
+  {
+   "name": "proxied, trusted: no forwarded host falls back to Host",
+   "method": "POST",
+   "headers": [
+    [
+     "host",
+     "app.example.uz"
+    ],
+    [
+     "cookie",
+     "atlas_at=a"
+    ],
+    [
+     "origin",
+     "https://app.example.uz"
+    ]
+   ],
+   "trustProxy": true,
+   "crossOrigin": false
+  }
+ ],
+ "clientType": [
+  {
+   "value": null,
+   "clientType": "web"
+  },
+  {
+   "value": "mobile",
+   "clientType": "mobile"
+  },
+  {
+   "value": "Mobile",
+   "clientType": "mobile"
+  },
+  {
+   "value": " MOBILE ",
+   "clientType": "mobile"
+  },
+  {
+   "value": "web",
+   "clientType": "web"
+  },
+  {
+   "value": "",
+   "clientType": "web"
+  },
+  {
+   "value": "mobile-app",
+   "clientType": "web"
+  },
+  {
+   "value": "mobile, mobile",
+   "clientType": "web"
+  },
+  {
+   "value": "ios",
+   "clientType": "web"
+  }
+ ],
+ "clientTypeTwice": "web",
+ "clientIp": [
+  {
+   "name": "not trusted: forwarded headers are ignored",
+   "headers": [
+    [
+     "x-forwarded-for",
+     "203.0.113.7"
+    ],
+    [
+     "x-real-ip",
+     "203.0.113.7"
+    ]
+   ],
+   "trustProxy": false,
+   "ip": null
+  },
+  {
+   "name": "trusted: one forwarded address",
+   "headers": [
+    [
+     "x-forwarded-for",
+     "203.0.113.7"
+    ]
+   ],
+   "trustProxy": true,
+   "ip": "203.0.113.7"
+  },
+  {
+   "name": "trusted: the right-most address is the one the proxy vouches for",
+   "headers": [
+    [
+     "x-forwarded-for",
+     "10.9.9.9, 198.51.100.4,203.0.113.7"
+    ]
+   ],
+   "trustProxy": true,
+   "ip": "203.0.113.7"
+  },
+  {
+   "name": "trusted: spaces and empty items",
+   "headers": [
+    [
+     "x-forwarded-for",
+     " 198.51.100.4 , 203.0.113.7 , ,"
+    ]
+   ],
+   "trustProxy": true,
+   "ip": "203.0.113.7"
+  },
+  {
+   "name": "trusted: the header sent twice",
+   "headers": [
+    [
+     "x-forwarded-for",
+     "198.51.100.4"
+    ],
+    [
+     "x-forwarded-for",
+     "203.0.113.7"
+    ]
+   ],
+   "trustProxy": true,
+   "ip": "203.0.113.7"
+  },
+  {
+   "name": "trusted: no forwarded-for, the real-ip header",
+   "headers": [
+    [
+     "x-real-ip",
+     "203.0.113.9"
+    ]
+   ],
+   "trustProxy": true,
+   "ip": "203.0.113.9"
+  },
+  {
+   "name": "trusted: an empty forwarded-for falls back to real-ip",
+   "headers": [
+    [
+     "x-forwarded-for",
+     " , "
+    ],
+    [
+     "x-real-ip",
+     "203.0.113.9"
+    ]
+   ],
+   "trustProxy": true,
+   "ip": "203.0.113.9"
+  },
+  {
+   "name": "trusted: forwarded-for wins over real-ip",
+   "headers": [
+    [
+     "x-forwarded-for",
+     "203.0.113.7"
+    ],
+    [
+     "x-real-ip",
+     "203.0.113.9"
+    ]
+   ],
+   "trustProxy": true,
+   "ip": "203.0.113.7"
+  },
+  {
+   "name": "trusted: neither header",
+   "headers": [],
+   "trustProxy": true,
+   "ip": null
+  },
+  {
+   "name": "trusted: an IPv6 address",
+   "headers": [
+    [
+     "x-forwarded-for",
+     "2001:db8::1"
+    ]
+   ],
+   "trustProxy": true,
+   "ip": "2001:db8::1"
+  },
+  {
+   "name": "trusted: not an address at all",
+   "headers": [
+    [
+     "x-forwarded-for",
+     "unknown"
+    ]
+   ],
+   "trustProxy": true,
+   "ip": "unknown"
+  }
+ ],
+ "auth": [
+  {
+   "name": "no credentials",
+   "headers": [],
+   "via": null,
+   "user": null
+  },
+  {
+   "name": "a valid bearer token",
+   "headers": [
+    [
+     "authorization",
+     "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyX2JlYXJlciIsImVtYWlsIjoiYmVhcmVyQHRlc3QubG9jYWwiLCJzaWQiOiJzZXNzX2JlYXJlciIsImlhdCI6MTc5NTYyNDkyMiwiaXNzIjoiYWktZmFzaGlvbi1zdHlsaXN0IiwiZXhwIjo0MTAyNDQ0ODAwfQ.zVbehWk-_jsUJjEOSEXHwdy6ZPExe88I17u1RJNB8ig"
+    ]
+   ],
+   "via": "bearer",
+   "user": {
+    "sub": "user_bearer",
+    "email": "bearer@test.local",
+    "sid": "sess_bearer"
+   }
+  },
+  {
+   "name": "a valid access cookie",
+   "headers": [
+    [
+     "cookie",
+     "atlas_at=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyX2Nvb2tpZSIsImVtYWlsIjoiY29va2llQHRlc3QubG9jYWwiLCJzaWQiOiJzZXNzX2Nvb2tpZSIsImlhdCI6MTc5NTYyNDkyMiwiaXNzIjoiYWktZmFzaGlvbi1zdHlsaXN0IiwiZXhwIjo0MTAyNDQ0ODAwfQ.GRjyAR0U_XjEa5aPowpczPoNjbFNB-sRuYAvQua4gds"
+    ]
+   ],
+   "via": "cookie",
+   "user": {
+    "sub": "user_cookie",
+    "email": "cookie@test.local",
+    "sid": "sess_cookie"
+   }
+  },
+  {
+   "name": "both: the header is the only credential considered",
+   "headers": [
+    [
+     "authorization",
+     "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyX2JlYXJlciIsImVtYWlsIjoiYmVhcmVyQHRlc3QubG9jYWwiLCJzaWQiOiJzZXNzX2JlYXJlciIsImlhdCI6MTc5NTYyNDkyMiwiaXNzIjoiYWktZmFzaGlvbi1zdHlsaXN0IiwiZXhwIjo0MTAyNDQ0ODAwfQ.zVbehWk-_jsUJjEOSEXHwdy6ZPExe88I17u1RJNB8ig"
+    ],
+    [
+     "cookie",
+     "atlas_at=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyX2Nvb2tpZSIsImVtYWlsIjoiY29va2llQHRlc3QubG9jYWwiLCJzaWQiOiJzZXNzX2Nvb2tpZSIsImlhdCI6MTc5NTYyNDkyMiwiaXNzIjoiYWktZmFzaGlvbi1zdHlsaXN0IiwiZXhwIjo0MTAyNDQ0ODAwfQ.GRjyAR0U_XjEa5aPowpczPoNjbFNB-sRuYAvQua4gds"
+    ]
+   ],
+   "via": "bearer",
+   "user": {
+    "sub": "user_bearer",
+    "email": "bearer@test.local",
+    "sid": "sess_bearer"
+   }
+  },
+  {
+   "name": "an invalid bearer token never falls back to a valid cookie",
+   "headers": [
+    [
+     "authorization",
+     "Bearer not-a-token"
+    ],
+    [
+     "cookie",
+     "atlas_at=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyX2Nvb2tpZSIsImVtYWlsIjoiY29va2llQHRlc3QubG9jYWwiLCJzaWQiOiJzZXNzX2Nvb2tpZSIsImlhdCI6MTc5NTYyNDkyMiwiaXNzIjoiYWktZmFzaGlvbi1zdHlsaXN0IiwiZXhwIjo0MTAyNDQ0ODAwfQ.GRjyAR0U_XjEa5aPowpczPoNjbFNB-sRuYAvQua4gds"
+    ]
+   ],
+   "via": "bearer",
+   "user": null
+  },
+  {
+   "name": "an empty Authorization header never falls back to a valid cookie",
+   "headers": [
+    [
+     "authorization",
+     ""
+    ],
+    [
+     "cookie",
+     "atlas_at=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyX2Nvb2tpZSIsImVtYWlsIjoiY29va2llQHRlc3QubG9jYWwiLCJzaWQiOiJzZXNzX2Nvb2tpZSIsImlhdCI6MTc5NTYyNDkyMiwiaXNzIjoiYWktZmFzaGlvbi1zdHlsaXN0IiwiZXhwIjo0MTAyNDQ0ODAwfQ.GRjyAR0U_XjEa5aPowpczPoNjbFNB-sRuYAvQua4gds"
+    ]
+   ],
+   "via": "bearer",
+   "user": null
+  },
+  {
+   "name": "another scheme never falls back to a valid cookie",
+   "headers": [
+    [
+     "authorization",
+     "Basic eDp5"
+    ],
+    [
+     "cookie",
+     "atlas_at=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyX2Nvb2tpZSIsImVtYWlsIjoiY29va2llQHRlc3QubG9jYWwiLCJzaWQiOiJzZXNzX2Nvb2tpZSIsImlhdCI6MTc5NTYyNDkyMiwiaXNzIjoiYWktZmFzaGlvbi1zdHlsaXN0IiwiZXhwIjo0MTAyNDQ0ODAwfQ.GRjyAR0U_XjEa5aPowpczPoNjbFNB-sRuYAvQua4gds"
+    ]
+   ],
+   "via": "bearer",
+   "user": null
+  },
+  {
+   "name": "an invalid access cookie",
+   "headers": [
+    [
+     "cookie",
+     "atlas_at=not-a-token"
+    ]
+   ],
+   "via": "cookie",
+   "user": null
+  },
+  {
+   "name": "an empty access cookie",
+   "headers": [
+    [
+     "cookie",
+     "atlas_at="
+    ]
+   ],
+   "via": null,
+   "user": null
+  },
+  {
+   "name": "the access token in the refresh cookie only",
+   "headers": [
+    [
+     "cookie",
+     "atlas_rt=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyX2Nvb2tpZSIsImVtYWlsIjoiY29va2llQHRlc3QubG9jYWwiLCJzaWQiOiJzZXNzX2Nvb2tpZSIsImlhdCI6MTc5NTYyNDkyMiwiaXNzIjoiYWktZmFzaGlvbi1zdHlsaXN0IiwiZXhwIjo0MTAyNDQ0ODAwfQ.GRjyAR0U_XjEa5aPowpczPoNjbFNB-sRuYAvQua4gds"
+    ]
+   ],
+   "via": null,
+   "user": null
+  },
+  {
+   "name": "the access cookie among others",
+   "headers": [
+    [
+     "cookie",
+     "theme=dark; atlas_at=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyX2Nvb2tpZSIsImVtYWlsIjoiY29va2llQHRlc3QubG9jYWwiLCJzaWQiOiJzZXNzX2Nvb2tpZSIsImlhdCI6MTc5NTYyNDkyMiwiaXNzIjoiYWktZmFzaGlvbi1zdHlsaXN0IiwiZXhwIjo0MTAyNDQ0ODAwfQ.GRjyAR0U_XjEa5aPowpczPoNjbFNB-sRuYAvQua4gds; atlas_rt=r"
+    ]
+   ],
+   "via": "cookie",
+   "user": {
+    "sub": "user_cookie",
+    "email": "cookie@test.local",
+    "sid": "sess_cookie"
+   }
+  },
+  {
+   "name": "the access cookie twice: the last one counts",
+   "headers": [
+    [
+     "cookie",
+     "atlas_at=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyX290aGVyIiwiZW1haWwiOiJvdGhlckB0ZXN0LmxvY2FsIiwic2lkIjoic2Vzc19vdGhlciIsImlhdCI6MTc5NTYyNDkyMiwiaXNzIjoiYWktZmFzaGlvbi1zdHlsaXN0IiwiZXhwIjo0MTAyNDQ0ODAwfQ.FhuX8auxeVslmqwzZBYhFeZFqU-fd0Fmqinxm-nbzEk; atlas_at=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyX2Nvb2tpZSIsImVtYWlsIjoiY29va2llQHRlc3QubG9jYWwiLCJzaWQiOiJzZXNzX2Nvb2tpZSIsImlhdCI6MTc5NTYyNDkyMiwiaXNzIjoiYWktZmFzaGlvbi1zdHlsaXN0IiwiZXhwIjo0MTAyNDQ0ODAwfQ.GRjyAR0U_XjEa5aPowpczPoNjbFNB-sRuYAvQua4gds"
+    ]
+   ],
+   "via": "cookie",
+   "user": {
+    "sub": "user_cookie",
+    "email": "cookie@test.local",
+    "sid": "sess_cookie"
+   }
+  },
+  {
+   "name": "a quoted access cookie",
+   "headers": [
+    [
+     "cookie",
+     "atlas_at=\"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyX2Nvb2tpZSIsImVtYWlsIjoiY29va2llQHRlc3QubG9jYWwiLCJzaWQiOiJzZXNzX2Nvb2tpZSIsImlhdCI6MTc5NTYyNDkyMiwiaXNzIjoiYWktZmFzaGlvbi1zdHlsaXN0IiwiZXhwIjo0MTAyNDQ0ODAwfQ.GRjyAR0U_XjEa5aPowpczPoNjbFNB-sRuYAvQua4gds\""
+    ]
+   ],
+   "via": "cookie",
+   "user": null
+  },
+  {
+   "name": "the Authorization header twice",
+   "headers": [
+    [
+     "authorization",
+     "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyX2JlYXJlciIsImVtYWlsIjoiYmVhcmVyQHRlc3QubG9jYWwiLCJzaWQiOiJzZXNzX2JlYXJlciIsImlhdCI6MTc5NTYyNDkyMiwiaXNzIjoiYWktZmFzaGlvbi1zdHlsaXN0IiwiZXhwIjo0MTAyNDQ0ODAwfQ.zVbehWk-_jsUJjEOSEXHwdy6ZPExe88I17u1RJNB8ig"
+    ],
+    [
+     "authorization",
+     "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyX2JlYXJlciIsImVtYWlsIjoiYmVhcmVyQHRlc3QubG9jYWwiLCJzaWQiOiJzZXNzX2JlYXJlciIsImlhdCI6MTc5NTYyNDkyMiwiaXNzIjoiYWktZmFzaGlvbi1zdHlsaXN0IiwiZXhwIjo0MTAyNDQ0ODAwfQ.zVbehWk-_jsUJjEOSEXHwdy6ZPExe88I17u1RJNB8ig"
+    ]
+   ],
+   "via": "bearer",
+   "user": null
+  },
+  {
+   "name": "bearer in lower case",
+   "headers": [
+    [
+     "authorization",
+     "bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyX2JlYXJlciIsImVtYWlsIjoiYmVhcmVyQHRlc3QubG9jYWwiLCJzaWQiOiJzZXNzX2JlYXJlciIsImlhdCI6MTc5NTYyNDkyMiwiaXNzIjoiYWktZmFzaGlvbi1zdHlsaXN0IiwiZXhwIjo0MTAyNDQ0ODAwfQ.zVbehWk-_jsUJjEOSEXHwdy6ZPExe88I17u1RJNB8ig"
+    ]
+   ],
+   "via": "bearer",
+   "user": {
+    "sub": "user_bearer",
+    "email": "bearer@test.local",
+    "sid": "sess_bearer"
+   }
+  }
+ ]
+}

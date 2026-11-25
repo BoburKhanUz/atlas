@@ -113,20 +113,71 @@ type JWTPayload struct {
 // struct cannot silently ignore a section of the vectors.
 func LoadAuth(t testing.TB) Auth {
 	t.Helper()
+	var a Auth
+	load(t, "auth.json", &a)
+	if len(a.JWT.Verify) == 0 || len(a.Classify) == 0 || len(a.Bcrypt) == 0 || len(a.Successor.Decrypt) == 0 {
+		t.Fatal("auth.json: a section is empty")
+	}
+	return a
+}
+
+// AuthHTTP is testdata/golden/auth-http.json
+// (apps/web/scripts/golden-auth-http.ts): what the Next.js API decides about
+// requests. Headers are [name, value] pairs in the order sent.
+type AuthHTTP struct {
+	GeneratedBy        string `json:"generatedBy"`
+	SourceCommit       string `json:"sourceCommit"`
+	Note               string `json:"note"`
+	GeneratedAtSeconds int64  `json:"generatedAtSeconds"`
+	JWTSecret          string `json:"jwtSecret"`
+	CSRF               []struct {
+		Name        string      `json:"name"`
+		Method      string      `json:"method"`
+		Headers     [][2]string `json:"headers"`
+		TrustProxy  bool        `json:"trustProxy"`
+		CrossOrigin bool        `json:"crossOrigin"`
+	} `json:"csrf"`
+	ClientType []struct {
+		Value      *string `json:"value"`
+		ClientType string  `json:"clientType"`
+	} `json:"clientType"`
+	ClientTypeTwice string `json:"clientTypeTwice"`
+	ClientIP        []struct {
+		Name       string      `json:"name"`
+		Headers    [][2]string `json:"headers"`
+		TrustProxy bool        `json:"trustProxy"`
+		IP         *string     `json:"ip"`
+	} `json:"clientIp"`
+	Auth []struct {
+		Name    string      `json:"name"`
+		Headers [][2]string `json:"headers"`
+		Via     *string     `json:"via"`
+		User    *JWTPayload `json:"user"`
+	} `json:"auth"`
+}
+
+// LoadAuthHTTP reads testdata/golden/auth-http.json; unknown fields fail.
+func LoadAuthHTTP(t testing.TB) AuthHTTP {
+	t.Helper()
+	var a AuthHTTP
+	load(t, "auth-http.json", &a)
+	if len(a.CSRF) == 0 || len(a.ClientType) == 0 || len(a.ClientIP) == 0 || len(a.Auth) == 0 {
+		t.Fatal("auth-http.json: a section is empty")
+	}
+	return a
+}
+
+func load(t testing.TB, name string, into any) {
+	t.Helper()
 	_, file, _, _ := runtime.Caller(0)
-	f, err := os.Open(filepath.Join(filepath.Dir(file), "../../testdata/golden/auth.json"))
+	f, err := os.Open(filepath.Join(filepath.Dir(file), "../../testdata/golden", name))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer f.Close()
 	dec := json.NewDecoder(f)
 	dec.DisallowUnknownFields()
-	var a Auth
-	if err := dec.Decode(&a); err != nil {
-		t.Fatalf("auth.json: %v", err)
+	if err := dec.Decode(into); err != nil {
+		t.Fatalf("%s: %v", name, err)
 	}
-	if len(a.JWT.Verify) == 0 || len(a.Classify) == 0 || len(a.Bcrypt) == 0 || len(a.Successor.Decrypt) == 0 {
-		t.Fatal("auth.json: a section is empty")
-	}
-	return a
 }
