@@ -12,7 +12,7 @@ Every stage ends with the stage gate in `.claude/skills/lookly-workflow/SKILL.md
 
 | Goal | Exit criteria | Started at | Status |
 |---|---|---|---|
-| Project rules, skills, ADRs, CI checks | `CLAUDE.md`, 7 skills and ADRs 0001–0007 in the repo; skills reviewed by a fresh agent and findings fixed; `repo-rules` CI job green | `e939067` | in progress |
+| Project rules, skills, ADRs, CI checks | `CLAUDE.md`, 7 skills and ADRs 0001–0007 in the repo; skills reviewed by a fresh agent and findings fixed; `repo-rules` CI job green | `e939067` | done (`ddaec99`, CI green) |
 
 ## Backend (Go, `apps/api`)
 
