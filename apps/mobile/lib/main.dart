@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
+import 'package:atlas_api/atlas_api.dart' show ClientErrorReportKindEnum;
 import 'package:flutter/foundation.dart' show LicenseEntryWithLineBreaks, LicenseRegistry;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +13,7 @@ import 'core/config/environment_config.dart';
 import 'core/logging/android_crashes.dart';
 import 'core/logging/app_log.dart';
 import 'core/logging/crash_reporter.dart';
+import 'core/network/api_failure.dart';
 import 'core/network/providers.dart';
 
 void main() {
@@ -29,6 +31,8 @@ void main() {
     platform: devicePlatform(),
     osVersion: deviceOsVersion(),
   )..install();
+  // Errors that controllers caught and showed, but that nobody expected.
+  UnexpectedErrors.report = (error, stack) => crashes.record(error, stack, kind: ClientErrorReportKindEnum.dart);
   // Crashes outside Dart that ended an earlier run.
   if (Platform.isAndroid) unawaited(crashes.reportAndroidCrashes(const MethodChannelAndroidCrashRecords()));
   AppLog.info('Lookly starting (${config.environment.name})');

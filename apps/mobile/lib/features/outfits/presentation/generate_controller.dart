@@ -163,7 +163,8 @@ class GenerateController extends Notifier<GenerateState> {
       );
       if (!ref.mounted) return;
       state = state.copyWith(phase: GeneratePhase.ready, result: () => result, candidates: const {});
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       if (!ref.mounted) return;
       AppLog.info('outfits not generated: ${f.describe()}');
       if (f is SessionEndedFailure) {
@@ -195,7 +196,8 @@ class GenerateController extends Notifier<GenerateState> {
         await _repo.setSaved(id, saved: true);
         _put(tempId, state.candidate(tempId).copyWith(save: SaveStatus.saved, isSaved: true));
         ref.invalidate(outfitListProvider);
-      } on ApiFailure catch (f) {
+      } catch (error, stack) {
+        final f = failureOf(error, stack);
         _put(tempId, state.candidate(tempId).copyWith(save: SaveStatus.failed, failure: () => f));
       }
       return;
@@ -229,7 +231,8 @@ class GenerateController extends Notifier<GenerateState> {
     try {
       await _repo.feedback(id, kind);
       _put(tempId, state.candidate(tempId).copyWith(sendingFeedback: false, feedback: kind));
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       AppLog.info('feedback not sent: ${f.describe()}');
       _put(tempId, state.candidate(tempId).copyWith(sendingFeedback: false, feedbackFailed: true, failure: () => f));
     }
@@ -257,7 +260,8 @@ class GenerateController extends Notifier<GenerateState> {
       final id = await _repo.save(request);
       _stored(tempId, id, isSaved: isSaved);
       return true;
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       AppLog.info('outfit save: ${f.describe()}');
       if (_definitelyNotStored(f)) {
         _put(tempId, state.candidate(tempId).copyWith(save: SaveStatus.failed, failure: () => f));
@@ -296,7 +300,8 @@ class GenerateController extends Notifier<GenerateState> {
         sinceAttempt: pending.attempt.elapsed,
         knownIds: {for (final c in state.candidates.values) ?c.outfitId},
       );
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       AppLog.info('save check failed: ${f.describe()}');
     }
     if (!ref.mounted) return false;

@@ -80,7 +80,8 @@ class WardrobeListController extends Notifier<WardrobeListState> {
         nextCursor: page.nextCursor,
         status: ListStatus.ready,
       );
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       if (generation != _generation || !ref.mounted) return;
       // A failed refresh keeps what is shown and reports below it.
       state = state.items.isEmpty
@@ -124,7 +125,8 @@ class WardrobeListController extends Notifier<WardrobeListState> {
         nextCursor: () => page.nextCursor,
         status: ListStatus.ready,
       );
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       if (generation != _generation || !ref.mounted) return;
       state = state.copyWith(status: ListStatus.ready, loadMoreFailure: () => f);
     }
@@ -165,7 +167,8 @@ class WardrobeListController extends Notifier<WardrobeListState> {
       } while (cursor != null && items.length < wanted);
       _urlsRefreshedAt = DateTime.now();
       state = state.copyWith(items: items, nextCursor: () => cursor, status: ListStatus.ready, failure: () => null);
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       if (generation != _generation || !ref.mounted) return;
       _urlsRefreshedAt = DateTime.now();
       state = state.copyWith(status: ListStatus.ready, loadMoreFailure: () => f);

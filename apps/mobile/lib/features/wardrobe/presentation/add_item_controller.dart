@@ -290,7 +290,8 @@ class AddItemController extends Notifier<AddItemState> {
         ref.read(wardrobeListProvider.notifier).insert(result.item);
         state = _settled(AddItemState(job: job, progress: 1, result: result, recovered: recovered));
         return;
-      } on ApiFailure catch (f) {
+      } catch (error, stack) {
+        final f = failureOf(error, stack);
         if (!ref.mounted) return;
         AppLog.info('upload failed: ${f.describe()}');
         if (f is ApiHttpFailure && f.code == ApiErrorCode.idempotencyInProgress && waits < maxInProgressWaits) {

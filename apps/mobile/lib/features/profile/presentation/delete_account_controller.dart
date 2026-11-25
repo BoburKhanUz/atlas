@@ -57,7 +57,8 @@ class DeleteAccountController extends Notifier<DeleteAccountState> {
     state = const DeleteAccountState(phase: DeletePhase.deleting);
     try {
       await ref.read(accountRepositoryProvider).delete();
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       AppLog.info('account deletion: ${f.describe()}');
       if (f is ApiHttpFailure && f.code == ApiErrorCode.notFound) {
         await _confirmed(userId); // already gone = deleted

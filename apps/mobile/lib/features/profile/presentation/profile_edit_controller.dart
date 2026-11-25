@@ -50,7 +50,8 @@ class ProfileEditController extends Notifier<ProfileEditState> {
       final p = await ref.read(accountProfileRepositoryProvider).get();
       if (!ref.mounted) return;
       state = ProfileEditState(status: ProfileEditStatus.editing, original: p, draft: p.toDraft());
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       if (!ref.mounted) return;
       state = ProfileEditState(status: ProfileEditStatus.loadFailed, failure: f);
     }
@@ -84,7 +85,8 @@ class ProfileEditController extends Notifier<ProfileEditState> {
     final repo = ref.read(accountProfileRepositoryProvider);
     try {
       await repo.update(patch);
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       if (!ref.mounted) return;
       AppLog.info('profile not saved: ${f.describe()}');
       if (f is SessionEndedFailure) {
@@ -101,7 +103,8 @@ class ProfileEditController extends Notifier<ProfileEditState> {
       if (!ref.mounted) return;
       ref.read(profileProvider.notifier).replace(fresh);
       state = ProfileEditState(status: ProfileEditStatus.saved, original: fresh, draft: fresh.toDraft());
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       if (!ref.mounted) return;
       AppLog.info('profile not re-read after save: ${f.describe()}');
       ref.invalidate(profileProvider);

@@ -45,7 +45,8 @@ class ConversationListController extends Notifier<ConversationListState> {
       final list = await ref.read(stylistRepositoryProvider).conversations();
       if (!ref.mounted) return;
       state = ConversationListState(status: ConversationListStatus.ready, conversations: list);
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       if (!ref.mounted) return;
       AppLog.info('conversations not loaded: ${f.describe()}');
       state = ConversationListState(

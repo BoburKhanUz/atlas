@@ -65,7 +65,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             acceptedLegalVersion: legal.version,
             ageConfirmed: _ageConfirmed,
           );
-    } on ApiFailure catch (f) {
+    } on StateError {
+      // A sign-in is already running.
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       if (!mounted) return;
       if (f is ApiHttpFailure && f.fieldErrors.any((e) => e.path == 'acceptedLegalVersion')) {
         // The documents changed since they were loaded: load the new ones and ask again.
@@ -73,8 +76,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         _consent.currentState?.didChange(false);
       }
       setState(() => _error = authFailureMessage(f));
-    } on StateError {
-      // A sign-in is already running.
     }
   }
 

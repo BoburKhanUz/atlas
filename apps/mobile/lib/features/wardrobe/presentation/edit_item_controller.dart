@@ -70,7 +70,8 @@ class EditItemController extends Notifier<EditState> {
       final item = await ref.read(wardrobeItemProvider(id).future);
       if (!ref.mounted) return;
       state = EditState(status: EditStatus.editing, original: item, draft: ItemDraft.of(item));
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       if (!ref.mounted) return;
       final missing = f is ApiHttpFailure && f.code == ApiErrorCode.notFound;
       state = EditState(status: missing ? EditStatus.notFound : EditStatus.loadFailed, failure: f);
@@ -115,7 +116,8 @@ class EditItemController extends Notifier<EditState> {
       ref.read(wardrobeItemUpdatesProvider.notifier).publish(updated);
       ref.invalidate(wardrobeItemProvider(id));
       state = EditState(status: EditStatus.saved, original: updated, draft: ItemDraft.of(updated));
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       if (!ref.mounted) return;
       AppLog.info('edit not saved: ${f.describe()}');
       if (f is SessionEndedFailure) {

@@ -44,7 +44,8 @@ class ProfileController extends Notifier<ProfileViewState> {
       final p = await ref.read(accountProfileRepositoryProvider).get();
       if (!ref.mounted) return;
       state = ProfileViewState(status: ProfileStatus.ready, profile: p);
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       if (!ref.mounted) return;
       AppLog.info('profile not loaded: ${f.describe()}');
       state = ProfileViewState(

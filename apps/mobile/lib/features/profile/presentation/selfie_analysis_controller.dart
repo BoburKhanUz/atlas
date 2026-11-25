@@ -140,7 +140,8 @@ class SelfieAnalysisController extends Notifier<SelfieAnalysisState> {
       _image = null; // done: the bytes are not kept
       ref.read(colorProfileProvider.notifier).replace(result);
       state = SelfieAnalysisState(phase: SelfiePhase.done, result: result);
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       if (!ref.mounted) return;
       AppLog.info('colour analysis: ${f.describe()}');
       if (f is ApiHttpFailure && f.statusCode == 422) {
@@ -151,11 +152,6 @@ class SelfieAnalysisController extends Notifier<SelfieAnalysisState> {
       } else {
         await _check(f);
       }
-    } catch (e) {
-      // Not an API answer (a bug or a platform error): nothing is known to
-      // have been analysed; the same photo may be retried explicitly.
-      AppLog.error('colour analysis failed unexpectedly', e);
-      if (ref.mounted) state = const SelfieAnalysisState(phase: SelfiePhase.failed, hasImage: true);
     }
   }
 
@@ -165,7 +161,8 @@ class SelfieAnalysisController extends Notifier<SelfieAnalysisState> {
     try {
       current = await ref.read(colorProfileRepositoryProvider).current();
       if (ref.mounted) ref.read(colorProfileProvider.notifier).replace(current);
-    } on ApiFailure catch (e) {
+    } catch (error, stack) {
+      final e = failureOf(error, stack);
       AppLog.info('colour profile check failed: ${e.describe()}');
     }
     if (!ref.mounted) return;

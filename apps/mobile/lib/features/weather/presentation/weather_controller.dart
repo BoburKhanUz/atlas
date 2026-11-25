@@ -294,7 +294,8 @@ class WeatherController extends Notifier<WeatherState> {
       if (!ref.mounted) return;
       _cache[location.cell] = weather;
       state = state.copyWith(status: WeatherStatus.ready, weather: () => weather, failure: () => null);
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       if (!ref.mounted) return;
       AppLog.info('weather not loaded: ${f.describe()}');
       // The last weather (possibly stale) stays visible.

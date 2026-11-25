@@ -45,7 +45,8 @@ class _GeneratedItemImageState extends ConsumerState<GeneratedItemImage> {
     try {
       final item = await ref.read(wardrobeRepositoryProvider).get(widget.itemId);
       if (mounted) setState(() => _fresh = item);
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       AppLog.info('outfit item image not refreshed: ${f.describe()}');
       if (mounted && f is ApiHttpFailure && f.statusCode == 404) setState(() => _gone = true);
     } finally {

@@ -139,7 +139,8 @@ class ChatController extends Notifier<ChatState> {
       final c = await _repo.conversation(id);
       if (!ref.mounted) return;
       state = state.copyWith(status: ChatStatus.ready, title: () => c.title, messages: c.messages);
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       if (!ref.mounted) return;
       final missing = f is ApiHttpFailure && f.code == ApiErrorCode.notFound;
       state = state.copyWith(status: missing ? ChatStatus.notFound : ChatStatus.loadFailed, failure: () => f);
@@ -210,7 +211,8 @@ class ChatController extends Notifier<ChatState> {
       );
       ref.invalidate(conversationListProvider);
       return SendResult.sent;
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       AppLog.info('stylist message: ${f.describe()}');
       if (!ref.mounted) return SendResult.failed;
       if (_definitelyNotStored(f)) {
@@ -248,7 +250,8 @@ class ChatController extends Notifier<ChatState> {
         pending: () => null,
         failure: () => null,
       );
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       if (!ref.mounted) return;
       AppLog.info('conversation not refreshed: ${f.describe()}');
       state = state.copyWith(refreshing: false, failure: () => f);

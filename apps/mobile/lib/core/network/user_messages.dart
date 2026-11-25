@@ -11,6 +11,7 @@ abstract final class UserMessages {
   static const insecure = 'Xavfsiz ulanish o‘rnatilmadi. Boshqa tarmoqdan urinib ko‘ring.';
   static const cancelled = 'So‘rov bekor qilindi.';
   static const unexpected = 'Kutilmagan javob olindi. Qayta urinib ko‘ring.';
+  static const unexpectedError = 'Nimadir noto‘g‘ri ketdi. Qayta urinib ko‘ring.';
   static const generic = 'Nimadir xato ketdi. Qayta urinib ko‘ring.';
   static const signInRequired = 'Davom etish uchun tizimga kiring.';
   static const secureStorage =

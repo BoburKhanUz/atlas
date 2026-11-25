@@ -49,7 +49,8 @@ class ColorProfileController extends Notifier<ColorProfileViewState> {
         status: ColorProfileStatus.ready,
         current: NotAnalysed('Rang profili o‘chirildi. Selfi orqali qayta aniqlashingiz mumkin.'),
       );
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       if (!ref.mounted) return;
       AppLog.info('colour profile not deleted: ${f.describe()}');
       state = ColorProfileViewState(status: ColorProfileStatus.ready, current: before, failure: f);
@@ -65,7 +66,8 @@ class ColorProfileController extends Notifier<ColorProfileViewState> {
       final c = await ref.read(colorProfileRepositoryProvider).current();
       if (!ref.mounted) return;
       state = ColorProfileViewState(status: ColorProfileStatus.ready, current: c);
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       if (!ref.mounted) return;
       AppLog.info('colour profile not loaded: ${f.describe()}');
       state = ColorProfileViewState(

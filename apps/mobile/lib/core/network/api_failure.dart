@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../logging/app_log.dart';
 import '../session/signed_out_reason.dart';
 import 'api_error_code.dart';
 import 'user_messages.dart';
@@ -181,4 +182,38 @@ final class SecureStorageFailure extends ApiFailure {
   bool get retryable => true;
   @override
   String describe() => 'secure storage $operation failed';
+}
+
+/// Something other than an API answer failed: a bug or a platform error.
+/// Screens show the generic message with a retry instead of staying on
+/// "loading"; the error itself is logged by type and reported.
+final class UnexpectedErrorFailure extends ApiFailure {
+  const UnexpectedErrorFailure(this.type);
+
+  /// The runtime type of the original error (its message may hold data).
+  final String type;
+  @override
+  String get userMessage => UserMessages.unexpectedError;
+  @override
+  bool get retryable => true;
+  @override
+  String describe() => 'unexpected client error: $type';
+}
+
+/// Where [failureOf] sends unexpected errors (main.dart points it at the
+/// crash reporter; a no-op in tests).
+abstract final class UnexpectedErrors {
+  static void Function(Object error, StackTrace stack) report = _ignore;
+  static void _ignore(Object error, StackTrace stack) {}
+}
+
+/// The [ApiFailure] for anything a request or a state update threw: an
+/// [ApiFailure] as is, anything else as [UnexpectedErrorFailure] after it is
+/// logged and reported. Controllers catch everything through this, so no
+/// screen is left on "loading" by an error nobody expected.
+ApiFailure failureOf(Object error, StackTrace stack) {
+  if (error is ApiFailure) return error;
+  AppLog.error('unexpected error', error);
+  UnexpectedErrors.report(error, stack);
+  return UnexpectedErrorFailure(error.runtimeType.toString());
 }

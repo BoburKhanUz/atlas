@@ -90,7 +90,8 @@ class OnboardingController extends Notifier<OnboardingDraft> {
         // The auth state already moved to sign-in; the router leaves.
         if (ref.mounted) state = state.copyWith(save: SaveStatus.idle);
         return;
-      } on ApiFailure catch (f) {
+      } catch (error, stack) {
+        final f = failureOf(error, stack);
         AppLog.warn('onboarding save failed: ${f.describe()}');
         if (ref.mounted) state = state.copyWith(save: SaveStatus.failed, failure: f);
         return;

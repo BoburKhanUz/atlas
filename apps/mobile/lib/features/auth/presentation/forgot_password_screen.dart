@@ -41,7 +41,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     try {
       await ref.read(passwordResetRepositoryProvider).requestLink(_email.text.trim());
       if (mounted) setState(() => _sent = true);
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       if (mounted) setState(() => _error = authFailureMessage(f));
     } finally {
       if (mounted) setState(() => _busy = false);

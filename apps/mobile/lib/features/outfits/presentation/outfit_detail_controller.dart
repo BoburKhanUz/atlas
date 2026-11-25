@@ -69,7 +69,8 @@ class OutfitDetailController extends Notifier<OutfitDetailState> {
       final outfit = await ref.read(outfitsRepositoryProvider).get(id);
       if (!ref.mounted) return;
       state = OutfitDetailState(status: OutfitDetailStatus.ready, outfit: outfit);
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       if (!ref.mounted) return;
       if (_gone(f)) return _markGone(f);
       state = state.copyWith(
@@ -100,7 +101,8 @@ class OutfitDetailController extends Notifier<OutfitDetailState> {
       if (!ref.mounted) return;
       ref.invalidate(outfitListProvider);
       state = state.copyWith(status: OutfitDetailStatus.deleted, running: () => null);
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       if (!ref.mounted) return;
       if (_gone(f)) {
         // Already gone: the outcome the user wanted.
@@ -129,7 +131,8 @@ class OutfitDetailController extends Notifier<OutfitDetailState> {
             ..updatedAt = row.updatedAt,
         ),
       );
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       if (!ref.mounted) return;
       AppLog.info('outfit ${action.name} failed: ${f.describe()}');
       if (_gone(f)) return _markGone(f);

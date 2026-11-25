@@ -41,10 +41,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     try {
       await ref.read(sessionControllerProvider).login(email: _email.text.trim(), password: _password.text);
       // The router leaves this screen when the state becomes Authenticated.
-    } on ApiFailure catch (f) {
-      if (mounted) setState(() => _error = authFailureMessage(f));
     } on StateError {
       // A sign-in is already running.
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
+      if (mounted) setState(() => _error = authFailureMessage(f));
     }
   }
 

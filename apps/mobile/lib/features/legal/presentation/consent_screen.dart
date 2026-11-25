@@ -41,7 +41,8 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
       await ref.read(legalRepositoryProvider).accept(version: legal.version);
       if (!mounted) return;
       ref.read(consentGateProvider).markAccepted();
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       if (!mounted) return;
       final outdated = f is ApiHttpFailure && f.fieldErrors.any((e) => e.path == 'acceptedLegalVersion');
       if (outdated) {

@@ -51,7 +51,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     final messenger = ScaffoldMessenger.of(context);
     try {
       await ref.read(wardrobeRepositoryProvider).delete(widget.id);
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       // Already gone on the server: the outcome the user wanted.
       final gone = f is ApiHttpFailure && f.code == ApiErrorCode.notFound;
       if (!gone) {

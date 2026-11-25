@@ -162,6 +162,20 @@ void main() {
     expect(h.backend.calls(P.wardrobe), 2, reason: 'initial load + one URL refresh');
   });
 
+  test('an unexpected error (a bug, not an API answer) ends loading with a retryable failure', () async {
+    var broken = true;
+    final (c, _) = await start((r) {
+      if (broken) throw StateError('a bug');
+      return JsonReply(200, pageJson(['a']));
+    });
+    final s = c.read(wardrobeListProvider);
+    expect(s.status, ListStatus.ready, reason: 'never left on loading');
+    expect(s.failure, isA<UnexpectedErrorFailure>());
+    broken = false;
+    await c.read(wardrobeListProvider.notifier).refresh();
+    expect(c.read(wardrobeListProvider).items, hasLength(1));
+  });
+
   test('insert respects the active category and dedupes; remove drops the item', () async {
     final (c, _) = await start((r) => JsonReply(200, pageJson(['a'])));
     final list = c.read(wardrobeListProvider.notifier);

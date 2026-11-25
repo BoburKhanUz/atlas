@@ -44,7 +44,8 @@ class OutfitListController extends Notifier<OutfitListState> {
       final list = await ref.read(outfitsRepositoryProvider).list(savedOnly: savedOnly);
       if (!ref.mounted) return;
       state = OutfitListState(status: OutfitListStatus.ready, outfits: list.outfits);
-    } on ApiFailure catch (f) {
+    } catch (error, stack) {
+      final f = failureOf(error, stack);
       if (!ref.mounted) return;
       AppLog.info('outfits not loaded: ${f.describe()}');
       state = OutfitListState(
