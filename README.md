@@ -1,18 +1,27 @@
-# ATLAS
+# Lookly
 
-ATLAS is an AI personal fashion stylist, built Uzbekistan-first. Users photograph their wardrobe, get outfit recommendations based on weather, occasion and personal taste, and chat with a stylist. The current MVP is a mobile-first Next.js application; the product UI is in Uzbek.
+Lookly is an AI personal fashion stylist, built Uzbekistan-first. Users photograph their wardrobe, get outfit recommendations based on weather, occasion and personal taste, and chat with a stylist. The product UI is in Uzbek. The repository keeps the internal working name `atlas` (packages, environment variables, cookies).
 
 ## Repository layout
 
 ```
-apps/web/              Next.js app (UI, API routes under /api/v1, Prisma schema + migrations, tests, Dockerfile)
+apps/mobile/           Flutter app (Android + iOS)
+apps/web/              Next.js app: web UI and, until the Go backend replaces it, the API under /api/v1
+                       (Prisma schema + migrations, tests, Dockerfile)
+docs/api/              The API contract (openapi.json) - the single source of truth
+docs/adr/              Architecture decision records
 docs/architecture/     Architecture notes and change logs
-docs/ai/               AI provider design and evaluation proposal
+docs/ai/               AI provider design and evaluation
+docs/release/          Release and device test checklists
 docs/history/          Archived history (Z.ai worklog)
+deploy/                Single-server deployment (Compose overlay, Caddy, backups)
+CLAUDE.md, .claude/    Rules and skills for Claude Code, which writes this codebase
+GLOSSARY.md            Domain terms
 docker-compose.yml     Postgres + one-shot migration + web
-.env.example           Environment template
 .github/workflows/     CI
 ```
+
+The backend is being rewritten in Go as `apps/api` with the same contract (see `docs/adr/0001-go-backend.md`).
 
 Origin: the source was imported from a Z.ai-generated export in a single clean import. The export's git history, `.env`, SQLite database, user uploads, screenshots and Z.ai runtime/gateway files were deliberately excluded. Only the worklog was kept (`docs/history/zai-worklog.md`).
 
