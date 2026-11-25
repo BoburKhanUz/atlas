@@ -18,7 +18,7 @@ Every stage ends with the stage gate in `.claude/skills/lookly-workflow/SKILL.md
 
 | Stage | Goal | Exit criteria |
 |---|---|---|
-| B0 | Skeleton: module, config, logging, error envelope, health, CI job, Dockerfile. Starts with a spike: generate the server interface from the OpenAPI 3.1 contract with oapi-codegen; if 3.1 support is not enough, choose the workaround (as the Dart client does with `prepare_spec.dart`) and record it in an ADR | CI job green; missing config stops the server (tested); codegen approach recorded |
+| B0 | Skeleton: module, config, logging, error envelope, health, CI job, Dockerfile (spec `B0.md`; started at `409d7aa`, in progress). Starts with a spike: generate the server interface from the OpenAPI 3.1 contract with oapi-codegen; if 3.1 support is not enough, choose the workaround (as the Dart client does with `prepare_spec.dart`) and record it in an ADR | CI job green; missing config stops the server (tested); codegen approach recorded |
 | B1 | Data layer: sqlc queries, migration tool, River tables, scheduled cleanup jobs | See ADR 0007; Go schema equals the Prisma schema (checked in CI) |
 | B2 | Auth and sessions | 9 session vectors and the session e2e specs pass against Go |
 | B3 | Profile, consent, password reset, mail, account deletion | Their e2e specs pass against Go |

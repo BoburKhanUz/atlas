@@ -1,0 +1,13 @@
+# Generates the server interface and types from docs/api/openapi.json (ADR 0008).
+# Only implemented operations are included; each stage adds its own. The test
+# TestOperationsNotYetImplemented lists the rest until B7.
+package: contract
+output: contract.gen.go
+generate:
+  std-http-server: true
+  strict-server: true
+  models: true
+output-options:
+  nullable-type: true
+  include-operation-ids:
+    - getHealth
