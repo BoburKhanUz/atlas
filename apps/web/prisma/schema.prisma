@@ -388,3 +388,15 @@ model PasswordResetToken {
   @@index([userId])
   @@index([expiresAt])
 }
+
+/// Fixed-window counters of the Go API's rate limiter (stage B2; the Next.js
+/// API keeps its in-memory limiter until the cutover and never reads this).
+/// `key` is a keyed hash of the limited subject: an email or an address is
+/// never stored. Rows past `resetAt` are dead; the Go worker deletes them.
+model RateLimitBucket {
+  key     String   @id
+  count   Int
+  resetAt DateTime
+
+  @@index([resetAt])
+}

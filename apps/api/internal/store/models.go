@@ -127,6 +127,12 @@ type PasswordResetToken struct {
 	ExpiresAt time.Time
 }
 
+type RateLimitBucket struct {
+	Key     string
+	Count   int32
+	ResetAt time.Time
+}
+
 type Session struct {
 	ID                string
 	UserId            string

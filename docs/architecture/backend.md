@@ -147,6 +147,28 @@ the cutover (`docs/plan/B2.md`).
   passwords over 72 bytes compared by their first 72 as before, and `NeedsRehash` marks
   them for replacement after a successful sign-in.
 
+## Rate limits
+
+`internal/ratelimit` bounds attempts per subject with fixed windows in PostgreSQL
+(table `RateLimitBucket`, added by a Prisma migration: ADR 0007). Every instance sees
+the same counters and they survive a restart; the Next.js limiter kept them in process
+memory.
+
+- A window starts at the subject's first attempt and ends on the database clock.
+- `Take` counts one attempt against several buckets at once (an account and an address),
+  or against none: if any is at its limit, nothing is counted and the caller answers
+  `RATE_LIMITED` with the wait. `Refund` gives an attempt back, which is how a
+  successful sign-in ends up not counted while failures stay.
+- Concurrent attempts are serialised per bucket: no more than the limit ever pass in a
+  window (tested with 40 at once). Buckets are locked in key order, so overlapping
+  attempts cannot deadlock.
+- A bucket that cannot be counted (locked past 2 s, database error) is an error, never
+  a pass.
+- The stored key is an HMAC-SHA256 of the rule and the subject, with a key derived from
+  `JWT_SECRET` for this purpose only. An email or an address is never stored, and a
+  database dump cannot be tested against guesses without the server's secret.
+- Ended windows are removed by the hourly cleanup.
+
 ## Process
 
 - `lookly serve` validates the configuration, opens the pgx pool (lazily: the server
@@ -195,7 +217,7 @@ reads and writes data but changes no schema there.
 
 - **Migrations** (`apps/api/migrations`, goose v3, embedded in the binary):
   - `00001_baseline.sql` equals the Prisma schema up to
-    `20261017010000_password_reset`, including the two `SystemMarker` rows.
+    `20261125000000_rate_limit_bucket`, including the two `SystemMarker` rows.
   - `scripts/make-baseline.sh` produces it from the Prisma migrations; it is never
     hand-edited and has Up only.
   - Until B7 the migrations run in test databases only. A Prisma migration added before
@@ -235,8 +257,9 @@ reads and writes data but changes no schema there.
   - rotated sessions and families dead for 30 days: deleted;
   - reset links: deleted once expired.
 
-  It also deletes expired idempotency keys and weather cache rows. Consent records and
-  quota history are never deleted. Each run logs its counts (`cleanup done`). A busy
+  It also deletes expired idempotency keys, weather cache rows and ended rate-limit
+  windows (last, and with `SKIP LOCKED`, so a sign-in never waits long for a bucket and
+  the two cannot deadlock; tested). Consent records and quota history are never deleted. Each run logs its counts (`cleanup done`). A busy
   table makes the run give up and retry, instead of blocking sign-ins. Orphaned media
   files wait for the storage driver (B4).
 

@@ -4,7 +4,9 @@ package maintenance_test
 
 import (
 	"context"
+	"fmt"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -12,6 +14,7 @@ import (
 
 	"lookly/internal/dbtest"
 	"lookly/internal/maintenance"
+	"lookly/internal/ratelimit"
 	"lookly/migrations"
 )
 
@@ -132,6 +135,9 @@ func TestCleanupRemovesOnlyWhatIsDead(t *testing.T) {
 		now, now.Add(time.Millisecond))
 	d.exec(`INSERT INTO "WeatherCache" ("id","cacheKey","dataJson","expiresAt") VALUES
 		('w_old','41.30,69.28','{}',$1), ('w_new','39.65,66.96','{}',$2)`, now, now.Add(time.Millisecond))
+	// Rate-limit windows: ended exactly now (dead: the limiter starts a new
+	// one from then on), and ending 1 ms later.
+	d.exec(`INSERT INTO "RateLimitBucket" ("key","count","resetAt") VALUES ('rl_old',10,$1), ('rl_new',10,$2)`, now, now.Add(time.Millisecond))
 	// Proof of consent and quota history, however old, are not cleanup's business.
 	d.exec(`INSERT INTO "LegalConsent" ("id","userId","version","ageConfirmed","acceptedAt") VALUES ('lc','mu','2026-01-01',true,$1)`, at(-400*day))
 	d.exec(`INSERT INTO "AiUsage" ("id","userId","feature","day","count","updatedAt") VALUES ('au','mu','stylist','2025-01-01',3,$1)`, at(-400*day))
@@ -148,11 +154,15 @@ func TestCleanupRemovesOnlyWhatIsDead(t *testing.T) {
 		ExpiredResetLinksDeleted:    1,
 		ExpiredIdempotencyKeys:      1,
 		ExpiredWeatherRows:          1,
+		ExpiredRateLimitBuckets:     1,
 	}
 	if report != want {
 		t.Fatalf("report %+v\nwant   %+v", report, want)
 	}
 
+	if got := d.ids(`SELECT string_agg("key", ',' ORDER BY "key") FROM "RateLimitBucket"`); got != "rl_new" {
+		t.Errorf("rate-limit buckets left: %s", got)
+	}
 	if got := d.ids(`SELECT string_agg("id", ',' ORDER BY "id") FROM "SessionFamily"`); got != "f_live,f_recent_out" {
 		t.Errorf("families left: %s", got)
 	}
@@ -447,5 +457,54 @@ func TestConcurrentCleanupsAreSafe(t *testing.T) {
 	}
 	if got := d.ids(`SELECT count(*)::text FROM "Session"`); got != "20" {
 		t.Errorf("%s sessions left, want the 20 live tails", got)
+	}
+}
+
+// The cleanup deletes ended rate-limit windows while sign-ins count attempts
+// in the same buckets, several at a time. Neither waits for the other while
+// holding a bucket: no deadlock, and no attempt fails.
+func TestCleanupAndRateLimitedAttemptsDoNotDeadlock(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+	dbtest.SetClock(t, d.pool, time.Date(2026, 11, 1, 12, 0, 0, 0, time.UTC))
+	limiter := ratelimit.New(d.pool, []byte("cleanup-test-secret-cleanup-test-secret"))
+	// A window of zero ends the moment it starts: every bucket is always
+	// "ended", so the cleanup wants each one the attempts are using.
+	rule := func(name string) ratelimit.Rule { return ratelimit.Rule{Name: name, Limit: 1_000_000, Window: 0} }
+	hits := []ratelimit.Hit{rule("a").For("x"), rule("b").For("x"), rule("c").For("x"), rule("d").For("x")}
+
+	ctx, stop := context.WithCancel(context.Background())
+	var wg sync.WaitGroup
+	fail := make(chan error, 16)
+	for i := range 6 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; ctx.Err() == nil; j++ {
+				a, b := hits[(i+j)%len(hits)], hits[(i+2*j+1)%len(hits)]
+				if _, err := limiter.Take(context.Background(), a, b); err != nil {
+					fail <- fmt.Errorf("attempt: %w", err)
+					return
+				}
+			}
+		}()
+	}
+	deleted := int64(0)
+	for range 150 {
+		report, err := service(d).Cleanup(context.Background())
+		if err != nil {
+			fail <- fmt.Errorf("cleanup: %w", err)
+			break
+		}
+		deleted += report.ExpiredRateLimitBuckets
+	}
+	stop()
+	wg.Wait()
+	close(fail)
+	for err := range fail {
+		t.Error(err)
+	}
+	if deleted == 0 {
+		t.Error("the cleanup never deleted a bucket: the test did not exercise the race")
 	}
 }

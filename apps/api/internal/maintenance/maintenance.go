@@ -1,7 +1,8 @@
 // Package maintenance removes data nothing needs any more, on a schedule
 // (the worker runs Cleanup hourly). The rules are the manual Node script's
-// (docs/architecture/sessions.md "Operations"), plus expired idempotency keys
-// and weather cache rows; the queries are in internal/store/queries.
+// (docs/architecture/sessions.md "Operations"), plus expired idempotency keys,
+// weather cache rows and rate-limit windows; the queries are in
+// internal/store/queries.
 package maintenance
 
 import (
@@ -32,6 +33,7 @@ type Report struct {
 	ExpiredResetLinksDeleted    int64
 	ExpiredIdempotencyKeys      int64
 	ExpiredWeatherRows          int64
+	ExpiredRateLimitBuckets     int64
 }
 
 // LogValue writes the counts as one log group.
@@ -44,6 +46,7 @@ func (r Report) LogValue() slog.Value {
 		slog.Int64("expiredResetLinksDeleted", r.ExpiredResetLinksDeleted),
 		slog.Int64("expiredIdempotencyKeys", r.ExpiredIdempotencyKeys),
 		slog.Int64("expiredWeatherRows", r.ExpiredWeatherRows),
+		slog.Int64("expiredRateLimitBuckets", r.ExpiredRateLimitBuckets),
 	)
 }
 
@@ -111,6 +114,12 @@ func (s *Service) Cleanup(ctx context.Context) (Report, error) {
 			}},
 			{"delete expired weather rows", func() (err error) {
 				r.ExpiredWeatherRows, err = q.DeleteExpiredWeatherCache(ctx)
+				return err
+			}},
+			// Last: the buckets it locks stay locked until the commit, and a
+			// sign-in may be waiting for one.
+			{"delete expired rate-limit buckets", func() (err error) {
+				r.ExpiredRateLimitBuckets, err = q.DeleteExpiredRateLimitBuckets(ctx)
 				return err
 			}},
 		}

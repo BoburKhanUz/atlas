@@ -62,3 +62,14 @@ DELETE FROM "IdempotencyKey" WHERE "expiresAt" <= atlas_now();
 
 -- name: DeleteExpiredWeatherCache :execrows
 DELETE FROM "WeatherCache" WHERE "expiresAt" <= atlas_now();
+
+-- name: DeleteExpiredRateLimitBuckets :execrows
+-- Windows that have ended. SKIP LOCKED: a bucket an attempt is using right
+-- now is left to the next run, so the cleanup never waits for a row while it
+-- holds another (an attempt locks several buckets, in key order).
+DELETE FROM "RateLimitBucket"
+ WHERE "key" IN (
+   SELECT "key" FROM "RateLimitBucket"
+    WHERE "resetAt" <= atlas_now()
+    ORDER BY "key"
+      FOR UPDATE SKIP LOCKED);

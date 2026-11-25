@@ -77,6 +77,26 @@ func (q *Queries) DeleteExpiredIdempotencyKeys(ctx context.Context) (int64, erro
 	return result.RowsAffected(), nil
 }
 
+const deleteExpiredRateLimitBuckets = `-- name: DeleteExpiredRateLimitBuckets :execrows
+DELETE FROM "RateLimitBucket"
+ WHERE "key" IN (
+   SELECT "key" FROM "RateLimitBucket"
+    WHERE "resetAt" <= atlas_now()
+    ORDER BY "key"
+      FOR UPDATE SKIP LOCKED)
+`
+
+// Windows that have ended. SKIP LOCKED: a bucket an attempt is using right
+// now is left to the next run, so the cleanup never waits for a row while it
+// holds another (an attempt locks several buckets, in key order).
+func (q *Queries) DeleteExpiredRateLimitBuckets(ctx context.Context) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteExpiredRateLimitBuckets)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const deleteExpiredResetTokens = `-- name: DeleteExpiredResetTokens :execrows
 DELETE FROM "PasswordResetToken" WHERE "expiresAt" <= atlas_now()
 `
