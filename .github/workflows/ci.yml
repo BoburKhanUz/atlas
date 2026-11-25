@@ -361,6 +361,13 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+          # Gradle's downloads (plugins, Kotlin, AndroidX) are cached: Maven
+          # Central rate-limits runners (HTTP 429 failed this build twice on
+          # 2026-11-25 with no code change).
+          cache: gradle
+          cache-dependency-path: |
+            apps/mobile/android/**/*.gradle*
+            apps/mobile/android/**/gradle-wrapper.properties
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: stable
@@ -385,7 +392,23 @@ jobs:
           grep -q 'cleartextTrafficPermitted="false"' android/app/src/main/res/xml/network_security_config.xml
           grep -q 'android:allowBackup="false"' android/app/src/main/AndroidManifest.xml
       - name: Build debug APK (development config)
-        run: flutter build apk --debug --dart-define-from-file=config/development.json
+        # Retried only when Gradle could not download from the registries
+        # (rate limit, network); any other failure fails at once.
+        run: |
+          set -o pipefail
+          for attempt in 1 2 3; do
+            if flutter build apk --debug --dart-define-from-file=config/development.json 2>&1 | tee "$RUNNER_TEMP/apk-build.log"; then
+              exit 0
+            fi
+            if ! grep -qE "Too Many Requests|error while downloading artifacts from the network" "$RUNNER_TEMP/apk-build.log"; then
+              exit 1
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "::warning::Gradle could not download dependencies (attempt $attempt of 3); retrying in $((attempt * 45)) s"
+              sleep "$((attempt * 45))"
+            fi
+          done
+          exit 1
       - name: Release signing guard fails closed
         run: tool/check_release_signing_guard.sh
       - name: Generated API client matches docs/api/openapi.json
