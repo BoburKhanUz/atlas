@@ -51,7 +51,7 @@ jobs:
     # newer than it (ubuntu-latest moved to 26.04 and the install failed).
     # Raise this together with @playwright/test.
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 35
     defaults:
       run:
         working-directory: apps/web
@@ -101,6 +101,26 @@ jobs:
           export STORAGE_LOCAL_DIR="$RUNNER_TEMP/atlas-e2e-storage"
           mkdir -p "$STORAGE_LOCAL_DIR"
           bun run test:e2e
+      # Go mode (docs/plan/B2.md): the same browser specs with the operations
+      # the Go backend already serves answered by Go, behind a test-only proxy
+      # (e2e/go-front.mjs), on the same database and secrets as Next.js. The
+      # runner's Go switches itself to the toolchain pinned in go.mod.
+      - name: Build the Go server
+        working-directory: apps/api
+        run: CGO_ENABLED=0 go build -trimpath -o "$RUNNER_TEMP/lookly" ./cmd/lookly
+      - name: Run the session e2e specs in Go mode
+        run: |
+          JWT_SECRET="$(openssl rand -hex 32)"
+          MEDIA_SIGNING_SECRET="$(openssl rand -hex 32)"
+          SESSION_ENC_KEY="$(openssl rand -base64 32)"
+          echo "::add-mask::$JWT_SECRET"
+          echo "::add-mask::$MEDIA_SIGNING_SECRET"
+          echo "::add-mask::$SESSION_ENC_KEY"
+          export JWT_SECRET MEDIA_SIGNING_SECRET SESSION_ENC_KEY
+          export STORAGE_LOCAL_DIR="$RUNNER_TEMP/atlas-e2e-storage-go"
+          mkdir -p "$STORAGE_LOCAL_DIR"
+          export E2E_GO=1 E2E_GO_BINARY="$RUNNER_TEMP/lookly"
+          npx playwright test auth.spec.ts session.spec.ts session-recovery.spec.ts go-mode.spec.ts
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

@@ -45,12 +45,16 @@ client ─► Wrap (middleware) ─► routed (404 for unknown routes) ─► ge
   - an empty body is `VALIDATION_ERROR` (Node reads it as `{}`);
   - malformed JSON is `BAD_REQUEST`, and a body over the limit is `PAYLOAD_TOO_LARGE`.
 
-  Field-level Uzbek messages come from each service's own validation (B2 onward). The
-  first operation with inputs adds tests of these through the real router: health has no
-  inputs, so B0 tests the mapping directly.
+  From B2 on, request bodies are judged by the gate's body rules before the generated
+  decoder reads them (see *The gate*), with the Next.js validator's own messages; the
+  mapping above remains for parameters and for operations without a body rule.
 - If writing a response fails after it started (the client left), nothing is added to
-  it; this is logged as a warning, not as an internal error. Error responses carry
-  `Cache-Control: no-store`.
+  it; this is logged as a warning, not as an internal error.
+- **Caching headers**: only health and answers with tokens in the body (mobile mode)
+  say `Cache-Control: no-store`. Nothing else sets a caching header, as the Next.js API
+  sets none. The reason is a browser behaviour the e2e suite found in Go mode: Chromium
+  keeps a `no-store` answer pending for as long as the page has not read its body, and
+  the web client does not read every body (a successful refresh, a sign-out).
 - Not everything reaches the router: net/http answers some malformed requests itself
   (a bad `Content-Length`: plain 400; headers over 16 KB: 431), and ServeMux redirects
   unclean paths (`//api/health`: 307). The Next.js server has similar edges.
@@ -158,7 +162,6 @@ and the rate limiter.
   tokens and their expiries in the body and no cookies. Times are written as JavaScript
   writes them (milliseconds, `Z`). A web refresh that ends the session for good clears
   the cookies; `SESSION_RACE` and `SESSION_BUSY` (with `Retry-After: 1`) keep them.
-  Every answer is `Cache-Control: no-store`.
 
 ## Tokens, passwords and session encryption
 
@@ -276,6 +279,10 @@ memory.
 - `DATABASE_URL` is shared with Prisma. Prisma-only URL options (`schema`,
   `connection_limit`, `pgbouncer`) pass this check, but PostgreSQL refuses them when pgx
   forwards them. Health then shows 503. Check the production URL at the cutover.
+- The Next.js server adds security headers to API answers too (`X-Content-Type-Options`,
+  `Referrer-Policy`, `X-Frame-Options`; `e2e/security-headers.spec.ts`). The Go server
+  sets none yet: at the cutover they come from Go or from the reverse proxy, and that
+  spec runs against the result.
 - The runtime base image is pinned by digest. The build image
   (`golang:1.26.11-bookworm`) is pinned by tag only: Docker Hub rate-limited the digest
   lookup in the B0 session. Pin it by digest before the first production image.
@@ -346,3 +353,18 @@ reads and writes data but changes no schema there.
   - builds the binary.
 
   The `docker` job builds the image.
+- **E2E in Go mode** (CI job `e2e`, second run): the browser specs `auth`, `session` and
+  `session-recovery` run again with the operations Go already serves answered by Go.
+  `apps/web/e2e/go-front.mjs`, a test-only proxy, stands in front of a Next.js server
+  and a Go server on one database and the same secrets, and sends those operations to
+  Go and everything else to Next.js. So sessions started by one server are rotated,
+  read and ended by the other (page loads are still rotated by Next.js). Each answer is
+  marked with the server that gave it, and `go-mode.spec.ts` checks the routing, so a
+  misrouted run cannot pass. This arrangement is never deployed: production switches
+  in one step (ADR 0002). Locally:
+
+  ```bash
+  cd apps/api && go build -o /tmp/lookly-e2e ./cmd/lookly
+  cd ../web && E2E_GO=1 E2E_GO_BINARY=/tmp/lookly-e2e e2e/run-local.sh \
+    auth.spec.ts session.spec.ts session-recovery.spec.ts go-mode.spec.ts
+  ```

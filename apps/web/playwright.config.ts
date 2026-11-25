@@ -15,9 +15,20 @@ import path from 'node:path'
  *     "access token really expires" test can wait out a 10s TTL (the app's minimum)
  *     without making the other specs flaky.
  * Secrets are random per run unless supplied via env. Nothing is printed.
+ *
+ * Go mode (E2E_GO=1, E2E_GO_BINARY=<the built `lookly` binary>): each instance
+ * becomes three processes on the same database and secrets: Next.js, the Go
+ * server, and e2e/go-front.mjs in front of them on the instance's port. The
+ * proxy sends the operations Go already serves to Go and everything else to
+ * Next.js. A test arrangement only; see docs/plan/B2.md.
  */
 const PORT = Number(process.env.E2E_PORT ?? 3100)
 const SESSION_PORT = PORT + 1
+const GO_MODE = process.env.E2E_GO === '1'
+const GO_BINARY = process.env.E2E_GO_BINARY
+if (GO_MODE && !GO_BINARY) {
+  throw new Error('E2E_GO=1 needs E2E_GO_BINARY (cd apps/api && go build -o <path> ./cmd/lookly)')
+}
 const secret = (name: string) => process.env[name] || randomBytes(32).toString('hex')
 
 const DATABASE_URL = process.env.E2E_DATABASE_URL
@@ -72,15 +83,58 @@ const baseEnv = {
   NEXT_TELEMETRY_DISABLED: '1',
 }
 
-const server = (port: number, extra: Record<string, string> = {}) => ({
+interface WebServer {
+  command: string
+  url: string
+  reuseExistingServer: boolean
+  timeout: number
+  env: Record<string, string>
+  stdout: 'ignore'
+  stderr: 'pipe'
+}
+
+const server = (port: number, extra: Record<string, string> = {}): WebServer => ({
   command: 'node .next/standalone/server.js',
   url: `http://127.0.0.1:${port}/api/health`,
   reuseExistingServer: !process.env.CI,
   timeout: 90_000,
   env: { ...baseEnv, PORT: String(port), ...extra },
-  stdout: 'ignore' as const,
-  stderr: 'pipe' as const,
+  stdout: 'ignore',
+  stderr: 'pipe',
 })
+
+/** One instance in Go mode: Next.js on port + 10, Go on port + 20, the proxy on port. */
+const goInstance = (port: number, extra: Record<string, string> = {}): WebServer[] => [
+  server(port + 10, extra),
+  {
+    command: `"${GO_BINARY}" serve`,
+    url: `http://127.0.0.1:${port + 20}/api/health`,
+    reuseExistingServer: !process.env.CI,
+    timeout: 60_000,
+    env: {
+      LOOKLY_ENV: 'test',
+      LOOKLY_HTTP_ADDR: `127.0.0.1:${port + 20}`,
+      LOOKLY_LOG_LEVEL: 'warn',
+      DATABASE_URL: DATABASE_URL!,
+      JWT_SECRET,
+      MEDIA_SIGNING_SECRET,
+      SESSION_ENC_KEY,
+      COOKIE_SECURE: '0', // plain http
+      ...extra,
+    },
+    stdout: 'ignore',
+    stderr: 'pipe',
+  },
+  {
+    command: 'node e2e/go-front.mjs',
+    url: `http://127.0.0.1:${port}/api/health`,
+    reuseExistingServer: !process.env.CI,
+    timeout: 90_000,
+    env: { FRONT_PORT: String(port), NEXT_PORT: String(port + 10), GO_PORT: String(port + 20) },
+    stdout: 'ignore',
+    stderr: 'pipe',
+  },
+]
 
 export default defineConfig({
   testDir: './e2e',
@@ -109,5 +163,7 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], baseURL: `http://127.0.0.1:${SESSION_PORT}` },
     },
   ],
-  webServer: [server(PORT), server(SESSION_PORT, { ACCESS_TOKEN_TTL_SECONDS: '10' })],
+  webServer: GO_MODE
+    ? [...goInstance(PORT), ...goInstance(SESSION_PORT, { ACCESS_TOKEN_TTL_SECONDS: '10' })]
+    : [server(PORT), server(SESSION_PORT, { ACCESS_TOKEN_TTL_SECONDS: '10' })],
 })

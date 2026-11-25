@@ -213,7 +213,6 @@ func writeEnvelope(w http.ResponseWriter, info *requestInfo, e *apierr.Error) {
 		body.Details = append(body.Details, envelopeDetail(d))
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Cache-Control", "no-store")
 	if seconds := e.RetryAfterSeconds(); seconds > 0 {
 		w.Header().Set("Retry-After", strconv.Itoa(seconds))
 	}

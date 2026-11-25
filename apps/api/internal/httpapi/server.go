@@ -68,6 +68,7 @@ type healthResponse struct {
 }
 
 func (r healthResponse) VisitGetHealthResponse(w http.ResponseWriter) error {
+	w.Header().Set("Cache-Control", "no-store")
 	return writeJSON(w, r.status, r.body)
 }
 
@@ -219,11 +220,13 @@ type meBody struct {
 // isoMillis is a time as JavaScript's toISOString writes it.
 func isoMillis(t time.Time) string { return t.UTC().Format("2006-01-02T15:04:05.000Z") }
 
-// writeJSON writes a JSON answer that is never cached: these answers are
-// about one user at one moment, and some hold tokens.
+// writeJSON writes a JSON answer. It sets no caching header, as the Next.js
+// API sets none: a browser keeps a "no-store" answer pending for as long as
+// the page has not read its body, and the web client does not read every
+// body (a successful refresh, a sign-out). Answers that must not be stored
+// say so themselves (health, and tokens in a body).
 func writeJSON(w http.ResponseWriter, status int, body any) error {
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(status)
 	return json.NewEncoder(w).Encode(body)
 }
@@ -240,6 +243,9 @@ type signedIn struct {
 func (r signedIn) write(w http.ResponseWriter) error {
 	user := userBody{ID: r.user.ID, Email: r.user.Email, Name: r.user.Name}
 	if r.mode == session.Mobile {
+		// Tokens in a body: never to be stored (RFC 6749, 5.1). The mobile
+		// client is not a browser and reads every body.
+		w.Header().Set("Cache-Control", "no-store")
 		return writeJSON(w, r.status, mobileAuthBody{
 			User:                  user,
 			AccessToken:           r.issued.AccessToken,

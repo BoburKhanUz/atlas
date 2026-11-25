@@ -237,8 +237,16 @@ func (a *api) do(c call) answer {
 	for _, cookie := range w.Result().Cookies() {
 		out.cookies[cookie.Name] = cookie
 	}
-	if got := w.Header().Get("Cache-Control"); got != "no-store" {
-		a.t.Errorf("%s %s: Cache-Control %q, want no-store", c.method, c.path, got)
+	// Answers that hold tokens are never to be stored. Nothing else carries
+	// the header, as with the Next.js API: Chromium keeps a no-store answer
+	// "pending" for as long as the page has not read its body, and the web
+	// client does not read the body of a successful refresh.
+	wantCache := ""
+	if _, tokens := out.body["refreshToken"]; tokens {
+		wantCache = "no-store"
+	}
+	if got := w.Header().Get("Cache-Control"); got != wantCache {
+		a.t.Errorf("%s %s (%d): Cache-Control %q, want %q", c.method, c.path, w.Code, got, wantCache)
 	}
 	if w.Code >= 400 && (out.body["requestId"] == "" || out.body["requestId"] != w.Header().Get("X-Request-Id")) {
 		a.t.Errorf("%s %s: requestId %v, header %q", c.method, c.path, out.body["requestId"], w.Header().Get("X-Request-Id"))
