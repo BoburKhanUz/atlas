@@ -25,6 +25,16 @@ final backgroundRemoverProvider = Provider<BackgroundRemover>((ref) => const Pla
 /// Waits used by the upload flow (IDEMPOTENCY_IN_PROGRESS); tests replace it.
 final uploadSleepProvider = Provider<Future<void> Function(Duration)>((ref) => Future<void>.delayed);
 
+/// Monotonic time for the wardrobe's URL-refresh throttle: a change of the
+/// device clock never stops or speeds it up. Tests replace it.
+final wardrobeClockProvider = Provider<Duration Function()>((ref) {
+  final watch = Stopwatch()..start();
+  return () => watch.elapsed;
+});
+
+/// Waits used by the wardrobe list (a deferred URL refresh); tests replace it.
+final wardrobeDelayProvider = Provider<Future<void> Function(Duration)>((ref) => Future<void>.delayed);
+
 final wardrobeListProvider = NotifierProvider<WardrobeListController, WardrobeListState>(WardrobeListController.new);
 
 /// One add-item flow; disposed when its screen closes (bytes are dropped).

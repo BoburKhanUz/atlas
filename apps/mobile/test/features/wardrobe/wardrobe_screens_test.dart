@@ -42,6 +42,42 @@ void main() {
     expect(find.text('Internet aloqasi yo‘q', skipOffstage: false), findsWidgets);
   });
 
+  testWidgets('a failed next page: the footer retry loads that page', (tester) async {
+    tester.view.physicalSize = const Size(390 * 3, 844 * 3); // a phone: the add button sits below the footer
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    final app = App(tester);
+    var nextFails = true;
+    await app.start(
+      wardrobe: (r) => r.uri.queryParameters['cursor'] == null
+          ? JsonReply(200, pageJson(['a'], next: 'cur-2'))
+          : nextFails
+          ? JsonReply(500, errorBody('INTERNAL'))
+          : JsonReply(200, pageJson(['b'])),
+    );
+    final retry = find.byKey(const Key('wardrobe.loadMoreRetry'));
+    expect(retry, findsOneWidget);
+    nextFails = false;
+    await app.tap(retry);
+    expect(find.byKey(const Key('wardrobe.item.b')), findsOneWidget);
+    expect(retry, findsNothing);
+  });
+
+  testWidgets('a failed refresh keeps the items, says so, and its retry reloads them', (tester) async {
+    final app = App(tester);
+    var fail = false;
+    await app.start(wardrobe: (r) => fail ? JsonReply(500, errorBody('INTERNAL')) : JsonReply(200, pageJson(['a'])));
+    fail = true;
+    unawaited(app.container.read(wardrobeListProvider.notifier).refresh());
+    await app.settle();
+    expect(find.byKey(const Key('wardrobe.item.a')), findsOneWidget);
+    expect(find.byKey(const Key('refreshFailed')), findsOneWidget);
+    expect(find.byKey(const Key('wardrobe.loadMoreRetry')), findsNothing, reason: 'not a next-page failure');
+    fail = false;
+    await app.tap(find.byKey(const Key('refreshFailed.retry')));
+    expect(find.byKey(const Key('refreshFailed')), findsNothing);
+  });
+
   testWidgets('item detail: leaving while the delete is in flight still removes the item from the list', (
     tester,
   ) async {

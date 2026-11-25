@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:atlas_api/atlas_api.dart' show WardrobeItem;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +19,7 @@ class WardrobeListState {
     this.nextCursor,
     this.status = ListStatus.loading,
     this.failure,
+    this.refreshFailure,
     this.loadMoreFailure,
   });
 
@@ -27,6 +30,10 @@ class WardrobeListState {
 
   /// The first page could not be loaded (shown instead of the list).
   final ApiFailure? failure;
+
+  /// A refresh (pull-to-refresh or fresh image URLs) failed while items are
+  /// shown: they stay, and a banner offers to try again.
+  final ApiFailure? refreshFailure;
 
   /// The next page could not be loaded (shown under the list).
   final ApiFailure? loadMoreFailure;
@@ -39,6 +46,7 @@ class WardrobeListState {
     String? Function()? nextCursor,
     ListStatus? status,
     ApiFailure? Function()? failure,
+    ApiFailure? Function()? refreshFailure,
     ApiFailure? Function()? loadMoreFailure,
   }) => WardrobeListState(
     category: category ?? this.category,
@@ -46,6 +54,7 @@ class WardrobeListState {
     nextCursor: nextCursor != null ? nextCursor() : this.nextCursor,
     status: status ?? this.status,
     failure: failure != null ? failure() : this.failure,
+    refreshFailure: refreshFailure != null ? refreshFailure() : this.refreshFailure,
     loadMoreFailure: loadMoreFailure != null ? loadMoreFailure() : this.loadMoreFailure,
   );
 }
@@ -57,15 +66,39 @@ class WardrobeListController extends Notifier<WardrobeListState> {
 
   /// Signed URLs are reloaded at most this often: many tiles report the same
   /// expiry at once, and a wrong device clock must not cause a request loop.
+  /// A report inside the interval is done when it is over (never dropped: a
+  /// tile reports an expired URL only once).
   static const urlRefreshInterval = Duration(seconds: 30);
   Future<void>? _urlRefresh;
-  DateTime? _urlsRefreshedAt;
+  Duration? _urlsRefreshedAt; // on [wardrobeClockProvider]
+  bool _urlRefreshDeferred = false;
+
+  /// An expiry reported while a page was loading: reload when it is done.
+  bool _urlRefreshWanted = false;
+
+  /// Inserts and removals made while a reload is running, re-applied to its
+  /// result (it was read from the server before them).
+  List<List<WardrobeItem> Function(List<WardrobeItem>)>? _edits;
 
   @override
   WardrobeListState build() {
     ref.watch(authStateProvider.select((s) => s.user?.id)); // new user → new list
+    _urlRefresh = null;
+    _urlsRefreshedAt = null;
+    _urlRefreshWanted = false;
+    _edits = null;
     Future.microtask(_loadFirst);
     return const WardrobeListState();
+  }
+
+  Duration get _now => ref.read(wardrobeClockProvider)();
+
+  List<WardrobeItem> _withEdits(List<WardrobeItem> items) {
+    var result = items;
+    for (final edit in _edits ?? const <List<WardrobeItem> Function(List<WardrobeItem>)>[]) {
+      result = edit(result);
+    }
+    return result;
   }
 
   Future<void> _loadFirst() async {
@@ -74,24 +107,30 @@ class WardrobeListController extends Notifier<WardrobeListState> {
     try {
       final page = await ref.read(wardrobeRepositoryProvider).list(category: category);
       if (generation != _generation || !ref.mounted) return;
+      _urlRefreshWanted = false; // the URLs are fresh
       state = WardrobeListState(
         category: category,
-        items: page.items,
+        items: _withEdits(page.items),
         nextCursor: page.nextCursor,
         status: ListStatus.ready,
       );
     } catch (error, stack) {
       final f = failureOf(error, stack);
       if (generation != _generation || !ref.mounted) return;
-      // A failed refresh keeps what is shown and reports below it.
+      _urlRefreshWanted = false; // the banner's retry reloads them
+      // A failed refresh keeps what is shown and says so above it.
       state = state.items.isEmpty
           ? state.copyWith(status: ListStatus.ready, failure: () => f)
-          : state.copyWith(status: ListStatus.ready, loadMoreFailure: () => f);
+          : state.copyWith(status: ListStatus.ready, refreshFailure: () => f);
+    } finally {
+      if (generation == _generation) _edits = null;
     }
   }
 
   Future<void> setCategory(String category) async {
     if (category == state.category && state.failure == null) return;
+    _urlRefreshWanted = false;
+    _edits = null; // a new list: edits of the old one do not apply
     state = WardrobeListState(category: category);
     await _loadFirst();
   }
@@ -102,8 +141,10 @@ class WardrobeListController extends Notifier<WardrobeListState> {
     state = state.copyWith(
       status: state.items.isEmpty ? ListStatus.loading : ListStatus.refreshing,
       failure: () => null,
+      refreshFailure: () => null,
       loadMoreFailure: () => null,
     );
+    _edits = [];
     await _loadFirst();
   }
 
@@ -130,19 +171,44 @@ class WardrobeListController extends Notifier<WardrobeListState> {
       if (generation != _generation || !ref.mounted) return;
       state = state.copyWith(status: ListStatus.ready, loadMoreFailure: () => f);
     }
+    if (_urlRefreshWanted) unawaited(refreshUrls());
   }
 
   /// Fresh signed URLs for everything already loaded, keeping every loaded
   /// page (a pull-to-refresh would go back to the first page only). One
   /// request for the loaded range (up to the contract's largest page),
-  /// further pages only beyond that.
-  Future<void> refreshUrls() {
+  /// further pages only beyond that. [retry] (the banner's button) skips the
+  /// interval.
+  Future<void> refreshUrls({bool retry = false}) {
     final running = _urlRefresh;
     if (running != null) return running;
+    if (state.items.isEmpty) return Future.value();
+    if (state.status != ListStatus.ready) {
+      _urlRefreshWanted = true;
+      return Future.value();
+    }
     final last = _urlsRefreshedAt;
-    if (last != null && DateTime.now().difference(last) < urlRefreshInterval) return Future.value();
-    if (state.status != ListStatus.ready || state.items.isEmpty) return Future.value();
+    if (!retry && last != null) {
+      final rest = urlRefreshInterval - (_now - last);
+      if (rest > Duration.zero) {
+        _deferUrlRefresh(rest);
+        return Future.value();
+      }
+    }
+    _urlRefreshWanted = false;
     return _urlRefresh = _reloadLoadedRange().whenComplete(() => _urlRefresh = null);
+  }
+
+  void _deferUrlRefresh(Duration wait) {
+    if (_urlRefreshDeferred) return;
+    _urlRefreshDeferred = true;
+    final generation = _generation;
+    unawaited(
+      ref.read(wardrobeDelayProvider)(wait).then((_) {
+        _urlRefreshDeferred = false;
+        if (ref.mounted && generation == _generation) unawaited(refreshUrls());
+      }),
+    );
   }
 
   Future<void> _reloadLoadedRange() async {
@@ -151,6 +217,7 @@ class WardrobeListController extends Notifier<WardrobeListState> {
     final wanted = state.items.length;
     final repository = ref.read(wardrobeRepositoryProvider);
     state = state.copyWith(status: ListStatus.refreshing);
+    _edits = [];
     final items = <WardrobeItem>[];
     final seen = <String>{};
     String? cursor;
@@ -165,25 +232,37 @@ class WardrobeListController extends Notifier<WardrobeListState> {
         items.addAll(page.items.where((i) => seen.add(i.id)));
         cursor = page.nextCursor;
       } while (cursor != null && items.length < wanted);
-      _urlsRefreshedAt = DateTime.now();
-      state = state.copyWith(items: items, nextCursor: () => cursor, status: ListStatus.ready, failure: () => null);
+      _urlsRefreshedAt = _now;
+      state = state.copyWith(
+        items: _withEdits(items),
+        nextCursor: () => cursor,
+        status: ListStatus.ready,
+        failure: () => null,
+        refreshFailure: () => null,
+      );
     } catch (error, stack) {
       final f = failureOf(error, stack);
       if (generation != _generation || !ref.mounted) return;
-      _urlsRefreshedAt = DateTime.now();
-      state = state.copyWith(status: ListStatus.ready, loadMoreFailure: () => f);
+      _urlsRefreshedAt = _now;
+      state = state.copyWith(status: ListStatus.ready, refreshFailure: () => f);
+    } finally {
+      if (generation == _generation) _edits = null;
     }
   }
 
   /// A new item from an upload (a replay never duplicates an item).
   void insert(WardrobeItem item) {
     if (state.category != 'all' && state.category != item.category) return;
-    state = state.copyWith(items: [item, ...state.items.where((i) => i.id != item.id)], failure: () => null);
+    _edit((items) => [item, ...items.where((i) => i.id != item.id)], clearFailure: true);
   }
 
   /// An item changed on the server (e.g. corrected attributes).
-  void replace(WardrobeItem item) =>
-      state = state.copyWith(items: [for (final i in state.items) i.id == item.id ? item : i]);
+  void replace(WardrobeItem item) => _edit((items) => [for (final i in items) i.id == item.id ? item : i]);
 
-  void remove(String id) => state = state.copyWith(items: state.items.where((i) => i.id != id).toList());
+  void remove(String id) => _edit((items) => items.where((i) => i.id != id).toList());
+
+  void _edit(List<WardrobeItem> Function(List<WardrobeItem>) change, {bool clearFailure = false}) {
+    _edits?.add(change);
+    state = state.copyWith(items: change(state.items), failure: clearFailure ? () => null : null);
+  }
 }

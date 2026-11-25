@@ -82,6 +82,13 @@ class WardrobeScreen extends ConsumerWidget {
         if (body != null)
           SliverFillRemaining(hasScrollBody: false, child: SizedBox(height: 420, child: body))
         else ...[
+          if (s.refreshFailure case final failure?)
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(AtlasSpacing.screen, AtlasSpacing.sm, AtlasSpacing.screen, 0),
+              sliver: SliverToBoxAdapter(
+                child: RefreshFailedBanner(message: failure.userMessage, onRetry: () => list.refreshUrls(retry: true)),
+              ),
+            ),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(AtlasSpacing.screen, AtlasSpacing.sm, AtlasSpacing.screen, 0),
             sliver: SliverGrid.builder(
