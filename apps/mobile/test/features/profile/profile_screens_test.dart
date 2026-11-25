@@ -4,12 +4,14 @@ import 'package:atlas_mobile/app/app.dart';
 import 'package:atlas_mobile/app/router.dart';
 import 'package:atlas_mobile/core/network/api_error_code.dart';
 import 'package:atlas_mobile/core/network/api_failure.dart';
+import 'package:atlas_mobile/core/widgets/atlas_button.dart';
 import 'package:atlas_mobile/features/auth/presentation/login_screen.dart';
 import 'package:atlas_mobile/features/profile/presentation/profile_edit_screen.dart';
 import 'package:atlas_mobile/features/profile/presentation/selfie_analysis_screen.dart';
 import 'package:atlas_mobile/features/wardrobe/data/image_preparer.dart';
 import 'package:atlas_mobile/features/wardrobe/providers.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -186,6 +188,23 @@ void main() {
     expect(find.textContaining('Ishonch: 82%'), findsOneWidget);
     expect(find.byKey(const Key('color.disclaimer')), findsOneWidget);
     expect(app.picker.front, [true]);
+  });
+
+  testWidgets('selfie: a picker failure shows a message, the user can try again or leave', (tester) async {
+    final app = ProfileApp(
+      tester,
+      picker: FakePicker(error: PlatformException(code: 'camera_unavailable')),
+    );
+    await app.start(at: AtlasRoutes.profileColor);
+    await app.open(find.text('Selfi orqali aniqlash'));
+    await app.tap(find.byKey(const Key('selfie.camera')));
+    expect(find.byKey(const Key('selfie.pickFailed')), findsOneWidget);
+    expect(find.byKey(const Key('selfie.consent')), findsOneWidget);
+    expect(tester.widget<AtlasButton>(find.byKey(const Key('selfie.gallery'))).onPressed, isNotNull);
+    expect(app.h.backend.calls(P.analyze), 0);
+    await tester.binding.handlePopRoute(); // the system back button
+    await app.settle();
+    expect(find.byType(SelfieAnalysisScreen), findsNothing);
   });
 
   testWidgets('colour: analysed state with palettes; low-confidence warning on a weak result', (tester) async {

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:atlas_mobile/core/session/auth_state.dart';
 import 'package:atlas_mobile/features/onboarding/data/onboarding_marker_store.dart';
@@ -17,6 +16,7 @@ import 'package:atlas_mobile/features/wardrobe/data/photo_picker.dart';
 import 'package:atlas_mobile/features/wardrobe/providers.dart';
 import 'package:atlas_mobile/features/weather/data/city_store.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -317,6 +317,21 @@ void main() {
       expect(of(p).phase, SelfiePhase.consent);
       expect(of(p).denied, PhotoSource.camera);
       expect(p.h.backend.calls(P.analyze), 0);
+    });
+
+    test('any other picker failure → back to consent with a message; nothing sent; a new try works', () async {
+      final picker = FakePicker(error: PlatformException(code: 'camera_unavailable'));
+      final (p, s) = await start(picker: picker);
+      await s.pick(PhotoSource.camera);
+      expect(of(p).phase, SelfiePhase.consent);
+      expect(of(p).pickFailed, isTrue);
+      expect(p.h.backend.calls(P.analyze), 0);
+      picker
+        ..error = null
+        ..result = photo('selfie.jpg');
+      await s.pick(PhotoSource.gallery);
+      expect(of(p).phase, SelfiePhase.done);
+      expect(of(p).pickFailed, isFalse);
     });
 
     test('an unreadable photo → rejected before upload', () async {

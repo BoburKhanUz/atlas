@@ -97,9 +97,13 @@ Map<String, Object?> uploadJson(String id, {Map<String, Object?>? confidences}) 
 
 /// The system picker stand-in.
 class FakePicker implements PhotoPicker {
-  FakePicker({this.result, this.denied = false, this.lost});
+  FakePicker({this.result, this.denied = false, this.lost, this.error});
   PickedPhoto? result;
   bool denied;
+
+  /// Thrown by [pick] when set: a failure other than a denied permission
+  /// (camera unavailable, unreadable file).
+  Object? error;
 
   /// What `retrieveLostData` would deliver (Android process death).
   PickedPhoto? lost;
@@ -122,6 +126,8 @@ class FakePicker implements PhotoPicker {
     calls.add(source);
     front.add(preferFront);
     if (denied) throw PhotoAccessDenied(source);
+    final e = error;
+    if (e != null) throw e;
     return result;
   }
 }

@@ -44,6 +44,7 @@ class SelfieAnalysisState {
     this.failure,
     this.rejection,
     this.denied,
+    this.pickFailed = false,
     this.hasImage = false,
   });
 
@@ -58,6 +59,10 @@ class SelfieAnalysisState {
   final ApiFailure? failure;
   final PreparationError? rejection;
   final PhotoSource? denied;
+
+  /// The photo could not be taken or read (camera unavailable, unreadable
+  /// file, a platform error): back at the choice with a message.
+  final bool pickFailed;
 
   /// A prepared selfie is held in memory (for an explicit retry).
   final bool hasImage;
@@ -92,6 +97,12 @@ class SelfieAnalysisController extends Notifier<SelfieAnalysisState> {
       if (!ref.mounted) return;
       state = SelfieAnalysisState(phase: SelfiePhase.consent, denied: e.source);
       return;
+    } catch (e) {
+      // Any other failure must not leave the screen on "picking" (back is
+      // blocked while busy).
+      AppLog.warn('selfie: the photo could not be picked (${e.runtimeType})');
+      if (ref.mounted) state = const SelfieAnalysisState(pickFailed: true);
+      return;
     }
     if (!ref.mounted) return;
     if (photo == null) {
@@ -107,6 +118,11 @@ class SelfieAnalysisController extends Notifier<SelfieAnalysisState> {
       if (!ref.mounted) return;
       _image = null;
       state = SelfieAnalysisState(phase: SelfiePhase.rejected, rejection: e.error);
+      return;
+    } catch (e) {
+      AppLog.warn('selfie: the photo could not be prepared (${e.runtimeType})');
+      _image = null;
+      if (ref.mounted) state = const SelfieAnalysisState(pickFailed: true);
       return;
     }
     if (!ref.mounted) return;
@@ -135,6 +151,11 @@ class SelfieAnalysisController extends Notifier<SelfieAnalysisState> {
       } else {
         await _check(f);
       }
+    } catch (e) {
+      // Not an API answer (a bug or a platform error): nothing is known to
+      // have been analysed; the same photo may be retried explicitly.
+      AppLog.error('colour analysis failed unexpectedly', e);
+      if (ref.mounted) state = const SelfieAnalysisState(phase: SelfiePhase.failed, hasImage: true);
     }
   }
 
