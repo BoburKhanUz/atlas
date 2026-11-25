@@ -28,16 +28,18 @@ apps/api/
     contracttest/        test helper: validates responses against the contract
     database/            pgx pool
     health/              database liveness
+    store/               sqlc queries (queries/*.sql) and generated code
+    maintenance/         scheduled cleanup (sessions, reset links, idempotency, weather)
+    jobs/                River client, workers, periodic jobs (schema "river")
+    dbtest/              test helper: throwaway databases, catalog snapshot, test clock
     auth/ session/       login, register, refresh rotation, families, consent gate
     wardrobe/ media/     items, uploads, image variants, signed URLs, storage drivers
     outfits/ engine/     outfit engine (pure), generate, saved outfits, feedback
     stylist/ ai/         conversations, provider adapters, prompts, validation, quotas
     weather/ color/      Open-Meteo client and cache, colour profile analysis
     admin/               admin API (role-checked, audited)
-    jobs/                River job definitions and workers
-    store/               sqlc queries (queries/*.sql) and generated code
     platform/            clock, ids, crypto helpers (when a second package needs them)
-  migrations/            SQL migrations (up and down)
+  migrations/            goose SQL migrations, embedded; 00001_baseline = Prisma (Up only)
   testdata/              golden vectors, fixture images
 ```
 

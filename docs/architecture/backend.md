@@ -86,6 +86,11 @@ variables; keep it that way.
   `LOOKLY_SHUTDOWN_GRACE`. After it, the remaining connections are closed, which cancels
   their requests. A second signal exits at once (130). Exit codes: 0 clean, 1 runtime
   failure or requests cut off, 2 usage or configuration error.
+- `lookly worker` runs the background jobs (River) with the same configuration; on a
+  signal it stops River within the grace period and cancels jobs still running after
+  it.
+- `lookly migrate river` creates River's schema and tables (idempotent). Against a
+  shared or production database only with the owner's approval of the deploy.
 - `lookly health` requests the local `/api/health` and exits 0 only on 200. The image is
   distroless (no shell or curl), so this is its Docker `HEALTHCHECK`.
 - `GET /api/health` pings the database within 2 s: 200 `{status: ok, database: ok,
@@ -109,8 +114,44 @@ variables; keep it that way.
 
 ## Database
 
-Until B7, Prisma owns the schema and its migrations (ADR 0007). The Go service runs no
-migrations; in B0 it only pings. The data layer (sqlc, River) arrives in B1.
+Until B7, Prisma owns the `public` schema and its migrations (ADR 0007). The Go service
+reads and writes data but changes no schema there.
+
+- **Migrations** (`apps/api/migrations`, goose v3, embedded in the binary):
+  - `00001_baseline.sql` equals the Prisma schema up to
+    `20261017010000_password_reset`, including the two `SystemMarker` rows.
+  - `scripts/make-baseline.sh` produces it from the Prisma migrations; it is never
+    hand-edited and has Up only.
+  - Until B7 the migrations run in test databases only. A Prisma migration added before
+    then means rebuilding the baseline. At B7 the baseline is recorded as applied in
+    production (not run) and Go takes over the schema.
+- **Schema equality**: `migrations/schema_integration_test.go` applies Prisma's
+  migrations and the Go migrations to two fresh databases and compares their catalogs:
+  - tables and columns (type, nullability, default);
+  - constraints, indexes, functions, triggers and types;
+  - the marker rows.
+
+  Any difference fails CI and names the object.
+- **Queries** (`internal/store`, sqlc v1.31.1): SQL in `internal/store/queries/*.sql`,
+  typed Go generated over the migrations and committed (`scripts/generate.sh`).
+  Timestamps are Prisma's `timestamp(3)` without time zone holding UTC: `time.Time` in
+  UTC. Nullable columns are pointers. Times that decide security or retention are
+  compared with the database clock `atlas_now()`, as the Node session protocol does.
+- **Jobs** (`internal/jobs`, River v0.51.2): tables in the schema `river`, which Prisma
+  does not manage, so it neither shows them as drift nor drops them. `lookly migrate
+  river` creates them. `lookly worker` runs the queue; it refuses to start without the
+  tables. Periodic jobs run on the elected leader only.
+- **Cleanup** (`internal/maintenance`, a periodic job: hourly and at worker start; one
+  transaction, `lock_timeout` 5 s). It applies the manual Node script's rules
+  (`docs/architecture/sessions.md`, Operations):
+  - successor ciphertexts: cleared after 60 s;
+  - rotated sessions and families dead for 30 days: deleted;
+  - reset links: deleted once expired.
+
+  It also deletes expired idempotency keys and weather cache rows. Consent records and
+  quota history are never deleted. Each run logs its counts (`cleanup done`). A busy
+  table makes the run give up and retry, instead of blocking sign-ins. Orphaned media
+  files wait for the storage driver (B4).
 
 ## Tests and CI
 

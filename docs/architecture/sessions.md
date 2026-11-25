@@ -107,7 +107,8 @@ closed (`SESSION_RACE`).
 clears ciphertexts older than 60 s, deletes rotated sessions and whole
 families revoked or expired more than 30 days ago, and expired password reset
 links. A deleted old token then reads as `INVALID_TOKEN` instead of
-`REFRESH_REUSED`.
+`REFRESH_REUSED`. The Go worker (`lookly worker`, stage B1) applies the same rules
+hourly once it is deployed (with the cutover, B7); see `docs/architecture/backend.md`.
 
 `bun scripts/session-cleanup.ts --preflight-families` — read-only, run
 against the Phase 2 database before the cutover (`docs/database/cutover.md`):
