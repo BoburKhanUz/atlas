@@ -27,6 +27,7 @@ Every stage ends with the stage gate in `.claude/skills/lookly-workflow/SKILL.md
 | B6 | AI: providers, vision, stylist, jobs, monitoring, `eval` command | AI e2e specs pass with mock providers; offline evaluation tests pass against Go |
 | B7 | Cutover: web calls Go, Prisma retired, old API removed | All Playwright specs green against Go; phone checked on staging |
 | B8 | Admin API | Admin role enforced (tested); actions audited |
+| B9 | Sign-up and sign-in (owner decision, 2026-11-25; after the cutover, so it is written once, in Go): email verification by a code sent at registration; sign-in with a phone number and an SMS code. The SMS sender is an interface with one adapter per provider, chosen by configuration, so providers can be swapped without touching the sign-in code. Needs a contract change, the mail sender from B3, an SMS provider account (owner), and per-number and per-IP limits before SMS is enabled (each message costs money) | Contract and clients updated; a fake SMS adapter in tests and at least one real adapter checked on staging with the owner's approval; abuse limits tested; the app's screens (see M8) |
 
 ## Mobile (Flutter, `apps/mobile`)
 
@@ -39,6 +40,7 @@ Every stage ends with the stage gate in `.claude/skills/lookly-workflow/SKILL.md
 | M5 | Screens redesigned from the approved mockups | Owner approves each screen |
 | M6 | Device testing: `integration_test/`, Android device, iPhone via TestFlight (macOS CI job) | Integration tests pass on both platforms |
 | M7 | Release readiness | `lookly-release` checklist complete |
+| M8 | Screens for B9: enter the email code after registration; sign in with a phone number and an SMS code (resend timer, wrong and expired code, no network) | Widget tests for each state; owner approves the screens |
 
 ## Web and admin (`apps/web`)
 
