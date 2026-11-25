@@ -31,6 +31,13 @@ final sessionControllerProvider = Provider<SessionController>((ref) {
   return controller;
 });
 
+/// Server time − device time, for comparing server timestamps (signed URL
+/// expiry) with the device clock. Updated whenever the session changes.
+final serverClockOffsetProvider = Provider<Duration>((ref) {
+  ref.watch(authStateProvider);
+  return ref.read(sessionControllerProvider).serverClockOffset;
+});
+
 /// The authoritative [AuthState] for widgets.
 final authStateProvider = Provider<AuthState>((ref) {
   final controller = ref.watch(sessionControllerProvider);

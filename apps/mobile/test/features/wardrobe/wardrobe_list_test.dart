@@ -109,6 +109,59 @@ void main() {
     expect(c.read(wardrobeListProvider).failure, isNull);
   });
 
+  test('a failed next page is not retried automatically, only by an explicit retry', () async {
+    var nextFails = true;
+    final (c, h) = await start(
+      (r) => r.uri.queryParameters['cursor'] == null
+          ? JsonReply(200, pageJson(['a'], next: 'cur-2'))
+          : nextFails
+          ? JsonReply(500, errorBody('INTERNAL'))
+          : JsonReply(200, pageJson(['b'])),
+    );
+    final list = c.read(wardrobeListProvider.notifier);
+    await list.loadMore();
+    expect(c.read(wardrobeListProvider).loadMoreFailure, isA<ApiHttpFailure>());
+    // The grid asks again on every rebuild of its last tiles.
+    await list.loadMore();
+    await list.loadMore();
+    expect(h.backend.calls(P.wardrobe), 2, reason: 'first page + one failed next page');
+    nextFails = false;
+    await list.loadMore(retry: true);
+    expect(h.backend.calls(P.wardrobe), 3);
+    expect(c.read(wardrobeListProvider).items.map((i) => i.id), ['a', 'b']);
+    expect(c.read(wardrobeListProvider).loadMoreFailure, isNull);
+  });
+
+  test('fresh image URLs keep every loaded page (not only the first)', () async {
+    final first = [for (var i = 0; i < 30; i++) 'a$i'];
+    final second = [for (var i = 0; i < 5; i++) 'b$i'];
+    final (c, h) = await start((r) {
+      final q = r.uri.queryParameters;
+      if (q['limit'] == '35') return JsonReply(200, pageJson([...first, ...second], next: 'cur-after-35'));
+      return q['cursor'] == null
+          ? JsonReply(200, pageJson(first, next: 'cur-2'))
+          : JsonReply(200, pageJson(second, next: 'cur-3'));
+    });
+    final list = c.read(wardrobeListProvider.notifier);
+    await list.loadMore();
+    expect(c.read(wardrobeListProvider).items, hasLength(35));
+    await list.refreshUrls();
+    final s = c.read(wardrobeListProvider);
+    expect(s.items.map((i) => i.id), [...first, ...second]);
+    expect(s.nextCursor, 'cur-after-35', reason: 'paging continues after the reloaded range');
+    final reload = h.backend.to(P.wardrobe).last.uri.queryParameters;
+    expect(reload['limit'], '35', reason: 'the loaded range in one request');
+    expect(reload.containsKey('cursor'), isFalse);
+  });
+
+  test('expired URLs reported by many tiles at once reload the list once', () async {
+    final (c, h) = await start((r) => JsonReply(200, pageJson(['a', 'b'])));
+    final list = c.read(wardrobeListProvider.notifier);
+    await Future.wait([list.refreshUrls(), list.refreshUrls(), list.refreshUrls()]);
+    await list.refreshUrls(); // right after: still the same fresh URLs
+    expect(h.backend.calls(P.wardrobe), 2, reason: 'initial load + one URL refresh');
+  });
+
   test('insert respects the active category and dedupes; remove drops the item', () async {
     final (c, _) = await start((r) => JsonReply(200, pageJson(['a'])));
     final list = c.read(wardrobeListProvider.notifier);

@@ -7,6 +7,10 @@ abstract final class SignedMediaUrl {
   /// the image).
   static const safetyMargin = Duration(seconds: 60);
 
-  static bool isUsable(DateTime urlExpiresAt, {DateTime? now}) =>
-      (now ?? DateTime.now()).toUtc().add(safetyMargin).isBefore(urlExpiresAt.toUtc());
+  /// [urlExpiresAt] is the server's time, so it is compared with the
+  /// server's clock: the device clock plus [serverClockOffset] (server time −
+  /// device time, measured on authentication answers). A wrong device clock
+  /// would otherwise make every fresh URL look expired.
+  static bool isUsable(DateTime urlExpiresAt, {DateTime? now, Duration serverClockOffset = Duration.zero}) =>
+      (now ?? DateTime.now()).toUtc().add(serverClockOffset).add(safetyMargin).isBefore(urlExpiresAt.toUtc());
 }

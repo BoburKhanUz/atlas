@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_failure.dart';
 import '../../../core/session/providers.dart';
+import '../data/wardrobe_repository.dart';
 import '../providers.dart';
 
 enum ListStatus { loading, ready, refreshing, loadingMore }
@@ -54,6 +55,12 @@ class WardrobeListState {
 class WardrobeListController extends Notifier<WardrobeListState> {
   int _generation = 0;
 
+  /// Signed URLs are reloaded at most this often: many tiles report the same
+  /// expiry at once, and a wrong device clock must not cause a request loop.
+  static const urlRefreshInterval = Duration(seconds: 30);
+  Future<void>? _urlRefresh;
+  DateTime? _urlsRefreshedAt;
+
   @override
   WardrobeListState build() {
     ref.watch(authStateProvider.select((s) => s.user?.id)); // new user → new list
@@ -99,9 +106,13 @@ class WardrobeListController extends Notifier<WardrobeListState> {
     await _loadFirst();
   }
 
-  Future<void> loadMore() async {
+  /// The next page. The grid calls this whenever its last tiles are built;
+  /// after a failure only an explicit [retry] (the footer button) asks again,
+  /// so a failing server is not hit on every rebuild.
+  Future<void> loadMore({bool retry = false}) async {
     final cursor = state.nextCursor;
     if (cursor == null || state.status != ListStatus.ready) return;
+    if (state.loadMoreFailure != null && !retry) return;
     final generation = _generation;
     state = state.copyWith(status: ListStatus.loadingMore, loadMoreFailure: () => null);
     try {
@@ -115,6 +126,48 @@ class WardrobeListController extends Notifier<WardrobeListState> {
       );
     } on ApiFailure catch (f) {
       if (generation != _generation || !ref.mounted) return;
+      state = state.copyWith(status: ListStatus.ready, loadMoreFailure: () => f);
+    }
+  }
+
+  /// Fresh signed URLs for everything already loaded, keeping every loaded
+  /// page (a pull-to-refresh would go back to the first page only). One
+  /// request for the loaded range (up to the contract's largest page),
+  /// further pages only beyond that.
+  Future<void> refreshUrls() {
+    final running = _urlRefresh;
+    if (running != null) return running;
+    final last = _urlsRefreshedAt;
+    if (last != null && DateTime.now().difference(last) < urlRefreshInterval) return Future.value();
+    if (state.status != ListStatus.ready || state.items.isEmpty) return Future.value();
+    return _urlRefresh = _reloadLoadedRange().whenComplete(() => _urlRefresh = null);
+  }
+
+  Future<void> _reloadLoadedRange() async {
+    final generation = _generation;
+    final category = state.category;
+    final wanted = state.items.length;
+    final repository = ref.read(wardrobeRepositoryProvider);
+    state = state.copyWith(status: ListStatus.refreshing);
+    final items = <WardrobeItem>[];
+    final seen = <String>{};
+    String? cursor;
+    try {
+      do {
+        final page = await repository.list(
+          category: category,
+          cursor: cursor,
+          limit: (wanted - items.length).clamp(WardrobeRepository.pageSize, WardrobeRepository.maxPageSize),
+        );
+        if (generation != _generation || !ref.mounted) return;
+        items.addAll(page.items.where((i) => seen.add(i.id)));
+        cursor = page.nextCursor;
+      } while (cursor != null && items.length < wanted);
+      _urlsRefreshedAt = DateTime.now();
+      state = state.copyWith(items: items, nextCursor: () => cursor, status: ListStatus.ready, failure: () => null);
+    } on ApiFailure catch (f) {
+      if (generation != _generation || !ref.mounted) return;
+      _urlsRefreshedAt = DateTime.now();
       state = state.copyWith(status: ListStatus.ready, loadMoreFailure: () => f);
     }
   }

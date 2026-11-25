@@ -31,11 +31,14 @@ class WardrobeRepository {
 
   static const pageSize = 30;
 
-  Future<WardrobePage> list({String category = 'all', String? cursor}) async {
+  /// The contract's largest page (`limit` 1–200).
+  static const maxPageSize = 200;
+
+  Future<WardrobePage> list({String category = 'all', String? cursor, int limit = pageSize}) async {
     final r = await _client.call(
       (api) => api.getWardrobeApi().listWardrobeItems(
         category: category == 'all' ? null : category,
-        limit: pageSize,
+        limit: limit.clamp(1, maxPageSize),
         cursor: cursor,
       ),
     );

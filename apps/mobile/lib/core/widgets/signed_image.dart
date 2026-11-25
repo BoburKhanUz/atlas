@@ -9,6 +9,7 @@ import 'package:material_ui/material_ui.dart';
 import '../design/tokens.dart';
 import '../network/media_url.dart';
 import '../network/providers.dart';
+import '../session/providers.dart';
 import 'skeleton.dart';
 
 /// Which rendition of a stored image.
@@ -172,7 +173,8 @@ class _SignedImageState extends ConsumerState<SignedImage> {
     final provider = SignedImageProvider(widget.image, ref.watch(mediaFetcherProvider));
     final cached = PaintingBinding.instance.imageCache.containsKey(provider.key);
     final expiresAt = widget.image.expiresAt;
-    if (!cached && expiresAt != null && !SignedMediaUrl.isUsable(expiresAt)) {
+    final offset = ref.watch(serverClockOffsetProvider);
+    if (!cached && expiresAt != null && !SignedMediaUrl.isUsable(expiresAt, serverClockOffset: offset)) {
       _expired();
       return const _Placeholder(loading: true);
     }

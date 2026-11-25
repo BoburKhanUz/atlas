@@ -126,6 +126,10 @@ class SessionController extends ChangeNotifier implements AccessTokenSource {
   @override
   Future<String?> currentAccessToken() async => _tokens?.accessToken;
 
+  /// Server time − device time, measured on the last authentication answer
+  /// (zero when signed out or unknown).
+  Duration get serverClockOffset => _tokens?.serverClockOffset ?? Duration.zero;
+
   void _setState(AuthState next) {
     if (_disposed || next == _state) return;
     AppLog.info('auth state: $next');

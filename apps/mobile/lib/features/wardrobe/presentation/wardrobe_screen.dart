@@ -94,12 +94,12 @@ class WardrobeScreen extends ConsumerWidget {
               itemCount: s.items.length,
               itemBuilder: (context, i) {
                 if (i >= s.items.length - 6) WidgetsBinding.instance.addPostFrameCallback((_) => list.loadMore());
-                return _ItemTile(item: s.items[i], onExpired: list.refresh);
+                return _ItemTile(item: s.items[i], onExpired: list.refreshUrls);
               },
             ),
           ),
           SliverToBoxAdapter(
-            child: _Footer(state: s, onRetry: list.loadMore),
+            child: _Footer(state: s, onRetry: () => list.loadMore(retry: true)),
           ),
         ],
       ],

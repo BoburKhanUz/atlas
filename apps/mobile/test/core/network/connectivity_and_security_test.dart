@@ -167,6 +167,12 @@ void main() {
       expect(SignedMediaUrl.isUsable(now.add(const Duration(minutes: 5)), now: now), isTrue);
       expect(SignedMediaUrl.isUsable(now.add(const Duration(seconds: 59)), now: now), isFalse);
       expect(SignedMediaUrl.isUsable(now.subtract(const Duration(seconds: 1)), now: now), isFalse);
+      // The device clock is an hour ahead: judged on the server's clock, a
+      // URL valid for 30 more server-minutes is still usable.
+      const ahead = Duration(hours: 1);
+      final serverExpiry = now.subtract(ahead).add(const Duration(minutes: 30));
+      expect(SignedMediaUrl.isUsable(serverExpiry, now: now), isFalse, reason: 'device clock alone');
+      expect(SignedMediaUrl.isUsable(serverExpiry, now: now, serverClockOffset: -ahead), isTrue);
     });
   });
 }

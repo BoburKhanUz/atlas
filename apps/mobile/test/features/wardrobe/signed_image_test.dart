@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:atlas_mobile/core/config/environment_config.dart';
 import 'package:atlas_mobile/core/logging/app_log.dart';
+import 'package:atlas_mobile/core/session/providers.dart';
 import 'package:atlas_mobile/core/widgets/signed_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,9 +27,16 @@ SignedImageRef ref(
 
 const mediaPrefix = '/api/v1/media/users/u1/';
 
-Future<SessionHarness> pumpImage(WidgetTester tester, SignedImageRef image, {VoidCallback? onExpired}) async {
+Future<SessionHarness> pumpImage(
+  WidgetTester tester,
+  SignedImageRef image, {
+  VoidCallback? onExpired,
+  Duration serverClockOffset = Duration.zero,
+}) async {
   final h = SessionHarness(stored: pair(1));
-  final c = ProviderContainer(overrides: appOverrides(h));
+  final c = ProviderContainer(
+    overrides: [...appOverrides(h), serverClockOffsetProvider.overrideWithValue(serverClockOffset)],
+  );
   addTearDown(c.dispose);
   await tester.runAsync(h.session.restore);
   await tester.pumpWidget(
@@ -107,6 +115,17 @@ void main() {
     await settleIo(tester);
     expect(h.backend.sent.where((r) => r.uri.path.startsWith(mediaPrefix)), isEmpty);
     expect(expired, 1);
+  });
+
+  testWidgets('a device clock ahead of the server does not make fresh URLs look expired', (tester) async {
+    var expired = 0;
+    // Valid for 30 server-minutes, but the device clock is one hour ahead.
+    final image = ref('k', validFor: const Duration(minutes: -30));
+    final h = await pumpImage(tester, image, onExpired: () => expired++, serverClockOffset: const Duration(hours: -1));
+    h.backend.handlers['${mediaPrefix}k_display.webp'] = (r) => BytesReply(200, fixtureBytes('plain_landscape.jpg'));
+    await settleIo(tester);
+    expect(expired, 0);
+    expect(h.backend.to('${mediaPrefix}k_display.webp'), hasLength(1));
   });
 
   for (final (name, status) in [('tampered signature (400)', 400), ('expired on the server (404)', 404)]) {
