@@ -262,6 +262,19 @@ void main() {
       expect(w.state.status, WeatherStatus.ready);
     });
 
+    test('a failed location read with old weather on screen does not stay "locating"', () async {
+      final w = Weather();
+      w.h.locator.current = LocationAccess.granted;
+      await w.start();
+      await w.ctl.locate();
+      expect(w.state.status, WeatherStatus.ready);
+      w.h.locator.result = const NotLocated(LocationIssue.timeout);
+      await w.ctl.useDeviceLocation();
+      expect(w.state.status, isNot(WeatherStatus.locating));
+      expect(w.state.issue, LocationIssue.timeout);
+      expect(w.state.weather, isNotNull, reason: 'the last weather stays visible');
+    });
+
     test('double tap → one location flow, one request', () async {
       final w = Weather();
       w.h.locator.current = LocationAccess.granted;
@@ -273,6 +286,29 @@ void main() {
   });
 
   group('manual city', () {
+    test('a city chosen while the device location is still being read wins', () async {
+      final w = Weather();
+      w.h.locator.current = LocationAccess.granted;
+      final gps = Completer<void>();
+      w.h.locator.hold = gps.future;
+      await w.start();
+      w.h.backend.script(P.weather, [
+        JsonReply(200, weatherJson(fetchedAt: DateTime.utc(2026, 10, 5, 10))),
+        JsonReply(200, weatherJson(fetchedAt: DateTime.utc(2026, 10, 5, 10))),
+      ]);
+      final locating = w.ctl.locate();
+      await pumpEventQueue();
+      expect(w.state.status, WeatherStatus.locating);
+      final choosing = w.ctl.chooseCity(Cities.byId('bukhara')!);
+      gps.complete();
+      await Future.wait([locating, choosing]);
+      expect(w.state.source, LocationSource.city);
+      expect(w.state.city!.id, 'bukhara');
+      expect(w.state.status, WeatherStatus.ready);
+      expect(w.weatherCalls.last.uri.queryParameters, {'lat': '39.77', 'lon': '64.42'});
+      expect(w.h.kv.values['atlas.weather.city.u1'], 'bukhara');
+    });
+
     test('choosing a city stores its id for this user and fetches the city weather; the device is not used', () async {
       final w = Weather();
       await w.start();

@@ -84,6 +84,14 @@ class WeatherController extends Notifier<WeatherState> {
   final _cache = <String, WeatherResponseWeather>{};
   RoundedLocation? _location;
   Future<void>? _running;
+
+  /// A user choice made while another task runs; it runs next (the latest
+  /// choice wins).
+  Future<void> Function()? _queued;
+
+  /// Bumped by every explicit choice of location source. A device-location
+  /// read that finishes after a newer choice is discarded.
+  int _intent = 0;
   String? _userId;
 
   /// The system prompt was shown in this app session: automatic paths
@@ -99,6 +107,8 @@ class WeatherController extends Notifier<WeatherState> {
     _cache.clear();
     _location = null;
     _running = null;
+    _queued = null;
+    _intent++;
     _prompted = false;
     return const WeatherState();
   }
@@ -121,8 +131,9 @@ class WeatherController extends Notifier<WeatherState> {
   /// a stored city, or the device when permission was already granted.
   Future<void> refreshIfStale() => _serial(() async {
     if (state.weather != null && !isStale && _location != null) return;
+    final intent = _intent;
     final location = _location ?? await _silentLocation();
-    if (location == null) return;
+    if (location == null || intent != _intent) return;
     await _fetch(location);
   });
 
@@ -130,22 +141,24 @@ class WeatherController extends Notifier<WeatherState> {
   /// may show the system prompt, at most once per app session. A stored
   /// city is used when there is one.
   Future<void> locate() => _serial(() async {
+    final intent = _intent;
     final location = _location ?? await _silentLocation(prompt: !_prompted);
-    if (location != null) await _fetch(location);
+    if (location != null && intent == _intent) await _fetch(location);
   });
 
   /// "Use my location" (switches away from a chosen city).
-  Future<void> useDeviceLocation() => _serial(() async {
+  Future<void> useDeviceLocation() => _choose(() async {
     final userId = _userId;
     if (userId != null) await ref.read(cityStoreProvider).clear(userId);
     if (!ref.mounted) return;
     _location = null;
     state = state.copyWith(city: () => null);
+    final intent = _intent;
     final location = await _deviceLocation(prompt: true);
-    if (location != null) await _fetch(location);
+    if (location != null && intent == _intent) await _fetch(location);
   });
 
-  Future<void> chooseCity(City city) => _serial(() async {
+  Future<void> chooseCity(City city) => _choose(() async {
     final userId = _userId;
     if (userId != null) await ref.read(cityStoreProvider).save(userId, city);
     if (!ref.mounted) return;
@@ -157,16 +170,43 @@ class WeatherController extends Notifier<WeatherState> {
   /// Pull-to-refresh: asks the server again (its own 30-minute cache still
   /// applies).
   Future<void> refresh() => _serial(() async {
+    final intent = _intent;
     final location = _location ?? await _silentLocation();
-    if (location != null) await _fetch(location, force: true);
+    if (location != null && intent == _intent) await _fetch(location, force: true);
   });
 
   Future<void> openSettings() =>
       state.issue == LocationIssue.serviceDisabled ? _locator.openLocationSettings() : _locator.openAppSettings();
 
+  /// One task at a time: a second automatic request or a double tap joins
+  /// the running one.
   Future<void> _serial(Future<void> Function() task) {
     final running = _running;
-    if (running != null) return running; // one at a time (double taps)
+    if (running != null) return running;
+    return _start(task);
+  }
+
+  /// An explicit choice of location source (a city, or the device). It is
+  /// never dropped: a running task's late result is discarded ([_intent])
+  /// and the choice runs right after it; of several queued choices the
+  /// latest wins.
+  Future<void> _choose(Future<void> Function() task) {
+    _intent++;
+    final running = _running;
+    if (running == null) return _start(task);
+    _queued = task;
+    return running.then((_) => _drainQueued());
+  }
+
+  Future<void> _drainQueued() {
+    final running = _running;
+    if (running != null) return running.then((_) => _drainQueued());
+    final next = _queued;
+    _queued = null;
+    return next == null ? Future.value() : _start(next);
+  }
+
+  Future<void> _start(Future<void> Function() task) {
     final future = task().whenComplete(() => _running = null);
     _running = future;
     return future;
@@ -186,6 +226,7 @@ class WeatherController extends Notifier<WeatherState> {
   }
 
   Future<RoundedLocation?> _deviceLocation({required bool prompt}) async {
+    final intent = _intent;
     try {
       if (!await _locator.serviceEnabled()) return _noLocation(LocationIssue.serviceDisabled);
       var access = await _locator.access();
@@ -209,6 +250,7 @@ class WeatherController extends Notifier<WeatherState> {
       state = state.copyWith(status: WeatherStatus.locating, source: LocationSource.device);
       final result = await _locator.currentLocation(WeatherFreshness.locationTimeout);
       if (!ref.mounted) return null;
+      if (intent != _intent) return null; // a newer choice was made meanwhile
       switch (result) {
         case Located(:final location):
           _location = location;
@@ -226,8 +268,14 @@ class WeatherController extends Notifier<WeatherState> {
   RoundedLocation? _noLocation(LocationIssue issue) {
     AppLog.info('no device location: ${issue.name}');
     if (ref.mounted) {
+      // Without weather the card explains the issue; with older weather it
+      // stays visible (marked stale when it is) — never left on "locating".
       state = state.copyWith(
-        status: state.weather == null ? WeatherStatus.noLocation : state.status,
+        status: state.weather == null
+            ? WeatherStatus.noLocation
+            : state.status == WeatherStatus.locating
+            ? WeatherStatus.ready
+            : state.status,
         issue: () => issue,
       );
     }

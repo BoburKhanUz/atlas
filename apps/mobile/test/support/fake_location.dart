@@ -11,6 +11,9 @@ class FakeLocator implements DeviceLocator {
   LocationAccess onRequest = LocationAccess.granted;
   LocationResult result = Located(RoundedLocation.round(41.31, 69.28)!);
 
+  /// When set, [currentLocation] waits for it (a slow GPS fix).
+  Future<void>? hold;
+
   int requests = 0;
   int reads = 0;
   int settingsOpened = 0;
@@ -30,6 +33,8 @@ class FakeLocator implements DeviceLocator {
   @override
   Future<LocationResult> currentLocation(Duration timeout) async {
     reads++;
+    final wait = hold;
+    if (wait != null) await wait;
     return result;
   }
 
