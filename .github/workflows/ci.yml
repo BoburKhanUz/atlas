@@ -237,6 +237,8 @@ jobs:
           persist-credentials: false
       - name: Build image (no push)
         run: docker build apps/web
+      - name: Build the API image (no push)
+        run: docker build --build-arg VERSION=ci apps/api
       - name: Validate docker-compose.yml with generated dummy env
         run: |
           # Random throwaway values, generated per run; nothing is stored.
@@ -273,6 +275,54 @@ jobs:
           docker run --rm -v "$PWD:/repo"
           zricethezav/gitleaks:v8.18.4
           detect --source /repo --redact --verbose
+
+  api:
+    # Go backend (apps/api). The runner's Go switches itself to the toolchain
+    # pinned in go.mod (checksum-verified); tool versions are pinned here.
+    name: "api (Go: generate, vet, staticcheck, test, integration, vulncheck)"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/api
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: lookly_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d lookly_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      LOOKLY_TEST_DATABASE_URL: postgresql://ci:ci@localhost:5432/lookly_test?sslmode=disable
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Toolchain
+        run: go version
+      - name: Generated code matches docs/api/openapi.json
+        run: scripts/generate.sh --check
+      - name: Format
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then echo "$unformatted"; exit 1; fi
+      - name: Vet
+        run: go vet ./... && go vet -tags integration ./...
+      - name: staticcheck
+        run: go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 -tags integration ./...
+      - name: Tests, with the integration tests against PostgreSQL 16
+        run: go test -race -tags integration ./...
+      - name: govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
+      - name: Build
+        run: CGO_ENABLED=0 go build -trimpath -o "$RUNNER_TEMP/lookly" ./cmd/lookly
 
   repo-rules:
     # Workflow security (actionlint, zizmor) and the Claude Code project

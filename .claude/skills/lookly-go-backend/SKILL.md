@@ -43,8 +43,9 @@ apps/api/
 
 - The server interface and request/response types are generated from
   `docs/api/openapi.json` (oapi-codegen, strict server). Never hand-write a route.
-  The document is OpenAPI 3.1; how the generator copes with 3.1 is settled by the B0
-  spike and recorded in an ADR.
+  The document is OpenAPI 3.1 and is used as is (ADR 0008): only implemented
+  operations are generated (`include-operation-ids`), and contract tests validate
+  responses with `internal/contracttest`.
 - **Until B7 the document is generated** from `apps/web/src/server/openapi/registry.ts`:
   a contract change starts there, then `bun run openapi:write`, then
   `apps/mobile/tool/openapi/generate_api.sh`, then the Go code. Never edit the JSON by
@@ -123,7 +124,7 @@ are in `references/porting.md`. Parity testing is described in
 
 ## Done when
 
-- `go vet ./...`, `staticcheck ./...`, `go test -race ./...` pass.
+- `scripts/generate.sh --check`, `go vet ./...`, staticcheck, `go test -race -tags integration ./...` and govulncheck pass (exact commands: `apps/api/README.md`).
 - The touched endpoints pass their contract tests and the relevant Playwright e2e specs
   against the Go server.
 - `lookly-security` ran if auth, sessions, uploads, AI, quotas, admin or config changed.

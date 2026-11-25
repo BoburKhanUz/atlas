@@ -21,7 +21,7 @@ docker-compose.yml     Postgres + one-shot migration + web
 .github/workflows/     CI
 ```
 
-The backend is being rewritten in Go as `apps/api` with the same contract (see `docs/adr/0001-go-backend.md`).
+The backend is being rewritten in Go as `apps/api` with the same contract (see `docs/adr/0001-go-backend.md`, `docs/architecture/backend.md` and `apps/api/README.md`).
 
 Origin: the source was imported from a Z.ai-generated export in a single clean import. The export's git history, `.env`, SQLite database, user uploads, screenshots and Z.ai runtime/gateway files were deliberately excluded. Only the worklog was kept (`docs/history/zai-worklog.md`).
 

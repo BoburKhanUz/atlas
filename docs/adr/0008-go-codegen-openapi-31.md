@@ -55,6 +55,13 @@ Response validation with kin-openapi v0.153.0:
 - The server enforces the email rule in code (same rule as the pattern, without
   lookahead) when auth arrives in B2. Go's regexp cannot run the pattern.
 - CI regenerates the code and fails on any difference.
+- The generator prints a warning that OpenAPI 3.1 is "not yet supported". The spike
+  showed correct output for every construct the contract uses. The coverage test, the
+  compiler and the contract tests catch a construct it handles badly.
+- Versions: kin-openapi v0.153.0. v0.142.0, the generator's minimum, has nine known
+  vulnerabilities, all fixed by v0.149.0 (govulncheck runs in CI). regexp2 v1.11.4 is the
+  generator's own minimum: pinning it lower made Go downgrade the generator itself. After
+  any `go get`, check the generator version and run `scripts/generate.sh --check`.
 
 ## Consequences
 

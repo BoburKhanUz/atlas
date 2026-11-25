@@ -82,15 +82,19 @@ bun run test:integration    # needs a PostgreSQL 16 (see .github/workflows/ci.ym
 bun run test:e2e            # e2e/run-local.sh: expects a trust-auth PostgreSQL 16 on a Unix socket
                             # (defaults /var/tmp/atlas-pg, port 55432; override PGHOST_DIR/PGPORT_NUM)
 
-# Go backend (apps/api), from stage B0
-go vet ./... && staticcheck ./... && go test -race ./...
+# Go backend (apps/api); full list in apps/api/README.md
+scripts/generate.sh --check && go vet ./... \
+  && go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 -tags integration ./... \
+  && go test -race ./...
+LOOKLY_TEST_DATABASE_URL=... go test -race -tags integration ./...   # needs a PostgreSQL 16
+go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
 ```
 
-Tools that may be missing in a fresh cloud session: `staticcheck`, `semgrep`,
-`govulncheck`, Docker. Install them pinned when a gate needs them, or say that the gate
-ran in CI only.
+Tools that may be missing in a fresh cloud session: `semgrep`, a running Docker daemon
+(start `dockerd`; Docker Hub may rate-limit pulls). staticcheck and govulncheck run
+pinned through `go run`. Say when a gate ran in CI only.
 
-CI (`.github/workflows/ci.yml`) runs the web, e2e, integration, migrations, mobile,
-docker, secret-scan and repo-rules jobs on every push; `brand:check` and the Go checks
-are local until they are added to CI. A red CI on our branch is the next task, before
+CI (`.github/workflows/ci.yml`) runs the web, e2e, integration, migrations, api (Go),
+mobile, docker, secret-scan and repo-rules jobs on every push; `brand:check` is local
+until it is added to CI. A red CI on our branch is the next task, before
 anything else.
