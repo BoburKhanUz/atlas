@@ -21,9 +21,11 @@ if ! pg_dump --version | grep -qE ' 16\.'; then
   exit 1
 fi
 
-tmp=$(mktemp)
-psql "$admin_url" -v ON_ERROR_STOP=1 -q -c "CREATE DATABASE $scratch"
+# The temporary file sits next to the baseline (same filesystem: the final
+# mv is atomic); its name does not end in .sql, so it is never embedded.
+tmp=$(mktemp "$out.XXXXXX")
 trap 'rm -f "$tmp"; psql "$admin_url" -q -c "DROP DATABASE IF EXISTS $scratch" >/dev/null' EXIT
+psql "$admin_url" -v ON_ERROR_STOP=1 -q -c "CREATE DATABASE $scratch"
 scratch_url=$(python3 -I -c 'import sys, urllib.parse as u; p = u.urlsplit(sys.argv[1]); print(u.urlunsplit(p._replace(path="/" + sys.argv[2])))' "$admin_url" "$scratch")
 sql() { psql "$scratch_url" -At -v ON_ERROR_STOP=1 -c "$1"; }
 
@@ -56,8 +58,8 @@ fi
   echo "-- +goose Up"
   echo "-- +goose StatementBegin"
   # Drop only pg_dump's own lines: its psql meta-commands, session settings,
-  # section comments and the schema (which exists). Anything else, including
-  # every line of a function body, is kept.
+  # section comments (and bare "--" lines, which are empty comments wherever
+  # they stand) and the schema (which exists). Every other line is kept.
   pg_dump "$scratch_url" --schema-only --no-owner --no-privileges --no-comments -n public \
     | grep -vE '^(\\(un)?restrict [A-Za-z0-9]+$|SET (statement_timeout|lock_timeout|idle_in_transaction_session_timeout|transaction_timeout|client_encoding|standard_conforming_strings|check_function_bodies|xmloption|client_min_messages|row_security|default_tablespace|default_table_access_method) = .*;$|SELECT pg_catalog\.set_config\(.search_path., .., false\);$|--$|-- (Name: |Dumped (from|by) ).*$|-- PostgreSQL database dump( complete)?$|CREATE SCHEMA public;$)' \
     | cat -s
@@ -68,5 +70,6 @@ fi
   echo "-- +goose StatementEnd"
 } > "$tmp"
 # Only a complete baseline replaces the old one.
+chmod 644 "$tmp"
 mv "$tmp" "$out"
 echo "wrote $out (Prisma up to $last)"

@@ -16,8 +16,8 @@ import (
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
 	"github.com/riverqueue/river/rivermigrate"
-	"github.com/riverqueue/river/rivertype"
 
+	"lookly/internal/database"
 	"lookly/internal/maintenance"
 )
 
@@ -27,19 +27,9 @@ const Schema = "river"
 // CleanupInterval is how often the cleanup runs (and once at every start).
 const CleanupInterval = time.Hour
 
-// cleanupMaxAttempts bounds River's retries of one cleanup (its default is 25,
-// spread over weeks).
+// cleanupMaxAttempts bounds River's attempts at one cleanup (its default is
+// 25, spread over weeks): a run that keeps failing is left to the next hour.
 const cleanupMaxAttempts = 3
-
-// unfinished are the job states a new cleanup is unique against (River
-// requires available, pending, running and scheduled).
-var unfinished = []rivertype.JobState{
-	rivertype.JobStateAvailable,
-	rivertype.JobStatePending,
-	rivertype.JobStateRunning,
-	rivertype.JobStateRetryable,
-	rivertype.JobStateScheduled,
-}
 
 // Migrate creates the schema and applies River's own migrations. It returns
 // the names of the migrations applied (none when already current).
@@ -72,7 +62,7 @@ func CheckMigrated(ctx context.Context, pool *pgxpool.Pool) error {
 	}
 	res, err := migrator.Validate(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("river's tables are missing (%v): %s", err, fix)
+		return fmt.Errorf("river's tables are missing (%s): %s", database.Describe(err), fix)
 	}
 	if !res.OK {
 		return fmt.Errorf("river's tables are behind this build (%s): %s", strings.Join(res.Messages, "; "), fix)
@@ -120,14 +110,12 @@ func NewClient(pool *pgxpool.Pool, log *slog.Logger, cleanup *maintenance.Servic
 			river.NewPeriodicJob(
 				river.PeriodicInterval(CleanupInterval),
 				func() (river.JobArgs, *river.InsertOpts) {
-					// Never two cleanups waiting, running or retrying at once; a
-					// finished one does not block the next (every start runs one).
-					// A failing run is retried a few times, then left to the
-					// next hour.
-					return CleanupArgs{}, &river.InsertOpts{
-						MaxAttempts: cleanupMaxAttempts,
-						UniqueOpts:  river.UniqueOpts{ByState: unfinished},
-					}
+					// Not unique on purpose: a job left "running" by a killed
+					// worker must not block the next one. Two cleanups at once
+					// are safe: they lock the dead families in the same order
+					// and skip each other's session rows; the second finds
+					// nothing to do.
+					return CleanupArgs{}, &river.InsertOpts{MaxAttempts: cleanupMaxAttempts}
 				},
 				&river.PeriodicJobOpts{RunOnStart: true},
 			),

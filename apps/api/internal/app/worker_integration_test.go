@@ -5,6 +5,7 @@ package app_test
 import (
 	"bytes"
 	"context"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -176,6 +177,33 @@ func TestWorkerRunsTheCleanupAtEveryStartAndStopsOnASignal(t *testing.T) {
 	}
 }
 
+// A worker killed mid-job (SIGKILL, out of memory) leaves its job "running"
+// until River rescues it. That must not stop the next worker's cleanup.
+func TestWorkerRunsTheCleanupAfterAnotherWorkerWasKilledMidJob(t *testing.T) {
+	t.Parallel()
+	pool := schemaDB(t)
+	migrateRiver(t, pool)
+	first := startWorker(t, pool, nil)
+	waitFor(t, "the first cleanup", func() bool { return strings.Contains(first.stdout.String(), `"msg":"cleanup done"`) })
+	if code, _ := first.stopAndWait(t); code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	// What a killed worker leaves behind: its job still marked as running.
+	if _, err := pool.Exec(context.Background(),
+		`UPDATE river.river_job SET state = 'running', finalized_at = NULL WHERE kind = 'maintenance_cleanup'`); err != nil {
+		t.Fatal(err)
+	}
+
+	expiredResetLink(t, pool, "after-kill")
+	next := startWorker(t, pool, nil)
+	waitFor(t, "the cleanup after a killed worker", func() bool {
+		return count(t, pool, `SELECT count(*) FROM "PasswordResetToken"`) == 0
+	})
+	if code, _ := next.stopAndWait(t); code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+}
+
 // A job still running when the grace period ends is cancelled: the worker
 // exits 1 soon after the grace period, not when the job would have ended.
 func TestWorkerCancelsAJobStillRunningAfterTheGracePeriod(t *testing.T) {
@@ -214,5 +242,28 @@ func TestWorkerCancelsAJobStillRunningAfterTheGracePeriod(t *testing.T) {
 	}
 	if count(t, pool, `SELECT count(*) FROM "PasswordResetToken"`) != 1 {
 		t.Error("the cancelled cleanup changed data")
+	}
+}
+
+// The server answers but refuses (here: no such database). The reason is
+// given as its SQLSTATE; the database name, user and host are not printed.
+func TestWorkerSaysWhyTheDatabaseRefusedWithoutConnectionDetails(t *testing.T) {
+	t.Parallel()
+	u, err := url.Parse(dbtest.AdminURL(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	u.Path = "/lookly_no_such_database"
+	var stderr bytes.Buffer
+	code := app.Run(context.Background(), []string{"worker"},
+		env(map[string]string{"LOOKLY_ENV": "test", "DATABASE_URL": u.String()}), &bytes.Buffer{}, &stderr)
+	msg := stderr.String()
+	if code != 1 || !strings.Contains(msg, "cannot reach the database") || !strings.Contains(msg, "SQLSTATE 3D000") {
+		t.Fatalf("exit %d, stderr %q", code, msg)
+	}
+	for _, leak := range []string{"lookly_no_such_database", u.Hostname(), u.User.Username()} {
+		if leak != "" && strings.Contains(msg, leak) {
+			t.Errorf("stderr shows %q: %s", leak, msg)
+		}
 	}
 }

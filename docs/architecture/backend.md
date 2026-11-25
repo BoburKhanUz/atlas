@@ -146,13 +146,20 @@ reads and writes data but changes no schema there.
 - **Jobs** (`internal/jobs`, River v0.51.2): tables in the schema `river`, which Prisma
   does not manage, so it neither shows them as drift nor drops them. `lookly migrate
   river` creates them. `lookly worker` runs the queue; it refuses to start without the
-  tables or when the database cannot be reached. Periodic jobs run on the elected leader
+  tables or when the database cannot be reached (it says which, and gives the server's
+  SQLSTATE, never the user, database or host). Periodic jobs run on the elected leader
   only.
 - **Cleanup** (`internal/maintenance`, a periodic job: hourly and at every worker
-  start; never two at once; up to 3 attempts). It runs as one read-committed
-  transaction with `lock_timeout` 5 s. It locks the dead families first, in id order,
-  then touches sessions: the session protocol's order, so a refresh racing it cannot
-  deadlock (tested). It applies the manual Node script's rules
+  start; at most 3 attempts per run). It runs as one read-committed transaction with
+  `lock_timeout` 5 s. Its locking follows the session protocol, so a refresh or a
+  revocation racing it cannot deadlock (both cases tested):
+  - it locks the dead families first, in id order, before any of their sessions;
+  - session rows of live families (stale ciphertexts, old rotated rows) are taken with
+    `SKIP LOCKED`: a row someone else holds is left to them or to the next run.
+
+  Runs are not serialised: a job left "running" by a killed worker never blocks the
+  next one, and several cleanups at once are safe (tested). It applies the manual Node
+  script's rules
   (`docs/architecture/sessions.md`, Operations):
   - successor ciphertexts: cleared after 60 s;
   - rotated sessions and families dead for 30 days: deleted;

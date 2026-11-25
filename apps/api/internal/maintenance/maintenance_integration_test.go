@@ -75,6 +75,28 @@ func (d db) session(id, family string, created time.Time, revoked *time.Time, su
 		id, created.Add(30*day), created, revoked, replacedBy, family, rotated, enc)
 }
 
+// waitUntilBlockedOrDone returns once another session of this database
+// waits for a lock, or done reports true. False after 10 s of neither.
+func (d db) waitUntilBlockedOrDone(done func() bool) bool {
+	d.t.Helper()
+	deadline := time.Now().Add(10 * time.Second)
+	for time.Now().Before(deadline) {
+		if done() {
+			return true
+		}
+		var waiting int
+		if err := d.pool.QueryRow(context.Background(),
+			`SELECT count(*) FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock'`).Scan(&waiting); err != nil {
+			d.t.Fatal(err)
+		}
+		if waiting > 0 {
+			return true
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	return false
+}
+
 func ptr(t time.Time) *time.Time { return &t }
 
 func service(d db) *maintenance.Service { return maintenance.New(d.pool) }
@@ -285,7 +307,11 @@ func TestCleanupAndARefreshOnTheSameFamilyDoNotDeadlock(t *testing.T) {
 		r, err := service(d).Cleanup(ctx)
 		cleanup <- result{r, err}
 	}()
-	time.Sleep(300 * time.Millisecond) // the cleanup runs into the family lock
+	// The cleanup runs into the family lock (seen in PostgreSQL, not guessed
+	// from a sleep).
+	if !d.waitUntilBlockedOrDone(func() bool { return len(cleanup) > 0 }) {
+		t.Fatal("the cleanup neither finished nor waited for a lock")
+	}
 
 	// The refresh presents the old (rotated) token: family first, then that
 	// session (sessions.md), then it revokes the family's sessions.
@@ -308,5 +334,118 @@ func TestCleanupAndARefreshOnTheSameFamilyDoNotDeadlock(t *testing.T) {
 		}
 	case <-time.After(10 * time.Second):
 		t.Fatal("the cleanup did not finish")
+	}
+}
+
+// The same race on a LIVE family: its stale ciphertexts are the cleanup's
+// business, and a family revocation (reuse, logout, reset) clears every
+// ciphertext in the family. The cleanup takes session rows only when nobody
+// holds them (SKIP LOCKED), so it never waits for a row while holding
+// another one.
+func TestCleanupAndARevocationOnALiveFamilyDoNotDeadlock(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+	now := time.Date(2026, 11, 1, 12, 0, 0, 0, time.UTC)
+	d.family("f_live", now.Add(-10*day), now.Add(80*day), nil)
+	d.session("s1", "f_live", now.Add(-10*day), ptr(now.Add(-2*time.Hour)), "s2")
+	d.session("s2", "f_live", now.Add(-2*time.Hour), ptr(now.Add(-time.Hour)), "s3")
+	d.session("s3", "f_live", now.Add(-time.Hour), nil, "")
+	dbtest.SetClock(t, d.pool, now)
+
+	ctx := context.Background()
+	refresh, err := d.pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = refresh.Rollback(ctx) }() // moot once committed
+	// A replay of s2's token: family first, then that session.
+	for _, lock := range []string{
+		`SELECT "id" FROM "SessionFamily" WHERE "id" = 'f_live' FOR UPDATE`,
+		`SELECT "id" FROM "Session" WHERE "id" = 's2' FOR UPDATE`,
+	} {
+		if _, err := refresh.Exec(ctx, lock); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	type result struct {
+		report maintenance.Report
+		err    error
+	}
+	cleanup := make(chan result, 1)
+	go func() {
+		r, err := service(d).Cleanup(ctx)
+		cleanup <- result{r, err}
+	}()
+	if !d.waitUntilBlockedOrDone(func() bool { return len(cleanup) > 0 }) {
+		t.Fatal("the cleanup neither finished nor waited for a lock")
+	}
+
+	// The refresh decides "reuse" and revokes the family: every session's
+	// ciphertext is cleared, s1's included.
+	if _, err := refresh.Exec(ctx, `UPDATE "Session" SET "successorTokenEnc" = NULL, "revokedAt" = coalesce("revokedAt", $1) WHERE "familyId" = 'f_live'`, now); err != nil {
+		t.Fatalf("the refresh failed: %v", err)
+	}
+	if err := refresh.Commit(ctx); err != nil {
+		t.Fatalf("the refresh failed: %v", err)
+	}
+	select {
+	case r := <-cleanup:
+		if r.err != nil {
+			t.Fatalf("the cleanup failed: %v", r.err)
+		}
+		// s1 was free and is cleared; s2 was held by the refresh and left to it.
+		if r.report.SuccessorCiphertextsCleared != 1 {
+			t.Errorf("report %+v", r.report)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("the cleanup did not finish")
+	}
+	if got := d.ids(`SELECT string_agg("id", ',') FROM "Session" WHERE "successorTokenEnc" IS NOT NULL`); got != "" {
+		t.Errorf("ciphertexts left on %s", got)
+	}
+}
+
+// Cleanups are not serialised by the job queue: several at once must all
+// succeed, and together remove each thing exactly once.
+func TestConcurrentCleanupsAreSafe(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+	now := time.Date(2026, 11, 1, 12, 0, 0, 0, time.UTC)
+	for i := range 20 {
+		id := string(rune('a' + i))
+		d.family("dead_"+id, now.Add(-100*day), now.Add(-40*day), nil)
+		d.session("dead_s_"+id, "dead_"+id, now.Add(-100*day), nil, "")
+		d.family("live_"+id, now.Add(-50*day), now.Add(40*day), nil)
+		d.session("rot_"+id, "live_"+id, now.Add(-50*day), ptr(now.Add(-40*day)), "tail_"+id)
+		d.session("tail_"+id, "live_"+id, now.Add(-40*day), nil, "")
+	}
+	dbtest.SetClock(t, d.pool, now)
+
+	const runs = 4
+	reports := make(chan maintenance.Report, runs)
+	errs := make(chan error, runs)
+	for range runs {
+		go func() {
+			r, err := service(d).Cleanup(context.Background())
+			reports <- r
+			errs <- err
+		}()
+	}
+	var total maintenance.Report
+	for range runs {
+		if err := <-errs; err != nil {
+			t.Fatalf("a concurrent cleanup failed: %v", err)
+		}
+		r := <-reports
+		total.FamiliesDeleted += r.FamiliesDeleted
+		total.RotatedSessionsDeleted += r.RotatedSessionsDeleted
+		total.SuccessorCiphertextsCleared += r.SuccessorCiphertextsCleared
+	}
+	if total.FamiliesDeleted != 20 || total.RotatedSessionsDeleted != 20 || total.SuccessorCiphertextsCleared != 20 {
+		t.Errorf("together they removed %+v, want 20 of each", total)
+	}
+	if got := d.ids(`SELECT count(*)::text FROM "Session"`); got != "20" {
+		t.Errorf("%s sessions left, want the 20 live tails", got)
 	}
 }

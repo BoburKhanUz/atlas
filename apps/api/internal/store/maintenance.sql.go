@@ -11,11 +11,21 @@ import (
 
 const clearStaleSuccessorCiphertexts = `-- name: ClearStaleSuccessorCiphertexts :execrows
 UPDATE "Session" SET "successorTokenEnc" = NULL
- WHERE "successorTokenEnc" IS NOT NULL
-   AND "rotatedAt" < atlas_now() - interval '60 seconds'
+ WHERE "id" IN (
+   SELECT "id" FROM "Session"
+    WHERE "successorTokenEnc" IS NOT NULL
+      AND "rotatedAt" < atlas_now() - interval '60 seconds'
+    ORDER BY "id"
+      FOR UPDATE SKIP LOCKED)
 `
 
 // A ciphertext only serves a replay within 60 s of its rotation.
+//
+// These rows belong to live families too, whose family lock the cleanup does
+// not hold. SKIP LOCKED: a row someone holds (a refresh or a revocation of
+// that family, which clears its ciphertexts itself) is left to them or to
+// the next run, so the cleanup never waits for a session row while it holds
+// another one.
 func (q *Queries) ClearStaleSuccessorCiphertexts(ctx context.Context) (int64, error) {
 	result, err := q.db.Exec(ctx, clearStaleSuccessorCiphertexts)
 	if err != nil {
@@ -93,16 +103,20 @@ func (q *Queries) DeleteExpiredWeatherCache(ctx context.Context) (int64, error) 
 
 const deleteOldRotatedSessions = `-- name: DeleteOldRotatedSessions :execrows
 DELETE FROM "Session"
- WHERE "replacedById" IS NOT NULL
-   AND "revokedAt" < atlas_now() - interval '30 days'
-   AND "familyId" NOT IN (
-     SELECT "id" FROM "SessionFamily"
-      WHERE "revokedAt" < atlas_now() - interval '30 days'
-         OR "absoluteExpiresAt" < atlas_now() - interval '30 days')
+ WHERE "id" IN (
+   SELECT "id" FROM "Session"
+    WHERE "replacedById" IS NOT NULL
+      AND "revokedAt" < atlas_now() - interval '30 days'
+      AND "familyId" NOT IN (
+        SELECT "id" FROM "SessionFamily"
+         WHERE "revokedAt" < atlas_now() - interval '30 days'
+            OR "absoluteExpiresAt" < atlas_now() - interval '30 days')
+    ORDER BY "id"
+      FOR UPDATE SKIP LOCKED)
 `
 
 // Rotated rows (never a live tail) rotated more than 30 days ago, of families
-// that are not themselves deleted below.
+// that are not themselves deleted below. SKIP LOCKED for the same reason.
 func (q *Queries) DeleteOldRotatedSessions(ctx context.Context) (int64, error) {
 	result, err := q.db.Exec(ctx, deleteOldRotatedSessions)
 	if err != nil {
