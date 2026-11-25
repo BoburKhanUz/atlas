@@ -31,11 +31,25 @@ client ─► Wrap (middleware) ─► routed (404 for unknown routes) ─► ge
 - **Errors** (`internal/apierr`): the 31 contract codes with their status and Uzbek
   message in one table. Services return `*apierr.Error`; anything else becomes 500
   `INTERNAL`, logged with its cause and the request id, and never sent to the client.
-  The generator's own decode errors become `BAD_REQUEST`, `VALIDATION_ERROR` (naming
-  the parameter) or `PAYLOAD_TOO_LARGE`.
-- **Request id**: a client `X-Request-Id` matching `[A-Za-z0-9-]{8,64}` is kept,
-  otherwise a random UUID is used. It is in the response header, the envelope and every
-  log line.
+  The generator's own decode errors match the Next.js API, which parses then validates
+  with zod:
+  - a parameter or header of the wrong form, or a JSON value of the wrong type, is
+    `VALIDATION_ERROR` naming the field;
+  - an empty body is `VALIDATION_ERROR` (Node reads it as `{}`);
+  - malformed JSON is `BAD_REQUEST`, and a body over the limit is `PAYLOAD_TOO_LARGE`.
+
+  Field-level Uzbek messages come from each service's own validation (B2 onward). The
+  first operation with inputs adds tests of these through the real router: health has no
+  inputs, so B0 tests the mapping directly.
+- If writing a response fails after it started (the client left), nothing is added to
+  it; this is logged as a warning, not as an internal error. Error responses carry
+  `Cache-Control: no-store`.
+- Not everything reaches the router: net/http answers some malformed requests itself
+  (a bad `Content-Length`: plain 400; headers over 16 KB: 431), and ServeMux redirects
+  unclean paths (`//api/health`: 307). The Next.js server has similar edges.
+- **Request id**: a single client `X-Request-Id` matching `[A-Za-z0-9-]{8,64}` is kept,
+  otherwise (missing, malformed or sent more than once, as the Next.js API) a random UUID
+  is used. It is in the response header, the envelope and every request's log lines.
 - **Logs**: JSON on stdout (`log/slog`). There is one `request` line per request with the
   method, the route pattern (not the path, which can hold media keys), status, bytes and
   duration. Query strings, headers and bodies are never logged. A panic is logged with
@@ -50,7 +64,7 @@ before listening. Values that hold credentials are never printed.
 | Variable | Default | Rule |
 |---|---|---|
 | `LOOKLY_ENV` | none (required) | `production`, `staging`, `development` or `test` |
-| `DATABASE_URL` | none (required) | `postgres://` or `postgresql://` URL with host and database (shared with the Next.js server) |
+| `DATABASE_URL` | none (required) | `postgres://` or `postgresql://` URL with host and database (shared with the Next.js server); in production `sslmode` must be set to `disable`, `require`, `verify-ca` or `verify-full` (the driver's default, `prefer`, falls back to plain text silently) |
 | `LOOKLY_HTTP_ADDR` | `:8080` | `host:port` or `:port` |
 | `LOOKLY_DB_MAX_CONNS` | `10` | 1–100 |
 | `LOOKLY_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error`; `debug` is refused in production |
@@ -58,21 +72,40 @@ before listening. Values that hold credentials are never printed.
 
 Later stages add their settings (session keys, media secret, AI, mail) to the same check.
 
+The PostgreSQL driver (pgx) also reads `PG*` variables (`PGPASSWORD`, `PGSSLMODE`, …),
+`~/.pgpass` and the service file for anything the URL leaves out. The URL is required to
+name the host and database, and in production `sslmode`. The container sets no `PG*`
+variables; keep it that way.
+
 ## Process
 
 - `lookly serve` validates the configuration, opens the pgx pool (lazily: the server
   starts while the database is down, and health reports it), and serves with these
   limits: header 5 s, read 30 s, write 60 s, idle 120 s, headers ≤ 16 KB. SIGINT or
   SIGTERM stops accepting connections and lets running requests finish within
-  `LOOKLY_SHUTDOWN_GRACE`. Exit codes: 0 clean, 1 runtime failure, 2 usage or
-  configuration error.
+  `LOOKLY_SHUTDOWN_GRACE`. After it, the remaining connections are closed, which cancels
+  their requests. A second signal exits at once (130). Exit codes: 0 clean, 1 runtime
+  failure or requests cut off, 2 usage or configuration error.
 - `lookly health` requests the local `/api/health` and exits 0 only on 200. The image is
   distroless (no shell or curl), so this is its Docker `HEALTHCHECK`.
 - `GET /api/health` pings the database within 2 s: 200 `{status: ok, database: ok,
   version}` or 503 `{status: degraded, database: unreachable, version}`, `Cache-Control:
   no-store`. This is the Next.js behaviour.
-- The version is stamped at build time (`-ldflags -X lookly/internal/app.version=…`);
-  `dev` otherwise.
+- The version is stamped at build time (`-ldflags -X lookly/internal/app.version=…`,
+  the image's `--build-arg VERSION`); `dev` otherwise. The deployment must pass it (the
+  Next.js server read `APP_VERSION`).
+
+## Deployment notes for B7
+
+- Docker stops a container after 10 s by default; `LOOKLY_SHUTDOWN_GRACE` is 20 s. The
+  service's compose entry needs `stop_grace_period` of at least the grace plus 5 s
+  (25 s), or the grace period never applies.
+- `DATABASE_URL` is shared with Prisma. Prisma-only URL options (`schema`,
+  `connection_limit`, `pgbouncer`) pass this check, but PostgreSQL refuses them when pgx
+  forwards them. Health then shows 503. Check the production URL at the cutover.
+- The runtime base image is pinned by digest. The build image
+  (`golang:1.26.11-bookworm`) is pinned by tag only: Docker Hub rate-limited the digest
+  lookup in the B0 session. Pin it by digest before the first production image.
 
 ## Database
 

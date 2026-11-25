@@ -68,6 +68,15 @@ func TestExplicitValues(t *testing.T) {
 		if _, err := config.Load(env(with(map[string]string{"LOOKLY_ENV": e}))); err != nil {
 			t.Errorf("%s: %v", e, err)
 		}
+		// Outside production the driver's default is acceptable.
+		if _, err := config.Load(env(with(map[string]string{"LOOKLY_ENV": e, "DATABASE_URL": "postgresql://u@localhost/db"}))); err != nil {
+			t.Errorf("%s without sslmode: %v", e, err)
+		}
+	}
+	for _, mode := range []string{"disable", "require", "verify-ca", "verify-full"} {
+		if _, err := config.Load(env(with(map[string]string{"DATABASE_URL": "postgresql://u:p@db/x?sslmode=" + mode}))); err != nil {
+			t.Errorf("production with sslmode=%s: %v", mode, err)
+		}
 	}
 }
 
@@ -89,6 +98,10 @@ func TestRefusals(t *testing.T) {
 		{"database without host", map[string]string{"DATABASE_URL": "postgresql:///atlas"}, "DATABASE_URL"},
 		{"database without name", map[string]string{"DATABASE_URL": "postgresql://atlas:s3cret-pass@db:5432/"}, "DATABASE_URL"},
 		{"database bad port", map[string]string{"DATABASE_URL": "postgresql://atlas:s3cret-pass@db:99999/atlas"}, "DATABASE_URL"},
+		// Without sslmode the driver uses "prefer", which falls back to plain
+		// text silently: production states its choice.
+		{"database without sslmode in production", map[string]string{"DATABASE_URL": "postgresql://atlas:s3cret-pass@db.internal:5432/atlas"}, "DATABASE_URL"},
+		{"database with an unknown sslmode", map[string]string{"DATABASE_URL": "postgresql://atlas:s3cret-pass@db.internal:5432/atlas?sslmode=sometimes"}, "DATABASE_URL"},
 		{"address without port", map[string]string{"LOOKLY_HTTP_ADDR": "localhost"}, "LOOKLY_HTTP_ADDR"},
 		{"address port zero", map[string]string{"LOOKLY_HTTP_ADDR": ":0"}, "LOOKLY_HTTP_ADDR"},
 		{"address port too big", map[string]string{"LOOKLY_HTTP_ADDR": ":70000"}, "LOOKLY_HTTP_ADDR"},

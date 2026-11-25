@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -109,6 +110,13 @@ func TestRequestID(t *testing.T) {
 		{"other characters are replaced", "id with spaces!", false},
 		{"header injection is replaced", "abcdefgh\r\nSet-Cookie: x=1", false},
 	}
+	t.Run("several ids are replaced (as the Next.js API, which joins them)", func(t *testing.T) {
+		t.Parallel()
+		w := do(h, http.MethodGet, "/api/health", nil, http.Header{"X-Request-Id": {"client-req-0001", "client-req-0002"}})
+		if got := w.Header().Get("X-Request-Id"); !generatedID.MatchString(got) {
+			t.Errorf("got %q", got)
+		}
+	})
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
@@ -231,7 +239,7 @@ func TestAPanicIsAnInternalErrorAndIsLogged(t *testing.T) {
 func TestAccessLog(t *testing.T) {
 	t.Parallel()
 	h, l := newHandler(t, fakeServer{health: ok})
-	do(h, http.MethodGet, "/api/health?token=secret-query", nil, http.Header{
+	do(h, http.MethodGet, "/api/health?token=secret-query", strings.NewReader(`{"password":"secret-body"}`), http.Header{
 		"X-Request-Id":  {"client-req-0002"},
 		"Authorization": {"Bearer secret-header"},
 	})
@@ -257,7 +265,7 @@ func TestAccessLog(t *testing.T) {
 	if access[1]["route"] != "unmatched" || access[1]["status"] != float64(404) {
 		t.Errorf("unmatched route line: %v", access[1])
 	}
-	for _, secret := range []string{"secret-query", "secret-header", "secret-key"} {
+	for _, secret := range []string{"secret-query", "secret-header", "secret-key", "secret-body"} {
 		if strings.Contains(l.String(), secret) {
 			t.Errorf("the log contains %q: %s", secret, l.String())
 		}
@@ -305,7 +313,10 @@ func TestRequestDecodeErrors(t *testing.T) {
 		path   string
 	}{
 		{"malformed JSON", &json.SyntaxError{Offset: 3}, 400, "BAD_REQUEST", ""},
-		{"wrong JSON type", &json.UnmarshalTypeError{Value: "number", Field: "name"}, 400, "BAD_REQUEST", ""},
+		// The Next.js API validates parsed JSON with zod: a wrong type and an
+		// empty body (read as {}) are validation errors there.
+		{"wrong JSON type", fmt.Errorf("can't decode JSON body: %w", &json.UnmarshalTypeError{Value: "number", Field: "email"}), 400, "VALIDATION_ERROR", "email"},
+		{"empty body", fmt.Errorf("can't decode JSON body: %w", io.EOF), 400, "VALIDATION_ERROR", ""},
 		{"body over the limit", &http.MaxBytesError{Limit: 10}, 413, "PAYLOAD_TOO_LARGE", ""},
 		{"bad parameter", &contract.InvalidParamFormatError{ParamName: "limit", Err: errors.New("x")}, 400, "VALIDATION_ERROR", "limit"},
 		{"missing parameter", &contract.RequiredParamError{ParamName: "exp"}, 400, "VALIDATION_ERROR", "exp"},
@@ -331,5 +342,75 @@ func TestRequestDecodeErrors(t *testing.T) {
 				t.Error("the decoder's text reaches the client")
 			}
 		})
+	}
+}
+
+// partial writes the start of a 200 and then fails, as when the client goes
+// away mid-response.
+type partial struct{}
+
+func (partial) VisitGetHealthResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status":"ok"`))
+	return errors.New("write tcp: broken pipe")
+}
+
+func TestAFailureAfterTheResponseStartedAddsNothingToIt(t *testing.T) {
+	t.Parallel()
+	h, l := newHandler(t, fakeServer{health: func(context.Context) (contract.GetHealthResponseObject, error) {
+		return partial{}, nil
+	}})
+	w := do(h, http.MethodGet, "/api/health", nil, nil)
+	if w.Code != http.StatusOK || w.Body.String() != `{"status":"ok"` {
+		t.Fatalf("%d %q: an error envelope was appended to a started response", w.Code, w.Body.String())
+	}
+	for _, line := range l.lines(t) {
+		if line["level"] == "ERROR" {
+			t.Errorf("a broken connection is not an internal error: %v", line)
+		}
+	}
+	if !strings.Contains(l.String(), "response not completed") {
+		t.Errorf("not logged: %s", l.String())
+	}
+}
+
+func TestAnAbortedRequestIsStillLogged(t *testing.T) {
+	t.Parallel()
+	h, l := newHandler(t, fakeServer{health: func(context.Context) (contract.GetHealthResponseObject, error) {
+		panic(http.ErrAbortHandler)
+	}})
+	func() {
+		defer func() {
+			if v := recover(); v != http.ErrAbortHandler {
+				t.Errorf("recovered %v, want http.ErrAbortHandler passed on to net/http", v)
+			}
+		}()
+		do(h, http.MethodGet, "/api/health", nil, nil)
+	}()
+	if !strings.Contains(l.String(), `"msg":"request"`) {
+		t.Errorf("no access line: %s", l.String())
+	}
+}
+
+// Over the limit, net/http must learn about it, so the connection is closed
+// instead of drained for reuse (only a real server shows this).
+func TestAnOversizedBodyClosesTheConnection(t *testing.T) {
+	t.Parallel()
+	srv := httptest.NewServer(httpapi.Wrap(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, err := io.ReadAll(r.Body); err != nil {
+			httpapi.WriteError(w, r, err)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}), slog.New(slog.NewJSONHandler(io.Discard, nil))))
+	defer srv.Close()
+	resp, err := http.Post(srv.URL, "application/json", strings.NewReader(strings.Repeat("a", httpapi.DefaultBodyLimit+1)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusRequestEntityTooLarge || !resp.Close {
+		t.Fatalf("status %d, Connection: close %v", resp.StatusCode, resp.Close)
 	}
 }

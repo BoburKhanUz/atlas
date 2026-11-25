@@ -12,7 +12,7 @@ import (
 func TestADriverRejectionNeverQuotesTheURL(t *testing.T) {
 	t.Parallel()
 	// The URL form is valid (config accepts it), the option is not.
-	url := "postgresql://atlas:s3cret-pass@db.internal:5432/atlas?sslmode=bogus"
+	url := "postgresql://atlas:s3cret-pass@db.internal:5432/atlas?connect_timeout=soon"
 	cfg, err := config.Load(func(k string) (string, bool) {
 		return map[string]string{"LOOKLY_ENV": "test", "DATABASE_URL": url}[k], true
 	})
@@ -21,7 +21,7 @@ func TestADriverRejectionNeverQuotesTheURL(t *testing.T) {
 	}
 	_, err = database.Open(context.Background(), cfg)
 	if err == nil {
-		t.Fatal("accepted an invalid sslmode")
+		t.Fatal("accepted an invalid connect_timeout")
 	}
 	if !strings.Contains(err.Error(), "DATABASE_URL") || strings.Contains(err.Error(), "s3cret-pass") || strings.Contains(err.Error(), "db.internal") {
 		t.Fatalf("error %q", err)

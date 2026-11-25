@@ -113,6 +113,12 @@ func serve(ctx context.Context, getenv func(string) (string, bool), stdout, stde
 	defer cancel()
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Error("requests still running when the grace period ended", "err", err.Error())
+		// Close the remaining connections: their requests' contexts end, so
+		// running queries are cancelled and pool.Close (deferred) does not wait
+		// on them past the grace period.
+		if err := srv.Close(); err != nil {
+			log.Error("closing connections", "err", err.Error())
+		}
 		return exitFailure
 	}
 	if err := <-served; !errors.Is(err, http.ErrServerClosed) {
@@ -145,7 +151,10 @@ func probe(ctx context.Context, getenv func(string) (string, bool), stderr io.Wr
 		fmt.Fprintln(stderr, err)
 		return exitFailure
 	}
-	resp, err := http.DefaultClient.Do(req)
+	// Straight to the local server: never through an HTTP proxy from the
+	// environment.
+	client := &http.Client{Transport: &http.Transport{Proxy: nil}}
+	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Fprintln(stderr, "unhealthy:", err)
 		return exitFailure

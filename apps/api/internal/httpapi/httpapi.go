@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"regexp"
@@ -67,13 +68,13 @@ func Wrap(next http.Handler, log *slog.Logger) http.Handler {
 		w.Header().Set("X-Request-Id", info.id)
 		rec := &recorder{ResponseWriter: w, status: http.StatusOK}
 		r = r.WithContext(context.WithValue(r.Context(), infoKey{}, info))
-		r.Body = http.MaxBytesReader(rec, r.Body, DefaultBodyLimit)
+		// The real writer, not the recorder: net/http must learn that the
+		// limit was hit, so it closes the connection instead of draining it.
+		r.Body = http.MaxBytesReader(w, r.Body, DefaultBodyLimit)
 
 		defer func() {
-			if v := recover(); v != nil {
-				if v == http.ErrAbortHandler { // the client went away: let net/http handle it
-					panic(v)
-				}
+			v := recover()
+			if v != nil && v != http.ErrAbortHandler { // a sentinel, compared by identity as net/http does
 				// The value may hold request data: log its type and the stack only.
 				log.Error("panic", "requestId", info.id, "type", fmt.Sprintf("%T", v), "stack", string(debug.Stack()))
 				if !rec.wrote {
@@ -90,6 +91,9 @@ func Wrap(next http.Handler, log *slog.Logger) http.Handler {
 				"bytes", rec.bytes,
 				"durationMs", float64(time.Since(started).Microseconds())/1000,
 			)
+			if v == http.ErrAbortHandler {
+				panic(v) // the client went away: net/http closes the connection quietly
+			}
 		}()
 		next.ServeHTTP(rec, r)
 	})
@@ -100,6 +104,14 @@ func Wrap(next http.Handler, log *slog.Logger) http.Handler {
 // is INTERNAL, and its cause is logged (never sent).
 func WriteError(w http.ResponseWriter, r *http.Request, err error) {
 	info := infoFrom(r.Context())
+	if s, ok := w.(interface{ started() bool }); ok && s.started() {
+		// Part of the answer is already sent (writing it failed, usually
+		// because the client left): an envelope cannot follow it.
+		if info != nil {
+			info.log.Warn("response not completed", "requestId", info.id, "route", info.route, "err", err.Error())
+		}
+		return
+	}
 	var e *apierr.Error
 	var tooLarge *http.MaxBytesError
 	switch {
@@ -128,9 +140,25 @@ func RequestError(w http.ResponseWriter, r *http.Request, err error) {
 		writeEnvelope(w, infoFrom(r.Context()), apierr.New(apierr.PayloadTooLarge))
 		return
 	}
+	msg := apierr.ValidationError.Message()
 	if name, ok := parameterOf(err); ok {
-		msg := apierr.ValidationError.Message()
 		writeEnvelope(w, infoFrom(r.Context()), apierr.Validation(msg, apierr.Detail{Path: name, Message: msg}))
+		return
+	}
+	// As the Next.js API (JSON parsed, then validated): a value of the wrong
+	// type names its field, and an empty body is read as {} and fails
+	// validation. Malformed JSON stays BAD_REQUEST.
+	var wrongType *json.UnmarshalTypeError
+	if errors.As(err, &wrongType) {
+		e := apierr.Validation(msg)
+		if wrongType.Field != "" {
+			e.Details = []apierr.Detail{{Path: wrongType.Field, Message: msg}}
+		}
+		writeEnvelope(w, infoFrom(r.Context()), e)
+		return
+	}
+	if errors.Is(err, io.EOF) {
+		writeEnvelope(w, infoFrom(r.Context()), apierr.Validation(msg))
 		return
 	}
 	writeEnvelope(w, infoFrom(r.Context()), apierr.New(apierr.BadRequest))
@@ -205,21 +233,15 @@ func infoFrom(ctx context.Context) *requestInfo {
 	return info
 }
 
-// RequestID returns the request's id (for services that log).
-func RequestID(ctx context.Context) string {
-	if info := infoFrom(ctx); info != nil {
-		return info.id
-	}
-	return ""
-}
-
 var clientRequestID = regexp.MustCompile(`^[A-Za-z0-9-]{8,64}$`)
 
 // requestID accepts the client's X-Request-Id when it is well-formed (the
 // Next.js API's rule), else generates a random UUID.
 func requestID(r *http.Request) string {
-	if id := r.Header.Get("X-Request-Id"); clientRequestID.MatchString(id) {
-		return id
+	// Several X-Request-Id headers: the Next.js API joins them ("a, b"),
+	// which fails the pattern, so a new id is used there too.
+	if ids := r.Header.Values("X-Request-Id"); len(ids) == 1 && clientRequestID.MatchString(ids[0]) {
+		return ids[0]
 	}
 	return newUUID()
 }
@@ -255,6 +277,8 @@ func (r *recorder) Write(b []byte) (int, error) {
 	r.bytes += n
 	return n, err
 }
+
+func (r *recorder) started() bool { return r.wrote }
 
 // Unwrap lets http.ResponseController reach the underlying writer.
 func (r *recorder) Unwrap() http.ResponseWriter { return r.ResponseWriter }

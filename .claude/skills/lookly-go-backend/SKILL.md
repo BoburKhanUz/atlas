@@ -13,12 +13,21 @@ on the same PostgreSQL database. Read `docs/adr/` first; the decisions there are
 The Go module and binary are named `lookly`; existing wire names (`atlas_at`,
 `X-Atlas-Client`, `ATLAS_*` variables the deployment already uses) stay as they are.
 
+Built so far (B0) and planned:
+
 ```
 apps/api/
-  cmd/lookly/            main: `serve`, `worker`, `migrate`, `eval` subcommands
+  cmd/lookly/            thin main (signals); the commands live in internal/app
   internal/
+    app/                 commands: `serve`, `health` (B0); `worker`, `migrate`, `eval` later
     config/              typed config from env; validated at startup, fails closed
-    httpapi/             router, middleware, error envelope, generated server interface
+    apierr/              the contract's error codes: status and Uzbek message (one table)
+    httpapi/             router, middleware (request id, access log, recovery, body
+                         limit), error envelope, Server = the generated interface
+    httpapi/contract/    generated from docs/api/openapi.json (never edited by hand)
+    contracttest/        test helper: validates responses against the contract
+    database/            pgx pool
+    health/              database liveness
     auth/ session/       login, register, refresh rotation, families, consent gate
     wardrobe/ media/     items, uploads, image variants, signed URLs, storage drivers
     outfits/ engine/     outfit engine (pure), generate, saved outfits, feedback
@@ -27,7 +36,7 @@ apps/api/
     admin/               admin API (role-checked, audited)
     jobs/                River job definitions and workers
     store/               sqlc queries (queries/*.sql) and generated code
-    platform/            logging, clock, ids, crypto helpers
+    platform/            clock, ids, crypto helpers (when a second package needs them)
   migrations/            SQL migrations (up and down)
   testdata/              golden vectors, fixture images
 ```

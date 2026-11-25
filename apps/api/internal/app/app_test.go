@@ -53,7 +53,8 @@ func freeAddr(t *testing.T) string {
 }
 
 // blackhole accepts connections and never answers: a database that hangs.
-func blackhole(t *testing.T) string {
+// accepted receives a value for each connection (the server is pinging).
+func blackhole(t *testing.T) (addr string, accepted <-chan struct{}) {
 	t.Helper()
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -61,6 +62,7 @@ func blackhole(t *testing.T) string {
 	}
 	var conns []net.Conn
 	var mu sync.Mutex
+	ch := make(chan struct{}, 16)
 	go func() {
 		for {
 			c, err := l.Accept()
@@ -70,6 +72,10 @@ func blackhole(t *testing.T) string {
 			mu.Lock()
 			conns = append(conns, c)
 			mu.Unlock()
+			select {
+			case ch <- struct{}{}:
+			default:
+			}
 		}
 	}()
 	t.Cleanup(func() {
@@ -80,7 +86,7 @@ func blackhole(t *testing.T) string {
 			c.Close()
 		}
 	})
-	return l.Addr().String()
+	return l.Addr().String(), ch
 }
 
 func TestUsage(t *testing.T) {
@@ -120,7 +126,7 @@ type started struct {
 	done   chan int
 }
 
-func serve(t *testing.T, databaseHost string) started {
+func serve(t *testing.T, databaseHost, grace string) started {
 	t.Helper()
 	addr := freeAddr(t)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -130,7 +136,7 @@ func serve(t *testing.T, databaseHost string) started {
 			"LOOKLY_ENV":            "test",
 			"LOOKLY_HTTP_ADDR":      addr,
 			"DATABASE_URL":          "postgresql://lookly@" + databaseHost + "/lookly",
-			"LOOKLY_SHUTDOWN_GRACE": "5s",
+			"LOOKLY_SHUTDOWN_GRACE": grace,
 		}), s.stdout, &syncBuffer{})
 	}()
 	t.Cleanup(cancel)
@@ -149,7 +155,7 @@ func serve(t *testing.T, databaseHost string) started {
 
 func TestServeAnswersAndStopsCleanly(t *testing.T) {
 	t.Parallel()
-	s := serve(t, "127.0.0.1:1") // nothing listens: the database is down
+	s := serve(t, "127.0.0.1:1", "5s") // nothing listens: the database is down
 	resp, err := http.Get("http://" + s.addr + "/api/health")
 	if err != nil {
 		t.Fatal(err)
@@ -188,8 +194,10 @@ func TestAStopSignalLetsARunningRequestFinish(t *testing.T) {
 	t.Parallel()
 	// The database accepts and never answers: health takes its full ping
 	// timeout (2 s), during which the stop signal arrives.
-	s := serve(t, blackhole(t))
+	db, pinging := blackhole(t)
+	s := serve(t, db, "5s")
 	result := make(chan int, 1)
+	sent := time.Now()
 	go func() {
 		resp, err := http.Get("http://" + s.addr + "/api/health")
 		if err != nil {
@@ -199,18 +207,61 @@ func TestAStopSignalLetsARunningRequestFinish(t *testing.T) {
 		resp.Body.Close()
 		result <- resp.StatusCode
 	}()
-	time.Sleep(300 * time.Millisecond) // the request is in flight
+	select {
+	case <-pinging: // the request is in its handler
+	case <-time.After(5 * time.Second):
+		t.Fatal("the request never reached the database")
+	}
 	s.cancel()
+	time.Sleep(300 * time.Millisecond) // draining: the request still runs (its ping takes 2 s)
+	if c, err := net.DialTimeout("tcp", s.addr, 200*time.Millisecond); err == nil {
+		c.Close()
+		t.Error("a new connection was accepted while draining")
+	}
 	select {
 	case status := <-result:
 		if status != http.StatusServiceUnavailable {
 			t.Fatalf("the running request got %d, want its 503 answer", status)
+		}
+		// It ran to its own end (the 2 s ping timeout): the stop signal did
+		// not cancel it.
+		if took := time.Since(sent); took < 1800*time.Millisecond {
+			t.Errorf("the request ended after %s: the stop signal cancelled it", took)
 		}
 	case <-time.After(10 * time.Second):
 		t.Fatal("the running request never finished")
 	}
 	if code := <-s.done; code != 0 {
 		t.Fatalf("exit %d", code)
+	}
+}
+
+func TestARequestLongerThanTheGracePeriodDoesNotKeepTheProcessAlive(t *testing.T) {
+	t.Parallel()
+	// The request needs 2 s (the ping timeout); the grace period is 1 s.
+	db, pinging := blackhole(t)
+	s := serve(t, db, "1s")
+	go func() {
+		if resp, err := http.Get("http://" + s.addr + "/api/health"); err == nil {
+			resp.Body.Close()
+		}
+	}()
+	<-pinging
+	stopped := time.Now()
+	s.cancel()
+	select {
+	case code := <-s.done:
+		if code != 1 {
+			t.Errorf("exit %d, want 1 (requests were cut off)", code)
+		}
+		if took := time.Since(stopped); took > 1800*time.Millisecond {
+			t.Errorf("stopping took %s; the grace period is 1s", took)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("the process did not stop")
+	}
+	if !strings.Contains(s.stdout.String(), "grace period ended") {
+		t.Errorf("not logged: %s", s.stdout.String())
 	}
 }
 

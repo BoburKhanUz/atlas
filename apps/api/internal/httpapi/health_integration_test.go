@@ -7,12 +7,17 @@ package httpapi_test
 
 import (
 	"context"
+	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"testing"
+	"time"
 
 	"lookly/internal/config"
 	"lookly/internal/database"
+	"lookly/internal/health"
+	"lookly/internal/httpapi"
 )
 
 func testConfig(t *testing.T, url string) config.Config {
@@ -42,7 +47,10 @@ func TestHealthAgainstPostgreSQL(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer pool.Close()
-	h, _ := healthHandler(t, pool)
+	// A real first connection (TCP, startup, password auth) can take longer
+	// than the unit tests' 50 ms: use the production ping timeout.
+	s := httpapi.NewServer(httpapi.Services{Health: health.New(pool, "1.2.3", 2*time.Second)})
+	h := httpapi.New(s, slog.New(slog.NewJSONHandler(io.Discard, nil)))
 	checkHealth(t, h, http.StatusOK, healthBody{"ok", "ok", "1.2.3"})
 }
 

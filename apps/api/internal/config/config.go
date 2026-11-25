@@ -84,7 +84,7 @@ func Load(getenv func(string) (string, bool)) (Config, error) {
 
 	if v, ok := value("DATABASE_URL"); !ok {
 		fail("DATABASE_URL", "is not set")
-	} else if err := checkDatabaseURL(v); err != nil {
+	} else if err := checkDatabaseURL(v, c.Env); err != nil {
 		// The value holds credentials: only the reason is reported.
 		fail("DATABASE_URL", "%v", err)
 	} else {
@@ -148,10 +148,16 @@ func checkListenAddr(addr string) error {
 	return nil
 }
 
+// sslModes are the driver's values. In production only an explicit choice
+// that never falls back silently is accepted: "prefer" and "allow" (and the
+// default, which is "prefer") switch to plain text when TLS fails.
+var sslModes = map[string]bool{"disable": true, "allow": true, "prefer": true, "require": true, "verify-ca": true, "verify-full": true}
+var productionSSLModes = map[string]bool{"disable": true, "require": true, "verify-ca": true, "verify-full": true}
+
 // checkDatabaseURL accepts the URL form the deployment uses
 // (postgresql://user:password@host:port/database?options). Errors never
 // include the value.
-func checkDatabaseURL(raw string) error {
+func checkDatabaseURL(raw string, env Env) error {
 	u, err := url.Parse(raw)
 	if err != nil {
 		return errors.New("is not a valid URL")
@@ -169,6 +175,13 @@ func checkDatabaseURL(raw string) error {
 	}
 	if strings.Trim(u.Path, "/") == "" {
 		return errors.New("has no database name")
+	}
+	mode, set := u.Query()["sslmode"]
+	switch {
+	case set && (len(mode) != 1 || !sslModes[mode[0]]):
+		return errors.New("sslmode must be disable, allow, prefer, require, verify-ca or verify-full")
+	case env == Production && (!set || !productionSSLModes[mode[0]]):
+		return errors.New("must set sslmode in production: disable (private network), require, verify-ca or verify-full")
 	}
 	return nil
 }

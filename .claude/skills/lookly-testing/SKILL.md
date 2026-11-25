@@ -39,7 +39,7 @@ session is not a result.
 ## Go backend (`apps/api`)
 
 ```bash
-go vet ./... && go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./... && go test -race ./...
+go vet ./... && go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 -tags integration ./... && go test -race ./...
 LOOKLY_TEST_DATABASE_URL=... go test -race -tags integration ./...   # real PostgreSQL 16
 ```
 

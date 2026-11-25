@@ -42,5 +42,5 @@ Until B7 the contract is generated from the TypeScript registry (ADR 0003): chan
 docker build --build-arg VERSION=<version> apps/api
 ```
 
-A static binary on `gcr.io/distroless/static-debian12:nonroot`. `lookly health` is the
+A static binary on `gcr.io/distroless/static-debian12:nonroot` (pinned by digest). `lookly health` is the
 Docker health check.
