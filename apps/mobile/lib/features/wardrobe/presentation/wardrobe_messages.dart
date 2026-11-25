@@ -3,6 +3,10 @@ import 'add_item_controller.dart';
 
 /// Uzbek texts of the add-item flow.
 abstract final class WardrobeMessages {
+  /// A cancelled upload: the photo may already have reached the server.
+  static const uploadCancelled =
+      'Yuklash to‘xtatildi. Rasm serverga yetib borgan bo‘lishi mumkin — “Qayta urinish” kiyimni ikki marta qo‘shmaydi.';
+
   static String reject(RejectReason r, {PhotoSource? source}) => switch (r) {
     RejectReason.tooSmall => 'Rasm juda kichik: qisqa tomoni kamida 256 px bo‘lishi kerak. Boshqa rasm tanlang.',
     RejectReason.dimensions =>

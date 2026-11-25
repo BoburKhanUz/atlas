@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../app/router.dart';
 import '../../../core/design/tokens.dart';
+import '../../../core/network/api_failure.dart';
 import '../../../core/widgets/atlas_button.dart';
 import '../data/photo_picker.dart';
 import '../providers.dart';
@@ -22,15 +23,18 @@ class AddItemScreen extends ConsumerWidget {
     final s = ref.watch(addItemControllerProvider);
     final c = ref.read(addItemControllerProvider.notifier);
     return PopScope(
-      canPop: !s.busy,
-      // Back while uploading cancels the upload and leaves; the job stays
-      // recoverable (the wardrobe offers to add it again).
+      // Back while preparing just leaves (nothing was sent). Back while
+      // uploading or analysing cancels first; the server may already have
+      // stored the item, so the wardrobe reloads when this screen closes.
+      canPop: !s.busy || s.phase == AddPhase.preparing,
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop || !s.busy) return;
+        if (didPop) return c.closed();
+        if (!s.busy) return;
         c.cancel();
-        // Leave once the cancel has settled the state (not busy any more).
+        // Leave once the cancel has settled the state; never retried per
+        // frame (a second back press tries again).
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (context.mounted) Navigator.of(context).maybePop();
+          if (context.mounted && !ref.read(addItemControllerProvider).busy) Navigator.of(context).maybePop();
         });
       },
       child: Scaffold(
@@ -181,7 +185,11 @@ class _Upload extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                state.failure?.userMessage ?? 'Yuklab bo‘lmadi.',
+                switch (state.failure) {
+                  CancelledFailure() => WardrobeMessages.uploadCancelled,
+                  final f? => f.userMessage,
+                  null => 'Yuklab bo‘lmadi.',
+                },
                 key: const Key('add.failure'),
                 style: text.bodyMedium?.copyWith(color: AtlasColors.error),
               ),

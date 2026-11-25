@@ -136,6 +136,35 @@ void main() {
       expect(h.backend.calls(profilePath), 1);
     });
 
+    test('restored session, changed legal texts, slow consent check: a refusal is not "no onboarding"', () async {
+      final h = SessionHarness(stored: pair(1));
+      // The consent check asks GET /auth/me like the app does, and it answers late.
+      final me = h.backend.gates[P.me] = Gate();
+      h.backend.script(P.me, [JsonReply(200, meJson(consentRequired: true))]);
+      h.backend.script(profilePath, [JsonReply(403, errorBody('CONSENT_REQUIRED'))]);
+      final c = ProviderContainer(overrides: appOverrides(h, onboarded: false, consentRequired: null));
+      addTearDown(c.dispose);
+      final consent = c.read(consentGateProvider);
+      final gate = c.read(onboardingGateProvider);
+      await h.session.restore();
+      for (var i = 0; i < 50; i++) {
+        await pumpEventQueue();
+      }
+      expect(h.backend.calls(profilePath), 1, reason: 'the restored session does not wait for the consent check');
+      expect(consent.status, ConsentStatus.required, reason: 'the refusal opens the consent screen');
+      expect(gate.status, OnboardingStatus.checking, reason: 'not decided from a refusal');
+      me.open();
+      for (var i = 0; i < 20; i++) {
+        await pumpEventQueue();
+      }
+
+      h.backend.script(profilePath, [JsonReply(200, profileJson())]);
+      consent.markAccepted();
+      await settle(gate);
+      expect(gate.status, OnboardingStatus.required);
+      expect(h.backend.calls(profilePath), 2);
+    });
+
     test('a marker decides at once, while the legal texts still wait', () async {
       final h = SessionHarness(stored: pair(1));
       final c = ProviderContainer(overrides: appOverrides(h, consentRequired: true));

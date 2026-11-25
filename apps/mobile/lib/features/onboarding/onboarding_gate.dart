@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../core/logging/app_log.dart';
+import '../../core/network/api_error_code.dart';
+import '../../core/network/api_failure.dart';
 import '../../core/session/auth_state.dart';
 import '../../core/session/session_controller.dart';
 import '../legal/consent_gate.dart';
@@ -28,7 +30,9 @@ enum OnboardingStatus {
 /// account has no style or colour preferences on the server → yes. The
 /// server is asked only once [ConsentGate] lets the user in: until changed
 /// legal texts are accepted it refuses every request, and a refusal must not
-/// read as "no onboarding". Any failure (offline, timeout) → no: the user is
+/// read as "no onboarding" (a restored session is let in before the consent
+/// check answers, so a CONSENT_REQUIRED answer means: ask again after
+/// acceptance). Any failure (offline, timeout) → no: the user is
 /// never blocked. A refresh or a request never changes the decision; only a
 /// different user (or the end of the session) does.
 class OnboardingGate extends ChangeNotifier {
@@ -107,6 +111,14 @@ class OnboardingGate extends ChangeNotifier {
     try {
       required = !await _hasStylePreferences().timeout(checkTimeout);
     } on Object catch (e) {
+      if (e case ApiHttpFailure(code: ApiErrorCode.consentRequired)) {
+        // A restored session lets the user in before the consent check has
+        // answered. The refusal sends [ConsentGate] to "required"; ask again
+        // once the texts are accepted, never decide from the refusal.
+        AppLog.info('onboarding check waits for the legal texts to be accepted');
+        if (check == _check) _waiting = check;
+        return;
+      }
       AppLog.info('onboarding check skipped (${e.runtimeType})');
     }
     if (check != _check || !_signedIn) return;

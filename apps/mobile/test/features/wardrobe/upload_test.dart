@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -411,6 +412,23 @@ void main() {
       ]);
       s.onSleep = (_) async => s.c.cancel();
       await s.c.upload();
+      expect(s.state.phase, AddPhase.failed);
+      expect(s.state.failure, isA<CancelledFailure>());
+      expect(s.uploads, hasLength(1), reason: 'no request after the cancel');
+    });
+
+    test('cancel ends a long wait for a running upload at once, not when the wait is over', () async {
+      final s = Setup();
+      await s.ready();
+      s.replies([
+        JsonReply(409, errorBody('IDEMPOTENCY_IN_PROGRESS'), headers: {'Retry-After': '30'}),
+      ]);
+      s.onSleep = (_) => Completer<void>().future; // the wait never ends by itself
+      final run = s.c.upload();
+      await pumpEventQueue();
+      expect(s.state.phase, AddPhase.analysing);
+      s.c.cancel();
+      await run.timeout(const Duration(seconds: 2));
       expect(s.state.phase, AddPhase.failed);
       expect(s.state.failure, isA<CancelledFailure>());
       expect(s.uploads, hasLength(1), reason: 'no request after the cancel');

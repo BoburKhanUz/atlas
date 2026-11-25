@@ -138,6 +138,10 @@ class AddItemController extends Notifier<AddItemState> {
   /// The running upload's cancel token (null when nothing is sent).
   CancelToken? _cancel;
 
+  /// An upload was cancelled after it started: the server may have stored
+  /// the item, so the wardrobe reloads when this flow closes ([closed]).
+  bool _maybeStored = false;
+
   @override
   AddItemState build() {
     // An edit saved elsewhere (editor) updates the item under review.
@@ -260,8 +264,18 @@ class AddItemController extends Notifier<AddItemState> {
   /// record are kept: Retry sends the same key and gets the stored item back
   /// instead of a duplicate.
   void cancel() {
-    if (!state.busy) return;
-    _cancel?.cancel();
+    final cancel = _cancel;
+    if (cancel == null || (state.phase != AddPhase.uploading && state.phase != AddPhase.analysing)) return;
+    _maybeStored = true;
+    cancel.cancel();
+  }
+
+  /// The screen was left. After a cancelled upload the wardrobe reloads, so
+  /// an item the server stored anyway is shown.
+  void closed() {
+    if (!_maybeStored) return;
+    _maybeStored = false;
+    unawaited(ref.read(wardrobeListProvider.notifier).refresh());
   }
 
   Future<void> _upload(UploadJob job, bool recovered, CancelToken cancel) async {
@@ -287,6 +301,7 @@ class AddItemController extends Notifier<AddItemState> {
             );
         await _forget();
         if (!ref.mounted) return;
+        _maybeStored = false;
         ref.read(wardrobeListProvider.notifier).insert(result.item);
         state = _settled(AddItemState(job: job, progress: 1, result: result, recovered: recovered));
         return;
@@ -299,7 +314,8 @@ class AddItemController extends Notifier<AddItemState> {
           var wait = f.retryAfter ?? const Duration(seconds: 2);
           if (wait > maxInProgressWait) wait = maxInProgressWait;
           state = AddItemState(phase: AddPhase.analysing, job: job, progress: 1, recovered: recovered);
-          await ref.read(uploadSleepProvider)(wait);
+          // A cancel ends the wait at once.
+          await Future.any([ref.read(uploadSleepProvider)(wait), cancel.whenCancel]);
           if (!ref.mounted) return;
           if (cancel.isCancelled) {
             state = AddItemState(

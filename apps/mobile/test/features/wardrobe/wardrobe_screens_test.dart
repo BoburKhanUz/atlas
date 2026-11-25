@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:atlas_mobile/features/wardrobe/data/background_remover.dart';
+import 'package:atlas_mobile/features/wardrobe/presentation/add_item_controller.dart';
 import 'package:atlas_mobile/features/wardrobe/presentation/add_item_screen.dart';
 import 'package:atlas_mobile/features/wardrobe/presentation/item_detail_screen.dart';
+import 'package:atlas_mobile/features/wardrobe/presentation/wardrobe_messages.dart';
 import 'package:atlas_mobile/features/wardrobe/providers.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -99,8 +102,13 @@ void main() {
 
   testWidgets('add: a running upload can be cancelled, and back leaves the screen', (tester) async {
     final app = App(tester);
+    var stored = false; // the server stores the item although the client cancelled
     await app.start(
-      wardrobe: (r) => r.method == 'POST' ? JsonReply(201, uploadJson('new-1')) : JsonReply(200, pageJson(['a'])),
+      wardrobe: (r) {
+        if (r.method != 'POST') return JsonReply(200, pageJson(stored ? ['new-1', 'a'] : ['a']));
+        stored = true;
+        return JsonReply(201, uploadJson('new-1'));
+      },
     );
     await app.tap(find.byKey(const Key('wardrobe.add')));
     await app.tap(find.byKey(const Key('add.gallery')));
@@ -109,6 +117,7 @@ void main() {
     expect(find.byKey(const Key('add.cancel')), findsOneWidget);
     await app.tap(find.byKey(const Key('add.cancel')));
     expect(find.byKey(const Key('add.retry')), findsOneWidget);
+    expect(find.text(WardrobeMessages.uploadCancelled), findsOneWidget);
     // Upload again, then press back while it runs: it is cancelled and the screen closes.
     await app.tap(find.byKey(const Key('add.retry')));
     expect(find.byKey(const Key('add.cancel')), findsOneWidget);
@@ -118,6 +127,25 @@ void main() {
     expect(app.location, '/wardrobe');
     expect(find.byType(AddItemScreen), findsNothing);
     expect(app.h.backend.to(P.wardrobe).where((r) => r.method == 'POST'), hasLength(2), reason: 'nothing resent');
+    // The wardrobe reloaded: the item the server stored is shown.
+    expect(find.byKey(const Key('wardrobe.item.new-1')), findsOneWidget);
+  });
+
+  testWidgets('add: back while the photo is being prepared leaves the screen', (tester) async {
+    final app = App(tester);
+    final held = Completer<Uint8List?>();
+    await app.start(overrides: [backgroundRemoverProvider.overrideWithValue(_HeldRemover(held))]);
+    await app.tap(find.byKey(const Key('wardrobe.add')));
+    await app.tap(find.byKey(const Key('add.gallery')));
+    expect(app.container.read(addItemControllerProvider).phase, AddPhase.preparing);
+    await tester.binding.handlePopRoute();
+    await app.settle();
+    await tester.pump(const Duration(seconds: 1)); // route transition done
+    expect(find.byType(AddItemScreen), findsNothing);
+    expect(app.location, '/wardrobe');
+    held.complete(null); // the late result is dropped
+    await app.settle();
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('add: background removed on the phone; the switch brings back the original', (tester) async {
@@ -206,6 +234,14 @@ void main() {
       expect(find.byKey(const Key('add.completed')), findsOneWidget);
     });
   }
+}
+
+class _HeldRemover implements BackgroundRemover {
+  _HeldRemover(this.result);
+  final Completer<Uint8List?> result;
+
+  @override
+  Future<Uint8List?> cutout(Uint8List photo) => result.future;
 }
 
 class _Remover implements BackgroundRemover {
