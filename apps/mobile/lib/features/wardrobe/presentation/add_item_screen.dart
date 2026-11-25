@@ -23,6 +23,16 @@ class AddItemScreen extends ConsumerWidget {
     final c = ref.read(addItemControllerProvider.notifier);
     return PopScope(
       canPop: !s.busy,
+      // Back while uploading cancels the upload and leaves; the job stays
+      // recoverable (the wardrobe offers to add it again).
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop || !s.busy) return;
+        c.cancel();
+        // Leave once the cancel has settled the state (not busy any more).
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) Navigator.of(context).maybePop();
+        });
+      },
       child: Scaffold(
         appBar: AppBar(title: const Text('Kiyim qo‘shish')),
         body: SafeArea(
@@ -152,12 +162,21 @@ class _Upload extends ConsumerWidget {
           ),
         const SizedBox(height: AtlasSpacing.md),
         switch (state.phase) {
-          AddPhase.uploading => _Progress(
-            key: const Key('add.uploading'),
-            label: 'Yuklanmoqda… ${(state.progress * 100).round()}%',
-            value: state.progress,
+          AddPhase.uploading || AddPhase.analysing => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (state.phase == AddPhase.uploading)
+                _Progress(
+                  key: const Key('add.uploading'),
+                  label: 'Yuklanmoqda… ${(state.progress * 100).round()}%',
+                  value: state.progress,
+                )
+              else
+                const _Progress(key: Key('add.analysing'), label: 'Tahlil qilinmoqda…'),
+              const SizedBox(height: AtlasSpacing.sm),
+              TextButton(key: const Key('add.cancel'), onPressed: c.cancel, child: const Text('Bekor qilish')),
+            ],
           ),
-          AddPhase.analysing => const _Progress(key: Key('add.analysing'), label: 'Tahlil qilinmoqda…'),
           AddPhase.failed => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

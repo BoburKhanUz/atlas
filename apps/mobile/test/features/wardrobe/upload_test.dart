@@ -43,7 +43,10 @@ class Setup {
         ...appOverrides(h),
         photoPickerProvider.overrideWithValue(this.picker),
         imagePreparerProvider.overrideWithValue(ImagePreparer(StubCompressor())),
-        uploadSleepProvider.overrideWithValue((d) async => sleeps.add(d)),
+        uploadSleepProvider.overrideWithValue((d) async {
+          sleeps.add(d);
+          await onSleep?.call(d);
+        }),
         if (remover != null) backgroundRemoverProvider.overrideWithValue(remover),
       ],
     );
@@ -56,6 +59,9 @@ class Setup {
   final FakePicker picker;
   final sleeps = <Duration>[];
   final phases = <AddPhase>[];
+
+  /// Runs inside each IDEMPOTENCY_IN_PROGRESS wait.
+  Future<void> Function(Duration)? onSleep;
 
   AddItemController get c => container.read(addItemControllerProvider.notifier);
   AddItemState get state => container.read(addItemControllerProvider);
@@ -375,6 +381,46 @@ void main() {
       await s.c.upload();
       expect(s.state.phase, AddPhase.failed);
       expect(s.state.failure, isA<ApiHttpFailure>().having((f) => f.code, 'code', ApiErrorCode.internal));
+    });
+
+    test('cancel while uploading: the request is aborted, the job is kept, Retry sends the SAME key', () async {
+      final s = Setup();
+      await s.ready();
+      s.replies([JsonReply(201, uploadJson('new-1'))]);
+      s.h.backend.gates[P.wardrobe] = Gate();
+      final running = s.c.upload();
+      await pumpEventQueue();
+      expect(s.state.busy, isTrue);
+      s.c.cancel();
+      await running;
+      expect(s.state.busy, isFalse);
+      expect(s.state.phase, AddPhase.failed);
+      expect(s.state.failure, isA<CancelledFailure>());
+      expect(s.state.job, isNotNull, reason: 'kept: the server may have stored it; a retry is replayed');
+      s.h.backend.gates.remove(P.wardrobe);
+      await s.c.upload();
+      expect(s.state.phase, AddPhase.completed);
+      expect(s.uploads.map((r) => r.header('Idempotency-Key')).toSet(), hasLength(1));
+    });
+
+    test('cancel while waiting for a running upload stops the waiting', () async {
+      final s = Setup();
+      await s.ready();
+      s.replies([
+        JsonReply(409, errorBody('IDEMPOTENCY_IN_PROGRESS'), headers: {'Retry-After': '5'}),
+      ]);
+      s.onSleep = (_) async => s.c.cancel();
+      await s.c.upload();
+      expect(s.state.phase, AddPhase.failed);
+      expect(s.state.failure, isA<CancelledFailure>());
+      expect(s.uploads, hasLength(1), reason: 'no request after the cancel');
+    });
+
+    test('cancel is ignored when nothing is running', () async {
+      final s = Setup();
+      await s.ready();
+      s.c.cancel();
+      expect(s.state.phase, AddPhase.preview);
     });
 
     test('double tap: one upload request', () async {

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:atlas_api/atlas_api.dart' show WardrobeItem;
+import 'package:dio/dio.dart' show CancelToken;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -134,6 +135,9 @@ class AddItemController extends Notifier<AddItemState> {
   /// SHA-256 of the current job's bytes (for the recovery record).
   String? _hash;
 
+  /// The running upload's cancel token (null when nothing is sent).
+  CancelToken? _cancel;
+
   @override
   AddItemState build() {
     // An edit saved elsewhere (editor) updates the item under review.
@@ -243,6 +247,24 @@ class AddItemController extends Notifier<AddItemState> {
     if (job == null || (state.phase != AddPhase.preview && state.phase != AddPhase.failed)) return;
     final recovered = state.recovered;
     state = AddItemState(phase: AddPhase.uploading, job: job, recovered: recovered);
+    final cancel = _cancel = CancelToken();
+    try {
+      await _upload(job, recovered, cancel);
+    } finally {
+      if (identical(_cancel, cancel)) _cancel = null;
+    }
+  }
+
+  /// Stops the running upload (or its wait for a running duplicate). The
+  /// server may already have stored the item, so the job and its recovery
+  /// record are kept: Retry sends the same key and gets the stored item back
+  /// instead of a duplicate.
+  void cancel() {
+    if (!state.busy) return;
+    _cancel?.cancel();
+  }
+
+  Future<void> _upload(UploadJob job, bool recovered, CancelToken cancel) async {
     await _remember(job);
     var waits = 0;
     while (true) {
@@ -251,6 +273,7 @@ class AddItemController extends Notifier<AddItemState> {
             .read(wardrobeRepositoryProvider)
             .upload(
               job,
+              cancelToken: cancel,
               onSendProgress: (sent, total) {
                 if (!ref.mounted || total <= 0) return;
                 final p = (sent / total).clamp(0.0, 1.0);
@@ -277,6 +300,15 @@ class AddItemController extends Notifier<AddItemState> {
           state = AddItemState(phase: AddPhase.analysing, job: job, progress: 1, recovered: recovered);
           await ref.read(uploadSleepProvider)(wait);
           if (!ref.mounted) return;
+          if (cancel.isCancelled) {
+            state = AddItemState(
+              phase: AddPhase.failed,
+              job: job,
+              failure: const CancelledFailure(),
+              recovered: recovered,
+            );
+            return;
+          }
           continue; // same job
         }
         final next = _afterFailure(job, f, recovered);

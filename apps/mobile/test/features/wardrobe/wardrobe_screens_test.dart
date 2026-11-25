@@ -75,6 +75,29 @@ void main() {
     expect(find.byWidgetPredicate((w) => w is ItemDetailScreen && w.id == 'new-1'), findsOneWidget);
   });
 
+  testWidgets('add: a running upload can be cancelled, and back leaves the screen', (tester) async {
+    final app = App(tester);
+    await app.start(
+      wardrobe: (r) => r.method == 'POST' ? JsonReply(201, uploadJson('new-1')) : JsonReply(200, pageJson(['a'])),
+    );
+    await app.tap(find.byKey(const Key('wardrobe.add')));
+    await app.tap(find.byKey(const Key('add.gallery')));
+    app.h.backend.gates[P.wardrobe] = Gate();
+    await app.tap(find.byKey(const Key('add.upload')));
+    expect(find.byKey(const Key('add.cancel')), findsOneWidget);
+    await app.tap(find.byKey(const Key('add.cancel')));
+    expect(find.byKey(const Key('add.retry')), findsOneWidget);
+    // Upload again, then press back while it runs: it is cancelled and the screen closes.
+    await app.tap(find.byKey(const Key('add.retry')));
+    expect(find.byKey(const Key('add.cancel')), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    app.h.backend.gates.remove(P.wardrobe)?.open();
+    await tester.pumpAndSettle();
+    expect(app.location, '/wardrobe');
+    expect(find.byType(AddItemScreen), findsNothing);
+    expect(app.h.backend.to(P.wardrobe).where((r) => r.method == 'POST'), hasLength(2), reason: 'nothing resent');
+  });
+
   testWidgets('add: background removed on the phone; the switch brings back the original', (tester) async {
     final app = App(tester);
     await app.start(
