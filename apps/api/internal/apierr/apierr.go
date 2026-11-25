@@ -7,6 +7,7 @@ package apierr
 import (
 	"fmt"
 	"net/http"
+	"time"
 )
 
 // Code is one of the contract's error codes (ErrorResponse.code).
@@ -124,10 +125,40 @@ type Error struct {
 	Code    Code
 	Message string
 	Details []Detail
+	// RetryAfter, when positive, is sent as the Retry-After header (whole
+	// seconds, rounded up): the contract documents it for the retryable
+	// codes RATE_LIMITED and SESSION_BUSY.
+	RetryAfter time.Duration
 }
 
 // New returns the code with its default message.
 func New(code Code) *Error { return &Error{Code: code, Message: code.Message()} }
+
+// With returns the code with a specific Uzbek message (shown to the user).
+func With(code Code, message string) *Error { return &Error{Code: code, Message: message} }
+
+// TooManyAttempts returns RATE_LIMITED asking the client to wait.
+func TooManyAttempts(wait time.Duration) *Error {
+	e := New(RateLimited)
+	e.RetryAfter = wait
+	return e
+}
+
+// Busy returns SESSION_BUSY: the session store is busy; retry in a second.
+func Busy() *Error {
+	e := New(SessionBusy)
+	e.RetryAfter = time.Second
+	return e
+}
+
+// RetryAfterSeconds is the Retry-After header value: zero for none, else
+// the wait in whole seconds, rounded up.
+func (e *Error) RetryAfterSeconds() int {
+	if e.RetryAfter <= 0 {
+		return 0
+	}
+	return int((e.RetryAfter + time.Second - 1) / time.Second)
+}
 
 // Validation returns VALIDATION_ERROR with a specific Uzbek message (shown to
 // the user) and the fields at fault.

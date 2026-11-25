@@ -63,3 +63,18 @@ UPDATE "Session" SET "successorTokenEnc" = NULL WHERE "familyId" = $1 AND "succe
 -- name: LockLiveSessionFamiliesOfUser :many
 -- In id order, so two revocations of one user's families never deadlock.
 SELECT "id" FROM "SessionFamily" WHERE "userId" = $1 AND "revokedAt" IS NULL ORDER BY "id" FOR UPDATE;
+
+-- name: SessionIsAlive :one
+-- Whether an access token's session still stands, checked on every
+-- authenticated request: its family is not revoked (sign-out, reuse, expiry,
+-- password reset), and the session itself is live or was only rotated. A
+-- rotated session's access token stays good until it expires, so requests
+-- in flight during a refresh are not refused.
+SELECT EXISTS (
+  SELECT 1
+    FROM "Session" s
+    JOIN "SessionFamily" f ON f."id" = s."familyId"
+   WHERE s."id" = sqlc.arg(id) AND s."userId" = sqlc.arg(user_id)
+     AND f."revokedAt" IS NULL
+     AND (s."revokedAt" IS NULL OR s."replacedById" IS NOT NULL)
+) AS alive;

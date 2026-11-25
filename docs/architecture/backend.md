@@ -9,10 +9,17 @@ routes traffic to it; each stage adds endpoints behind tests. Rules for working 
 
 ```
 client ─► Wrap (middleware) ─► routed (404 for unknown routes) ─► generated router
-          request id           route pattern for the log            │
+          request id           route pattern for the log            │ header and path parameters
           access log                                                ▼
-          panic → 500                              generated strict handler (decodes)
-          64 KB body limit                                          │
+          panic → 500                                     gate (per route, in this order)
+          64 KB body limit                                 1. cross-site request guard → 403
+                                                           2. access token + live session → 401
+                                                           3. consent to the legal texts → 403
+                                                           4. request body rule → 400
+                                                                    │
+                                                                    ▼
+                                                   generated strict handler (decodes)
+                                                                    │
                                                                     ▼
                                          httpapi.Server method ─► domain service ─► store
                                                     │
@@ -89,6 +96,69 @@ The PostgreSQL driver (pgx) also reads `PG*` variables (`PGPASSWORD`, `PGSSLMODE
 `~/.pgpass` and the service file for anything the URL leaves out. The URL is required to
 name the host and database, and in production `sslmode`. The container sets no `PG*`
 variables; keep it that way.
+
+## The gate
+
+Every route passes `httpapi.Gate` before its handler (`internal/httpapi/gate.go`). Its
+table names the routes that are public, the one where a session is optional (sign-out)
+and the ones served although the user's consent is out of date. **A route that is not in
+the table is closed**: it needs a session and a current consent. A test compares the
+table with the contract's `security` fields for every route served.
+
+1. **Cross-site request guard.** A state-changing request that carries a session cookie,
+   has no `Authorization` header and whose `Origin` names another host is refused with
+   `FORBIDDEN`, before anything else happens (also on sign-in: another site cannot sign
+   the browser in as someone else). `Origin: null` is another host; no `Origin` passes.
+   Behind the trusted proxy (`TRUST_PROXY=1`) the first `X-Forwarded-Host` is the host.
+2. **Who is calling.** An `Authorization` header, when present, is the only credential
+   considered, even when it is empty or invalid: there is no fallback to the cookie.
+   Otherwise the `atlas_at` cookie. The token must be ours, unexpired, and name a session
+   that **still stands**, looked up on every request: its family is not revoked, and the
+   session is live or was only rotated. So a sign-out, a detected reuse, a password
+   reset or an account deletion takes effect at once (the Next.js API kept accepting the
+   token until it expired, up to 15 minutes). A rotated session's token stays good until
+   it expires, so requests in flight during a refresh are not refused.
+3. **Consent.** Unless the route is exempt, none of the user's consents being at least
+   the minimum version answers `CONSENT_REQUIRED` (`internal/legal`; the versions and
+   their ordering equal the TypeScript ones, by test).
+4. **Request body.** For routes with a body rule (`internal/httpapi/bodies.go`) the raw
+   body is judged as the Next.js API's schema judged it, and the generated decoder then
+   reads its canonical form: only the known members, normalised. The same members are
+   reported, in the same order, with the same Uzbek messages; 271 recorded answers of
+   the Next.js validator pin this. Refresh and sign-out read a body in mobile mode only;
+   in web mode the cookies carry everything and a body is not read at all.
+
+The handler then finds the caller (`identityFrom`) and the request (`requestFrom`) in
+its context. Cookies are parsed as Next parses them (of several with one name the last
+counts, quotes are kept, values are percent-decoded), not as `net/http` does.
+
+## Accounts
+
+`internal/accounts` is registration, sign-in and "who am I", on the session protocol
+and the rate limiter.
+
+- **Registration** checks the limit, then creates the user, the profile, the preferences
+  and the consent record in one transaction, then starts a session. Two registrations of
+  one email at once give one `201` and `CONFLICT` for the rest, never a partial account
+  (tested with four at once). Ids and times are written by Go until B7: ids as Prisma
+  shaped them, times from the database clock in UTC.
+- **Sign-in** counts the attempt, looks the user up, and compares the password. An
+  unknown email is compared against a decoy hash of the current cost, so both failures
+  cost the same work and give the same answer. A success gives the attempt back to the
+  limiter and, if the stored hash is weaker than the current cost, replaces it (only if
+  it is still the hash that was verified). A password over 72 bytes from the old server
+  keeps signing in and keeps its hash.
+- **Limits**: sign-in 10 failures per account and 50 per address in 15 minutes;
+  registration 10 attempts per address per hour, or one shared bucket of 100 per hour
+  when the address is not known (no trusted proxy). An IPv6 address is counted by its
+  /64 network. `RATE_LIMITED` carries `Retry-After`.
+- **Answers** (`internal/httpapi/server.go`): web mode sets the two HttpOnly cookies
+  (`Path=/`, `SameSite=Lax`, `Secure` by configuration, `Max-Age` counted from the
+  database time of issue and rounded up) and sends `{user}`; mobile mode sends the
+  tokens and their expiries in the body and no cookies. Times are written as JavaScript
+  writes them (milliseconds, `Z`). A web refresh that ends the session for good clears
+  the cookies; `SESSION_RACE` and `SESSION_BUSY` (with `Retry-After: 1`) keep them.
+  Every answer is `Cache-Control: no-store`.
 
 ## Tokens, passwords and session encryption
 

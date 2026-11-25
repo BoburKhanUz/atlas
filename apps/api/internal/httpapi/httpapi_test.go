@@ -29,6 +29,29 @@ func (f fakeServer) GetHealth(ctx context.Context, _ contract.GetHealthRequestOb
 	return f.health(ctx)
 }
 
+// The other operations are not what these tests are about.
+var errNotUsed = errors.New("operation not used in this test")
+
+func (fakeServer) Register(context.Context, contract.RegisterRequestObject) (contract.RegisterResponseObject, error) {
+	return nil, errNotUsed
+}
+
+func (fakeServer) Login(context.Context, contract.LoginRequestObject) (contract.LoginResponseObject, error) {
+	return nil, errNotUsed
+}
+
+func (fakeServer) Logout(context.Context, contract.LogoutRequestObject) (contract.LogoutResponseObject, error) {
+	return nil, errNotUsed
+}
+
+func (fakeServer) GetMe(context.Context, contract.GetMeRequestObject) (contract.GetMeResponseObject, error) {
+	return nil, errNotUsed
+}
+
+func (fakeServer) RefreshSession(context.Context, contract.RefreshSessionRequestObject) (contract.RefreshSessionResponseObject, error) {
+	return nil, errNotUsed
+}
+
 func ok(context.Context) (contract.GetHealthResponseObject, error) {
 	return contract.GetHealth200JSONResponse{Status: "ok", Database: "ok", Version: "test"}, nil
 }
@@ -54,7 +77,7 @@ func (l *logs) lines(t *testing.T) []map[string]any {
 func newHandler(t *testing.T, s contract.StrictServerInterface) (http.Handler, *logs) {
 	t.Helper()
 	l := &logs{}
-	return httpapi.New(s, slog.New(slog.NewJSONHandler(l, nil))), l
+	return httpapi.New(s, slog.New(slog.NewJSONHandler(l, nil)), &httpapi.Gate{}), l
 }
 
 func do(h http.Handler, method, target string, body io.Reader, header http.Header) *httptest.ResponseRecorder {

@@ -181,3 +181,45 @@ func load(t testing.TB, name string, into any) {
 		t.Fatalf("%s: %v", name, err)
 	}
 }
+
+// AuthValidation is testdata/golden/auth-validation.json
+// (apps/web/scripts/golden-auth-validation.ts): what the Next.js API answers
+// to request bodies of the auth operations.
+type AuthValidation struct {
+	GeneratedBy  string           `json:"generatedBy"`
+	SourceCommit string           `json:"sourceCommit"`
+	Note         string           `json:"note"`
+	LegalVersion string           `json:"legalVersion"`
+	Login        []ValidationCase `json:"login"`
+	Register     []ValidationCase `json:"register"`
+	Refresh      []ValidationCase `json:"refresh"`
+	Logout       []ValidationCase `json:"logout"`
+}
+
+// ValidationCase is one request body and its outcome: the parsed value, or
+// the error envelope.
+type ValidationCase struct {
+	Name    string          `json:"name"`
+	Body    string          `json:"body"`
+	OK      bool            `json:"ok"`
+	Value   json.RawMessage `json:"value"`
+	Status  int             `json:"status"`
+	Code    string          `json:"code"`
+	Error   string          `json:"error"`
+	Details []struct {
+		Path    string `json:"path"`
+		Message string `json:"message"`
+	} `json:"details"`
+}
+
+// LoadAuthValidation reads testdata/golden/auth-validation.json; unknown
+// fields fail.
+func LoadAuthValidation(t testing.TB) AuthValidation {
+	t.Helper()
+	var a AuthValidation
+	load(t, "auth-validation.json", &a)
+	if len(a.Login) == 0 || len(a.Register) == 0 || len(a.Refresh) == 0 || len(a.Logout) == 0 {
+		t.Fatal("auth-validation.json: a section is empty")
+	}
+	return a
+}

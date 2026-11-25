@@ -271,6 +271,34 @@ func (q *Queries) RevokeSessionsOfFamily(ctx context.Context, arg RevokeSessions
 	return err
 }
 
+const sessionIsAlive = `-- name: SessionIsAlive :one
+SELECT EXISTS (
+  SELECT 1
+    FROM "Session" s
+    JOIN "SessionFamily" f ON f."id" = s."familyId"
+   WHERE s."id" = $1 AND s."userId" = $2
+     AND f."revokedAt" IS NULL
+     AND (s."revokedAt" IS NULL OR s."replacedById" IS NOT NULL)
+) AS alive
+`
+
+type SessionIsAliveParams struct {
+	ID     string
+	UserID string
+}
+
+// Whether an access token's session still stands, checked on every
+// authenticated request: its family is not revoked (sign-out, reuse, expiry,
+// password reset), and the session itself is live or was only rotated. A
+// rotated session's access token stays good until it expires, so requests
+// in flight during a refresh are not refused.
+func (q *Queries) SessionIsAlive(ctx context.Context, arg SessionIsAliveParams) (bool, error) {
+	row := q.db.QueryRow(ctx, sessionIsAlive, arg.ID, arg.UserID)
+	var alive bool
+	err := row.Scan(&alive)
+	return alive, err
+}
+
 const sessionNow = `-- name: SessionNow :one
 
 SELECT atlas_now()::timestamp(3) AS now

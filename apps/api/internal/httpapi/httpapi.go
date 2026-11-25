@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"regexp"
 	"runtime/debug"
+	"strconv"
 	"time"
 
 	"lookly/internal/apierr"
@@ -28,8 +29,8 @@ import (
 const DefaultBodyLimit = 64 << 10
 
 // New builds the server's handler: the routes generated from the contract
-// over server, wrapped in the middleware (Wrap).
-func New(server contract.StrictServerInterface, log *slog.Logger) http.Handler {
+// over server, each behind the gate, all wrapped in the middleware (Wrap).
+func New(server contract.StrictServerInterface, log *slog.Logger, gate *Gate) http.Handler {
 	mux := http.NewServeMux()
 	strict := contract.NewStrictHandlerWithOptions(server, nil, contract.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc:  RequestError,
@@ -38,6 +39,7 @@ func New(server contract.StrictServerInterface, log *slog.Logger) http.Handler {
 	contract.HandlerWithOptions(strict, contract.StdHTTPServerOptions{
 		BaseRouter:       mux,
 		ErrorHandlerFunc: RequestError,
+		Middlewares:      []contract.MiddlewareFunc{gate.middleware},
 	})
 	return Wrap(routed(mux), log)
 }
@@ -212,6 +214,9 @@ func writeEnvelope(w http.ResponseWriter, info *requestInfo, e *apierr.Error) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
+	if seconds := e.RetryAfterSeconds(); seconds > 0 {
+		w.Header().Set("Retry-After", strconv.Itoa(seconds))
+	}
 	w.WriteHeader(e.Status())
 	// Writing can only fail when the client is gone; there is nobody to tell.
 	if err := json.NewEncoder(w).Encode(body); err != nil && info != nil {

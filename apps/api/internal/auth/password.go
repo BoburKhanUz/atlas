@@ -48,3 +48,17 @@ func NeedsRehash(hash string) bool {
 	cost, err := bcrypt.Cost([]byte(hash))
 	return err != nil || cost < PasswordCost
 }
+
+// Bcrypt is the password hasher of the running server: the functions above
+// behind one value, so that services take a hasher and tests can count its
+// use.
+type Bcrypt struct{}
+
+// Hash is HashPassword.
+func (Bcrypt) Hash(plain string) (string, error) { return HashPassword(plain) }
+
+// Verify is VerifyPassword.
+func (Bcrypt) Verify(plain, hash string) bool { return VerifyPassword(plain, hash) }
+
+// NeedsRehash is NeedsRehash.
+func (Bcrypt) NeedsRehash(hash string) bool { return NeedsRehash(hash) }

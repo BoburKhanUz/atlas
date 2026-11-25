@@ -16,12 +16,11 @@ import (
 var notYetImplemented = []string{
 	"acceptLegalDocuments", "analyzeColorProfile", "createWardrobeItem", "deleteAccount",
 	"deleteColorProfile", "deleteOutfit", "deleteWardrobeItem", "generateOutfits",
-	"getColorProfile", "getConversation", "getCurrentWeather", "getLegalDocuments", "getMe",
+	"getColorProfile", "getConversation", "getCurrentWeather", "getLegalDocuments",
 	"getMedia", "getOpenApiDocument", "getOutfit", "getProfile", "getWardrobeItem",
-	"listConversations", "listOutfits", "listWardrobeItems", "login", "logout",
-	"refreshSession", "register", "reportClientErrors", "requestPasswordReset",
-	"resetPassword", "saveOutfit", "sendOutfitFeedback", "stylistChat", "updateOutfit",
-	"updateProfile", "updateWardrobeItem",
+	"listConversations", "listOutfits", "listWardrobeItems", "reportClientErrors",
+	"requestPasswordReset", "resetPassword", "saveOutfit", "sendOutfitFeedback",
+	"stylistChat", "updateOutfit", "updateProfile", "updateWardrobeItem",
 }
 
 func contractOperations(t *testing.T) []string {

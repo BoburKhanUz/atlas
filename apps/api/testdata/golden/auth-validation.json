@@ -1,0 +1,3625 @@
+{
+ "generatedBy": "apps/web/scripts/golden-auth-validation.ts",
+ "sourceCommit": "3ddf904251e6ec8f3d10327363d3fc4b7307620e",
+ "note": "body is the raw request body. ok: the parsed value; otherwise the error envelope. register was recorded with legalVersion as the current version.",
+ "legalVersion": "2026-11-24.1-draft",
+ "login": [
+  {
+   "name": "an empty body",
+   "body": "",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    },
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "white space only",
+   "body": "  \n",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "not JSON",
+   "body": "{email",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "truncated JSON",
+   "body": "{\"email\":\"a@test.uz\"",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "two JSON values",
+   "body": "{}{}",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "JSON null",
+   "body": "null",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "a JSON string",
+   "body": "\"text\"",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "a JSON number",
+   "body": "12",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "a JSON array",
+   "body": "[]",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "JSON true",
+   "body": "true",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "an empty object",
+   "body": "{}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    },
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "a byte order mark before the object",
+   "body": "﻿{}",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "valid",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol123\"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "parol123"
+   }
+  },
+  {
+   "name": "valid, with a device name",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol123\",\"deviceName\":\"Pixel 9\"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "parol123",
+    "deviceName": "Pixel 9"
+   }
+  },
+  {
+   "name": "unknown fields are dropped",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol123\",\"admin\":true,\"role\":\"x\"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "parol123"
+   }
+  },
+  {
+   "name": "no email",
+   "body": "{\"password\":\"x\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "no password",
+   "body": "{\"email\":\"aziza@example.uz\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "an empty password",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "password",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "a password of 1 character",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"x\"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "x"
+   }
+  },
+  {
+   "name": "a password of 200 characters",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp\"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp"
+   }
+  },
+  {
+   "name": "a password of 201 characters",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=200 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "password",
+     "message": "Juda katta: kutilgan string <=200 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a password of 200 two-byte characters",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"ўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўў\"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "ўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўў"
+   }
+  },
+  {
+   "name": "a password of 100 characters outside the basic plane (200 units)",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+   }
+  },
+  {
+   "name": "a password of 101 characters outside the basic plane (202 units)",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=200 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "password",
+     "message": "Juda katta: kutilgan string <=200 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a password of spaces",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"   \"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "   "
+   }
+  },
+  {
+   "name": "a bad email and no password",
+   "body": "{\"email\":\"nope\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    },
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "a bad email and a long password",
+   "body": "{\"email\":\"nope\",\"password\":\"ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    },
+    {
+     "path": "password",
+     "message": "Juda katta: kutilgan string <=200 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "everything wrong",
+   "body": "{\"email\":5,\"password\":null,\"deviceName\":\"\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    },
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    },
+    {
+     "path": "deviceName",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "an empty device name",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol123\",\"deviceName\":\"\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "deviceName",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a device name of spaces",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol123\",\"deviceName\":\"   \"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "deviceName",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a device name with spaces around",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol123\",\"deviceName\":\"  Pixel 9  \"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "parol123",
+    "deviceName": "Pixel 9"
+   }
+  },
+  {
+   "name": "a device name of 100 characters",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol123\",\"deviceName\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "parol123",
+    "deviceName": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+   }
+  },
+  {
+   "name": "a device name of 101 characters",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol123\",\"deviceName\":\"ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=100 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "deviceName",
+     "message": "Juda katta: kutilgan string <=100 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a device name of 100 characters and spaces around",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol123\",\"deviceName\":\" dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd \"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "parol123",
+    "deviceName": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+   }
+  },
+  {
+   "name": "a device name of 50 characters outside the basic plane (100 units)",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol123\",\"deviceName\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "parol123",
+    "deviceName": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+   }
+  },
+  {
+   "name": "a device name of 51 characters outside the basic plane (102 units)",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol123\",\"deviceName\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=100 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "deviceName",
+     "message": "Juda katta: kutilgan string <=100 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a device name with other white space around",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol123\",\"deviceName\":\"  Pixel﻿\\t\"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "parol123",
+    "deviceName": "Pixel"
+   }
+  },
+  {
+   "name": "email \"aziza@example.uz\"",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol123\"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "parol123"
+   }
+  },
+  {
+   "name": "email \"AZIZA@Example.UZ\"",
+   "body": "{\"email\":\"AZIZA@Example.UZ\",\"password\":\"parol123\"}",
+   "ok": true,
+   "value": {
+    "email": "AZIZA@Example.UZ",
+    "password": "parol123"
+   }
+  },
+  {
+   "name": "email \"a.b+c_d-e@sub.example.co.uz\"",
+   "body": "{\"email\":\"a.b+c_d-e@sub.example.co.uz\",\"password\":\"parol123\"}",
+   "ok": true,
+   "value": {
+    "email": "a.b+c_d-e@sub.example.co.uz",
+    "password": "parol123"
+   }
+  },
+  {
+   "name": "email \"o'neil@example.uz\"",
+   "body": "{\"email\":\"o'neil@example.uz\",\"password\":\"parol123\"}",
+   "ok": true,
+   "value": {
+    "email": "o'neil@example.uz",
+    "password": "parol123"
+   }
+  },
+  {
+   "name": "email \"a@b.uz\"",
+   "body": "{\"email\":\"a@b.uz\",\"password\":\"parol123\"}",
+   "ok": true,
+   "value": {
+    "email": "a@b.uz",
+    "password": "parol123"
+   }
+  },
+  {
+   "name": "email \"a@b.u\"",
+   "body": "{\"email\":\"a@b.u\",\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"a@b\"",
+   "body": "{\"email\":\"a@b\",\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"a@.uz\"",
+   "body": "{\"email\":\"a@.uz\",\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"@b.uz\"",
+   "body": "{\"email\":\"@b.uz\",\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"a@b..uz\"",
+   "body": "{\"email\":\"a@b..uz\",\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \".a@b.uz\"",
+   "body": "{\"email\":\".a@b.uz\",\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"a.@b.uz\"",
+   "body": "{\"email\":\"a.@b.uz\",\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"a..b@b.uz\"",
+   "body": "{\"email\":\"a..b@b.uz\",\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"a b@b.uz\"",
+   "body": "{\"email\":\"a b@b.uz\",\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \" aziza@example.uz\"",
+   "body": "{\"email\":\" aziza@example.uz\",\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"aziza@example.uz \"",
+   "body": "{\"email\":\"aziza@example.uz \",\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"aziza@example.uz\\n\"",
+   "body": "{\"email\":\"aziza@example.uz\\n\",\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"aziza@-example.uz\"",
+   "body": "{\"email\":\"aziza@-example.uz\",\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"aziza@example-.uz\"",
+   "body": "{\"email\":\"aziza@example-.uz\",\"password\":\"parol123\"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example-.uz",
+    "password": "parol123"
+   }
+  },
+  {
+   "name": "email \"aziza@exa_mple.uz\"",
+   "body": "{\"email\":\"aziza@exa_mple.uz\",\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"aziza@example.u2\"",
+   "body": "{\"email\":\"aziza@example.u2\",\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"ўзбек@example.uz\"",
+   "body": "{\"email\":\"ўзбек@example.uz\",\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"aziza@мисол.uz\"",
+   "body": "{\"email\":\"aziza@мисол.uz\",\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"a@b@c.uz\"",
+   "body": "{\"email\":\"a@b@c.uz\",\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"aziza\"",
+   "body": "{\"email\":\"aziza\",\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"\"",
+   "body": "{\"email\":\"\",\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.uz\"",
+   "body": "{\"email\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.uz\",\"password\":\"parol123\"}",
+   "ok": true,
+   "value": {
+    "email": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.uz",
+    "password": "parol123"
+   }
+  },
+  {
+   "name": "email \"a%b@example.uz\"",
+   "body": "{\"email\":\"a%b@example.uz\",\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"a&b@example.uz\"",
+   "body": "{\"email\":\"a&b@example.uz\",\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"\\\"a b\\\"@example.uz\"",
+   "body": "{\"email\":\"\\\"a b\\\"@example.uz\",\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"aziza@123.45\"",
+   "body": "{\"email\":\"aziza@123.45\",\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email yoki parol noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"aziza@1.2.3.uz\"",
+   "body": "{\"email\":\"aziza@1.2.3.uz\",\"password\":\"parol123\"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@1.2.3.uz",
+    "password": "parol123"
+   }
+  },
+  {
+   "name": "email \"A_1+x@x-y.zz\"",
+   "body": "{\"email\":\"A_1+x@x-y.zz\",\"password\":\"parol123\"}",
+   "ok": true,
+   "value": {
+    "email": "A_1+x@x-y.zz",
+    "password": "parol123"
+   }
+  },
+  {
+   "name": "email is null",
+   "body": "{\"email\":null,\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "password is null",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "deviceName is null",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol123\",\"deviceName\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "deviceName",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "email is a number",
+   "body": "{\"email\":7,\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "password is a number",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "deviceName is a number",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol123\",\"deviceName\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "deviceName",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "email is true",
+   "body": "{\"email\":true,\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "password is true",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "deviceName is true",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol123\",\"deviceName\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "deviceName",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "email is false",
+   "body": "{\"email\":false,\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "password is false",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":false}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "deviceName is false",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol123\",\"deviceName\":false}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "deviceName",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "email is an array",
+   "body": "{\"email\":[\"x\"],\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "password is an array",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "deviceName is an array",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol123\",\"deviceName\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "deviceName",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "email is an object",
+   "body": "{\"email\":{\"a\":1},\"password\":\"parol123\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "password is an object",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "deviceName is an object",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol123\",\"deviceName\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "deviceName",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "the email twice: the last one counts",
+   "body": "{\"email\":\"nope\",\"password\":\"x\",\"email\":\"aziza@example.uz\"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "x"
+   }
+  },
+  {
+   "name": "password is an empty array",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":[]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    },
+    {
+     "path": "password",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "password is an array of 201 items",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":[\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    },
+    {
+     "path": "password",
+     "message": "Juda katta: kutilgan array <=200 element bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "password is an object with a length of 300",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":{\"length\":300}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    },
+    {
+     "path": "password",
+     "message": "Juda katta: kutilgan unknown <=200"
+    }
+   ]
+  },
+  {
+   "name": "password is an object with a length of 0",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":{\"length\":0}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    },
+    {
+     "path": "password",
+     "message": "Email yoki parol noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "deviceName is an empty array",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol123\",\"deviceName\":[]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "deviceName",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    },
+    {
+     "path": "deviceName",
+     "message": "Juda kichik: kutilgan array >=1 element bo‘lishi kerak"
+    }
+   ]
+  }
+ ],
+ "register": [
+  {
+   "name": "an empty body",
+   "body": "",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    },
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    },
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    },
+    {
+     "path": "ageConfirmed",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "white space only",
+   "body": "  \n",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "not JSON",
+   "body": "{email",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "truncated JSON",
+   "body": "{\"email\":\"a@test.uz\"",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "two JSON values",
+   "body": "{}{}",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "JSON null",
+   "body": "null",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "a JSON string",
+   "body": "\"text\"",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "a JSON number",
+   "body": "12",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "a JSON array",
+   "body": "[]",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "JSON true",
+   "body": "true",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "an empty object",
+   "body": "{}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    },
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    },
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    },
+    {
+     "path": "ageConfirmed",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "a byte order mark before the object",
+   "body": "﻿{}",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "valid",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "parol1234",
+    "acceptedLegalVersion": "2026-11-24.1-draft",
+    "ageConfirmed": true
+   }
+  },
+  {
+   "name": "valid, with a name and a device name",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"name\":\"Aziza\",\"deviceName\":\"Pixel 9\"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "parol1234",
+    "name": "Aziza",
+    "deviceName": "Pixel 9",
+    "acceptedLegalVersion": "2026-11-24.1-draft",
+    "ageConfirmed": true
+   }
+  },
+  {
+   "name": "unknown fields are dropped",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"role\":\"admin\"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "parol1234",
+    "acceptedLegalVersion": "2026-11-24.1-draft",
+    "ageConfirmed": true
+   }
+  },
+  {
+   "name": "no email",
+   "body": "{\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "no password",
+   "body": "{\"email\":\"aziza@example.uz\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "a password of 7 characters",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"ppppppp\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Parol kamida 8 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "password",
+     "message": "Parol kamida 8 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a password of 8 characters",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"pppppppp\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "pppppppp",
+    "acceptedLegalVersion": "2026-11-24.1-draft",
+    "ageConfirmed": true
+   }
+  },
+  {
+   "name": "a password of 4 characters outside the basic plane (8 units)",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"😀😀😀😀\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "😀😀😀😀",
+    "acceptedLegalVersion": "2026-11-24.1-draft",
+    "ageConfirmed": true
+   }
+  },
+  {
+   "name": "a password of 200 characters",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+    "acceptedLegalVersion": "2026-11-24.1-draft",
+    "ageConfirmed": true
+   }
+  },
+  {
+   "name": "a password of 201 characters",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=200 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "password",
+     "message": "Juda katta: kutilgan string <=200 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "an empty password",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Parol kamida 8 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "password",
+     "message": "Parol kamida 8 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "an empty name",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"name\":\"\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "name",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a name of spaces (not trimmed)",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"name\":\"  \"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "parol1234",
+    "name": "  ",
+    "acceptedLegalVersion": "2026-11-24.1-draft",
+    "ageConfirmed": true
+   }
+  },
+  {
+   "name": "a name with spaces around (kept)",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"name\":\" Aziza \"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "parol1234",
+    "name": " Aziza ",
+    "acceptedLegalVersion": "2026-11-24.1-draft",
+    "ageConfirmed": true
+   }
+  },
+  {
+   "name": "a name of 60 characters",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"name\":\"nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn\"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "parol1234",
+    "name": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+    "acceptedLegalVersion": "2026-11-24.1-draft",
+    "ageConfirmed": true
+   }
+  },
+  {
+   "name": "a name of 61 characters",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"name\":\"nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "name",
+     "message": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a name of 30 characters outside the basic plane (60 units)",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"name\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "parol1234",
+    "name": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+    "acceptedLegalVersion": "2026-11-24.1-draft",
+    "ageConfirmed": true
+   }
+  },
+  {
+   "name": "a name of 31 characters outside the basic plane (62 units)",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"name\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "name",
+     "message": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "an empty device name",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"deviceName\":\"\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "deviceName",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a device name of 101 characters",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"deviceName\":\"ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=100 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "deviceName",
+     "message": "Juda katta: kutilgan string <=100 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "no accepted version",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "no age confirmation",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "ageConfirmed",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "neither consent field",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    },
+    {
+     "path": "ageConfirmed",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "age not confirmed",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":false}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "18 yoshdan kattaligingizni tasdiqlang.",
+   "details": [
+    {
+     "path": "ageConfirmed",
+     "message": "18 yoshdan kattaligingizni tasdiqlang."
+    }
+   ]
+  },
+  {
+   "name": "an older accepted version",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-10-17.2-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang."
+    }
+   ]
+  },
+  {
+   "name": "an empty accepted version",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang."
+    }
+   ]
+  },
+  {
+   "name": "an accepted version with a space",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft \",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang."
+    }
+   ]
+  },
+  {
+   "name": "an accepted version of 40 characters",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang."
+    }
+   ]
+  },
+  {
+   "name": "an accepted version of 41 characters",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang."
+    },
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang."
+    }
+   ]
+  },
+  {
+   "name": "an old version and age not confirmed",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"old\",\"ageConfirmed\":false}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang."
+    },
+    {
+     "path": "ageConfirmed",
+     "message": "18 yoshdan kattaligingizni tasdiqlang."
+    }
+   ]
+  },
+  {
+   "name": "everything wrong",
+   "body": "{\"email\":\"nope\",\"password\":\"short\",\"name\":\"\",\"deviceName\":\" \",\"acceptedLegalVersion\":\"old\",\"ageConfirmed\":false}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    },
+    {
+     "path": "password",
+     "message": "Parol kamida 8 belgi bo‘lishi kerak"
+    },
+    {
+     "path": "name",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    },
+    {
+     "path": "deviceName",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    },
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang."
+    },
+    {
+     "path": "ageConfirmed",
+     "message": "18 yoshdan kattaligingizni tasdiqlang."
+    }
+   ]
+  },
+  {
+   "name": "every field of the wrong type",
+   "body": "{\"email\":1,\"password\":2,\"name\":3,\"deviceName\":4,\"acceptedLegalVersion\":5,\"ageConfirmed\":\"yes\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    },
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    },
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    },
+    {
+     "path": "deviceName",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    },
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    },
+    {
+     "path": "ageConfirmed",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "more than twenty problems cannot happen: all six fields wrong, twice over",
+   "body": "{\"email\":null,\"password\":[],\"name\":{},\"deviceName\":true,\"acceptedLegalVersion\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\"ageConfirmed\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    },
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    },
+    {
+     "path": "password",
+     "message": "Parol kamida 8 belgi bo‘lishi kerak"
+    },
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    },
+    {
+     "path": "deviceName",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    },
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang."
+    },
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang."
+    },
+    {
+     "path": "ageConfirmed",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "email \"aziza@example.uz\"",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "parol1234",
+    "acceptedLegalVersion": "2026-11-24.1-draft",
+    "ageConfirmed": true
+   }
+  },
+  {
+   "name": "email \"AZIZA@Example.UZ\"",
+   "body": "{\"email\":\"AZIZA@Example.UZ\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": true,
+   "value": {
+    "email": "AZIZA@Example.UZ",
+    "password": "parol1234",
+    "acceptedLegalVersion": "2026-11-24.1-draft",
+    "ageConfirmed": true
+   }
+  },
+  {
+   "name": "email \"a.b+c_d-e@sub.example.co.uz\"",
+   "body": "{\"email\":\"a.b+c_d-e@sub.example.co.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": true,
+   "value": {
+    "email": "a.b+c_d-e@sub.example.co.uz",
+    "password": "parol1234",
+    "acceptedLegalVersion": "2026-11-24.1-draft",
+    "ageConfirmed": true
+   }
+  },
+  {
+   "name": "email \"o'neil@example.uz\"",
+   "body": "{\"email\":\"o'neil@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": true,
+   "value": {
+    "email": "o'neil@example.uz",
+    "password": "parol1234",
+    "acceptedLegalVersion": "2026-11-24.1-draft",
+    "ageConfirmed": true
+   }
+  },
+  {
+   "name": "email \"a@b.uz\"",
+   "body": "{\"email\":\"a@b.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": true,
+   "value": {
+    "email": "a@b.uz",
+    "password": "parol1234",
+    "acceptedLegalVersion": "2026-11-24.1-draft",
+    "ageConfirmed": true
+   }
+  },
+  {
+   "name": "email \"a@b.u\"",
+   "body": "{\"email\":\"a@b.u\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"a@b\"",
+   "body": "{\"email\":\"a@b\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"a@.uz\"",
+   "body": "{\"email\":\"a@.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"@b.uz\"",
+   "body": "{\"email\":\"@b.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"a@b..uz\"",
+   "body": "{\"email\":\"a@b..uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \".a@b.uz\"",
+   "body": "{\"email\":\".a@b.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"a.@b.uz\"",
+   "body": "{\"email\":\"a.@b.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"a..b@b.uz\"",
+   "body": "{\"email\":\"a..b@b.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"a b@b.uz\"",
+   "body": "{\"email\":\"a b@b.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \" aziza@example.uz\"",
+   "body": "{\"email\":\" aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"aziza@example.uz \"",
+   "body": "{\"email\":\"aziza@example.uz \",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"aziza@example.uz\\n\"",
+   "body": "{\"email\":\"aziza@example.uz\\n\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"aziza@-example.uz\"",
+   "body": "{\"email\":\"aziza@-example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"aziza@example-.uz\"",
+   "body": "{\"email\":\"aziza@example-.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example-.uz",
+    "password": "parol1234",
+    "acceptedLegalVersion": "2026-11-24.1-draft",
+    "ageConfirmed": true
+   }
+  },
+  {
+   "name": "email \"aziza@exa_mple.uz\"",
+   "body": "{\"email\":\"aziza@exa_mple.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"aziza@example.u2\"",
+   "body": "{\"email\":\"aziza@example.u2\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"ўзбек@example.uz\"",
+   "body": "{\"email\":\"ўзбек@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"aziza@мисол.uz\"",
+   "body": "{\"email\":\"aziza@мисол.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"a@b@c.uz\"",
+   "body": "{\"email\":\"a@b@c.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"aziza\"",
+   "body": "{\"email\":\"aziza\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"\"",
+   "body": "{\"email\":\"\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.uz\"",
+   "body": "{\"email\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": true,
+   "value": {
+    "email": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.uz",
+    "password": "parol1234",
+    "acceptedLegalVersion": "2026-11-24.1-draft",
+    "ageConfirmed": true
+   }
+  },
+  {
+   "name": "email \"a%b@example.uz\"",
+   "body": "{\"email\":\"a%b@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"a&b@example.uz\"",
+   "body": "{\"email\":\"a&b@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"\\\"a b\\\"@example.uz\"",
+   "body": "{\"email\":\"\\\"a b\\\"@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"aziza@123.45\"",
+   "body": "{\"email\":\"aziza@123.45\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "email \"aziza@1.2.3.uz\"",
+   "body": "{\"email\":\"aziza@1.2.3.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": true,
+   "value": {
+    "email": "aziza@1.2.3.uz",
+    "password": "parol1234",
+    "acceptedLegalVersion": "2026-11-24.1-draft",
+    "ageConfirmed": true
+   }
+  },
+  {
+   "name": "email \"A_1+x@x-y.zz\"",
+   "body": "{\"email\":\"A_1+x@x-y.zz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": true,
+   "value": {
+    "email": "A_1+x@x-y.zz",
+    "password": "parol1234",
+    "acceptedLegalVersion": "2026-11-24.1-draft",
+    "ageConfirmed": true
+   }
+  },
+  {
+   "name": "email is null",
+   "body": "{\"email\":null,\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "password is null",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":null,\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "name is null",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"name\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "deviceName is null",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"deviceName\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "deviceName",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "acceptedLegalVersion is null",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":null,\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "ageConfirmed is null",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "ageConfirmed",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "email is a number",
+   "body": "{\"email\":7,\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "password is a number",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":7,\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "name is a number",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"name\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "deviceName is a number",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"deviceName\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "deviceName",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "acceptedLegalVersion is a number",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":7,\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "ageConfirmed is a number",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "ageConfirmed",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "email is true",
+   "body": "{\"email\":true,\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "password is true",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":true,\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "name is true",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"name\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "deviceName is true",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"deviceName\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "deviceName",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "acceptedLegalVersion is true",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":true,\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "ageConfirmed is true",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz",
+    "password": "parol1234",
+    "acceptedLegalVersion": "2026-11-24.1-draft",
+    "ageConfirmed": true
+   }
+  },
+  {
+   "name": "email is false",
+   "body": "{\"email\":false,\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "password is false",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":false,\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "name is false",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"name\":false}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "deviceName is false",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"deviceName\":false}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "deviceName",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "acceptedLegalVersion is false",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":false,\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "ageConfirmed is false",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":false}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "18 yoshdan kattaligingizni tasdiqlang.",
+   "details": [
+    {
+     "path": "ageConfirmed",
+     "message": "18 yoshdan kattaligingizni tasdiqlang."
+    }
+   ]
+  },
+  {
+   "name": "email is an array",
+   "body": "{\"email\":[\"x\"],\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "password is an array",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":[\"x\"],\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    },
+    {
+     "path": "password",
+     "message": "Parol kamida 8 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "name is an array",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"name\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "deviceName is an array",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"deviceName\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "deviceName",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "acceptedLegalVersion is an array",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":[\"x\"],\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "ageConfirmed is an array",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "ageConfirmed",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "email is an object",
+   "body": "{\"email\":{\"a\":1},\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "password is an object",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":{\"a\":1},\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "name is an object",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"name\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "deviceName is an object",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"deviceName\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "deviceName",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "acceptedLegalVersion is an object",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":{\"a\":1},\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "ageConfirmed is an object",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "ageConfirmed",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "ageConfirmed is the string \"true\"",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":\"true\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "ageConfirmed",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "ageConfirmed is 1",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":1}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "ageConfirmed",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "name is an empty array",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"name\":[]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    },
+    {
+     "path": "name",
+     "message": "Juda kichik: kutilgan array >=1 element bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "acceptedLegalVersion is an array of 41 items",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":[\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\"],\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    },
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang."
+    }
+   ]
+  },
+  {
+   "name": "ageConfirmed is 0",
+   "body": "{\"email\":\"aziza@example.uz\",\"password\":\"parol1234\",\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":0}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "ageConfirmed",
+     "message": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  }
+ ],
+ "refresh": [
+  {
+   "name": "an empty body",
+   "body": "",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "refreshToken",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "white space only",
+   "body": "  \n",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "not JSON",
+   "body": "{email",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "truncated JSON",
+   "body": "{\"email\":\"a@test.uz\"",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "two JSON values",
+   "body": "{}{}",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "JSON null",
+   "body": "null",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "a JSON string",
+   "body": "\"text\"",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "a JSON number",
+   "body": "12",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "a JSON array",
+   "body": "[]",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "JSON true",
+   "body": "true",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "an empty object",
+   "body": "{}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "refreshToken",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "a byte order mark before the object",
+   "body": "﻿{}",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "valid",
+   "body": "{\"refreshToken\":\"rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr\"}",
+   "ok": true,
+   "value": {
+    "refreshToken": "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
+   }
+  },
+  {
+   "name": "unknown fields are dropped",
+   "body": "{\"refreshToken\":\"abc\",\"other\":1}",
+   "ok": true,
+   "value": {
+    "refreshToken": "abc"
+   }
+  },
+  {
+   "name": "an empty token",
+   "body": "{\"refreshToken\":\"\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "refreshToken",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a token of 1 character",
+   "body": "{\"refreshToken\":\"r\"}",
+   "ok": true,
+   "value": {
+    "refreshToken": "r"
+   }
+  },
+  {
+   "name": "a token of 128 characters",
+   "body": "{\"refreshToken\":\"rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr\"}",
+   "ok": true,
+   "value": {
+    "refreshToken": "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
+   }
+  },
+  {
+   "name": "a token of 129 characters",
+   "body": "{\"refreshToken\":\"rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=128 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "refreshToken",
+     "message": "Juda katta: kutilgan string <=128 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a token of 64 characters outside the basic plane (128 units)",
+   "body": "{\"refreshToken\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+   "ok": true,
+   "value": {
+    "refreshToken": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+   }
+  },
+  {
+   "name": "a token of spaces (not trimmed)",
+   "body": "{\"refreshToken\":\"  \"}",
+   "ok": true,
+   "value": {
+    "refreshToken": "  "
+   }
+  },
+  {
+   "name": "refreshToken is null",
+   "body": "{\"refreshToken\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "refreshToken",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "refreshToken is a number",
+   "body": "{\"refreshToken\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "refreshToken",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "refreshToken is true",
+   "body": "{\"refreshToken\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "refreshToken",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "refreshToken is false",
+   "body": "{\"refreshToken\":false}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "refreshToken",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "refreshToken is an array",
+   "body": "{\"refreshToken\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "refreshToken",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "refreshToken is an object",
+   "body": "{\"refreshToken\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "refreshToken",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "another field only (the token is required)",
+   "body": "{\"other\":\"x\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "refreshToken",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "refreshToken is an empty array",
+   "body": "{\"refreshToken\":[]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "refreshToken",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    },
+    {
+     "path": "refreshToken",
+     "message": "Juda kichik: kutilgan array >=1 element bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "refreshToken is an array of 129 items",
+   "body": "{\"refreshToken\":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "refreshToken",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    },
+    {
+     "path": "refreshToken",
+     "message": "Juda katta: kutilgan array <=128 element bo‘lishi kerak"
+    }
+   ]
+  }
+ ],
+ "logout": [
+  {
+   "name": "an empty body",
+   "body": "",
+   "ok": true,
+   "value": {}
+  },
+  {
+   "name": "white space only",
+   "body": "  \n",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "not JSON",
+   "body": "{email",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "truncated JSON",
+   "body": "{\"email\":\"a@test.uz\"",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "two JSON values",
+   "body": "{}{}",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "JSON null",
+   "body": "null",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "a JSON string",
+   "body": "\"text\"",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "a JSON number",
+   "body": "12",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "a JSON array",
+   "body": "[]",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "JSON true",
+   "body": "true",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "an empty object",
+   "body": "{}",
+   "ok": true,
+   "value": {}
+  },
+  {
+   "name": "a byte order mark before the object",
+   "body": "﻿{}",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "valid",
+   "body": "{\"refreshToken\":\"rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr\"}",
+   "ok": true,
+   "value": {
+    "refreshToken": "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
+   }
+  },
+  {
+   "name": "unknown fields are dropped",
+   "body": "{\"refreshToken\":\"abc\",\"other\":1}",
+   "ok": true,
+   "value": {
+    "refreshToken": "abc"
+   }
+  },
+  {
+   "name": "an empty token",
+   "body": "{\"refreshToken\":\"\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "refreshToken",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a token of 1 character",
+   "body": "{\"refreshToken\":\"r\"}",
+   "ok": true,
+   "value": {
+    "refreshToken": "r"
+   }
+  },
+  {
+   "name": "a token of 128 characters",
+   "body": "{\"refreshToken\":\"rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr\"}",
+   "ok": true,
+   "value": {
+    "refreshToken": "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
+   }
+  },
+  {
+   "name": "a token of 129 characters",
+   "body": "{\"refreshToken\":\"rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=128 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "refreshToken",
+     "message": "Juda katta: kutilgan string <=128 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a token of 64 characters outside the basic plane (128 units)",
+   "body": "{\"refreshToken\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+   "ok": true,
+   "value": {
+    "refreshToken": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+   }
+  },
+  {
+   "name": "a token of spaces (not trimmed)",
+   "body": "{\"refreshToken\":\"  \"}",
+   "ok": true,
+   "value": {
+    "refreshToken": "  "
+   }
+  },
+  {
+   "name": "refreshToken is null",
+   "body": "{\"refreshToken\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "refreshToken",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "refreshToken is a number",
+   "body": "{\"refreshToken\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "refreshToken",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "refreshToken is true",
+   "body": "{\"refreshToken\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "refreshToken",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "refreshToken is false",
+   "body": "{\"refreshToken\":false}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "refreshToken",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "refreshToken is an array",
+   "body": "{\"refreshToken\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "refreshToken",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "refreshToken is an object",
+   "body": "{\"refreshToken\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "refreshToken",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "another field only (the token is optional)",
+   "body": "{\"other\":\"x\"}",
+   "ok": true,
+   "value": {}
+  },
+  {
+   "name": "refreshToken is an empty array",
+   "body": "{\"refreshToken\":[]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "refreshToken",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    },
+    {
+     "path": "refreshToken",
+     "message": "Juda kichik: kutilgan array >=1 element bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "refreshToken is an array of 129 items",
+   "body": "{\"refreshToken\":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "refreshToken",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    },
+    {
+     "path": "refreshToken",
+     "message": "Juda katta: kutilgan array <=128 element bo‘lishi kerak"
+    }
+   ]
+  }
+ ]
+}

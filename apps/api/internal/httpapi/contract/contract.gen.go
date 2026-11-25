@@ -9,8 +9,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"time"
+
+	"github.com/oapi-codegen/nullable"
+	"github.com/oapi-codegen/runtime"
 )
 
 // Defines values for ErrorResponseCode.
@@ -154,6 +160,86 @@ func (e HealthResponseStatus) Valid() bool {
 	}
 }
 
+// Defines values for OkResponseOk.
+const (
+	True OkResponseOk = true
+)
+
+// Valid indicates whether the value is a known member of the OkResponseOk enum.
+func (e OkResponseOk) Valid() bool {
+	switch e {
+	case True:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for LoginParamsXAtlasClient.
+const (
+	LoginParamsXAtlasClientMobile LoginParamsXAtlasClient = "mobile"
+)
+
+// Valid indicates whether the value is a known member of the LoginParamsXAtlasClient enum.
+func (e LoginParamsXAtlasClient) Valid() bool {
+	switch e {
+	case LoginParamsXAtlasClientMobile:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for LogoutParamsXAtlasClient.
+const (
+	LogoutParamsXAtlasClientMobile LogoutParamsXAtlasClient = "mobile"
+)
+
+// Valid indicates whether the value is a known member of the LogoutParamsXAtlasClient enum.
+func (e LogoutParamsXAtlasClient) Valid() bool {
+	switch e {
+	case LogoutParamsXAtlasClientMobile:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RefreshSessionParamsXAtlasClient.
+const (
+	RefreshSessionParamsXAtlasClientMobile RefreshSessionParamsXAtlasClient = "mobile"
+)
+
+// Valid indicates whether the value is a known member of the RefreshSessionParamsXAtlasClient enum.
+func (e RefreshSessionParamsXAtlasClient) Valid() bool {
+	switch e {
+	case RefreshSessionParamsXAtlasClientMobile:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RegisterParamsXAtlasClient.
+const (
+	RegisterParamsXAtlasClientMobile RegisterParamsXAtlasClient = "mobile"
+)
+
+// Valid indicates whether the value is a known member of the RegisterParamsXAtlasClient enum.
+func (e RegisterParamsXAtlasClient) Valid() bool {
+	switch e {
+	case RegisterParamsXAtlasClientMobile:
+		return true
+	default:
+		return false
+	}
+}
+
+// AuthResponse defines model for AuthResponse.
+type AuthResponse struct {
+	union json.RawMessage
+}
+
 // ErrorResponse Every error response. Clients branch on `code`, never on `error`.
 type ErrorResponse struct {
 	Code    ErrorResponseCode `json:"code"`
@@ -183,11 +269,218 @@ type HealthResponseDatabase string
 // HealthResponseStatus defines model for HealthResponse.Status.
 type HealthResponseStatus string
 
+// LoginRequest defines model for LoginRequest.
+type LoginRequest struct {
+	// DeviceName Mobile only: a label for the device in the session list (ignored for web).
+	DeviceName *string `json:"deviceName,omitempty"`
+	Email      string  `json:"email"`
+	Password   string  `json:"password"`
+}
+
+// MeResponse defines model for MeResponse.
+type MeResponse struct {
+	// ConsentRequired The legal texts changed: the user must accept them (POST /api/v1/legal/consent) before using the app
+	ConsentRequired bool `json:"consentRequired"`
+	User            struct {
+		// CreatedAt ISO 8601, UTC
+		CreatedAt time.Time                 `json:"createdAt"`
+		Email     string                    `json:"email"`
+		Id        string                    `json:"id"`
+		Name      nullable.Nullable[string] `json:"name"`
+	} `json:"user"`
+}
+
+// MobileAuthResponse Mobile mode (X-Atlas-Client: mobile): tokens in the body, no cookies
+type MobileAuthResponse struct {
+	AccessToken string `json:"accessToken"`
+
+	// AccessTokenExpiresAt ISO 8601, UTC
+	AccessTokenExpiresAt time.Time `json:"accessTokenExpiresAt"`
+	RefreshToken         string    `json:"refreshToken"`
+
+	// RefreshTokenExpiresAt ISO 8601, UTC
+	RefreshTokenExpiresAt time.Time `json:"refreshTokenExpiresAt"`
+
+	// SessionExpiresAt Absolute limit of this login (90 days); refresh is impossible afterwards
+	SessionExpiresAt time.Time   `json:"sessionExpiresAt"`
+	User             SessionUser `json:"user"`
+}
+
+// MobileLogoutRequest defines model for MobileLogoutRequest.
+type MobileLogoutRequest struct {
+	RefreshToken *string `json:"refreshToken,omitempty"`
+}
+
+// MobileRefreshRequest defines model for MobileRefreshRequest.
+type MobileRefreshRequest struct {
+	RefreshToken string `json:"refreshToken"`
+}
+
+// OkResponse defines model for OkResponse.
+type OkResponse struct {
+	Ok OkResponseOk `json:"ok"`
+}
+
+// OkResponseOk defines model for OkResponse.Ok.
+type OkResponseOk bool
+
+// RegisterRequest defines model for RegisterRequest.
+type RegisterRequest struct {
+	// AcceptedLegalVersion The `version` from GET /api/v1/legal that the user accepted; it must be the current one.
+	AcceptedLegalVersion string `json:"acceptedLegalVersion"`
+
+	// AgeConfirmed The user confirmed being 18 or older; must be true.
+	AgeConfirmed bool `json:"ageConfirmed"`
+
+	// DeviceName Mobile only: a label for the device in the session list (ignored for web).
+	DeviceName *string `json:"deviceName,omitempty"`
+	Email      string  `json:"email"`
+	Name       *string `json:"name,omitempty"`
+	Password   string  `json:"password"`
+}
+
+// SessionUser defines model for SessionUser.
+type SessionUser struct {
+	Email string                    `json:"email"`
+	Id    string                    `json:"id"`
+	Name  nullable.Nullable[string] `json:"name"`
+}
+
+// WebAuthResponse Web mode: tokens are only in HttpOnly cookies
+type WebAuthResponse struct {
+	User SessionUser `json:"user"`
+}
+
+// LoginParams defines parameters for Login.
+type LoginParams struct {
+	// XAtlasClient `mobile` selects mobile mode: tokens in JSON bodies, no cookies. Any other value or none: web mode. Not a security boundary — each login is bound to its mode (401 CLIENT_MISMATCH otherwise).
+	XAtlasClient *LoginParamsXAtlasClient `json:"X-Atlas-Client,omitempty"`
+}
+
+// LoginParamsXAtlasClient defines parameters for Login.
+type LoginParamsXAtlasClient string
+
+// LogoutParams defines parameters for Logout.
+type LogoutParams struct {
+	// XAtlasClient `mobile` selects mobile mode: tokens in JSON bodies, no cookies. Any other value or none: web mode. Not a security boundary — each login is bound to its mode (401 CLIENT_MISMATCH otherwise).
+	XAtlasClient *LogoutParamsXAtlasClient `json:"X-Atlas-Client,omitempty"`
+}
+
+// LogoutParamsXAtlasClient defines parameters for Logout.
+type LogoutParamsXAtlasClient string
+
+// RefreshSessionParams defines parameters for RefreshSession.
+type RefreshSessionParams struct {
+	// XAtlasClient `mobile` selects mobile mode: tokens in JSON bodies, no cookies. Any other value or none: web mode. Not a security boundary — each login is bound to its mode (401 CLIENT_MISMATCH otherwise).
+	XAtlasClient *RefreshSessionParamsXAtlasClient `json:"X-Atlas-Client,omitempty"`
+}
+
+// RefreshSessionParamsXAtlasClient defines parameters for RefreshSession.
+type RefreshSessionParamsXAtlasClient string
+
+// RegisterParams defines parameters for Register.
+type RegisterParams struct {
+	// XAtlasClient `mobile` selects mobile mode: tokens in JSON bodies, no cookies. Any other value or none: web mode. Not a security boundary — each login is bound to its mode (401 CLIENT_MISMATCH otherwise).
+	XAtlasClient *RegisterParamsXAtlasClient `json:"X-Atlas-Client,omitempty"`
+}
+
+// RegisterParamsXAtlasClient defines parameters for Register.
+type RegisterParamsXAtlasClient string
+
+// LoginJSONRequestBody defines body for Login for application/json ContentType.
+type LoginJSONRequestBody = LoginRequest
+
+// LogoutJSONRequestBody defines body for Logout for application/json ContentType.
+type LogoutJSONRequestBody = MobileLogoutRequest
+
+// RefreshSessionJSONRequestBody defines body for RefreshSession for application/json ContentType.
+type RefreshSessionJSONRequestBody = MobileRefreshRequest
+
+// RegisterJSONRequestBody defines body for Register for application/json ContentType.
+type RegisterJSONRequestBody = RegisterRequest
+
+// AsMobileAuthResponse returns the union data inside the AuthResponse as a MobileAuthResponse
+func (t AuthResponse) AsMobileAuthResponse() (MobileAuthResponse, error) {
+	var body MobileAuthResponse
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMobileAuthResponse overwrites any union data inside the AuthResponse as the provided MobileAuthResponse
+func (t *AuthResponse) FromMobileAuthResponse(v MobileAuthResponse) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMobileAuthResponse performs a merge with any union data inside the AuthResponse, using the provided MobileAuthResponse
+func (t *AuthResponse) MergeMobileAuthResponse(v MobileAuthResponse) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsWebAuthResponse returns the union data inside the AuthResponse as a WebAuthResponse
+func (t AuthResponse) AsWebAuthResponse() (WebAuthResponse, error) {
+	var body WebAuthResponse
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWebAuthResponse overwrites any union data inside the AuthResponse as the provided WebAuthResponse
+func (t *AuthResponse) FromWebAuthResponse(v WebAuthResponse) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWebAuthResponse performs a merge with any union data inside the AuthResponse, using the provided WebAuthResponse
+func (t *AuthResponse) MergeWebAuthResponse(v WebAuthResponse) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t AuthResponse) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *AuthResponse) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// GetHealth Liveness and database check
 	// (GET /api/health)
 	GetHealth(w http.ResponseWriter, r *http.Request)
+	// Login Sign in (web: cookies; mobile: tokens in the body)
+	// (POST /api/v1/auth/login)
+	Login(w http.ResponseWriter, r *http.Request, params LoginParams)
+	// Logout End this login (session family). Idempotent.
+	// (POST /api/v1/auth/logout)
+	Logout(w http.ResponseWriter, r *http.Request, params LogoutParams)
+	// GetMe The signed-in user, and whether the changed legal texts must be accepted first
+	// (GET /api/v1/auth/me)
+	GetMe(w http.ResponseWriter, r *http.Request)
+	// RefreshSession Rotate the refresh token (web: atlas_rt cookie; mobile: body). A token rotated ≤ 60 s ago returns the same new token.
+	// (POST /api/v1/auth/refresh)
+	RefreshSession(w http.ResponseWriter, r *http.Request, params RefreshSessionParams)
+	// Register Create an account and sign in (web: cookies; mobile: tokens in the body)
+	// (POST /api/v1/auth/register)
+	Register(w http.ResponseWriter, r *http.Request, params RegisterParams)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -204,6 +497,184 @@ func (siw *ServerInterfaceWrapper) GetHealth(w http.ResponseWriter, r *http.Requ
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetHealth(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// Login operation middleware
+func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params LoginParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "X-Atlas-Client" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Atlas-Client")]; found {
+		var XAtlasClient LoginParamsXAtlasClient
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Atlas-Client", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Atlas-Client", valueList[0], &XAtlasClient, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Atlas-Client", Err: err})
+			return
+		}
+
+		params.XAtlasClient = &XAtlasClient
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Login(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// Logout operation middleware
+func (siw *ServerInterfaceWrapper) Logout(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params LogoutParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "X-Atlas-Client" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Atlas-Client")]; found {
+		var XAtlasClient LogoutParamsXAtlasClient
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Atlas-Client", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Atlas-Client", valueList[0], &XAtlasClient, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Atlas-Client", Err: err})
+			return
+		}
+
+		params.XAtlasClient = &XAtlasClient
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Logout(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetMe operation middleware
+func (siw *ServerInterfaceWrapper) GetMe(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMe(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RefreshSession operation middleware
+func (siw *ServerInterfaceWrapper) RefreshSession(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RefreshSessionParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "X-Atlas-Client" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Atlas-Client")]; found {
+		var XAtlasClient RefreshSessionParamsXAtlasClient
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Atlas-Client", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Atlas-Client", valueList[0], &XAtlasClient, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Atlas-Client", Err: err})
+			return
+		}
+
+		params.XAtlasClient = &XAtlasClient
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RefreshSession(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// Register operation middleware
+func (siw *ServerInterfaceWrapper) Register(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RegisterParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "X-Atlas-Client" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Atlas-Client")]; found {
+		var XAtlasClient RegisterParamsXAtlasClient
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Atlas-Client", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Atlas-Client", valueList[0], &XAtlasClient, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Atlas-Client", Err: err})
+			return
+		}
+
+		params.XAtlasClient = &XAtlasClient
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Register(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -334,6 +805,11 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	}
 
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/health", wrapper.GetHealth)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/auth/login", wrapper.Login)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/auth/logout", wrapper.Logout)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/auth/me", wrapper.GetMe)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/auth/refresh", wrapper.RefreshSession)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/auth/register", wrapper.Register)
 
 	return m
 }
@@ -387,11 +863,531 @@ func (response GetHealth503JSONResponse) VisitGetHealthResponse(w http.ResponseW
 	return err
 }
 
+type LoginRequestObject struct {
+	Params LoginParams
+	Body   *LoginJSONRequestBody
+}
+
+type LoginResponseObject interface {
+	VisitLoginResponse(w http.ResponseWriter) error
+}
+
+type Login200ResponseHeaders struct {
+	SetCookie *string
+}
+
+type Login200JSONResponse struct {
+	Body    AuthResponse
+	Headers Login200ResponseHeaders
+}
+
+func (response Login200JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.SetCookie != nil {
+		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type Login400JSONResponse ErrorResponse
+
+func (response Login400JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type Login401JSONResponse ErrorResponse
+
+func (response Login401JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type Login413JSONResponse ErrorResponse
+
+func (response Login413JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type Login429ResponseHeaders struct {
+	RetryAfter *string
+}
+
+type Login429JSONResponse struct {
+	Body    ErrorResponse
+	Headers Login429ResponseHeaders
+}
+
+func (response Login429JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type Login500JSONResponse ErrorResponse
+
+func (response Login500JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LogoutRequestObject struct {
+	Params LogoutParams
+	Body   *LogoutJSONRequestBody
+}
+
+type LogoutResponseObject interface {
+	VisitLogoutResponse(w http.ResponseWriter) error
+}
+
+type Logout200JSONResponse OkResponse
+
+func (response Logout200JSONResponse) VisitLogoutResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type Logout400JSONResponse ErrorResponse
+
+func (response Logout400JSONResponse) VisitLogoutResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type Logout403JSONResponse ErrorResponse
+
+func (response Logout403JSONResponse) VisitLogoutResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type Logout413JSONResponse ErrorResponse
+
+func (response Logout413JSONResponse) VisitLogoutResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type Logout500JSONResponse ErrorResponse
+
+func (response Logout500JSONResponse) VisitLogoutResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type Logout503ResponseHeaders struct {
+	RetryAfter *string
+}
+
+type Logout503JSONResponse struct {
+	Body    ErrorResponse
+	Headers Logout503ResponseHeaders
+}
+
+func (response Logout503JSONResponse) VisitLogoutResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetMeRequestObject struct {
+}
+
+type GetMeResponseObject interface {
+	VisitGetMeResponse(w http.ResponseWriter) error
+}
+
+type GetMe200JSONResponse MeResponse
+
+func (response GetMe200JSONResponse) VisitGetMeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetMe401JSONResponse ErrorResponse
+
+func (response GetMe401JSONResponse) VisitGetMeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetMe404JSONResponse ErrorResponse
+
+func (response GetMe404JSONResponse) VisitGetMeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetMe500JSONResponse ErrorResponse
+
+func (response GetMe500JSONResponse) VisitGetMeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RefreshSessionRequestObject struct {
+	Params RefreshSessionParams
+	Body   *RefreshSessionJSONRequestBody
+}
+
+type RefreshSessionResponseObject interface {
+	VisitRefreshSessionResponse(w http.ResponseWriter) error
+}
+
+type RefreshSession200ResponseHeaders struct {
+	SetCookie *string
+}
+
+type RefreshSession200JSONResponse struct {
+	Body    AuthResponse
+	Headers RefreshSession200ResponseHeaders
+}
+
+func (response RefreshSession200JSONResponse) VisitRefreshSessionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.SetCookie != nil {
+		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RefreshSession400JSONResponse ErrorResponse
+
+func (response RefreshSession400JSONResponse) VisitRefreshSessionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RefreshSession401JSONResponse ErrorResponse
+
+func (response RefreshSession401JSONResponse) VisitRefreshSessionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RefreshSession413JSONResponse ErrorResponse
+
+func (response RefreshSession413JSONResponse) VisitRefreshSessionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RefreshSession500JSONResponse ErrorResponse
+
+func (response RefreshSession500JSONResponse) VisitRefreshSessionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RefreshSession503ResponseHeaders struct {
+	RetryAfter *string
+}
+
+type RefreshSession503JSONResponse struct {
+	Body    ErrorResponse
+	Headers RefreshSession503ResponseHeaders
+}
+
+func (response RefreshSession503JSONResponse) VisitRefreshSessionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RegisterRequestObject struct {
+	Params RegisterParams
+	Body   *RegisterJSONRequestBody
+}
+
+type RegisterResponseObject interface {
+	VisitRegisterResponse(w http.ResponseWriter) error
+}
+
+type Register201ResponseHeaders struct {
+	SetCookie *string
+}
+
+type Register201JSONResponse struct {
+	Body    AuthResponse
+	Headers Register201ResponseHeaders
+}
+
+func (response Register201JSONResponse) VisitRegisterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.SetCookie != nil {
+		w.Header().Set("Set-Cookie", fmt.Sprint(*response.Headers.SetCookie))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type Register400JSONResponse ErrorResponse
+
+func (response Register400JSONResponse) VisitRegisterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type Register409JSONResponse ErrorResponse
+
+func (response Register409JSONResponse) VisitRegisterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type Register413JSONResponse ErrorResponse
+
+func (response Register413JSONResponse) VisitRegisterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type Register429ResponseHeaders struct {
+	RetryAfter *string
+}
+
+type Register429JSONResponse struct {
+	Body    ErrorResponse
+	Headers Register429ResponseHeaders
+}
+
+func (response Register429JSONResponse) VisitRegisterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type Register500JSONResponse ErrorResponse
+
+func (response Register500JSONResponse) VisitRegisterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// GetHealth Liveness and database check
 	// (GET /api/health)
 	GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error)
+	// Login Sign in (web: cookies; mobile: tokens in the body)
+	// (POST /api/v1/auth/login)
+	Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error)
+	// Logout End this login (session family). Idempotent.
+	// (POST /api/v1/auth/logout)
+	Logout(ctx context.Context, request LogoutRequestObject) (LogoutResponseObject, error)
+	// GetMe The signed-in user, and whether the changed legal texts must be accepted first
+	// (GET /api/v1/auth/me)
+	GetMe(ctx context.Context, request GetMeRequestObject) (GetMeResponseObject, error)
+	// RefreshSession Rotate the refresh token (web: atlas_rt cookie; mobile: body). A token rotated ≤ 60 s ago returns the same new token.
+	// (POST /api/v1/auth/refresh)
+	RefreshSession(ctx context.Context, request RefreshSessionRequestObject) (RefreshSessionResponseObject, error)
+	// Register Create an account and sign in (web: cookies; mobile: tokens in the body)
+	// (POST /api/v1/auth/register)
+	Register(ctx context.Context, request RegisterRequestObject) (RegisterResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -450,6 +1446,168 @@ func (sh *strictHandler) GetHealth(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetHealthResponseObject); ok {
 		if err := validResponse.VisitGetHealthResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// Login operation middleware
+func (sh *strictHandler) Login(w http.ResponseWriter, r *http.Request, params LoginParams) {
+	var request LoginRequestObject
+
+	request.Params = params
+
+	var body LoginJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.Login(ctx, request.(LoginRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "Login")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(LoginResponseObject); ok {
+		if err := validResponse.VisitLoginResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// Logout operation middleware
+func (sh *strictHandler) Logout(w http.ResponseWriter, r *http.Request, params LogoutParams) {
+	var request LogoutRequestObject
+
+	request.Params = params
+
+	var body LogoutJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		if !errors.Is(err, io.EOF) {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+			return
+		}
+	} else {
+		request.Body = &body
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.Logout(ctx, request.(LogoutRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "Logout")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(LogoutResponseObject); ok {
+		if err := validResponse.VisitLogoutResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetMe operation middleware
+func (sh *strictHandler) GetMe(w http.ResponseWriter, r *http.Request) {
+	var request GetMeRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetMe(ctx, request.(GetMeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetMe")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMeResponseObject); ok {
+		if err := validResponse.VisitGetMeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RefreshSession operation middleware
+func (sh *strictHandler) RefreshSession(w http.ResponseWriter, r *http.Request, params RefreshSessionParams) {
+	var request RefreshSessionRequestObject
+
+	request.Params = params
+
+	var body RefreshSessionJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		if !errors.Is(err, io.EOF) {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+			return
+		}
+	} else {
+		request.Body = &body
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RefreshSession(ctx, request.(RefreshSessionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RefreshSession")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RefreshSessionResponseObject); ok {
+		if err := validResponse.VisitRefreshSessionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// Register operation middleware
+func (sh *strictHandler) Register(w http.ResponseWriter, r *http.Request, params RegisterParams) {
+	var request RegisterRequestObject
+
+	request.Params = params
+
+	var body RegisterJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.Register(ctx, request.(RegisterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "Register")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RegisterResponseObject); ok {
+		if err := validResponse.VisitRegisterResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

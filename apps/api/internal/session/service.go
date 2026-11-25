@@ -422,6 +422,22 @@ func (s *Service) End(ctx context.Context, o EndOptions) error {
 	})
 }
 
+// Alive reports whether an access token's session still stands: its family
+// is not revoked, and the session is live or was only rotated (a rotated
+// session's access token stays good until it expires). Checked on every
+// authenticated request, so a sign-out, a detected reuse or a password reset
+// takes effect at once and not when the access token expires.
+func (s *Service) Alive(ctx context.Context, sessionID, userID string) (bool, error) {
+	if sessionID == "" || userID == "" {
+		return false, nil
+	}
+	alive, err := store.New(s.pool).SessionIsAlive(ctx, store.SessionIsAliveParams{ID: sessionID, UserID: userID})
+	if err != nil {
+		return false, fmt.Errorf("check the session: %w", err)
+	}
+	return alive, nil
+}
+
 // InTransaction runs fn in one session-protocol transaction: read
 // committed, with the lock and statement timeouts, and the request time t
 // from the database clock. When the store is too busy (a lock, statement or
@@ -439,7 +455,7 @@ func (s *Service) InTransaction(ctx context.Context, fn func(tx pgx.Tx, t time.T
 	}
 	if isBusy(err) {
 		s.cfg.Log.WarnContext(ctx, "session operation busy", "err", describeBusy(err))
-		return apierr.New(apierr.SessionBusy)
+		return apierr.Busy()
 	}
 	return err
 }

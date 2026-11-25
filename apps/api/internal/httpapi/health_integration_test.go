@@ -43,7 +43,7 @@ func TestHealthAgainstPostgreSQL(t *testing.T) {
 	// A real first connection (TCP, startup, password auth) can take longer
 	// than the unit tests' 50 ms: use the production ping timeout.
 	s := httpapi.NewServer(httpapi.Services{Health: health.New(pool, "1.2.3", 2*time.Second)})
-	h := httpapi.New(s, slog.New(slog.NewJSONHandler(io.Discard, nil)))
+	h := httpapi.New(s, slog.New(slog.NewJSONHandler(io.Discard, nil)), &httpapi.Gate{})
 	checkHealth(t, h, http.StatusOK, healthBody{"ok", "ok", "1.2.3"})
 }
 

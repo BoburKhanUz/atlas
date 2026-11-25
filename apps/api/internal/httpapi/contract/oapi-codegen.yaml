@@ -9,5 +9,19 @@ generate:
   models: true
 output-options:
   nullable-type: true
+  # An email is a plain string here: requests are validated by our own rules
+  # (the contract's pattern, the Next.js API's messages) before the generated
+  # decoder sees them, and the generator's own email type parses addresses
+  # by other rules.
+  type-mapping:
+    string:
+      formats:
+        email:
+          type: string
   include-operation-ids:
     - getHealth
+    - register
+    - login
+    - logout
+    - getMe
+    - refreshSession

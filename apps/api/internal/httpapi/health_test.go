@@ -23,7 +23,7 @@ func healthHandler(t *testing.T, db health.Pinger) (http.Handler, *logs) {
 	t.Helper()
 	l := &logs{}
 	s := httpapi.NewServer(httpapi.Services{Health: health.New(db, "1.2.3", 50*time.Millisecond)})
-	return httpapi.New(s, slog.New(slog.NewJSONHandler(l, nil))), l
+	return httpapi.New(s, slog.New(slog.NewJSONHandler(l, nil)), &httpapi.Gate{}), l
 }
 
 type healthBody struct {

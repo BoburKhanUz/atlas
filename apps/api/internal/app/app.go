@@ -22,12 +22,17 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"lookly/internal/accounts"
+	"lookly/internal/auth"
 	"lookly/internal/config"
 	"lookly/internal/database"
 	"lookly/internal/health"
 	"lookly/internal/httpapi"
 	"lookly/internal/jobs"
+	"lookly/internal/legal"
 	"lookly/internal/maintenance"
+	"lookly/internal/ratelimit"
+	"lookly/internal/session"
 )
 
 // version is stamped at build time: -ldflags "-X lookly/internal/app.version=<v>".
@@ -72,6 +77,29 @@ func Run(ctx context.Context, args []string, getenv func(string) (string, bool),
 	}
 }
 
+// api builds the HTTP API over the database: the domain services, the gate
+// every request passes, and the router generated from the contract.
+func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger) http.Handler {
+	tokens := auth.NewTokens(cfg.JWTSecret)
+	sessions := session.New(pool, session.Config{
+		Tokens:     tokens,
+		Keys:       session.Keys{Active: cfg.SessionEncKey, DecryptOnly: cfg.SessionDecryptKeys},
+		AccessTTL:  cfg.AccessTokenTTL,
+		RefreshTTL: cfg.RefreshTokenTTL,
+		Log:        log,
+	})
+	consent := legal.NewService(pool)
+	users := accounts.New(pool, sessions, ratelimit.New(pool, cfg.JWTSecret), consent, auth.Bcrypt{}, log)
+	server := httpapi.NewServer(httpapi.Services{
+		Health:       health.New(pool, version, healthPingTimeout),
+		Accounts:     users,
+		Sessions:     sessions,
+		CookieSecure: cfg.CookieSecure,
+		TrustProxy:   cfg.TrustProxy,
+	})
+	return httpapi.New(server, log, &httpapi.Gate{Tokens: tokens, Sessions: sessions, Consent: consent, TrustProxy: cfg.TrustProxy})
+}
+
 func serve(ctx context.Context, getenv func(string) (string, bool), stdout, stderr io.Writer) int {
 	cfg, log, pool, code := open(ctx, getenv, stdout, stderr)
 	if pool == nil {
@@ -79,9 +107,7 @@ func serve(ctx context.Context, getenv func(string) (string, bool), stdout, stde
 	}
 	defer pool.Close()
 
-	handler := httpapi.New(httpapi.NewServer(httpapi.Services{
-		Health: health.New(pool, version, healthPingTimeout),
-	}), log)
+	handler := api(cfg, pool, log)
 
 	listener, err := net.Listen("tcp", cfg.HTTPAddr)
 	if err != nil {
