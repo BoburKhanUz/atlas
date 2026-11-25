@@ -6,6 +6,7 @@ import '../../../core/logging/app_log.dart';
 import '../../../core/network/api_error_code.dart';
 import '../../../core/network/api_failure.dart';
 import '../../../core/session/providers.dart';
+import '../../../core/text/uzbek_text.dart';
 import '../data/local_user_data.dart';
 import '../providers.dart';
 
@@ -41,7 +42,9 @@ class DeleteAccountController extends Notifier<DeleteAccountState> {
   @override
   DeleteAccountState build() => const DeleteAccountState();
 
-  static bool confirmationMatches(String typed) => typed.trim().toUpperCase() == deleteConfirmationWord;
+  /// Case, surrounding spaces and the apostrophe a keyboard produces (', ’,
+  /// ʻ …) do not matter.
+  static bool confirmationMatches(String typed) => matchesUzbekWord(typed, deleteConfirmationWord);
 
   /// The first delete (needs the typed confirmation) or "Tekshirish" after
   /// an unknown outcome.

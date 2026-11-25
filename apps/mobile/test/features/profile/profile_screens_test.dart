@@ -301,7 +301,8 @@ void main() {
     await tester.enterText(find.byKey(const Key('delete.typed')), 'ochir');
     await app.settle();
     expect(tester.widget<FilledButton>(find.byKey(const Key('delete.confirm'))).onPressed, isNull);
-    await tester.enterText(find.byKey(const Key('delete.typed')), 'O‘CHIRISH');
+    // What a phone keyboard gives: a plain apostrophe, not U+2018.
+    await tester.enterText(find.byKey(const Key('delete.typed')), "O'CHIRISH");
     await app.settle();
     await app.tap(find.byKey(const Key('delete.confirm')));
     await tester.pump(const Duration(seconds: 1));

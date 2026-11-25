@@ -355,6 +355,17 @@ void main() {
       expect(DeleteAccountController.confirmationMatches(' o‘chirish '), isTrue);
     });
 
+    test('the confirmation accepts every apostrophe a phone keyboard produces', () {
+      // ' (U+0027), ’ (U+2019), ‘ (U+2018), ʻ (U+02BB), ʼ (U+02BC), ` and ´.
+      for (final apostrophe in ["'", '’', '‘', 'ʻ', 'ʼ', '`', '´']) {
+        expect(DeleteAccountController.confirmationMatches('o${apostrophe}chirish'), isTrue, reason: apostrophe);
+        expect(DeleteAccountController.confirmationMatches('O${apostrophe}CHIRISH'), isTrue, reason: apostrophe);
+      }
+      for (final wrong in ['ochirish', 'o chirish', 'o‘chiris', 'o‘‘chirish', '']) {
+        expect(DeleteAccountController.confirmationMatches(wrong), isFalse, reason: wrong);
+      }
+    });
+
     test(
       '200 → deleted: tokens + this user\'s keys removed, another user\'s kept; signed out WITHOUT /auth/logout',
       () async {
