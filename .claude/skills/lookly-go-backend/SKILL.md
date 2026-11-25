@@ -19,7 +19,7 @@ Built so far (B0) and planned:
 apps/api/
   cmd/lookly/            thin main (signals); the commands live in internal/app
   internal/
-    app/                 commands: `serve`, `health` (B0); `worker`, `migrate`, `eval` later
+    app/                 commands: `serve`, `worker`, `health`, `migrate river`; `eval` later
     config/              typed config from env; validated at startup, fails closed
     apierr/              the contract's error codes: status and Uzbek message (one table)
     httpapi/             router, middleware (request id, access log, recovery, body
@@ -86,8 +86,12 @@ apps/api/
   cleanup) runs as a River job in `lookly worker`, not inside the request.
 - Jobs are idempotent and retry with backoff; a job that gives up records why, and the
   user sees a clear state, never an endless spinner.
-- Scheduled cleanup removes expired sessions, reset tokens, weather cache rows and
-  orphaned files.
+- Scheduled cleanup (`internal/maintenance`, B1) removes successor ciphertexts after 60 s,
+  dead families and old rotated sessions after 30 days, expired reset links, idempotency
+  keys and weather rows; orphaned files arrive with the storage driver (B4).
+- A transaction that touches sessions locks families first, in id order, then sessions
+  (`docs/architecture/sessions.md`); the cleanup does too. Pass times to queries in UTC
+  (`time.Time.UTC()`): pgx stores a non-UTC time's wall clock as is.
 
 ## Errors and logging
 

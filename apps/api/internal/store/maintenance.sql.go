@@ -110,3 +110,20 @@ func (q *Queries) DeleteOldRotatedSessions(ctx context.Context) (int64, error) {
 	}
 	return result.RowsAffected(), nil
 }
+
+const lockDeadFamilies = `-- name: LockDeadFamilies :exec
+SELECT "id" FROM "SessionFamily"
+ WHERE "revokedAt" < atlas_now() - interval '30 days'
+    OR "absoluteExpiresAt" < atlas_now() - interval '30 days'
+ ORDER BY "id"
+   FOR UPDATE
+`
+
+// Families revoked, or past their absolute limit, for more than 30 days,
+// locked in id order BEFORE any session row: the session protocol locks a
+// family first, then its sessions (docs/architecture/sessions.md), so the
+// cleanup never holds a session while waiting for its family.
+func (q *Queries) LockDeadFamilies(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, lockDeadFamilies)
+	return err
+}

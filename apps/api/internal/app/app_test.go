@@ -265,6 +265,26 @@ func TestARequestLongerThanTheGracePeriodDoesNotKeepTheProcessAlive(t *testing.T
 	}
 }
 
+func TestWorkerAndMigrateRiverReportAnUnreachableDatabaseAsSuch(t *testing.T) {
+	t.Parallel()
+	for _, args := range [][]string{{"worker"}, {"migrate", "river"}} {
+		var stderr bytes.Buffer
+		code := app.Run(context.Background(), args, env(map[string]string{
+			"LOOKLY_ENV":   "test",
+			"DATABASE_URL": "postgresql://secretuser@127.0.0.1:1/proddb",
+		}), &bytes.Buffer{}, &stderr)
+		msg := stderr.String()
+		if code != 1 || !strings.Contains(msg, "cannot reach the database") {
+			t.Errorf("%v: exit %d, stderr %q", args, code, msg)
+		}
+		for _, leak := range []string{"secretuser", "proddb", "127.0.0.1", "migrate river"} {
+			if strings.Contains(msg, leak) {
+				t.Errorf("%v: stderr shows %q: %s", args, leak, msg)
+			}
+		}
+	}
+}
+
 func TestHealthCommand(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {

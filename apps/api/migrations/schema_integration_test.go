@@ -85,11 +85,20 @@ func TestADifferenceIsCaught(t *testing.T) {
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `ALTER TABLE "User" ADD COLUMN "nickname" text;
 		ALTER TABLE "Session" ALTER COLUMN "lastUsedAt" SET DEFAULT CURRENT_TIMESTAMP;
-		CREATE INDEX "Outfit_name_idx" ON "Outfit" ("name")`); err != nil {
+		CREATE INDEX "Outfit_name_idx" ON "Outfit" ("name");
+		ALTER TABLE "Outfit" ADD CONSTRAINT "Outfit_name_check" CHECK (length("name") < 100);
+		CREATE OR REPLACE FUNCTION public.atlas_now() RETURNS timestamp(3) LANGUAGE sql STABLE AS $$ SELECT now()::timestamp(3) $$;
+		CREATE FUNCTION public.touch() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END $$;
+		CREATE TRIGGER "User_touch" BEFORE UPDATE ON "User" FOR EACH ROW EXECUTE FUNCTION public.touch();
+		INSERT INTO "SystemMarker" ("key", "value") VALUES ('extra', now())`); err != nil {
 		t.Fatal(err)
 	}
 	diff := dbtest.Diff(before, dbtest.Catalog(t, pool))
-	for _, want := range []string{`column public."User".nickname`, `column public."Session"."lastUsedAt"`, `index public."Outfit_name_idx"`} {
+	for _, want := range []string{
+		`column public."User".nickname`, `column public."Session"."lastUsedAt"`, `index public."Outfit_name_idx"`,
+		`constraint public."Outfit"."Outfit_name_check"`, `function public.atlas_now()`, `function public.touch()`,
+		`trigger public."User"."User_touch"`, `rows public."SystemMarker"`, `marker extra`,
+	} {
 		if !strings.Contains(diff, want) {
 			t.Errorf("diff does not name %s:\n%s", want, diff)
 		}

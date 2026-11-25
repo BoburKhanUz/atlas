@@ -181,14 +181,26 @@ func TestBoundaries(t *testing.T) {
 	d.session("rot_30d", "f_old_live", now.Add(-60*day), ptr(now.Add(-30*day)), "rot_tail")
 	d.session("rot_30d1ms", "f_old_live", now.Add(-60*day), ptr(now.Add(-30*day-ms)), "rot_30d")
 	d.session("rot_tail", "f_old_live", now.Add(-30*day), nil, "")
+	// Revoked 40 days ago but never rotated (no successor): not a rotated row, stays.
+	d.session("revoked_not_rotated", "f_old_live", now.Add(-60*day), ptr(now.Add(-40*day)), "")
+	// A dead family's rotated rows go with the family, counted once.
+	d.session("dead_rotated", "f_revoked_30d1ms", now.Add(-40*day), ptr(now.Add(-39*day)), "dead_tail")
+	d.session("dead_tail", "f_revoked_30d1ms", now.Add(-39*day), ptr(now.Add(-30*day-ms)), "")
+	// Reset links: expired exactly now is deleted, 1 ms later is kept.
+	d.exec(`INSERT INTO "PasswordResetToken" ("id","userId","tokenHash","expiresAt") VALUES
+		('rt_now','mu','a',$1), ('rt_later','mu','b',$2)`, now, now.Add(ms))
 	dbtest.SetClock(t, d.pool, now)
 
 	report, err := service(d).Cleanup(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if report.FamiliesDeleted != 2 || report.RotatedSessionsDeleted != 1 {
+	if report.FamiliesDeleted != 2 || report.RotatedSessionsDeleted != 1 || report.FamilySessionsDeleted != 2 ||
+		report.ExpiredResetLinksDeleted != 1 {
 		t.Errorf("report %+v", report)
+	}
+	if got := d.ids(`SELECT string_agg("id", ',') FROM "PasswordResetToken"`); got != "rt_later" {
+		t.Errorf("reset links left: %s", got)
 	}
 	if got := d.ids(`SELECT string_agg("id", ',' ORDER BY "id") FROM "SessionFamily"`); got != "f_expired_30d,f_live,f_old_live,f_revoked_30d" {
 		t.Errorf("families left: %s", got)
@@ -196,7 +208,7 @@ func TestBoundaries(t *testing.T) {
 	if got := d.ids(`SELECT string_agg("id", ',' ORDER BY "id") FROM "Session" WHERE "successorTokenEnc" IS NOT NULL`); got != "keep_cipher" {
 		t.Errorf("ciphertexts left on: %s", got)
 	}
-	if got := d.ids(`SELECT string_agg("id", ',' ORDER BY "id") FROM "Session" WHERE "familyId" = 'f_old_live'`); got != "rot_30d,rot_tail" {
+	if got := d.ids(`SELECT string_agg("id", ',' ORDER BY "id") FROM "Session" WHERE "familyId" = 'f_old_live'`); got != "revoked_not_rotated,rot_30d,rot_tail" {
 		t.Errorf("sessions left in f_old_live: %s", got)
 	}
 }
@@ -238,5 +250,63 @@ func TestALockedTableMakesTheRunGiveUpAndChangeNothing(t *testing.T) {
 	}
 	if got := d.ids(`SELECT string_agg("id", ',') FROM "Session" WHERE "successorTokenEnc" IS NOT NULL`); got != "old" {
 		t.Errorf("the earlier step was not undone: ciphertexts on %q", got)
+	}
+}
+
+// The session protocol locks a family first, then its sessions. A refresh
+// presenting an old token of a dead family (past its absolute limit, not yet
+// revoked, with a stale ciphertext) while the cleanup runs must not deadlock:
+// the cleanup takes the family locks before any session lock.
+func TestCleanupAndARefreshOnTheSameFamilyDoNotDeadlock(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+	now := time.Date(2026, 11, 1, 12, 0, 0, 0, time.UTC)
+	d.family("f_dead", now.Add(-130*day), now.Add(-31*day), nil)
+	d.session("rotated", "f_dead", now.Add(-130*day), ptr(now.Add(-125*day)), "tail")
+	d.session("tail", "f_dead", now.Add(-125*day), nil, "")
+	dbtest.SetClock(t, d.pool, now)
+
+	ctx := context.Background()
+	refresh, err := d.pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = refresh.Rollback(ctx) }() // moot once committed
+	if _, err := refresh.Exec(ctx, `SELECT "id" FROM "SessionFamily" WHERE "id" = 'f_dead' FOR UPDATE`); err != nil {
+		t.Fatal(err)
+	}
+
+	type result struct {
+		report maintenance.Report
+		err    error
+	}
+	cleanup := make(chan result, 1)
+	go func() {
+		r, err := service(d).Cleanup(ctx)
+		cleanup <- result{r, err}
+	}()
+	time.Sleep(300 * time.Millisecond) // the cleanup runs into the family lock
+
+	// The refresh presents the old (rotated) token: family first, then that
+	// session (sessions.md), then it revokes the family's sessions.
+	if _, err := refresh.Exec(ctx, `SELECT "id" FROM "Session" WHERE "id" = 'rotated' FOR UPDATE`); err != nil {
+		t.Fatalf("the refresh failed: %v", err)
+	}
+	if _, err := refresh.Exec(ctx, `UPDATE "Session" SET "revokedAt" = $1 WHERE "familyId" = 'f_dead' AND "revokedAt" IS NULL`, now); err != nil {
+		t.Fatalf("the refresh failed: %v", err)
+	}
+	if err := refresh.Commit(ctx); err != nil {
+		t.Fatalf("the refresh failed: %v", err)
+	}
+	select {
+	case r := <-cleanup:
+		if r.err != nil {
+			t.Fatalf("the cleanup failed: %v", r.err)
+		}
+		if r.report.FamiliesDeleted != 1 || r.report.FamilySessionsDeleted != 2 {
+			t.Errorf("report %+v", r.report)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("the cleanup did not finish")
 	}
 }

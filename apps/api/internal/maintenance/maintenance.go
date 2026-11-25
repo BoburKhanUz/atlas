@@ -68,11 +68,13 @@ func New(pool *pgxpool.Pool, opts ...Option) *Service {
 	return s
 }
 
-// Cleanup runs every rule in one transaction: either all of it happens or,
-// on any error (a lock timeout included), none of it.
+// Cleanup runs every rule in one read-committed transaction: either all of
+// it happens or, on any error (a lock timeout included), none of it. It
+// locks the dead families first, in id order, as the session protocol locks
+// a family before its sessions.
 func (s *Service) Cleanup(ctx context.Context) (Report, error) {
 	var r Report
-	err := pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+	err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{IsoLevel: pgx.ReadCommitted}, func(tx pgx.Tx) error {
 		// SET LOCAL takes no parameters; the value is a duration we format.
 		if _, err := tx.Exec(ctx, fmt.Sprintf("SET LOCAL lock_timeout = '%dms'", s.lockTimeout.Milliseconds())); err != nil {
 			return fmt.Errorf("set lock timeout: %w", err)
@@ -82,6 +84,7 @@ func (s *Service) Cleanup(ctx context.Context) (Report, error) {
 			name string
 			run  func() error
 		}{
+			{"lock dead families", func() error { return q.LockDeadFamilies(ctx) }},
 			{"clear successor ciphertexts", func() (err error) {
 				r.SuccessorCiphertextsCleared, err = q.ClearStaleSuccessorCiphertexts(ctx)
 				return err

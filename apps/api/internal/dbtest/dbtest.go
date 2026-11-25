@@ -51,17 +51,12 @@ func Empty(t testing.TB) *pgxpool.Pool {
 	}
 	conn.Close(ctx)
 
-	u, err := url.Parse(admin)
-	if err != nil {
-		t.Fatal(err)
-	}
-	u.Path = "/" + name
-	pool, err := pgxpool.New(ctx, u.String())
-	if err != nil {
-		t.Fatal(err)
-	}
+	// Registered first, so the database is dropped even if the rest fails.
+	var pool *pgxpool.Pool
 	t.Cleanup(func() {
-		pool.Close()
+		if pool != nil {
+			pool.Close()
+		}
 		conn, err := pgx.Connect(context.Background(), admin)
 		if err != nil {
 			t.Errorf("drop %s: %v", name, err)
@@ -72,6 +67,15 @@ func Empty(t testing.TB) *pgxpool.Pool {
 			t.Errorf("drop %s: %v", name, err)
 		}
 	})
+	// The admin URL must be a URL (postgresql://…), not key=value pairs.
+	u, err := url.Parse(admin)
+	if err != nil || u.Scheme == "" {
+		t.Fatal("LOOKLY_TEST_DATABASE_URL must be a postgresql:// URL")
+	}
+	u.Path = "/" + name
+	if pool, err = pgxpool.New(ctx, u.String()); err != nil {
+		t.Fatal(err)
+	}
 	return pool
 }
 
@@ -142,7 +146,8 @@ var catalogQueries = []string{
 }
 
 // Catalog describes the public schema of the database: object key →
-// definition. It also lists the SystemMarker keys, data the migrations insert.
+// definition. It also counts the rows of every table (data a migration
+// inserts) and lists the SystemMarker keys.
 func Catalog(t testing.TB, pool *pgxpool.Pool) map[string]string {
 	t.Helper()
 	ctx := context.Background()
@@ -162,6 +167,22 @@ func Catalog(t testing.TB, pool *pgxpool.Pool) map[string]string {
 		if err := rows.Err(); err != nil {
 			t.Fatal(err)
 		}
+	}
+	tables, err := pool.Query(ctx, `SELECT quote_ident(tablename) FROM pg_tables WHERE schemaname = 'public' AND NOT (tablename = ANY($1))`, ignored)
+	if err != nil {
+		t.Fatal(err)
+	}
+	names, err := pgx.CollectRows(tables, pgx.RowTo[string])
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range names {
+		var n int64
+		// The name comes from the catalog, quoted by quote_ident.
+		if err := pool.QueryRow(ctx, "SELECT count(*) FROM public."+name).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		out["rows public."+name] = fmt.Sprint(n)
 	}
 	var exists bool
 	if err := pool.QueryRow(ctx, `SELECT to_regclass('public."SystemMarker"') IS NOT NULL`).Scan(&exists); err != nil {

@@ -76,52 +76,143 @@ func TestWorkerRefusesToStartWithoutRiversTables(t *testing.T) {
 	}
 }
 
-func TestWorkerRunsTheCleanupAtStartAndStopsOnASignal(t *testing.T) {
-	t.Parallel()
-	pool := schemaDB(t)
+type runningWorker struct {
+	stdout *syncBuffer
+	stop   context.CancelFunc
+	done   chan int
+}
+
+func startWorker(t *testing.T, pool *pgxpool.Pool, extra map[string]string) runningWorker {
+	t.Helper()
+	ctx, stop := context.WithCancel(context.Background())
+	t.Cleanup(stop)
+	w := runningWorker{stdout: &syncBuffer{}, stop: stop, done: make(chan int, 1)}
+	go func() { w.done <- app.Run(ctx, []string{"worker"}, appEnv(pool, extra), w.stdout, &syncBuffer{}) }()
+	return w
+}
+
+// stopAndWait sends the stop signal and returns the exit code and how long
+// the worker took to exit.
+func (w runningWorker) stopAndWait(t *testing.T) (int, time.Duration) {
+	t.Helper()
+	started := time.Now()
+	w.stop()
+	select {
+	case code := <-w.done:
+		return code, time.Since(started)
+	case <-time.After(20 * time.Second):
+		t.Fatalf("the worker did not stop:\n%s", w.stdout.String())
+		return 0, 0
+	}
+}
+
+func waitFor(t *testing.T, what string, cond func() bool) {
+	t.Helper()
+	deadline := time.Now().Add(15 * time.Second)
+	for !cond() {
+		if time.Now().After(deadline) {
+			t.Fatalf("timed out waiting for %s", what)
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+}
+
+func count(t *testing.T, pool *pgxpool.Pool, sql string) int {
+	t.Helper()
+	var n int
+	if err := pool.QueryRow(context.Background(), sql).Scan(&n); err != nil {
+		t.Fatalf("%v\n%s", err, sql)
+	}
+	return n
+}
+
+func expiredResetLink(t *testing.T, pool *pgxpool.Pool, id string) {
+	t.Helper()
+	ctx := context.Background()
+	if _, err := pool.Exec(ctx, `INSERT INTO "User" ("id","email","passwordHash","updatedAt") VALUES ('u','u@test.local','x',now()) ON CONFLICT DO NOTHING`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO "PasswordResetToken" ("id","userId","tokenHash","expiresAt") VALUES ($1,'u',$1, now() AT TIME ZONE 'UTC' - interval '1 hour')`, id); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func migrateRiver(t *testing.T, pool *pgxpool.Pool) {
+	t.Helper()
 	if code := app.Run(context.Background(), []string{"migrate", "river"}, appEnv(pool, nil), &bytes.Buffer{}, &bytes.Buffer{}); code != 0 {
 		t.Fatal("migrate river failed")
 	}
+}
+
+func TestWorkerRunsTheCleanupAtEveryStartAndStopsOnASignal(t *testing.T) {
+	t.Parallel()
+	pool := schemaDB(t)
+	migrateRiver(t, pool)
+	resetLinks := `SELECT count(*) FROM "PasswordResetToken"`
+
+	expiredResetLink(t, pool, "first")
+	w := startWorker(t, pool, nil)
+	waitFor(t, "the cleanup at start", func() bool {
+		return count(t, pool, resetLinks) == 0 && strings.Contains(w.stdout.String(), `"msg":"cleanup done"`)
+	})
+	if !strings.Contains(w.stdout.String(), `"expiredResetLinksDeleted":1`) {
+		t.Errorf("the counts are not logged: %s", w.stdout.String())
+	}
+	if code, _ := w.stopAndWait(t); code != 0 {
+		t.Fatalf("exit %d:\n%s", code, w.stdout.String())
+	}
+	if strings.Contains(w.stdout.String(), dbtest.URL(pool)) {
+		t.Error("the log shows the database URL")
+	}
+
+	// A restart within the same hour runs it again (not only once per hour).
+	expiredResetLink(t, pool, "second")
+	again := startWorker(t, pool, nil)
+	waitFor(t, "the cleanup at the second start", func() bool {
+		return count(t, pool, resetLinks) == 0 && strings.Contains(again.stdout.String(), `"msg":"cleanup done"`)
+	})
+	if code, _ := again.stopAndWait(t); code != 0 {
+		t.Fatalf("second exit %d", code)
+	}
+}
+
+// A job still running when the grace period ends is cancelled: the worker
+// exits 1 soon after the grace period, not when the job would have ended.
+func TestWorkerCancelsAJobStillRunningAfterTheGracePeriod(t *testing.T) {
+	t.Parallel()
+	pool := schemaDB(t)
+	migrateRiver(t, pool)
+	expiredResetLink(t, pool, "blocked")
+
+	// Someone holds the table: the cleanup waits (up to its 5 s lock timeout).
 	ctx := context.Background()
-	if _, err := pool.Exec(ctx, `INSERT INTO "User" ("id","email","passwordHash","updatedAt") VALUES ('u','u@test.local','x',now());
-		INSERT INTO "PasswordResetToken" ("id","userId","tokenHash","expiresAt") VALUES ('expired','u','h', now() AT TIME ZONE 'UTC' - interval '1 hour')`); err != nil {
+	holder, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = holder.Rollback(ctx) }() // moot after the test ends
+	if _, err := holder.Exec(ctx, `LOCK TABLE "PasswordResetToken" IN ACCESS EXCLUSIVE MODE`); err != nil {
 		t.Fatal(err)
 	}
 
-	runCtx, stop := context.WithCancel(ctx)
-	defer stop()
-	stdout := &syncBuffer{}
-	done := make(chan int, 1)
-	go func() { done <- app.Run(runCtx, []string{"worker"}, appEnv(pool, nil), stdout, &syncBuffer{}) }()
-
-	deadline := time.Now().Add(15 * time.Second)
-	for {
-		var left int
-		if err := pool.QueryRow(ctx, `SELECT count(*) FROM "PasswordResetToken"`).Scan(&left); err != nil {
-			t.Fatal(err)
-		}
-		if left == 0 && strings.Contains(stdout.String(), `"msg":"cleanup done"`) {
-			break
-		}
-		if time.Now().After(deadline) {
-			t.Fatalf("the cleanup did not run at start: %d reset links left\n%s", left, stdout.String())
-		}
-		time.Sleep(100 * time.Millisecond)
+	w := startWorker(t, pool, map[string]string{"LOOKLY_SHUTDOWN_GRACE": "1s"})
+	waitFor(t, "the cleanup to be running", func() bool {
+		return count(t, pool, `SELECT count(*) FROM river.river_job WHERE state = 'running'`) == 1
+	})
+	code, took := w.stopAndWait(t)
+	if code != 1 {
+		t.Errorf("exit %d, want 1 (a job was cut off)", code)
 	}
-	if !strings.Contains(stdout.String(), `"expiredResetLinksDeleted":1`) {
-		t.Errorf("the counts are not logged: %s", stdout.String())
+	if took > 4*time.Second {
+		t.Errorf("stopping took %s: the job was not cancelled after the 1 s grace period", took)
 	}
-
-	stop()
-	select {
-	case code := <-done:
-		if code != 0 {
-			t.Fatalf("exit %d:\n%s", code, stdout.String())
-		}
-	case <-time.After(15 * time.Second):
-		t.Fatal("the worker did not stop")
+	if !strings.Contains(w.stdout.String(), "cancelling them") {
+		t.Errorf("not logged:\n%s", w.stdout.String())
 	}
-	if strings.Contains(stdout.String(), dbtest.URL(pool)) {
-		t.Error("the log shows the database URL")
+	if err := holder.Rollback(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if count(t, pool, `SELECT count(*) FROM "PasswordResetToken"`) != 1 {
+		t.Error("the cancelled cleanup changed data")
 	}
 }

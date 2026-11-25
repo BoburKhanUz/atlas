@@ -16,6 +16,7 @@ import (
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
 	"github.com/riverqueue/river/rivermigrate"
+	"github.com/riverqueue/river/rivertype"
 
 	"lookly/internal/maintenance"
 )
@@ -23,8 +24,22 @@ import (
 // Schema holds River's tables.
 const Schema = "river"
 
-// CleanupInterval is how often the cleanup runs (and once at start).
+// CleanupInterval is how often the cleanup runs (and once at every start).
 const CleanupInterval = time.Hour
+
+// cleanupMaxAttempts bounds River's retries of one cleanup (its default is 25,
+// spread over weeks).
+const cleanupMaxAttempts = 3
+
+// unfinished are the job states a new cleanup is unique against (River
+// requires available, pending, running and scheduled).
+var unfinished = []rivertype.JobState{
+	rivertype.JobStateAvailable,
+	rivertype.JobStatePending,
+	rivertype.JobStateRunning,
+	rivertype.JobStateRetryable,
+	rivertype.JobStateScheduled,
+}
 
 // Migrate creates the schema and applies River's own migrations. It returns
 // the names of the migrations applied (none when already current).
@@ -105,8 +120,14 @@ func NewClient(pool *pgxpool.Pool, log *slog.Logger, cleanup *maintenance.Servic
 			river.NewPeriodicJob(
 				river.PeriodicInterval(CleanupInterval),
 				func() (river.JobArgs, *river.InsertOpts) {
-					// One cleanup per hour however often workers restart.
-					return CleanupArgs{}, &river.InsertOpts{UniqueOpts: river.UniqueOpts{ByPeriod: CleanupInterval}}
+					// Never two cleanups waiting, running or retrying at once; a
+					// finished one does not block the next (every start runs one).
+					// A failing run is retried a few times, then left to the
+					// next hour.
+					return CleanupArgs{}, &river.InsertOpts{
+						MaxAttempts: cleanupMaxAttempts,
+						UniqueOpts:  river.UniqueOpts{ByState: unfinished},
+					}
 				},
 				&river.PeriodicJobOpts{RunOnStart: true},
 			),

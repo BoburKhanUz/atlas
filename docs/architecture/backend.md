@@ -102,6 +102,12 @@ variables; keep it that way.
 
 ## Deployment notes for B7
 
+- goose keeps its version table (`goose_db_version`) in `public`. Decide at the cutover
+  whether it stays there while a rollback to Prisma is still possible, or moves to its
+  own schema.
+- `lookly worker` has no health check of its own: if River loses the database, it logs
+  errors but keeps running. Monitor its logs (or add a probe) when it is deployed.
+
 - Docker stops a container after 10 s by default; `LOOKLY_SHUTDOWN_GRACE` is 20 s. The
   service's compose entry needs `stop_grace_period` of at least the grace plus 5 s
   (25 s), or the grace period never applies.
@@ -140,9 +146,13 @@ reads and writes data but changes no schema there.
 - **Jobs** (`internal/jobs`, River v0.51.2): tables in the schema `river`, which Prisma
   does not manage, so it neither shows them as drift nor drops them. `lookly migrate
   river` creates them. `lookly worker` runs the queue; it refuses to start without the
-  tables. Periodic jobs run on the elected leader only.
-- **Cleanup** (`internal/maintenance`, a periodic job: hourly and at worker start; one
-  transaction, `lock_timeout` 5 s). It applies the manual Node script's rules
+  tables or when the database cannot be reached. Periodic jobs run on the elected leader
+  only.
+- **Cleanup** (`internal/maintenance`, a periodic job: hourly and at every worker
+  start; never two at once; up to 3 attempts). It runs as one read-committed
+  transaction with `lock_timeout` 5 s. It locks the dead families first, in id order,
+  then touches sessions: the session protocol's order, so a refresh racing it cannot
+  deadlock (tested). It applies the manual Node script's rules
   (`docs/architecture/sessions.md`, Operations):
   - successor ciphertexts: cleared after 60 s;
   - rotated sessions and families dead for 30 days: deleted;

@@ -12,6 +12,8 @@ generated=(internal/httpapi/contract/contract.gen.go internal/store)
 
 generate() {
   (cd internal/httpapi/contract && go generate ./...)
+  # sqlc never deletes the file of a removed query file: start clean.
+  find internal/store -maxdepth 1 -name '*.go' ! -name 'doc.go' -delete
   go run "github.com/sqlc-dev/sqlc/cmd/sqlc@${sqlc_version}" generate
 }
 
@@ -22,16 +24,26 @@ if [[ "${1:-}" == "--check" ]]; then
     mkdir -p "$before/$(dirname "$path")"
     cp -r "$path" "$before/$path"
   done
-  generate
+  restore() {
+    for path in "${generated[@]}"; do
+      rm -rf "$path"
+      cp -r "$before/$path" "$path"
+    done
+  }
+  # A failed generation must not leave the tree half-written.
+  if ! generate; then
+    restore
+    echo "generation failed" >&2
+    exit 1
+  fi
   stale=0
   for path in "${generated[@]}"; do
     if ! diff -r -q "$before/$path" "$path" >/dev/null; then
       echo "stale: $path" >&2
       stale=1
     fi
-    rm -rf "$path"
-    cp -r "$before/$path" "$path"
   done
+  restore
   if [[ $stale == 1 ]]; then
     echo "generated code is stale: run apps/api/scripts/generate.sh and commit the result" >&2
     exit 1

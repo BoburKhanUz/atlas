@@ -1,3 +1,14 @@
+-- name: LockDeadFamilies :exec
+-- Families revoked, or past their absolute limit, for more than 30 days,
+-- locked in id order BEFORE any session row: the session protocol locks a
+-- family first, then its sessions (docs/architecture/sessions.md), so the
+-- cleanup never holds a session while waiting for its family.
+SELECT "id" FROM "SessionFamily"
+ WHERE "revokedAt" < atlas_now() - interval '30 days'
+    OR "absoluteExpiresAt" < atlas_now() - interval '30 days'
+ ORDER BY "id"
+   FOR UPDATE;
+
 -- name: ClearStaleSuccessorCiphertexts :execrows
 -- A ciphertext only serves a replay within 60 s of its rotation.
 UPDATE "Session" SET "successorTokenEnc" = NULL

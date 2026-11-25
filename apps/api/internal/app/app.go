@@ -177,6 +177,9 @@ func worker(ctx context.Context, getenv func(string) (string, bool), stdout, std
 		return code
 	}
 	defer pool.Close()
+	if !reachable(ctx, pool, stderr) {
+		return exitFailure
+	}
 	if err := jobs.CheckMigrated(ctx, pool); err != nil {
 		fmt.Fprintln(stderr, err)
 		return exitFailure
@@ -215,6 +218,9 @@ func migrateRiver(ctx context.Context, getenv func(string) (string, bool), stdou
 		return code
 	}
 	defer pool.Close()
+	if !reachable(ctx, pool, stderr) {
+		return exitFailure
+	}
 	applied, err := jobs.Migrate(ctx, pool)
 	if err != nil {
 		log.Error("migrate river", "err", err.Error())
@@ -243,4 +249,17 @@ func open(ctx context.Context, getenv func(string) (string, bool), stdout, stder
 		return config.Config{}, nil, nil, exitUsage
 	}
 	return cfg, log, pool, 0
+}
+
+// reachable checks the database before a command that needs it from the
+// start (serve does not: it starts while the database is down). The driver's
+// error names the user, database and host, so only the advice is printed.
+func reachable(ctx context.Context, pool *pgxpool.Pool, stderr io.Writer) bool {
+	ctx, cancel := context.WithTimeout(ctx, database.ConnectTimeout)
+	defer cancel()
+	if err := pool.Ping(ctx); err != nil {
+		fmt.Fprintln(stderr, "cannot reach the database: check DATABASE_URL and that PostgreSQL is running")
+		return false
+	}
+	return true
 }
