@@ -1,0 +1,20 @@
+{
+  "extraKnownMarketplaces": {
+    "trailofbits": {
+      "source": {
+        "source": "github",
+        "repo": "trailofbits/skills",
+        "ref": "149d7b21f4067765b82e67029730b42d228ef4b4"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "static-analysis@trailofbits": true,
+    "sharp-edges@trailofbits": true,
+    "insecure-defaults@trailofbits": true,
+    "differential-review@trailofbits": true,
+    "supply-chain-risk-auditor@trailofbits": true,
+    "variant-analysis@trailofbits": true,
+    "audit-context-building@trailofbits": true
+  }
+}
