@@ -30,20 +30,34 @@ void main() {
     return g;
   }
 
-  test('signed out → none; signing in asks once: required or not', () async {
+  test('signed out → none; a fresh sign-in waits for the check: required or not', () async {
     for (final answer in [true, false]) {
-      h = SessionHarness(stored: pair(1));
+      h = SessionHarness();
+      h.backend.script(P.login, [JsonReply(200, pairJson(1))]);
       var asked = 0;
       final g = gate(() async {
         asked++;
         return answer;
       });
       expect(g.status, ConsentStatus.none);
-      await h.session.restore();
+      await h.session.login(email: 'a@test.local', password: 'pw');
       expect(g.status, ConsentStatus.checking);
       await pumpEventQueue();
       expect(g.status, answer ? ConsentStatus.required : ConsentStatus.notRequired);
       expect(asked, 1);
+    }
+  });
+
+  test('a restored session goes straight in; the check runs in the background', () async {
+    for (final answer in [true, false]) {
+      h = SessionHarness(stored: pair(1));
+      final server = Completer<bool>();
+      final g = gate(() => server.future);
+      await h.session.restore();
+      expect(g.status, ConsentStatus.notRequired, reason: 'no splash wait on a cold start');
+      server.complete(answer);
+      await pumpEventQueue();
+      expect(g.status, answer ? ConsentStatus.required : ConsentStatus.notRequired);
     }
   });
 
@@ -77,9 +91,14 @@ void main() {
   });
 
   test('signing out resets it; an answer that arrives after sign-out is ignored', () async {
+    h = SessionHarness();
+    h.backend.script(P.login, [JsonReply(200, pairJson(1))]);
+    h.backend.script(P.logout, [
+      JsonReply(200, {'ok': true}),
+    ]);
     final answer = Completer<bool>();
     final g = gate(() => answer.future);
-    await h.session.restore();
+    await h.session.login(email: 'a@test.local', password: 'pw');
     expect(g.status, ConsentStatus.checking);
     await h.session.logout();
     expect(g.status, ConsentStatus.none);

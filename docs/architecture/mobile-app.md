@@ -81,7 +81,7 @@ The folders marked with a phase are created in that phase, not as empty placehol
 
 ## Changed legal texts (re-consent)
 
-- **Who sees it (`ConsentGate`, `lib/features/legal/consent_gate.dart`):** asked once per signed-in user with `GET /api/v1/auth/me` (`consentRequired`).
+- **Who sees it (`ConsentGate`, `lib/features/legal/consent_gate.dart`):** asked once per signed-in user with `GET /api/v1/auth/me` (`consentRequired`). After an explicit sign-in the splash waits for the answer (at most 6 s); a session restored on a cold start goes straight in and the check runs in the background (and any `CONSENT_REQUIRED` refusal turns the gate on), so opening the app never waits on the network.
   - A failed check or a 6 s timeout lets the user in: the server refuses every other request with `CONSENT_REQUIRED` until the texts are accepted, and `AtlasApiClient` reports any such answer (`ConsentRefusals`), which turns the gate on wherever the user is.
 - **The screen (`/consent`):** the documents, the two boxes (18+, the texts), "Qabul qilaman" (`POST /api/v1/legal/consent` with the version the links showed), "Chiqish", and "Rozi emasman — hisobni o‘chirish" (account deletion, which the server allows without the consent).
 - **When:** the backend raises `LEGAL_CONSENT_MIN_VERSION` (`apps/web/src/lib/legal/version.ts`) for a change that needs new consent.

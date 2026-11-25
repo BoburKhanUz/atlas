@@ -11,7 +11,8 @@ enum ConsentStatus {
   /// No session (the auth state decides everything).
   none,
 
-  /// Signed in; asking the server (splash).
+  /// Signed in just now; asking the server (splash). A session restored on
+  /// a cold start skips this: the check runs in the background.
   checking,
 
   /// Show the consent screen: the server refuses everything else.
@@ -26,6 +27,10 @@ enum ConsentStatus {
 /// GET /api/v1/auth/me). A failed check (offline, timeout) lets the user in:
 /// the server refuses every request until the texts are accepted, and any
 /// such refusal ([refusals], from the HTTP layer) turns the gate on.
+///
+/// After an explicit sign-in the splash waits for the check. A session
+/// restored on a cold start goes straight in and is checked in the
+/// background, so opening the app never waits on the network.
 class ConsentGate extends ChangeNotifier {
   ConsentGate({
     required this._session,
@@ -45,6 +50,7 @@ class ConsentGate extends ChangeNotifier {
 
   ConsentStatus _status = ConsentStatus.none;
   String? _userId;
+  AuthState? _previous;
   int _check = 0;
   bool _disposed = false;
 
@@ -60,6 +66,8 @@ class ConsentGate extends ChangeNotifier {
 
   void _onSession() {
     final state = _session.state;
+    final restored = _previous is AuthRestoring;
+    _previous = state;
     final user = state.hasSession ? state.user : null;
     if (user == null) {
       _userId = null;
@@ -70,7 +78,7 @@ class ConsentGate extends ChangeNotifier {
     if (user.id == _userId) return;
     _userId = user.id;
     final check = ++_check;
-    _set(ConsentStatus.checking);
+    _set(restored ? ConsentStatus.notRequired : ConsentStatus.checking);
     unawaited(_decide(check));
   }
 
