@@ -8,20 +8,18 @@ routes traffic to it; each stage adds endpoints behind tests. Rules for working 
 ## Request path
 
 ```
-client ─► Wrap (middleware) ─► routed (404 for unknown routes) ─► generated router
-          request id           route pattern for the log            │ header and path parameters
-          30 s time limit                                           │
-          access log                                                ▼
-          panic → 500                                     gate (per route, in this order)
-          64 KB body limit                                 1. cross-site request guard → 403
-                                                           2. access token + live session → 401
-                                                           3. consent to the legal texts → 403
-                                                           4. request body rule → 400
-                                                                    │
-                                                                    ▼
-                                                   generated strict handler (decodes)
-                                                                    │
-                                                                    ▼
+client ─► Wrap (middleware) ─► routed (404 for unknown routes) ─► gate (per route, in this order)
+          request id           route pattern for the log and       1. cross-site request guard → 403
+          30 s time limit      the gate                            2. access token + live session → 401
+          access log                                               3. consent to the legal texts → 403
+          panic → 500                                              4. request body rule → 400
+          64 KB body limit                                                  │
+                                                                            ▼
+                                                     generated router: header, path and query
+                                                     parameters, strict handler (decodes)
+                                                     (or the media route, served by hand)
+                                                                            │
+                                                                            ▼
                                          httpapi.Server method ─► domain service ─► store
                                                     │
                      apierr.Error / any error ◄─────┘
@@ -88,13 +86,15 @@ before listening. Values that hold credentials are never printed.
 | `LOOKLY_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error`; `debug` is refused in production |
 | `LOOKLY_SHUTDOWN_GRACE` | `20s` | 1 s – 2 min |
 | `JWT_SECRET` | none (required) | at least 32 characters; not one of the known shipped defaults; no white space at its ends (it is used exactly as given, as the Next.js server uses it) |
+| `MEDIA_SIGNING_SECRET` | none (required) | signs the image links; the rules of `JWT_SECRET`, and not equal to it |
+| `MEDIA_URL_TTL_SECONDS` | `3600` | lifetime of an image link: whole number, 60 – 86 400 |
 | `SESSION_ENC_KEY` | none (required) | standard base64 of exactly 32 bytes (`openssl rand -base64 32`); neither the text nor the bytes of `JWT_SECRET` or `MEDIA_SIGNING_SECRET` |
 | `SESSION_ENC_DECRYPT_KEYS` | none | up to 2 older keys, comma-separated, same rules; they decrypt only (staged key rotation) |
 | `ACCESS_TOKEN_TTL_SECONDS` | `900` | whole number, 10 – 86 400 |
 | `REFRESH_TOKEN_TTL_DAYS` | `30` | whole number, 1 – 365 |
 | `COOKIE_SECURE` | on in production and staging, off in development and test | `0` or `1`; `0` is refused in production |
 | `TRUST_PROXY` | `0` | `0` or `1`; `1` only behind the reverse proxy that sets the forwarding headers |
-| `PUBLIC_BASE_URL` | none | the site's public origin (scheme and host, no path, no default port); `https` in production and staging; required there when mail is sent (the links in e-mails) |
+| `PUBLIC_BASE_URL` | none | the site's public origin (scheme and host, no path, no default port); `https` in production and staging; required there when mail is sent (the links in e-mails); image links are absolute with it, relative without |
 | `MAIL_TRANSPORT` | `disabled` in production and staging, `outbox` in development and test | `smtp`, `outbox` or `disabled`; `outbox` is refused in production and staging |
 | `MAIL_FROM` | none (required for `smtp`); `Lookly <no-reply@localhost>` for `outbox` | an address or `Name <address>`, one line, at most 200 characters |
 | `SMTP_HOST` | none (required for `smtp`) | host name without white space |
@@ -103,7 +103,7 @@ before listening. Values that hold credentials are never printed.
 | `SMTP_USER`, `SMTP_PASSWORD` | none | both or neither; the password is used as given and never printed |
 | `MAIL_OUTBOX_DIR` | `./storage/mail-outbox` | for `outbox`: where messages are written as files |
 | `STORAGE_DRIVER` | `local` | `local` only until the R2 driver (B4) |
-| `STORAGE_LOCAL_DIR` | none (required) | absolute path of the directory the images are in (the one the Next.js server writes to); `lookly worker` also requires that it exists |
+| `STORAGE_LOCAL_DIR` | none (required) | absolute path of the directory the images are in (the one the Next.js server writes to); `lookly serve` and `lookly worker` also require that it exists |
 
 The session variables are shared with the Next.js server and follow its rules, with two
 differences: Go refuses a value out of range or malformed, where the Next.js server
@@ -122,7 +122,13 @@ these differences: the outbox is refused in production and staging without excep
 required for SMTP in staging too, and `STORAGE_LOCAL_DIR` has no default (a wrong guess
 would purge nothing without anyone noticing).
 
-Later stages add their settings (media secret, AI) to the same check.
+The media variables are the Next.js server's (`apps/web/src/lib/config.ts`), with these
+differences: Go refuses a lifetime out of range or malformed (Next.js used the default
+for a malformed one and had no limits), a secret with white space at its ends, and the
+same secret for `JWT_SECRET` and `MEDIA_SIGNING_SECRET` (whoever learns one would hold
+both).
+
+Later stages add their settings (AI, the R2 driver) to the same check.
 
 The PostgreSQL driver (pgx) also reads `PG*` variables (`PGPASSWORD`, `PGSSLMODE`, …),
 `~/.pgpass` and the service file for anything the URL leaves out. The URL is required to
@@ -280,10 +286,31 @@ Job rows hold user ids, never addresses or tokens. River keeps finished jobs for
 
 ## Storage
 
-`internal/storage` has the local driver's part that account deletion needs:
-`DeleteOwner` removes `users/<id>` under `STORAGE_LOCAL_DIR` (ids of the users' form
-only; a link in place of the directory is removed, not followed). Uploads, reads and the
-R2 driver arrive with B4 behind the same shape.
+`internal/storage` defines `Store` (put, get, delete, delete an owner's images, list)
+and the local driver over `STORAGE_LOCAL_DIR`, laid out as the Next.js server lays it
+out: `users/<owner>/<uuid>.<jpg|png|webp>` (master), `_display.webp`, `_thumb.webp`.
+Every key is checked against the pattern of the keys we make before a path is built
+from it. A file is written under a temporary name and renamed into place, so a reader
+never sees half of one; files are `0644` in `0755` directories because until the
+cutover both servers, in their own containers, share the volume. `DeleteOwner` removes
+`users/<id>` (ids of the users' form only; a link in place of the directory is removed,
+not followed). The R2 driver arrives later in B4 behind the same interface.
+
+## Media links
+
+`internal/media` signs and checks the image links exactly as the Next.js server does
+(`apps/web/src/lib/storage/media.ts`; golden vectors in `testdata/golden/media.json`):
+`/api/v1/media/<key>?exp=<unix seconds>&sig=<HMAC-SHA256 of key, newline, exp, unpadded
+base64url>`, absolute with `PUBLIC_BASE_URL`. A link opens through its expiry second.
+`GET /api/v1/media/<key>` is served by hand (`internal/httpapi/server_media.go`): the
+key holds slashes, which a generated pattern matches as one segment, and the router's
+wildcard would redirect paths with `..` or `//` instead of refusing them. Every path
+under the prefix is that route, public in the gate (the link is the credential). A bad,
+expired or unsigned link, a key we never make and a missing image all answer 404 alike;
+an image is sent with its type by extension, `Cache-Control: private, max-age=3600`,
+`X-Content-Type-Options: nosniff` and `Content-Security-Policy: default-src 'none'`.
+The access log records the route pattern, never the path or the query (which hold the
+key and the signature).
 
 ## Tokens, passwords and session encryption
 

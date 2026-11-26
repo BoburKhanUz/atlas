@@ -38,11 +38,12 @@ func RouteRules() map[string]string {
 	return out
 }
 
-// ServedRoutes are the patterns the generated router registers.
+// ServedRoutes are the patterns the generated router registers, and the
+// media route served by hand.
 func ServedRoutes() []string {
 	m := &recordingMux{}
 	contract.HandlerWithOptions(contract.NewStrictHandler(nil, nil), contract.StdHTTPServerOptions{BaseRouter: m})
-	return m.patterns
+	return append(m.patterns, mediaRoute)
 }
 
 type recordingMux struct{ patterns []string }

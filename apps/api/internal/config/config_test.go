@@ -55,6 +55,9 @@ func TestDefaults(t *testing.T) {
 	if string(c.JWTSecret) != configtest.JWTSecret || !bytes.Equal(c.SessionEncKey, bytes.Repeat([]byte{0x5a}, 32)) || len(c.SessionDecryptKeys) != 0 {
 		t.Error("session secrets are not the configured ones")
 	}
+	if string(c.MediaSigningSecret) != configtest.MediaSigningSecret || c.MediaURLTTL != time.Hour {
+		t.Errorf("media links: secret as configured %v, lifetime %s", string(c.MediaSigningSecret) == configtest.MediaSigningSecret, c.MediaURLTTL)
+	}
 	if c.AccessTokenTTL != 15*time.Minute || c.RefreshTokenTTL != 30*24*time.Hour || !c.CookieSecure || c.TrustProxy {
 		t.Errorf("session defaults: access %s, refresh %s, secure cookies %v, trust proxy %v",
 			c.AccessTokenTTL, c.RefreshTokenTTL, c.CookieSecure, c.TrustProxy)
@@ -125,9 +128,18 @@ func TestExplicitValues(t *testing.T) {
 		"LOOKLY_LOG_LEVEL":      "debug",
 		"LOOKLY_SHUTDOWN_GRACE": "45s",
 		"DATABASE_URL":          "postgres://u@localhost/lookly",
+		"MEDIA_URL_TTL_SECONDS": " 600 ",
 	})))
 	if err != nil {
 		t.Fatal(err)
+	}
+	if c.MediaURLTTL != 10*time.Minute {
+		t.Errorf("media link lifetime %s", c.MediaURLTTL)
+	}
+	for _, edge := range []string{"60", "86400"} {
+		if _, err := config.Load(env(with(map[string]string{"MEDIA_URL_TTL_SECONDS": edge}))); err != nil {
+			t.Errorf("media link lifetime %s: %v", edge, err)
+		}
 	}
 	if c.Env != config.Staging || c.HTTPAddr != "127.0.0.1:9090" || c.DBMaxConns != 25 ||
 		c.LogLevel != slog.LevelDebug || c.ShutdownGrace != 45*time.Second {
@@ -191,6 +203,16 @@ func TestRefusals(t *testing.T) {
 		{"signing secret is the other shipped default", map[string]string{"JWT_SECRET": "dev-refresh-secret-change-in-production-please-use-env"}, "JWT_SECRET"},
 		// The Next.js server signs with the value as it is; a trimmed copy
 		// would be another key, so the difference is refused, not guessed.
+		{"media secret missing", map[string]string{"MEDIA_SIGNING_SECRET": "<unset>"}, "MEDIA_SIGNING_SECRET"},
+		{"media secret empty", map[string]string{"MEDIA_SIGNING_SECRET": ""}, "MEDIA_SIGNING_SECRET"},
+		{"media secret short", map[string]string{"MEDIA_SIGNING_SECRET": strings.Repeat("m", 31)}, "MEDIA_SIGNING_SECRET"},
+		{"media secret is a shipped default", map[string]string{"MEDIA_SIGNING_SECRET": "dev-secret-change-in-production-please-use-env"}, "MEDIA_SIGNING_SECRET"},
+		{"media secret with a trailing newline", map[string]string{"MEDIA_SIGNING_SECRET": strings.Repeat("m", 40) + "\n"}, "MEDIA_SIGNING_SECRET"},
+		{"media secret equal to the signing secret", map[string]string{"MEDIA_SIGNING_SECRET": configtest.JWTSecret}, "MEDIA_SIGNING_SECRET"},
+		{"media link lifetime not a number", map[string]string{"MEDIA_URL_TTL_SECONDS": "1h"}, "MEDIA_URL_TTL_SECONDS"},
+		{"media link lifetime fractional", map[string]string{"MEDIA_URL_TTL_SECONDS": "3600.5"}, "MEDIA_URL_TTL_SECONDS"},
+		{"media link lifetime too short", map[string]string{"MEDIA_URL_TTL_SECONDS": "59"}, "MEDIA_URL_TTL_SECONDS"},
+		{"media link lifetime too long", map[string]string{"MEDIA_URL_TTL_SECONDS": "86401"}, "MEDIA_URL_TTL_SECONDS"},
 		{"signing secret with a trailing space", map[string]string{"JWT_SECRET": strings.Repeat("x", 40) + " "}, "JWT_SECRET"},
 		{"signing secret with a leading newline", map[string]string{"JWT_SECRET": "\n" + strings.Repeat("x", 40)}, "JWT_SECRET"},
 		{"session key missing", map[string]string{"SESSION_ENC_KEY": "<unset>"}, "SESSION_ENC_KEY"},
@@ -249,7 +271,7 @@ func TestEveryProblemIsReportedAtOnce(t *testing.T) {
 	if err == nil {
 		t.Fatal("accepted")
 	}
-	for _, v := range []string{"LOOKLY_ENV", "DATABASE_URL", "LOOKLY_LOG_LEVEL", "JWT_SECRET", "SESSION_ENC_KEY", "STORAGE_LOCAL_DIR"} {
+	for _, v := range []string{"LOOKLY_ENV", "DATABASE_URL", "LOOKLY_LOG_LEVEL", "JWT_SECRET", "MEDIA_SIGNING_SECRET", "SESSION_ENC_KEY", "STORAGE_LOCAL_DIR"} {
 		if !strings.Contains(err.Error(), v) {
 			t.Errorf("missing %s in %q", v, err)
 		}
@@ -269,13 +291,13 @@ func TestPrintingTheConfigNeverShowsASecret(t *testing.T) {
 			t.Errorf("printed config shows the database URL: %s", s)
 		}
 		// Neither as text nor as the numbers of a printed byte slice.
-		for _, secret := range []string{configtest.JWTSecret, configtest.SessionEncKey, key(9), "116 101 115 116", "90 90 90", "9 9 9"} {
+		for _, secret := range []string{configtest.JWTSecret, configtest.MediaSigningSecret, configtest.SessionEncKey, key(9), "116 101 115 116", "90 90 90", "9 9 9"} {
 			if strings.Contains(s, secret) {
 				t.Errorf("printed config shows a secret (%q): %s", secret, s)
 			}
 		}
 	}
-	if !strings.Contains(b.String(), `"decryptOnlyKeys":1`) || !strings.Contains(b.String(), `"accessTokenTTL"`) {
+	if !strings.Contains(b.String(), `"decryptOnlyKeys":1`) || !strings.Contains(b.String(), `"accessTokenTTL"`) || !strings.Contains(b.String(), `"mediaURLTTL"`) {
 		t.Errorf("log value lacks the session settings: %s", b.String())
 	}
 	if !strings.Contains(b.String(), `"env":"production"`) {

@@ -6,8 +6,8 @@
 // Variables shared with the Next.js server keep their names (DATABASE_URL,
 // JWT_SECRET, SESSION_ENC_KEY, ...) and its rules, so one environment file
 // serves both until the cutover; Go-only variables use the LOOKLY_ prefix.
-// Later stages add their settings (media secret, AI, mail) here with the
-// same checks.
+// Later stages add their settings (AI, storage drivers) here with the same
+// checks.
 package config
 
 import (
@@ -54,8 +54,14 @@ type Config struct {
 	CookieSecure       bool // auth cookies carry the Secure attribute
 	TrustProxy         bool // the client address comes from the reverse proxy's headers
 
-	// PublicBaseURL is the site's public origin (links in e-mails); "" when
-	// not configured.
+	// MediaSigningSecret signs the image links (as the Next.js server does,
+	// so a link one server signed works on the other); MediaURLTTL is their
+	// lifetime.
+	MediaSigningSecret []byte // secret
+	MediaURLTTL        time.Duration
+
+	// PublicBaseURL is the site's public origin (links in e-mails, absolute
+	// image links); "" when not configured.
 	PublicBaseURL string
 	Mail          Mail
 	// StorageLocalDir is where the local storage driver keeps images: the
@@ -79,6 +85,9 @@ const (
 	minAccessTTLSeconds  = 10
 	maxAccessTTLSeconds  = 24 * 60 * 60
 	defaultRefreshDays   = 30
+	defaultMediaTTL      = time.Hour
+	minMediaTTLSeconds   = 60
+	maxMediaTTLSeconds   = 24 * 60 * 60
 	maxRefreshDays       = 365
 	generateSecretHint   = "generate one with: openssl rand -base64 48"
 	generateSessionKHint = "generate one with: openssl rand -base64 32"
@@ -177,18 +186,22 @@ func Load(getenv func(string) (string, bool)) (Config, error) {
 	// JWT_SECRET is used exactly as given, as the Next.js server uses it:
 	// both sign with the same bytes. A value with white space at its ends
 	// is refused, so nothing depends on who trims what.
-	jwtSecret, _ := getenv("JWT_SECRET")
-	switch {
-	case jwtSecret == "":
-		fail("JWT_SECRET", "is not set (%s)", generateSecretHint)
-	case strings.TrimSpace(jwtSecret) != jwtSecret:
-		fail("JWT_SECRET", "must not start or end with white space")
-	case utf8.RuneCountInString(jwtSecret) < minSecretChars:
-		fail("JWT_SECRET", "must be at least %d characters long", minSecretChars)
-	case knownInsecureSecrets[jwtSecret]:
-		fail("JWT_SECRET", "uses a known insecure default value")
-	default:
-		c.JWTSecret = []byte(jwtSecret)
+	c.JWTSecret = signingSecret("JWT_SECRET", getenv, fail)
+	c.MediaSigningSecret = signingSecret("MEDIA_SIGNING_SECRET", getenv, fail)
+	// One secret for both would let anyone holding an image link's key
+	// material forge access tokens, and the other way round.
+	if c.JWTSecret != nil && bytes.Equal(c.JWTSecret, c.MediaSigningSecret) {
+		fail("MEDIA_SIGNING_SECRET", "must be different from JWT_SECRET")
+		c.MediaSigningSecret = nil
+	}
+	c.MediaURLTTL = defaultMediaTTL
+	if v, ok := value("MEDIA_URL_TTL_SECONDS"); ok {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < minMediaTTLSeconds || n > maxMediaTTLSeconds {
+			fail("MEDIA_URL_TTL_SECONDS", "must be a whole number of seconds from %d to %d", minMediaTTLSeconds, maxMediaTTLSeconds)
+		} else {
+			c.MediaURLTTL = time.Duration(n) * time.Second
+		}
 	}
 
 	// The session key must not be derived from, or equal to, another secret.
@@ -299,6 +312,26 @@ func Load(getenv func(string) (string, bool)) (Config, error) {
 	return c, nil
 }
 
+// signingSecret reads an HMAC secret by the Next.js server's rules (at least
+// 32 characters, not a shipped default) and one of its own: no white space
+// around it, which an editor or a copied line adds without anyone seeing.
+func signingSecret(name string, getenv func(string) (string, bool), fail func(string, string, ...any)) []byte {
+	v, _ := getenv(name)
+	switch {
+	case v == "":
+		fail(name, "is not set (%s)", generateSecretHint)
+	case strings.TrimSpace(v) != v:
+		fail(name, "must not start or end with white space")
+	case utf8.RuneCountInString(v) < minSecretChars:
+		fail(name, "must be at least %d characters long", minSecretChars)
+	case knownInsecureSecrets[v]:
+		fail(name, "uses a known insecure default value")
+	default:
+		return []byte(v)
+	}
+	return nil
+}
+
 // decodeSessionKey reads a session key as the Next.js server does: standard
 // base64, padded or not, of exactly 32 bytes, and independent of the other
 // secrets (neither the same text nor the same bytes).
@@ -384,6 +417,8 @@ func (c Config) LogValue() slog.Value {
 		slog.String("logLevel", c.LogLevel.String()),
 		slog.Duration("shutdownGrace", c.ShutdownGrace),
 		slog.String("jwtSecret", "[set]"),
+		slog.String("mediaSigningSecret", "[set]"),
+		slog.Duration("mediaURLTTL", c.MediaURLTTL),
 		slog.String("sessionEncKey", "[set]"),
 		slog.Int("decryptOnlyKeys", len(c.SessionDecryptKeys)),
 		slog.Duration("accessTokenTTL", c.AccessTokenTTL),
@@ -406,9 +441,10 @@ func (c Config) LogValue() slog.Value {
 func (c Config) String() string {
 	return fmt.Sprintf("Config{Env:%s HTTPAddr:%s DatabaseURL:[set] DBMaxConns:%d LogLevel:%s ShutdownGrace:%s "+
 		"JWTSecret:[set] SessionEncKey:[set] DecryptOnlyKeys:%d AccessTokenTTL:%s RefreshTokenTTL:%s CookieSecure:%t TrustProxy:%t "+
+		"MediaSigningSecret:[set] MediaURLTTL:%s "+
 		"PublicBaseURL:%s %s StorageLocalDir:%s}",
 		c.Env, c.HTTPAddr, c.DBMaxConns, c.LogLevel, c.ShutdownGrace,
-		len(c.SessionDecryptKeys), c.AccessTokenTTL, c.RefreshTokenTTL, c.CookieSecure, c.TrustProxy,
+		len(c.SessionDecryptKeys), c.AccessTokenTTL, c.RefreshTokenTTL, c.CookieSecure, c.TrustProxy, c.MediaURLTTL,
 		c.PublicBaseURL, c.Mail, c.StorageLocalDir)
 }
 

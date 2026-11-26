@@ -137,6 +137,7 @@ func serve(t *testing.T, databaseHost, grace string) started {
 			"LOOKLY_HTTP_ADDR":      addr,
 			"DATABASE_URL":          "postgresql://lookly@" + databaseHost + "/lookly",
 			"LOOKLY_SHUTDOWN_GRACE": grace,
+			"STORAGE_LOCAL_DIR":     t.TempDir(), // serve opens it
 		}), s.stdout, &syncBuffer{})
 	}()
 	t.Cleanup(cancel)
@@ -319,9 +320,10 @@ func production(t *testing.T, extra map[string]string, during func(addr string))
 	t.Helper()
 	addr := freeAddr(t)
 	vars := map[string]string{
-		"LOOKLY_ENV":       "production",
-		"LOOKLY_HTTP_ADDR": addr,
-		"DATABASE_URL":     "postgresql://lookly@127.0.0.1:1/lookly?sslmode=disable", // nothing listens there
+		"LOOKLY_ENV":        "production",
+		"LOOKLY_HTTP_ADDR":  addr,
+		"DATABASE_URL":      "postgresql://lookly@127.0.0.1:1/lookly?sslmode=disable", // nothing listens there
+		"STORAGE_LOCAL_DIR": t.TempDir(),
 	}
 	for k, v := range extra {
 		vars[k] = v

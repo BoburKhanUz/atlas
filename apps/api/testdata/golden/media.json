@@ -1,0 +1,456 @@
+{
+ "generatedBy": "apps/web/scripts/golden-media.ts",
+ "sourceCommit": "b68454404d5eed008a99f28afe790778ffeb4b4b",
+ "note": "secret is a fixed test value used nowhere else. signed: signMedia(key, now) with PUBLIC_BASE_URL and MEDIA_URL_TTL_SECONDS as given (null: unset). verified: verifyMediaSignature(key, exp, sig, now); now in milliseconds. keys: isValidStorageKey.",
+ "secret": "golden-media-secret-golden-media-secret-0123",
+ "signed": [
+  {
+   "publicBaseUrl": null,
+   "ttlSeconds": null,
+   "now": 1795680000123,
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "url": "/api/v1/media/users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg?exp=1795683600&sig=VZg5A3irwtlJg7Ex-zS3BbGIG9LEOCjPjUh3Wakeloc",
+   "expiresAt": "2026-11-26T09:00:00.000Z"
+  },
+  {
+   "publicBaseUrl": null,
+   "ttlSeconds": null,
+   "now": 1795680000123,
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+   "url": "/api/v1/media/users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795683600&sig=0NscgHQZ2ZfIne82NMkP9Ksmy6sc_Krytxlwk4CkrV0",
+   "expiresAt": "2026-11-26T09:00:00.000Z"
+  },
+  {
+   "publicBaseUrl": null,
+   "ttlSeconds": null,
+   "now": 1795680000123,
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+   "url": "/api/v1/media/users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795683600&sig=bLNART3o4dkchLLZ1OBOVBvOB-mJlqVZRC4yTiiAa7o",
+   "expiresAt": "2026-11-26T09:00:00.000Z"
+  },
+  {
+   "publicBaseUrl": null,
+   "ttlSeconds": null,
+   "now": 1795680000123,
+   "key": "users/A-b_9/7c9e6679-7425-40de-944b-e07fc1f90ae7.png",
+   "url": "/api/v1/media/users/A-b_9/7c9e6679-7425-40de-944b-e07fc1f90ae7.png?exp=1795683600&sig=sEZonNoIpcH7ih5EYEFMnJX57-8eEJBv9hDUCJw9ZA4",
+   "expiresAt": "2026-11-26T09:00:00.000Z"
+  },
+  {
+   "publicBaseUrl": null,
+   "ttlSeconds": null,
+   "now": 1795680000123,
+   "key": "users/cabc123/7c9e6679-7425-40de-944b-e07fc1f90ae7_thumb.jpg",
+   "url": "/api/v1/media/users/cabc123/7c9e6679-7425-40de-944b-e07fc1f90ae7_thumb.jpg?exp=1795683600&sig=wsYtDgu7iytCazbSFVhadd5MsQ7_eaBvKwMsnH53mqw",
+   "expiresAt": "2026-11-26T09:00:00.000Z"
+  },
+  {
+   "publicBaseUrl": null,
+   "ttlSeconds": "60",
+   "now": 1795680000123,
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "url": "/api/v1/media/users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg?exp=1795680060&sig=RJOV_giRwwZ8kN0nsxoOgRCfwTaimO74LU6CIcWUtHo",
+   "expiresAt": "2026-11-26T08:01:00.000Z"
+  },
+  {
+   "publicBaseUrl": null,
+   "ttlSeconds": "60",
+   "now": 1795680000123,
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+   "url": "/api/v1/media/users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795680060&sig=12hBWd1OmMAIIQZOnNhsr1JBNVwIVDUxGQ6JBgU6B3k",
+   "expiresAt": "2026-11-26T08:01:00.000Z"
+  },
+  {
+   "publicBaseUrl": null,
+   "ttlSeconds": "60",
+   "now": 1795680000123,
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+   "url": "/api/v1/media/users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795680060&sig=UQNBKYhy5PW0a63Xx7QquPsT0dp4KvD5w1kBJRNCJXY",
+   "expiresAt": "2026-11-26T08:01:00.000Z"
+  },
+  {
+   "publicBaseUrl": null,
+   "ttlSeconds": "60",
+   "now": 1795680000123,
+   "key": "users/A-b_9/7c9e6679-7425-40de-944b-e07fc1f90ae7.png",
+   "url": "/api/v1/media/users/A-b_9/7c9e6679-7425-40de-944b-e07fc1f90ae7.png?exp=1795680060&sig=DszS5gk2MJJgPY6K3gs2EQFYmZ_Ah7yL4gcK3q2qRV0",
+   "expiresAt": "2026-11-26T08:01:00.000Z"
+  },
+  {
+   "publicBaseUrl": null,
+   "ttlSeconds": "60",
+   "now": 1795680000123,
+   "key": "users/cabc123/7c9e6679-7425-40de-944b-e07fc1f90ae7_thumb.jpg",
+   "url": "/api/v1/media/users/cabc123/7c9e6679-7425-40de-944b-e07fc1f90ae7_thumb.jpg?exp=1795680060&sig=QJT2dnk9Q1TvZFcVzqxOXuN56qIAOYUaxk1ZHdg0ltk",
+   "expiresAt": "2026-11-26T08:01:00.000Z"
+  },
+  {
+   "publicBaseUrl": null,
+   "ttlSeconds": "86400",
+   "now": 1795680000123,
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "url": "/api/v1/media/users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg?exp=1795766400&sig=tOKiV-IZIvoAm3qLOT4wm26qiL-2rKmxucCSyDZvlZg",
+   "expiresAt": "2026-11-27T08:00:00.000Z"
+  },
+  {
+   "publicBaseUrl": null,
+   "ttlSeconds": "86400",
+   "now": 1795680000123,
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+   "url": "/api/v1/media/users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795766400&sig=_TcoMxURcP_95OaGKQwZ5RQ56hjUhZGo23nMYwhFiXE",
+   "expiresAt": "2026-11-27T08:00:00.000Z"
+  },
+  {
+   "publicBaseUrl": null,
+   "ttlSeconds": "86400",
+   "now": 1795680000123,
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+   "url": "/api/v1/media/users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795766400&sig=vnU49Fz2a300wFIt9HSNLuZ4SRnJMG71Qz1MtzJOnsg",
+   "expiresAt": "2026-11-27T08:00:00.000Z"
+  },
+  {
+   "publicBaseUrl": null,
+   "ttlSeconds": "86400",
+   "now": 1795680000123,
+   "key": "users/A-b_9/7c9e6679-7425-40de-944b-e07fc1f90ae7.png",
+   "url": "/api/v1/media/users/A-b_9/7c9e6679-7425-40de-944b-e07fc1f90ae7.png?exp=1795766400&sig=Z4b7PQCCBKtrj1HWkd2VJybYj2-L4OF6gdoz7X8MX4o",
+   "expiresAt": "2026-11-27T08:00:00.000Z"
+  },
+  {
+   "publicBaseUrl": null,
+   "ttlSeconds": "86400",
+   "now": 1795680000123,
+   "key": "users/cabc123/7c9e6679-7425-40de-944b-e07fc1f90ae7_thumb.jpg",
+   "url": "/api/v1/media/users/cabc123/7c9e6679-7425-40de-944b-e07fc1f90ae7_thumb.jpg?exp=1795766400&sig=pAHMO5LU6AQJv-4GjGSTiSrJ-NqMNbu7YA9xNwslGLU",
+   "expiresAt": "2026-11-27T08:00:00.000Z"
+  },
+  {
+   "publicBaseUrl": "https://lookly.example.uz",
+   "ttlSeconds": null,
+   "now": 1795680000123,
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "url": "https://lookly.example.uz/api/v1/media/users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg?exp=1795683600&sig=VZg5A3irwtlJg7Ex-zS3BbGIG9LEOCjPjUh3Wakeloc",
+   "expiresAt": "2026-11-26T09:00:00.000Z"
+  },
+  {
+   "publicBaseUrl": "https://lookly.example.uz",
+   "ttlSeconds": null,
+   "now": 1795680000123,
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+   "url": "https://lookly.example.uz/api/v1/media/users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795683600&sig=0NscgHQZ2ZfIne82NMkP9Ksmy6sc_Krytxlwk4CkrV0",
+   "expiresAt": "2026-11-26T09:00:00.000Z"
+  },
+  {
+   "publicBaseUrl": "https://lookly.example.uz",
+   "ttlSeconds": null,
+   "now": 1795680000123,
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+   "url": "https://lookly.example.uz/api/v1/media/users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795683600&sig=bLNART3o4dkchLLZ1OBOVBvOB-mJlqVZRC4yTiiAa7o",
+   "expiresAt": "2026-11-26T09:00:00.000Z"
+  },
+  {
+   "publicBaseUrl": "https://lookly.example.uz",
+   "ttlSeconds": null,
+   "now": 1795680000123,
+   "key": "users/A-b_9/7c9e6679-7425-40de-944b-e07fc1f90ae7.png",
+   "url": "https://lookly.example.uz/api/v1/media/users/A-b_9/7c9e6679-7425-40de-944b-e07fc1f90ae7.png?exp=1795683600&sig=sEZonNoIpcH7ih5EYEFMnJX57-8eEJBv9hDUCJw9ZA4",
+   "expiresAt": "2026-11-26T09:00:00.000Z"
+  },
+  {
+   "publicBaseUrl": "https://lookly.example.uz",
+   "ttlSeconds": null,
+   "now": 1795680000123,
+   "key": "users/cabc123/7c9e6679-7425-40de-944b-e07fc1f90ae7_thumb.jpg",
+   "url": "https://lookly.example.uz/api/v1/media/users/cabc123/7c9e6679-7425-40de-944b-e07fc1f90ae7_thumb.jpg?exp=1795683600&sig=wsYtDgu7iytCazbSFVhadd5MsQ7_eaBvKwMsnH53mqw",
+   "expiresAt": "2026-11-26T09:00:00.000Z"
+  },
+  {
+   "publicBaseUrl": "https://lookly.example.uz",
+   "ttlSeconds": "60",
+   "now": 1795680000123,
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "url": "https://lookly.example.uz/api/v1/media/users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg?exp=1795680060&sig=RJOV_giRwwZ8kN0nsxoOgRCfwTaimO74LU6CIcWUtHo",
+   "expiresAt": "2026-11-26T08:01:00.000Z"
+  },
+  {
+   "publicBaseUrl": "https://lookly.example.uz",
+   "ttlSeconds": "60",
+   "now": 1795680000123,
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+   "url": "https://lookly.example.uz/api/v1/media/users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795680060&sig=12hBWd1OmMAIIQZOnNhsr1JBNVwIVDUxGQ6JBgU6B3k",
+   "expiresAt": "2026-11-26T08:01:00.000Z"
+  },
+  {
+   "publicBaseUrl": "https://lookly.example.uz",
+   "ttlSeconds": "60",
+   "now": 1795680000123,
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+   "url": "https://lookly.example.uz/api/v1/media/users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795680060&sig=UQNBKYhy5PW0a63Xx7QquPsT0dp4KvD5w1kBJRNCJXY",
+   "expiresAt": "2026-11-26T08:01:00.000Z"
+  },
+  {
+   "publicBaseUrl": "https://lookly.example.uz",
+   "ttlSeconds": "60",
+   "now": 1795680000123,
+   "key": "users/A-b_9/7c9e6679-7425-40de-944b-e07fc1f90ae7.png",
+   "url": "https://lookly.example.uz/api/v1/media/users/A-b_9/7c9e6679-7425-40de-944b-e07fc1f90ae7.png?exp=1795680060&sig=DszS5gk2MJJgPY6K3gs2EQFYmZ_Ah7yL4gcK3q2qRV0",
+   "expiresAt": "2026-11-26T08:01:00.000Z"
+  },
+  {
+   "publicBaseUrl": "https://lookly.example.uz",
+   "ttlSeconds": "60",
+   "now": 1795680000123,
+   "key": "users/cabc123/7c9e6679-7425-40de-944b-e07fc1f90ae7_thumb.jpg",
+   "url": "https://lookly.example.uz/api/v1/media/users/cabc123/7c9e6679-7425-40de-944b-e07fc1f90ae7_thumb.jpg?exp=1795680060&sig=QJT2dnk9Q1TvZFcVzqxOXuN56qIAOYUaxk1ZHdg0ltk",
+   "expiresAt": "2026-11-26T08:01:00.000Z"
+  },
+  {
+   "publicBaseUrl": "https://lookly.example.uz",
+   "ttlSeconds": "86400",
+   "now": 1795680000123,
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "url": "https://lookly.example.uz/api/v1/media/users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg?exp=1795766400&sig=tOKiV-IZIvoAm3qLOT4wm26qiL-2rKmxucCSyDZvlZg",
+   "expiresAt": "2026-11-27T08:00:00.000Z"
+  },
+  {
+   "publicBaseUrl": "https://lookly.example.uz",
+   "ttlSeconds": "86400",
+   "now": 1795680000123,
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+   "url": "https://lookly.example.uz/api/v1/media/users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795766400&sig=_TcoMxURcP_95OaGKQwZ5RQ56hjUhZGo23nMYwhFiXE",
+   "expiresAt": "2026-11-27T08:00:00.000Z"
+  },
+  {
+   "publicBaseUrl": "https://lookly.example.uz",
+   "ttlSeconds": "86400",
+   "now": 1795680000123,
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+   "url": "https://lookly.example.uz/api/v1/media/users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795766400&sig=vnU49Fz2a300wFIt9HSNLuZ4SRnJMG71Qz1MtzJOnsg",
+   "expiresAt": "2026-11-27T08:00:00.000Z"
+  },
+  {
+   "publicBaseUrl": "https://lookly.example.uz",
+   "ttlSeconds": "86400",
+   "now": 1795680000123,
+   "key": "users/A-b_9/7c9e6679-7425-40de-944b-e07fc1f90ae7.png",
+   "url": "https://lookly.example.uz/api/v1/media/users/A-b_9/7c9e6679-7425-40de-944b-e07fc1f90ae7.png?exp=1795766400&sig=Z4b7PQCCBKtrj1HWkd2VJybYj2-L4OF6gdoz7X8MX4o",
+   "expiresAt": "2026-11-27T08:00:00.000Z"
+  },
+  {
+   "publicBaseUrl": "https://lookly.example.uz",
+   "ttlSeconds": "86400",
+   "now": 1795680000123,
+   "key": "users/cabc123/7c9e6679-7425-40de-944b-e07fc1f90ae7_thumb.jpg",
+   "url": "https://lookly.example.uz/api/v1/media/users/cabc123/7c9e6679-7425-40de-944b-e07fc1f90ae7_thumb.jpg?exp=1795766400&sig=pAHMO5LU6AQJv-4GjGSTiSrJ-NqMNbu7YA9xNwslGLU",
+   "expiresAt": "2026-11-27T08:00:00.000Z"
+  }
+ ],
+ "verified": [
+  {
+   "name": "as signed",
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "exp": "1795683600",
+   "sig": "VZg5A3irwtlJg7Ex-zS3BbGIG9LEOCjPjUh3Wakeloc",
+   "now": 1795680000123,
+   "valid": true
+  },
+  {
+   "name": "at the second it expires",
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "exp": "1795683600",
+   "sig": "VZg5A3irwtlJg7Ex-zS3BbGIG9LEOCjPjUh3Wakeloc",
+   "now": 1795683600999,
+   "valid": true
+  },
+  {
+   "name": "one second later",
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "exp": "1795683600",
+   "sig": "VZg5A3irwtlJg7Ex-zS3BbGIG9LEOCjPjUh3Wakeloc",
+   "now": 1795683601000,
+   "valid": false
+  },
+  {
+   "name": "another key",
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+   "exp": "1795683600",
+   "sig": "VZg5A3irwtlJg7Ex-zS3BbGIG9LEOCjPjUh3Wakeloc",
+   "now": 1795680000123,
+   "valid": false
+  },
+  {
+   "name": "another expiry",
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "exp": "1795683601",
+   "sig": "VZg5A3irwtlJg7Ex-zS3BbGIG9LEOCjPjUh3Wakeloc",
+   "now": 1795680000123,
+   "valid": false
+  },
+  {
+   "name": "signature changed in its last character",
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "exp": "1795683600",
+   "sig": "VZg5A3irwtlJg7Ex-zS3BbGIG9LEOCjPjUh3WakeloA",
+   "now": 1795680000123,
+   "valid": false
+  },
+  {
+   "name": "signature in padded base64",
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "exp": "1795683600",
+   "sig": "VZg5A3irwtlJg7Ex+zS3BbGIG9LEOCjPjUh3Wakeloc=",
+   "now": 1795680000123,
+   "valid": false
+  },
+  {
+   "name": "signature cut short",
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "exp": "1795683600",
+   "sig": "VZg5A3irwt",
+   "now": 1795680000123,
+   "valid": false
+  },
+  {
+   "name": "no signature",
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "exp": "1795683600",
+   "sig": null,
+   "now": 1795680000123,
+   "valid": false
+  },
+  {
+   "name": "empty signature",
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "exp": "1795683600",
+   "sig": "",
+   "now": 1795680000123,
+   "valid": false
+  },
+  {
+   "name": "no expiry",
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "exp": null,
+   "sig": "VZg5A3irwtlJg7Ex-zS3BbGIG9LEOCjPjUh3Wakeloc",
+   "now": 1795680000123,
+   "valid": false
+  },
+  {
+   "name": "expiry with a sign",
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "exp": "+1795683600",
+   "sig": "VZg5A3irwtlJg7Ex-zS3BbGIG9LEOCjPjUh3Wakeloc",
+   "now": 1795680000123,
+   "valid": false
+  },
+  {
+   "name": "expiry of 13 digits",
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "exp": "1001795683600",
+   "sig": "VZg5A3irwtlJg7Ex-zS3BbGIG9LEOCjPjUh3Wakeloc",
+   "now": 1795680000123,
+   "valid": false
+  },
+  {
+   "name": "expiry with leading zeros",
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "exp": "01795683600",
+   "sig": "VZg5A3irwtlJg7Ex-zS3BbGIG9LEOCjPjUh3Wakeloc",
+   "now": 1795680000123,
+   "valid": true
+  },
+  {
+   "name": "a key we never generate",
+   "key": "users/cabc123/../secret.jpg",
+   "exp": "1795683600",
+   "sig": "VZg5A3irwtlJg7Ex-zS3BbGIG9LEOCjPjUh3Wakeloc",
+   "now": 1795680000123,
+   "valid": false
+  },
+  {
+   "name": "the master key of the other user",
+   "key": "users/cother/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "exp": "1795683600",
+   "sig": "VZg5A3irwtlJg7Ex-zS3BbGIG9LEOCjPjUh3Wakeloc",
+   "now": 1795680000123,
+   "valid": false
+  }
+ ],
+ "keys": [
+  {
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "valid": true
+  },
+  {
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+   "valid": true
+  },
+  {
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+   "valid": true
+  },
+  {
+   "key": "users/A-b_9/7c9e6679-7425-40de-944b-e07fc1f90ae7.png",
+   "valid": true
+  },
+  {
+   "key": "users/cabc123/7c9e6679-7425-40de-944b-e07fc1f90ae7_thumb.jpg",
+   "valid": true
+  },
+  {
+   "key": "users/cabc123/0F8FAD5B-D9CB-469F-A165-70867728950E.jpg",
+   "valid": false
+  },
+  {
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.jpeg",
+   "valid": false
+  },
+  {
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e_display.png",
+   "valid": true
+  },
+  {
+   "key": "users/cabc123/0f8fad5b-d9cb-469f-a165-70867728950e.gif",
+   "valid": false
+  },
+  {
+   "key": "users//0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "valid": false
+  },
+  {
+   "key": "users/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "valid": true
+  },
+  {
+   "key": "users/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "valid": false
+  },
+  {
+   "key": "users/c.b/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "valid": false
+  },
+  {
+   "key": "other/cabc/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "valid": false
+  },
+  {
+   "key": "users/cabc/0f8fad5b-d9cb-469f-a165-70867728950e.jpg/x",
+   "valid": false
+  },
+  {
+   "key": "/users/cabc/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+   "valid": false
+  },
+  {
+   "key": "users/cabc/0f8fad5b-d9cb-469f-a165-70867728950e.jpg\n",
+   "valid": false
+  },
+  {
+   "key": "users/cabc/0f8fad5bd9cb469fa16570867728950e.jpg",
+   "valid": false
+  },
+  {
+   "key": "",
+   "valid": false
+  }
+ ]
+}

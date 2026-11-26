@@ -391,3 +391,44 @@ func LoadImages(t testing.TB) Images {
 	}
 	return i
 }
+
+// Media is testdata/golden/media.json (apps/web/scripts/golden-media.ts):
+// signed media links, their verification, and which storage keys the
+// Next.js server accepts.
+type Media struct {
+	GeneratedBy  string `json:"generatedBy"`
+	SourceCommit string `json:"sourceCommit"`
+	Note         string `json:"note"`
+	Secret       string `json:"secret"`
+	Signed       []struct {
+		PublicBaseURL *string `json:"publicBaseUrl"`
+		TTLSeconds    *string `json:"ttlSeconds"`
+		Now           int64   `json:"now"`
+		Key           string  `json:"key"`
+		URL           string  `json:"url"`
+		ExpiresAt     string  `json:"expiresAt"`
+	} `json:"signed"`
+	Verified []struct {
+		Name  string  `json:"name"`
+		Key   string  `json:"key"`
+		Exp   *string `json:"exp"`
+		Sig   *string `json:"sig"`
+		Now   int64   `json:"now"`
+		Valid bool    `json:"valid"`
+	} `json:"verified"`
+	Keys []struct {
+		Key   string `json:"key"`
+		Valid bool   `json:"valid"`
+	} `json:"keys"`
+}
+
+// LoadMedia reads testdata/golden/media.json; unknown fields fail.
+func LoadMedia(t testing.TB) Media {
+	t.Helper()
+	var m Media
+	load(t, "media.json", &m)
+	if len(m.Signed) == 0 || len(m.Verified) == 0 || len(m.Keys) == 0 {
+		t.Fatal("media.json: a section is empty")
+	}
+	return m
+}

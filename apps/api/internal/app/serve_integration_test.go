@@ -295,16 +295,18 @@ func TestAnAccountDeletionRemovesItsImages(t *testing.T) {
 	}
 }
 
-// The worker removes images: it does not start without the directory they
-// are in.
-func TestWorkerRefusesToStartWithoutTheStorageDirectory(t *testing.T) {
+// The worker removes images and the server serves them: neither starts
+// without the directory they are in.
+func TestServerAndWorkerRefuseToStartWithoutTheStorageDirectory(t *testing.T) {
 	t.Parallel()
 	pool := schemaDB(t)
 	migrateRiver(t, pool)
-	var stderr bytes.Buffer
-	missing := filepath.Join(t.TempDir(), "not-there")
-	code := app.Run(context.Background(), []string{"worker"}, appEnv(pool, map[string]string{"STORAGE_LOCAL_DIR": missing}), &bytes.Buffer{}, &stderr)
-	if code != 2 || !strings.Contains(stderr.String(), "STORAGE_LOCAL_DIR") {
-		t.Fatalf("exit %d, stderr %q", code, stderr.String())
+	for _, command := range []string{"worker", "serve"} {
+		var stderr bytes.Buffer
+		missing := filepath.Join(t.TempDir(), "not-there")
+		code := app.Run(context.Background(), []string{command}, appEnv(pool, map[string]string{"STORAGE_LOCAL_DIR": missing}), &bytes.Buffer{}, &stderr)
+		if code != 2 || !strings.Contains(stderr.String(), "STORAGE_LOCAL_DIR") {
+			t.Errorf("%s: exit %d, stderr %q", command, code, stderr.String())
+		}
 	}
 }

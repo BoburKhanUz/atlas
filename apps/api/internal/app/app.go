@@ -33,6 +33,7 @@ import (
 	"lookly/internal/legal"
 	"lookly/internal/mail"
 	"lookly/internal/maintenance"
+	"lookly/internal/media"
 	"lookly/internal/profile"
 	"lookly/internal/ratelimit"
 	"lookly/internal/session"
@@ -83,7 +84,7 @@ func Run(ctx context.Context, args []string, getenv func(string) (string, bool),
 
 // api builds the HTTP API over the database: the domain services, the gate
 // every request passes, and the router generated from the contract.
-func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger) (http.Handler, error) {
+func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger, images storage.Store) (http.Handler, error) {
 	queue, err := jobs.NewQueue(pool, log)
 	if err != nil {
 		return nil, fmt.Errorf("job queue: %w", err)
@@ -107,12 +108,25 @@ func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger) (http.Handler,
 		Sessions:     sessions,
 		Legal:        consent,
 		Profile:      profile.New(pool),
+		Media:        media.NewSigner(cfg.MediaSigningSecret, cfg.MediaURLTTL, cfg.PublicBaseURL),
+		Images:       images,
 		CookieSecure: cfg.CookieSecure,
 		TrustProxy:   cfg.TrustProxy,
 	})
 	return httpapi.New(server, log, &httpapi.Gate{
 		Tokens: tokens, Sessions: sessions, Consent: consent, Users: users, TrustProxy: cfg.TrustProxy, HTTPSOnly: cfg.CookieSecure,
 	}), nil
+}
+
+// openStorage opens the image storage; nil and the exit code when it
+// cannot be used.
+func openStorage(cfg config.Config, stderr io.Writer) (storage.Store, int) {
+	images, err := storage.NewLocal(cfg.StorageLocalDir)
+	if err != nil {
+		fmt.Fprintf(stderr, "STORAGE_LOCAL_DIR: %v\n", err)
+		return nil, exitUsage
+	}
+	return images, 0
 }
 
 func serve(ctx context.Context, getenv func(string) (string, bool), stdout, stderr io.Writer) int {
@@ -127,7 +141,13 @@ func serve(ctx context.Context, getenv func(string) (string, bool), stdout, stde
 		// headers. But behind the reverse proxy this setting is a mistake.
 		log.Warn("TRUST_PROXY is not 1: client addresses are unknown, so sign-in is limited per account only and registration shares one limit")
 	}
-	handler, err := api(cfg, pool, log)
+	// The images are served from here: a storage directory that is not
+	// there would answer every image link with 404.
+	images, code := openStorage(cfg, stderr)
+	if images == nil {
+		return code
+	}
+	handler, err := api(cfg, pool, log, images)
 	if err != nil {
 		log.Error("server setup", "err", err.Error())
 		return exitFailure
@@ -236,10 +256,9 @@ func worker(ctx context.Context, getenv func(string) (string, bool), stdout, std
 	}
 	// The images of deleted accounts are removed here: a storage directory
 	// that is not there would make that a silent no-op.
-	images, err := storage.NewLocal(cfg.StorageLocalDir)
-	if err != nil {
-		fmt.Fprintf(stderr, "STORAGE_LOCAL_DIR: %v\n", err)
-		return exitUsage
+	images, code := openStorage(cfg, stderr)
+	if images == nil {
+		return code
 	}
 	client, err := jobs.NewClient(pool, log, jobs.Workers{
 		Cleanup:     maintenance.New(pool),

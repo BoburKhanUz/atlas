@@ -12,8 +12,9 @@ The Go toolchain switches itself to the version pinned in `go.mod` (Go 1.26).
 cd apps/api
 export LOOKLY_ENV=development
 export DATABASE_URL=postgresql://user@localhost:5432/lookly
-export JWT_SECRET="$(openssl rand -base64 48)"        # the same values as the Next.js server,
-export SESSION_ENC_KEY="$(openssl rand -base64 32)"   # when both run on one database
+export JWT_SECRET="$(openssl rand -base64 48)"            # the same values as the Next.js server,
+export MEDIA_SIGNING_SECRET="$(openssl rand -base64 48)"  # when both run on one database
+export SESSION_ENC_KEY="$(openssl rand -base64 32)"
 export STORAGE_LOCAL_DIR=/absolute/path/to/apps/web/storage/uploads   # where the images are
 go run ./cmd/lookly serve
 curl -s localhost:8080/api/health

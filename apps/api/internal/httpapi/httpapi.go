@@ -29,7 +29,8 @@ import (
 const DefaultBodyLimit = 64 << 10
 
 // New builds the server's handler: the routes generated from the contract
-// over server, each behind the gate, all wrapped in the middleware (Wrap).
+// over server and the media route served by hand (when server is the
+// Server), each behind the gate, all wrapped in the middleware (Wrap).
 func New(server contract.StrictServerInterface, log *slog.Logger, gate *Gate) http.Handler {
 	mux := http.NewServeMux()
 	strict := contract.NewStrictHandlerWithOptions(server, nil, contract.StrictHTTPServerOptions{
@@ -39,17 +40,32 @@ func New(server contract.StrictServerInterface, log *slog.Logger, gate *Gate) ht
 	contract.HandlerWithOptions(strict, contract.StdHTTPServerOptions{
 		BaseRouter:       mux,
 		ErrorHandlerFunc: RequestError,
-		Middlewares:      []contract.MiddlewareFunc{gate.middleware},
 	})
-	return Wrap(routed(mux), log)
+	var mediaHandler http.Handler
+	if s, ok := server.(*Server); ok {
+		mediaHandler = http.HandlerFunc(s.serveMedia)
+	}
+	return Wrap(routed(mux, mediaHandler, gate), log)
 }
 
-// routed answers 404 in the envelope for an unknown path or method (the
-// contract has no method-not-allowed code) and records the matched route
-// pattern for the access log.
-func routed(mux *http.ServeMux) http.Handler {
+// routed finds the route, records its pattern for the access log and the
+// gate, and sends the request through the gate to it; an unknown path or
+// method is 404 in the envelope (the contract has no method-not-allowed
+// code). The gate runs before the generated code reads path or query
+// parameters, so a caller without a session learns nothing about them.
+func routed(mux *http.ServeMux, mediaHandler http.Handler, gate *Gate) http.Handler {
+	gatedMux := gate.middleware(mux)
+	var gatedMedia http.Handler
+	if mediaHandler != nil {
+		gatedMedia = gate.middleware(mediaHandler)
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, pattern := mux.Handler(r)
+		next, pattern := gatedMux, ""
+		if gatedMedia != nil && isMedia(r) {
+			next, pattern = gatedMedia, mediaRoute
+		} else {
+			_, pattern = mux.Handler(r)
+		}
 		if pattern == "" {
 			WriteError(w, r, apierr.New(apierr.NotFound))
 			return
@@ -57,7 +73,7 @@ func routed(mux *http.ServeMux) http.Handler {
 		if info := infoFrom(r.Context()); info != nil {
 			info.route = pattern
 		}
-		mux.ServeHTTP(w, r)
+		next.ServeHTTP(w, r)
 	})
 }
 

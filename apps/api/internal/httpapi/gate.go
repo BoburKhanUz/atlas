@@ -107,6 +107,7 @@ var routes = map[string]routeRule{
 	"DELETE /api/v1/account":            {consentExempt: true, goneIsNotFound: true},
 	"GET /api/v1/profile":               {},
 	"PATCH /api/v1/profile":             {body: ProfilePatchBody},
+	mediaRoute:                          {access: public}, // the signed link is the credential
 }
 
 type identityKey struct{}

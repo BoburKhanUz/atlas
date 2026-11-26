@@ -3,6 +3,7 @@ package contract_test
 import (
 	"bufio"
 	"encoding/json"
+	"maps"
 	"os"
 	"slices"
 	"strings"
@@ -15,10 +16,18 @@ import (
 // cutover (B7).
 var notYetImplemented = []string{
 	"analyzeColorProfile", "createWardrobeItem", "deleteColorProfile", "deleteOutfit", "deleteWardrobeItem", "generateOutfits",
-	"getColorProfile", "getConversation", "getCurrentWeather", "getMedia", "getOpenApiDocument", "getOutfit", "getWardrobeItem",
+	"getColorProfile", "getConversation", "getCurrentWeather", "getOpenApiDocument", "getOutfit", "getWardrobeItem",
 	"listConversations", "listOutfits", "listWardrobeItems", "reportClientErrors",
 	"saveOutfit", "sendOutfitFeedback",
 	"stylistChat", "updateOutfit", "updateWardrobeItem",
+}
+
+// servedByHand are the operations served without generated code, each with
+// its reason.
+var servedByHand = map[string]string{
+	// Its {key} holds slashes; a generated pattern matches one segment only
+	// (internal/httpapi/server_media.go).
+	"getMedia": "the storage key in the path contains slashes",
 }
 
 func contractOperations(t *testing.T) []string {
@@ -84,13 +93,19 @@ func TestEveryContractOperationIsGeneratedOrListedAsNotYetImplemented(t *testing
 		t.Fatal("no include-operation-ids in oapi-codegen.yaml")
 	}
 	pending := slices.Sorted(slices.Values(notYetImplemented))
-	all := slices.Sorted(slices.Values(append(slices.Clone(generated), pending...)))
+	byHand := slices.Sorted(maps.Keys(servedByHand))
+	all := slices.Sorted(slices.Values(slices.Concat(generated, pending, byHand)))
 	if !slices.Equal(all, contractOperations(t)) {
-		t.Fatalf("generated %v + not yet implemented %v\n  != contract %v", generated, pending, contractOperations(t))
+		t.Fatalf("generated %v + not yet implemented %v + served by hand %v\n  != contract %v", generated, pending, byHand, contractOperations(t))
 	}
 	for _, id := range generated {
+		if slices.Contains(pending, id) || slices.Contains(byHand, id) {
+			t.Errorf("%s is generated and also listed as not yet implemented or served by hand", id)
+		}
+	}
+	for _, id := range byHand {
 		if slices.Contains(pending, id) {
-			t.Errorf("%s is generated and also listed as not yet implemented", id)
+			t.Errorf("%s is served by hand and also listed as not yet implemented", id)
 		}
 	}
 }

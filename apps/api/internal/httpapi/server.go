@@ -13,8 +13,10 @@ import (
 	"lookly/internal/health"
 	"lookly/internal/httpapi/contract"
 	"lookly/internal/legal"
+	"lookly/internal/media"
 	"lookly/internal/profile"
 	"lookly/internal/session"
+	"lookly/internal/storage"
 )
 
 // Services are the domain services the handlers call, and the settings of
@@ -25,6 +27,11 @@ type Services struct {
 	Sessions *session.Service
 	Legal    *legal.Service
 	Profile  *profile.Service
+	// Media signs and checks the image links; Images holds the images.
+	Media  *media.Signer
+	Images storage.Store
+	// Now is the clock for media links (time.Now when nil).
+	Now func() time.Time
 	// CookieSecure: auth cookies carry the Secure attribute (COOKIE_SECURE).
 	CookieSecure bool
 	// TrustProxy: the client's address is read from the reverse proxy's
@@ -43,6 +50,13 @@ var _ contract.StrictServerInterface = (*Server)(nil)
 
 // NewServer returns the contract implementation over the services.
 func NewServer(s Services) *Server { return &Server{s: s} }
+
+func (s *Server) now() time.Time {
+	if s.s.Now != nil {
+		return s.s.Now()
+	}
+	return time.Now()
+}
 
 // GetHealth: 200 when the database answers, 503 when it does not (the body
 // says which; Docker and monitoring read the status). Never cached.
