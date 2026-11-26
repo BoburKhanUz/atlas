@@ -134,7 +134,9 @@ psql --single-transaction -v ON_ERROR_STOP=1 -f docs/database/rollback/down-sess
 
 It refuses to run if `session_families` is not applied or a later migration
 is. Since Phase 4 later migrations are applied too; reverse them first, newest
-first, with the same command: `down-rate-limit-bucket.sql`
+first, with the same command: `down-wardrobe-child-indexes.sql`
+(`20261126000000_wardrobe_child_indexes`: three indexes; no data is lost), then
+`down-rate-limit-bucket.sql`
 (`20261125000000_rate_limit_bucket`: the Go API's rate-limit counters; every
 limit starts a new window), then `down-password-reset.sql`
 (`20261017010000_password_reset`: pending password reset links stop

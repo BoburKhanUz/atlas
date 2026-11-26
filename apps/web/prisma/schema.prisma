@@ -197,6 +197,8 @@ model WardrobeImage {
   sha256       String?
 
   createdAt    DateTime @default(now())
+
+  @@index([wardrobeItemId])
 }
 
 // ─── Outfits (spec section 12, future Phase 5) ──────────────────────────────
@@ -230,6 +232,9 @@ model OutfitItem {
   wardrobeItem   WardrobeItem @relation(fields: [wardrobeItemId], references: [id], onDelete: Cascade)
   role          String?  // top | bottom | shoes | accessory
   createdAt     DateTime @default(now())
+
+  @@index([outfitId])
+  @@index([wardrobeItemId])
 }
 
 model OutfitFeedback {

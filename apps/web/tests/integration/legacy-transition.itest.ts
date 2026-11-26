@@ -32,6 +32,7 @@ const DOWN_COLOR_PROFILE = path.resolve(__dirname, '../../../../docs/database/ro
 const DOWN_LEGAL_CONSENT = path.resolve(__dirname, '../../../../docs/database/rollback/down-legal-consent.sql')
 const DOWN_PASSWORD_RESET = path.resolve(__dirname, '../../../../docs/database/rollback/down-password-reset.sql')
 const DOWN_RATE_LIMIT = path.resolve(__dirname, '../../../../docs/database/rollback/down-rate-limit-bucket.sql')
+const DOWN_CHILD_INDEXES = path.resolve(__dirname, '../../../../docs/database/rollback/down-wardrobe-child-indexes.sql')
 
 const token = () => crypto.randomBytes(32).toString('base64url')
 const ms = (q: string) => Number(sql(DB, `SELECT (extract(epoch FROM (${q})) * 1000)::bigint`))
@@ -236,7 +237,7 @@ describe.skipIf(!enabled)('legacy session lifetime across the cutover (real Post
     setClock(DB, null)
     const c = chains.get('d59')!
     const limitBefore = absOf(c)
-    for (const file of [DOWN_RATE_LIMIT, DOWN_PASSWORD_RESET, DOWN_LEGAL_CONSENT, DOWN_COLOR_PROFILE, DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE]) {
+    for (const file of [DOWN_CHILD_INDEXES, DOWN_RATE_LIMIT, DOWN_PASSWORD_RESET, DOWN_LEGAL_CONSENT, DOWN_COLOR_PROFILE, DOWN_ANALYSIS_METADATA, DOWN_AI_USAGE]) {
       const downAi = spawnSync(
         'psql',
         ['--single-transaction', '-X', '-v', 'ON_ERROR_STOP=1', '-h', PG.host, '-p', PG.port, '-U', PG.user, '-d', DB, '-f', file],
