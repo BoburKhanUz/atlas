@@ -6,6 +6,8 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"lookly/internal/accounts"
@@ -78,6 +80,12 @@ type routeRule struct {
 	// routes that let the user see who they are, review and accept the
 	// texts, or delete the account).
 	consentExempt bool
+	// itemID: the path ends in an id, judged (ItemID) before the query and
+	// the body, as the Next.js routes do.
+	itemID bool
+	// query judges the query string and rewrites it in canonical form
+	// before the generated decoder reads it.
+	query QueryRule
 	// body judges the request body before the generated decoder reads it.
 	body BodyRule
 	// mobileBodyOnly: the body belongs to mobile mode; in web mode the
@@ -108,6 +116,11 @@ var routes = map[string]routeRule{
 	"GET /api/v1/profile":               {},
 	"PATCH /api/v1/profile":             {body: ProfilePatchBody},
 	mediaRoute:                          {access: public}, // the signed link is the credential
+
+	"GET /api/v1/wardrobe/items":         {query: WardrobeListQuery},
+	"GET /api/v1/wardrobe/items/{id}":    {itemID: true},
+	"PATCH /api/v1/wardrobe/items/{id}":  {itemID: true, body: WardrobePatchBody},
+	"DELETE /api/v1/wardrobe/items/{id}": {itemID: true},
 }
 
 type identityKey struct{}
@@ -175,6 +188,29 @@ func (g *Gate) middleware(next http.Handler) http.Handler {
 				ctx = context.WithValue(ctx, identityKey{}, id)
 				info.userID = id.UserID // for the request log
 			}
+		}
+
+		if rule.itemID {
+			// The id is the last path segment. The router has matched it as
+			// one segment, so the escaped path holds it whole.
+			escaped := r.URL.EscapedPath()
+			raw, err := url.PathUnescape(escaped[strings.LastIndexByte(escaped, '/')+1:])
+			if err != nil {
+				WriteError(w, r, apierr.New(apierr.BadRequest))
+				return
+			}
+			if _, refusal := ItemID(raw); refusal != nil {
+				WriteError(w, r, refusal)
+				return
+			}
+		}
+		if rule.query != nil {
+			canonical, refusal := rule.query(r.URL.Query())
+			if refusal != nil {
+				WriteError(w, r, refusal)
+				return
+			}
+			r.URL.RawQuery = canonical.Encode()
 		}
 
 		if rule.body != nil {

@@ -17,6 +17,7 @@ import (
 	"lookly/internal/profile"
 	"lookly/internal/session"
 	"lookly/internal/storage"
+	"lookly/internal/wardrobe"
 )
 
 // Services are the domain services the handlers call, and the settings of
@@ -27,6 +28,7 @@ type Services struct {
 	Sessions *session.Service
 	Legal    *legal.Service
 	Profile  *profile.Service
+	Wardrobe *wardrobe.Service
 	// Media signs and checks the image links; Images holds the images.
 	Media  *media.Signer
 	Images storage.Store

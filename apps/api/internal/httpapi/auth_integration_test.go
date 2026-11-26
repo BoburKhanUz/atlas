@@ -39,9 +39,12 @@ import (
 	"lookly/internal/httpapi"
 	"lookly/internal/jobs"
 	"lookly/internal/legal"
+	"lookly/internal/media"
 	"lookly/internal/profile"
 	"lookly/internal/ratelimit"
 	"lookly/internal/session"
+	"lookly/internal/storage"
+	"lookly/internal/wardrobe"
 	"lookly/migrations"
 )
 
@@ -112,6 +115,12 @@ func (h *quickHasher) comparisons() int {
 }
 
 type apiOptions struct {
+	// images replaces the image storage (a temporary directory).
+	images storage.Store
+	// media replaces the link signer; now, the clock the links are signed by.
+	media *media.Signer
+	now   func() time.Time
+
 	trustProxy   bool
 	cookieSecure bool
 	hasher       accounts.Hasher
@@ -129,6 +138,8 @@ type api struct {
 	handler  http.Handler
 	tokens   auth.Tokens
 	hasher   *quickHasher
+	images   storage.Store
+	media    *media.Signer
 	sessions *session.Service
 	gate     *httpapi.Gate
 	log      *bytes.Buffer
@@ -185,8 +196,20 @@ func newAPI(t *testing.T, o apiOptions) *api {
 		Pool: pool, Sessions: a.sessions, Limiter: ratelimit.New(pool, []byte("http-test-secret-http-test-secret-http")),
 		Consent: consent, Hasher: hasher, Log: log, Queue: queue, MailEnabled: !o.mailDisabled,
 	})
+	a.images, a.media = o.images, o.media
+	if a.images == nil {
+		local, err := storage.NewLocal(t.TempDir())
+		if err != nil {
+			t.Fatal(err)
+		}
+		a.images = local
+	}
+	if a.media == nil {
+		a.media = media.NewSigner([]byte("http-test-media-secret-http-test-media-secret"), time.Hour, "")
+	}
 	server := httpapi.NewServer(httpapi.Services{
 		Health: health.New(pool, "test", time.Second), Accounts: users, Sessions: a.sessions, Legal: consent, Profile: profile.New(pool),
+		Wardrobe: wardrobe.New(pool, a.images, log), Media: a.media, Images: a.images, Now: o.now,
 		CookieSecure: o.cookieSecure, TrustProxy: o.trustProxy,
 	})
 	a.gate = &httpapi.Gate{Tokens: a.tokens, Sessions: a.sessions, Consent: consent, Users: users, TrustProxy: o.trustProxy, HTTPSOnly: o.cookieSecure}
@@ -209,6 +232,9 @@ type call struct {
 	bearer  string // Authorization: Bearer
 	cookies map[string]string
 	headers map[string]string
+	// contract is the path as the contract writes it, when the request's
+	// path has a parameter or a query.
+	contract string
 }
 
 type answer struct {
@@ -276,10 +302,14 @@ func (a *api) do(c call) answer {
 	a.handler.ServeHTTP(w, r)
 
 	out := answer{status: w.Code, header: w.Header(), raw: w.Body.Bytes(), cookies: map[string]*http.Cookie{}}
-	if gap := fmt.Sprintf("%s %s %d", c.method, c.path, w.Code); knownContractGaps[gap] {
+	contractPath := c.contract
+	if contractPath == "" {
+		contractPath = c.path
+	}
+	if gap := fmt.Sprintf("%s %s %d", c.method, contractPath, w.Code); knownContractGaps[gap] {
 		contracttest.Schema(a.t, "ErrorResponse", out.raw)
 	} else {
-		contracttest.Response(a.t, c.method, c.path, w.Code, w.Header(), out.raw)
+		contracttest.Response(a.t, c.method, contractPath, w.Code, w.Header(), out.raw)
 	}
 	if err := json.Unmarshal(out.raw, &out.body); err != nil {
 		a.t.Fatalf("%s %s: body is not a JSON object: %s", c.method, c.path, out.raw)

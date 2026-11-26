@@ -296,6 +296,29 @@ cutover both servers, in their own containers, share the volume. `DeleteOwner` r
 `users/<id>` (ids of the users' form only; a link in place of the directory is removed,
 not followed). The R2 driver arrives later in B4 behind the same interface.
 
+## Wardrobe
+
+`internal/wardrobe` lists, reads, corrects and deletes a user's items; every query names
+the owner, so an item of another user is `NOT_FOUND`, never `FORBIDDEN`. The routes'
+gate rules judge the path id (`ItemID`), the list query (`WardrobeListQuery`, which
+also fills in the default limit and rewrites the query for the generated decoder) and
+the correction body (`WardrobePatchBody`) by the Next.js schemas' golden cases.
+
+- **List**: newest first, then by id; `cursor` is the id of the last item of the page
+  before, and must be an item of the caller's (anything else is an empty last page).
+- **Correct**: the item's row is locked, the patch is compared with it by the Next.js
+  rules (`apps/web/src/lib/wardrobe/corrections.ts`; golden vectors in
+  `testdata/golden/wardrobe.json`), and the changed columns, `wasCorrected`, the
+  appended `correctionLog` and `updatedAt` are written in one statement. A subcategory
+  that does not belong to the category the item ends up with is `VALIDATION_ERROR`.
+- **Delete**: the item's rows first (its image rows and outfit entries go by cascade),
+  then its files, with a context of their own; a file that cannot be removed is logged
+  and left to the sweep.
+- **Answers** have the Next.js serializer's shape (`serializeWardrobeItem`): lists
+  decoded, times with milliseconds, images as signed links (`url` is the display
+  variant, or the master for an image from before the variants). Storage keys never
+  leave the server.
+
 ## Media links
 
 `internal/media` signs and checks the image links exactly as the Next.js server does

@@ -432,3 +432,94 @@ func LoadMedia(t testing.TB) Media {
 	}
 	return m
 }
+
+// WardrobeRow is a stored wardrobe item as the golden cases give it: the
+// correctable columns always, the rest for the serialized cases.
+type WardrobeRow struct {
+	ID                     string             `json:"id"`
+	UserID                 string             `json:"userId"`
+	Category               string             `json:"category"`
+	Subcategory            *string            `json:"subcategory"`
+	Colors                 string             `json:"colors"`
+	Pattern                *string            `json:"pattern"`
+	Material               *string            `json:"material"`
+	SleeveLength           *string            `json:"sleeveLength"`
+	Fit                    *string            `json:"fit"`
+	Style                  *string            `json:"style"`
+	Season                 string             `json:"season"`
+	Gender                 *string            `json:"gender"`
+	Formality              *string            `json:"formality"`
+	Confidences            string             `json:"confidences"`
+	WasCorrected           bool               `json:"wasCorrected"`
+	CorrectionLog          string             `json:"correctionLog"`
+	AnalysisProvider       *string            `json:"analysisProvider"`
+	AnalysisModel          *string            `json:"analysisModel"`
+	AnalysisVersion        *string            `json:"analysisVersion"`
+	AnalyzedAt             *string            `json:"analyzedAt"`
+	AnalysisRawConfidences *string            `json:"analysisRawConfidences"`
+	CreatedAt              string             `json:"createdAt"`
+	UpdatedAt              string             `json:"updatedAt"`
+	Images                 []WardrobeImageRow `json:"images"`
+}
+
+// WardrobeImageRow is a stored image row.
+type WardrobeImageRow struct {
+	ID             string  `json:"id"`
+	WardrobeItemID string  `json:"wardrobeItemId"`
+	StorageKey     string  `json:"storageKey"`
+	ThumbnailKey   *string `json:"thumbnailKey"`
+	DisplayKey     *string `json:"displayKey"`
+	IsPrimary      bool    `json:"isPrimary"`
+	Width          *int32  `json:"width"`
+	Height         *int32  `json:"height"`
+	MimeType       *string `json:"mimeType"`
+	Bytes          *int32  `json:"bytes"`
+	Sha256         *string `json:"sha256"`
+	CreatedAt      string  `json:"createdAt"`
+}
+
+// Wardrobe is testdata/golden/wardrobe.json: what the Next.js correction
+// rules and item serializer make of stored rows
+// (apps/web/scripts/golden-wardrobe.ts).
+type Wardrobe struct {
+	Source        string `json:"source"`
+	Now           int64  `json:"now"` // the clock of the serialized cases, in milliseconds
+	SigningSecret string `json:"signingSecret"`
+	At            string `json:"at"` // the time the correction cases were logged with
+	// ExistingLog is the correction log every correction case starts with.
+	ExistingLog string `json:"existingLog"`
+	Corrections []struct {
+		Name        string          `json:"name"`
+		Current     WardrobeRow     `json:"current"`
+		Body        json.RawMessage `json:"body"`
+		Mismatch    bool            `json:"mismatch"`
+		Corrections []struct {
+			Field string `json:"field"`
+			From  string `json:"from"`
+			To    string `json:"to"`
+			At    string `json:"at"`
+		} `json:"corrections"`
+		// Update is the columns the Next.js route wrote (lists as JSON text).
+		Update map[string]*string `json:"update"`
+		// StoredLog is the log the route stored; nil when nothing changed.
+		StoredLog *string `json:"storedLog"`
+	} `json:"corrections"`
+	Serialized []struct {
+		Name          string      `json:"name"`
+		PublicBaseURL *string     `json:"publicBaseUrl"`
+		TTLSeconds    int         `json:"ttlSeconds"`
+		Row           WardrobeRow `json:"row"`
+		JSON          string      `json:"json"`
+	} `json:"serialized"`
+}
+
+// LoadWardrobe reads testdata/golden/wardrobe.json; unknown fields fail.
+func LoadWardrobe(t testing.TB) Wardrobe {
+	t.Helper()
+	var w Wardrobe
+	load(t, "wardrobe.json", &w)
+	if len(w.Corrections) == 0 || len(w.Serialized) == 0 {
+		t.Fatal("wardrobe.json: a section is empty")
+	}
+	return w
+}

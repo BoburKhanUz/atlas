@@ -38,6 +38,7 @@ import (
 	"lookly/internal/ratelimit"
 	"lookly/internal/session"
 	"lookly/internal/storage"
+	"lookly/internal/wardrobe"
 )
 
 // version is stamped at build time: -ldflags "-X lookly/internal/app.version=<v>".
@@ -108,6 +109,7 @@ func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger, images storage
 		Sessions:     sessions,
 		Legal:        consent,
 		Profile:      profile.New(pool),
+		Wardrobe:     wardrobe.New(pool, images, log),
 		Media:        media.NewSigner(cfg.MediaSigningSecret, cfg.MediaURLTTL, cfg.PublicBaseURL),
 		Images:       images,
 		CookieSecure: cfg.CookieSecure,

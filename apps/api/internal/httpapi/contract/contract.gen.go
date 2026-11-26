@@ -456,22 +456,22 @@ func (e ProfilePatchRequestPreferencesPreferredStyles) Valid() bool {
 
 // Defines values for ProfilePatchRequestProfileGender.
 const (
-	Female ProfilePatchRequestProfileGender = "female"
-	Male   ProfilePatchRequestProfileGender = "male"
-	Other  ProfilePatchRequestProfileGender = "other"
-	Unisex ProfilePatchRequestProfileGender = "unisex"
+	ProfilePatchRequestProfileGenderFemale ProfilePatchRequestProfileGender = "female"
+	ProfilePatchRequestProfileGenderMale   ProfilePatchRequestProfileGender = "male"
+	ProfilePatchRequestProfileGenderOther  ProfilePatchRequestProfileGender = "other"
+	ProfilePatchRequestProfileGenderUnisex ProfilePatchRequestProfileGender = "unisex"
 )
 
 // Valid indicates whether the value is a known member of the ProfilePatchRequestProfileGender enum.
 func (e ProfilePatchRequestProfileGender) Valid() bool {
 	switch e {
-	case Female:
+	case ProfilePatchRequestProfileGenderFemale:
 		return true
-	case Male:
+	case ProfilePatchRequestProfileGenderMale:
 		return true
-	case Other:
+	case ProfilePatchRequestProfileGenderOther:
 		return true
-	case Unisex:
+	case ProfilePatchRequestProfileGenderUnisex:
 		return true
 	default:
 		return false
@@ -480,22 +480,478 @@ func (e ProfilePatchRequestProfileGender) Valid() bool {
 
 // Defines values for ProfilePatchRequestProfilePreferredFit.
 const (
-	Oversized ProfilePatchRequestProfilePreferredFit = "oversized"
-	Regular   ProfilePatchRequestProfilePreferredFit = "regular"
-	Relaxed   ProfilePatchRequestProfilePreferredFit = "relaxed"
-	Slim      ProfilePatchRequestProfilePreferredFit = "slim"
+	ProfilePatchRequestProfilePreferredFitOversized ProfilePatchRequestProfilePreferredFit = "oversized"
+	ProfilePatchRequestProfilePreferredFitRegular   ProfilePatchRequestProfilePreferredFit = "regular"
+	ProfilePatchRequestProfilePreferredFitRelaxed   ProfilePatchRequestProfilePreferredFit = "relaxed"
+	ProfilePatchRequestProfilePreferredFitSlim      ProfilePatchRequestProfilePreferredFit = "slim"
 )
 
 // Valid indicates whether the value is a known member of the ProfilePatchRequestProfilePreferredFit enum.
 func (e ProfilePatchRequestProfilePreferredFit) Valid() bool {
 	switch e {
-	case Oversized:
+	case ProfilePatchRequestProfilePreferredFitOversized:
 		return true
-	case Regular:
+	case ProfilePatchRequestProfilePreferredFitRegular:
 		return true
-	case Relaxed:
+	case ProfilePatchRequestProfilePreferredFitRelaxed:
 		return true
-	case Slim:
+	case ProfilePatchRequestProfilePreferredFitSlim:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WardrobeItemPatchRequestCategory.
+const (
+	WardrobeItemPatchRequestCategoryAccessory WardrobeItemPatchRequestCategory = "accessory"
+	WardrobeItemPatchRequestCategoryBag       WardrobeItemPatchRequestCategory = "bag"
+	WardrobeItemPatchRequestCategoryDress     WardrobeItemPatchRequestCategory = "dress"
+	WardrobeItemPatchRequestCategoryOuterwear WardrobeItemPatchRequestCategory = "outerwear"
+	WardrobeItemPatchRequestCategoryPants     WardrobeItemPatchRequestCategory = "pants"
+	WardrobeItemPatchRequestCategoryShirt     WardrobeItemPatchRequestCategory = "shirt"
+	WardrobeItemPatchRequestCategoryShoes     WardrobeItemPatchRequestCategory = "shoes"
+)
+
+// Valid indicates whether the value is a known member of the WardrobeItemPatchRequestCategory enum.
+func (e WardrobeItemPatchRequestCategory) Valid() bool {
+	switch e {
+	case WardrobeItemPatchRequestCategoryAccessory:
+		return true
+	case WardrobeItemPatchRequestCategoryBag:
+		return true
+	case WardrobeItemPatchRequestCategoryDress:
+		return true
+	case WardrobeItemPatchRequestCategoryOuterwear:
+		return true
+	case WardrobeItemPatchRequestCategoryPants:
+		return true
+	case WardrobeItemPatchRequestCategoryShirt:
+		return true
+	case WardrobeItemPatchRequestCategoryShoes:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WardrobeItemPatchRequestColors.
+const (
+	WardrobeItemPatchRequestColorsBeige     WardrobeItemPatchRequestColors = "beige"
+	WardrobeItemPatchRequestColorsBlack     WardrobeItemPatchRequestColors = "black"
+	WardrobeItemPatchRequestColorsBlue      WardrobeItemPatchRequestColors = "blue"
+	WardrobeItemPatchRequestColorsBrown     WardrobeItemPatchRequestColors = "brown"
+	WardrobeItemPatchRequestColorsBurgundy  WardrobeItemPatchRequestColors = "burgundy"
+	WardrobeItemPatchRequestColorsCream     WardrobeItemPatchRequestColors = "cream"
+	WardrobeItemPatchRequestColorsGray      WardrobeItemPatchRequestColors = "gray"
+	WardrobeItemPatchRequestColorsGreen     WardrobeItemPatchRequestColors = "green"
+	WardrobeItemPatchRequestColorsIvory     WardrobeItemPatchRequestColors = "ivory"
+	WardrobeItemPatchRequestColorsKhaki     WardrobeItemPatchRequestColors = "khaki"
+	WardrobeItemPatchRequestColorsLightBlue WardrobeItemPatchRequestColors = "light_blue"
+	WardrobeItemPatchRequestColorsMustard   WardrobeItemPatchRequestColors = "mustard"
+	WardrobeItemPatchRequestColorsNavy      WardrobeItemPatchRequestColors = "navy"
+	WardrobeItemPatchRequestColorsOlive     WardrobeItemPatchRequestColors = "olive"
+	WardrobeItemPatchRequestColorsOrange    WardrobeItemPatchRequestColors = "orange"
+	WardrobeItemPatchRequestColorsPink      WardrobeItemPatchRequestColors = "pink"
+	WardrobeItemPatchRequestColorsPurple    WardrobeItemPatchRequestColors = "purple"
+	WardrobeItemPatchRequestColorsRed       WardrobeItemPatchRequestColors = "red"
+	WardrobeItemPatchRequestColorsRust      WardrobeItemPatchRequestColors = "rust"
+	WardrobeItemPatchRequestColorsTan       WardrobeItemPatchRequestColors = "tan"
+	WardrobeItemPatchRequestColorsTeal      WardrobeItemPatchRequestColors = "teal"
+	WardrobeItemPatchRequestColorsWhite     WardrobeItemPatchRequestColors = "white"
+	WardrobeItemPatchRequestColorsYellow    WardrobeItemPatchRequestColors = "yellow"
+)
+
+// Valid indicates whether the value is a known member of the WardrobeItemPatchRequestColors enum.
+func (e WardrobeItemPatchRequestColors) Valid() bool {
+	switch e {
+	case WardrobeItemPatchRequestColorsBeige:
+		return true
+	case WardrobeItemPatchRequestColorsBlack:
+		return true
+	case WardrobeItemPatchRequestColorsBlue:
+		return true
+	case WardrobeItemPatchRequestColorsBrown:
+		return true
+	case WardrobeItemPatchRequestColorsBurgundy:
+		return true
+	case WardrobeItemPatchRequestColorsCream:
+		return true
+	case WardrobeItemPatchRequestColorsGray:
+		return true
+	case WardrobeItemPatchRequestColorsGreen:
+		return true
+	case WardrobeItemPatchRequestColorsIvory:
+		return true
+	case WardrobeItemPatchRequestColorsKhaki:
+		return true
+	case WardrobeItemPatchRequestColorsLightBlue:
+		return true
+	case WardrobeItemPatchRequestColorsMustard:
+		return true
+	case WardrobeItemPatchRequestColorsNavy:
+		return true
+	case WardrobeItemPatchRequestColorsOlive:
+		return true
+	case WardrobeItemPatchRequestColorsOrange:
+		return true
+	case WardrobeItemPatchRequestColorsPink:
+		return true
+	case WardrobeItemPatchRequestColorsPurple:
+		return true
+	case WardrobeItemPatchRequestColorsRed:
+		return true
+	case WardrobeItemPatchRequestColorsRust:
+		return true
+	case WardrobeItemPatchRequestColorsTan:
+		return true
+	case WardrobeItemPatchRequestColorsTeal:
+		return true
+	case WardrobeItemPatchRequestColorsWhite:
+		return true
+	case WardrobeItemPatchRequestColorsYellow:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WardrobeItemPatchRequestFit.
+const (
+	WardrobeItemPatchRequestFitOversized WardrobeItemPatchRequestFit = "oversized"
+	WardrobeItemPatchRequestFitRegular   WardrobeItemPatchRequestFit = "regular"
+	WardrobeItemPatchRequestFitRelaxed   WardrobeItemPatchRequestFit = "relaxed"
+	WardrobeItemPatchRequestFitSlim      WardrobeItemPatchRequestFit = "slim"
+)
+
+// Valid indicates whether the value is a known member of the WardrobeItemPatchRequestFit enum.
+func (e WardrobeItemPatchRequestFit) Valid() bool {
+	switch e {
+	case WardrobeItemPatchRequestFitOversized:
+		return true
+	case WardrobeItemPatchRequestFitRegular:
+		return true
+	case WardrobeItemPatchRequestFitRelaxed:
+		return true
+	case WardrobeItemPatchRequestFitSlim:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WardrobeItemPatchRequestFormality.
+const (
+	WardrobeItemPatchRequestFormalityBlackTie    WardrobeItemPatchRequestFormality = "black_tie"
+	WardrobeItemPatchRequestFormalityCasual      WardrobeItemPatchRequestFormality = "casual"
+	WardrobeItemPatchRequestFormalityFormal      WardrobeItemPatchRequestFormality = "formal"
+	WardrobeItemPatchRequestFormalitySmartCasual WardrobeItemPatchRequestFormality = "smart_casual"
+)
+
+// Valid indicates whether the value is a known member of the WardrobeItemPatchRequestFormality enum.
+func (e WardrobeItemPatchRequestFormality) Valid() bool {
+	switch e {
+	case WardrobeItemPatchRequestFormalityBlackTie:
+		return true
+	case WardrobeItemPatchRequestFormalityCasual:
+		return true
+	case WardrobeItemPatchRequestFormalityFormal:
+		return true
+	case WardrobeItemPatchRequestFormalitySmartCasual:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WardrobeItemPatchRequestGender.
+const (
+	WardrobeItemPatchRequestGenderFemale WardrobeItemPatchRequestGender = "female"
+	WardrobeItemPatchRequestGenderMale   WardrobeItemPatchRequestGender = "male"
+	WardrobeItemPatchRequestGenderUnisex WardrobeItemPatchRequestGender = "unisex"
+)
+
+// Valid indicates whether the value is a known member of the WardrobeItemPatchRequestGender enum.
+func (e WardrobeItemPatchRequestGender) Valid() bool {
+	switch e {
+	case WardrobeItemPatchRequestGenderFemale:
+		return true
+	case WardrobeItemPatchRequestGenderMale:
+		return true
+	case WardrobeItemPatchRequestGenderUnisex:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WardrobeItemPatchRequestMaterial.
+const (
+	WardrobeItemPatchRequestMaterialBlend     WardrobeItemPatchRequestMaterial = "blend"
+	WardrobeItemPatchRequestMaterialCashmere  WardrobeItemPatchRequestMaterial = "cashmere"
+	WardrobeItemPatchRequestMaterialCotton    WardrobeItemPatchRequestMaterial = "cotton"
+	WardrobeItemPatchRequestMaterialDenim     WardrobeItemPatchRequestMaterial = "denim"
+	WardrobeItemPatchRequestMaterialKnit      WardrobeItemPatchRequestMaterial = "knit"
+	WardrobeItemPatchRequestMaterialLeather   WardrobeItemPatchRequestMaterial = "leather"
+	WardrobeItemPatchRequestMaterialLinen     WardrobeItemPatchRequestMaterial = "linen"
+	WardrobeItemPatchRequestMaterialNylon     WardrobeItemPatchRequestMaterial = "nylon"
+	WardrobeItemPatchRequestMaterialPolyester WardrobeItemPatchRequestMaterial = "polyester"
+	WardrobeItemPatchRequestMaterialSilk      WardrobeItemPatchRequestMaterial = "silk"
+	WardrobeItemPatchRequestMaterialSuede     WardrobeItemPatchRequestMaterial = "suede"
+	WardrobeItemPatchRequestMaterialWool      WardrobeItemPatchRequestMaterial = "wool"
+)
+
+// Valid indicates whether the value is a known member of the WardrobeItemPatchRequestMaterial enum.
+func (e WardrobeItemPatchRequestMaterial) Valid() bool {
+	switch e {
+	case WardrobeItemPatchRequestMaterialBlend:
+		return true
+	case WardrobeItemPatchRequestMaterialCashmere:
+		return true
+	case WardrobeItemPatchRequestMaterialCotton:
+		return true
+	case WardrobeItemPatchRequestMaterialDenim:
+		return true
+	case WardrobeItemPatchRequestMaterialKnit:
+		return true
+	case WardrobeItemPatchRequestMaterialLeather:
+		return true
+	case WardrobeItemPatchRequestMaterialLinen:
+		return true
+	case WardrobeItemPatchRequestMaterialNylon:
+		return true
+	case WardrobeItemPatchRequestMaterialPolyester:
+		return true
+	case WardrobeItemPatchRequestMaterialSilk:
+		return true
+	case WardrobeItemPatchRequestMaterialSuede:
+		return true
+	case WardrobeItemPatchRequestMaterialWool:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WardrobeItemPatchRequestPattern.
+const (
+	WardrobeItemPatchRequestPatternChecked    WardrobeItemPatchRequestPattern = "checked"
+	WardrobeItemPatchRequestPatternColorBlock WardrobeItemPatchRequestPattern = "color_block"
+	WardrobeItemPatchRequestPatternDenim      WardrobeItemPatchRequestPattern = "denim"
+	WardrobeItemPatchRequestPatternFloral     WardrobeItemPatchRequestPattern = "floral"
+	WardrobeItemPatchRequestPatternGraphic    WardrobeItemPatchRequestPattern = "graphic"
+	WardrobeItemPatchRequestPatternPlaid      WardrobeItemPatchRequestPattern = "plaid"
+	WardrobeItemPatchRequestPatternSolid      WardrobeItemPatchRequestPattern = "solid"
+	WardrobeItemPatchRequestPatternStriped    WardrobeItemPatchRequestPattern = "striped"
+)
+
+// Valid indicates whether the value is a known member of the WardrobeItemPatchRequestPattern enum.
+func (e WardrobeItemPatchRequestPattern) Valid() bool {
+	switch e {
+	case WardrobeItemPatchRequestPatternChecked:
+		return true
+	case WardrobeItemPatchRequestPatternColorBlock:
+		return true
+	case WardrobeItemPatchRequestPatternDenim:
+		return true
+	case WardrobeItemPatchRequestPatternFloral:
+		return true
+	case WardrobeItemPatchRequestPatternGraphic:
+		return true
+	case WardrobeItemPatchRequestPatternPlaid:
+		return true
+	case WardrobeItemPatchRequestPatternSolid:
+		return true
+	case WardrobeItemPatchRequestPatternStriped:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WardrobeItemPatchRequestSeason.
+const (
+	Autumn WardrobeItemPatchRequestSeason = "autumn"
+	Spring WardrobeItemPatchRequestSeason = "spring"
+	Summer WardrobeItemPatchRequestSeason = "summer"
+	Winter WardrobeItemPatchRequestSeason = "winter"
+)
+
+// Valid indicates whether the value is a known member of the WardrobeItemPatchRequestSeason enum.
+func (e WardrobeItemPatchRequestSeason) Valid() bool {
+	switch e {
+	case Autumn:
+		return true
+	case Spring:
+		return true
+	case Summer:
+		return true
+	case Winter:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WardrobeItemPatchRequestSleeveLength.
+const (
+	Long         WardrobeItemPatchRequestSleeveLength = "long"
+	Short        WardrobeItemPatchRequestSleeveLength = "short"
+	Sleeveless   WardrobeItemPatchRequestSleeveLength = "sleeveless"
+	ThreeQuarter WardrobeItemPatchRequestSleeveLength = "three_quarter"
+)
+
+// Valid indicates whether the value is a known member of the WardrobeItemPatchRequestSleeveLength enum.
+func (e WardrobeItemPatchRequestSleeveLength) Valid() bool {
+	switch e {
+	case Long:
+		return true
+	case Short:
+		return true
+	case Sleeveless:
+		return true
+	case ThreeQuarter:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WardrobeItemPatchRequestStyle.
+const (
+	WardrobeItemPatchRequestStyleBohemian    WardrobeItemPatchRequestStyle = "bohemian"
+	WardrobeItemPatchRequestStyleCasual      WardrobeItemPatchRequestStyle = "casual"
+	WardrobeItemPatchRequestStyleClassic     WardrobeItemPatchRequestStyle = "classic"
+	WardrobeItemPatchRequestStyleFormal      WardrobeItemPatchRequestStyle = "formal"
+	WardrobeItemPatchRequestStyleMinimal     WardrobeItemPatchRequestStyle = "minimal"
+	WardrobeItemPatchRequestStylePreppy      WardrobeItemPatchRequestStyle = "preppy"
+	WardrobeItemPatchRequestStyleSmartCasual WardrobeItemPatchRequestStyle = "smart_casual"
+	WardrobeItemPatchRequestStyleSporty      WardrobeItemPatchRequestStyle = "sporty"
+	WardrobeItemPatchRequestStyleStreetwear  WardrobeItemPatchRequestStyle = "streetwear"
+)
+
+// Valid indicates whether the value is a known member of the WardrobeItemPatchRequestStyle enum.
+func (e WardrobeItemPatchRequestStyle) Valid() bool {
+	switch e {
+	case WardrobeItemPatchRequestStyleBohemian:
+		return true
+	case WardrobeItemPatchRequestStyleCasual:
+		return true
+	case WardrobeItemPatchRequestStyleClassic:
+		return true
+	case WardrobeItemPatchRequestStyleFormal:
+		return true
+	case WardrobeItemPatchRequestStyleMinimal:
+		return true
+	case WardrobeItemPatchRequestStylePreppy:
+		return true
+	case WardrobeItemPatchRequestStyleSmartCasual:
+		return true
+	case WardrobeItemPatchRequestStyleSporty:
+		return true
+	case WardrobeItemPatchRequestStyleStreetwear:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WardrobeItemPatchRequestSubcategory.
+const (
+	WardrobeItemPatchRequestSubcategoryBackpack     WardrobeItemPatchRequestSubcategory = "backpack"
+	WardrobeItemPatchRequestSubcategoryBelt         WardrobeItemPatchRequestSubcategory = "belt"
+	WardrobeItemPatchRequestSubcategoryBlazer       WardrobeItemPatchRequestSubcategory = "blazer"
+	WardrobeItemPatchRequestSubcategoryBlouse       WardrobeItemPatchRequestSubcategory = "blouse"
+	WardrobeItemPatchRequestSubcategoryBoots        WardrobeItemPatchRequestSubcategory = "boots"
+	WardrobeItemPatchRequestSubcategoryCasualDress  WardrobeItemPatchRequestSubcategory = "casual_dress"
+	WardrobeItemPatchRequestSubcategoryChinos       WardrobeItemPatchRequestSubcategory = "chinos"
+	WardrobeItemPatchRequestSubcategoryClutch       WardrobeItemPatchRequestSubcategory = "clutch"
+	WardrobeItemPatchRequestSubcategoryCoat         WardrobeItemPatchRequestSubcategory = "coat"
+	WardrobeItemPatchRequestSubcategoryCrossbody    WardrobeItemPatchRequestSubcategory = "crossbody"
+	WardrobeItemPatchRequestSubcategoryEveningDress WardrobeItemPatchRequestSubcategory = "evening_dress"
+	WardrobeItemPatchRequestSubcategoryHat          WardrobeItemPatchRequestSubcategory = "hat"
+	WardrobeItemPatchRequestSubcategoryJacket       WardrobeItemPatchRequestSubcategory = "jacket"
+	WardrobeItemPatchRequestSubcategoryJeans        WardrobeItemPatchRequestSubcategory = "jeans"
+	WardrobeItemPatchRequestSubcategoryKnit         WardrobeItemPatchRequestSubcategory = "knit"
+	WardrobeItemPatchRequestSubcategoryLoafers      WardrobeItemPatchRequestSubcategory = "loafers"
+	WardrobeItemPatchRequestSubcategoryMidiDress    WardrobeItemPatchRequestSubcategory = "midi_dress"
+	WardrobeItemPatchRequestSubcategoryOxfordShirt  WardrobeItemPatchRequestSubcategory = "oxford_shirt"
+	WardrobeItemPatchRequestSubcategoryOxfordShoes  WardrobeItemPatchRequestSubcategory = "oxford_shoes"
+	WardrobeItemPatchRequestSubcategoryPolo         WardrobeItemPatchRequestSubcategory = "polo"
+	WardrobeItemPatchRequestSubcategorySandals      WardrobeItemPatchRequestSubcategory = "sandals"
+	WardrobeItemPatchRequestSubcategoryScarf        WardrobeItemPatchRequestSubcategory = "scarf"
+	WardrobeItemPatchRequestSubcategoryShorts       WardrobeItemPatchRequestSubcategory = "shorts"
+	WardrobeItemPatchRequestSubcategorySneakers     WardrobeItemPatchRequestSubcategory = "sneakers"
+	WardrobeItemPatchRequestSubcategorySunglasses   WardrobeItemPatchRequestSubcategory = "sunglasses"
+	WardrobeItemPatchRequestSubcategoryTote         WardrobeItemPatchRequestSubcategory = "tote"
+	WardrobeItemPatchRequestSubcategoryTrousers     WardrobeItemPatchRequestSubcategory = "trousers"
+	WardrobeItemPatchRequestSubcategoryTshirt       WardrobeItemPatchRequestSubcategory = "tshirt"
+	WardrobeItemPatchRequestSubcategoryWatch        WardrobeItemPatchRequestSubcategory = "watch"
+	WardrobeItemPatchRequestSubcategoryWindbreaker  WardrobeItemPatchRequestSubcategory = "windbreaker"
+)
+
+// Valid indicates whether the value is a known member of the WardrobeItemPatchRequestSubcategory enum.
+func (e WardrobeItemPatchRequestSubcategory) Valid() bool {
+	switch e {
+	case WardrobeItemPatchRequestSubcategoryBackpack:
+		return true
+	case WardrobeItemPatchRequestSubcategoryBelt:
+		return true
+	case WardrobeItemPatchRequestSubcategoryBlazer:
+		return true
+	case WardrobeItemPatchRequestSubcategoryBlouse:
+		return true
+	case WardrobeItemPatchRequestSubcategoryBoots:
+		return true
+	case WardrobeItemPatchRequestSubcategoryCasualDress:
+		return true
+	case WardrobeItemPatchRequestSubcategoryChinos:
+		return true
+	case WardrobeItemPatchRequestSubcategoryClutch:
+		return true
+	case WardrobeItemPatchRequestSubcategoryCoat:
+		return true
+	case WardrobeItemPatchRequestSubcategoryCrossbody:
+		return true
+	case WardrobeItemPatchRequestSubcategoryEveningDress:
+		return true
+	case WardrobeItemPatchRequestSubcategoryHat:
+		return true
+	case WardrobeItemPatchRequestSubcategoryJacket:
+		return true
+	case WardrobeItemPatchRequestSubcategoryJeans:
+		return true
+	case WardrobeItemPatchRequestSubcategoryKnit:
+		return true
+	case WardrobeItemPatchRequestSubcategoryLoafers:
+		return true
+	case WardrobeItemPatchRequestSubcategoryMidiDress:
+		return true
+	case WardrobeItemPatchRequestSubcategoryOxfordShirt:
+		return true
+	case WardrobeItemPatchRequestSubcategoryOxfordShoes:
+		return true
+	case WardrobeItemPatchRequestSubcategoryPolo:
+		return true
+	case WardrobeItemPatchRequestSubcategorySandals:
+		return true
+	case WardrobeItemPatchRequestSubcategoryScarf:
+		return true
+	case WardrobeItemPatchRequestSubcategoryShorts:
+		return true
+	case WardrobeItemPatchRequestSubcategorySneakers:
+		return true
+	case WardrobeItemPatchRequestSubcategorySunglasses:
+		return true
+	case WardrobeItemPatchRequestSubcategoryTote:
+		return true
+	case WardrobeItemPatchRequestSubcategoryTrousers:
+		return true
+	case WardrobeItemPatchRequestSubcategoryTshirt:
+		return true
+	case WardrobeItemPatchRequestSubcategoryWatch:
+		return true
+	case WardrobeItemPatchRequestSubcategoryWindbreaker:
 		return true
 	default:
 		return false
@@ -562,9 +1018,54 @@ func (e RegisterParamsXAtlasClient) Valid() bool {
 	}
 }
 
+// Defines values for ListWardrobeItemsParamsCategory.
+const (
+	ListWardrobeItemsParamsCategoryAccessory ListWardrobeItemsParamsCategory = "accessory"
+	ListWardrobeItemsParamsCategoryAll       ListWardrobeItemsParamsCategory = "all"
+	ListWardrobeItemsParamsCategoryBag       ListWardrobeItemsParamsCategory = "bag"
+	ListWardrobeItemsParamsCategoryDress     ListWardrobeItemsParamsCategory = "dress"
+	ListWardrobeItemsParamsCategoryOuterwear ListWardrobeItemsParamsCategory = "outerwear"
+	ListWardrobeItemsParamsCategoryPants     ListWardrobeItemsParamsCategory = "pants"
+	ListWardrobeItemsParamsCategoryShirt     ListWardrobeItemsParamsCategory = "shirt"
+	ListWardrobeItemsParamsCategoryShoes     ListWardrobeItemsParamsCategory = "shoes"
+)
+
+// Valid indicates whether the value is a known member of the ListWardrobeItemsParamsCategory enum.
+func (e ListWardrobeItemsParamsCategory) Valid() bool {
+	switch e {
+	case ListWardrobeItemsParamsCategoryAccessory:
+		return true
+	case ListWardrobeItemsParamsCategoryAll:
+		return true
+	case ListWardrobeItemsParamsCategoryBag:
+		return true
+	case ListWardrobeItemsParamsCategoryDress:
+		return true
+	case ListWardrobeItemsParamsCategoryOuterwear:
+		return true
+	case ListWardrobeItemsParamsCategoryPants:
+		return true
+	case ListWardrobeItemsParamsCategoryShirt:
+		return true
+	case ListWardrobeItemsParamsCategoryShoes:
+		return true
+	default:
+		return false
+	}
+}
+
 // AuthResponse defines model for AuthResponse.
 type AuthResponse struct {
 	union json.RawMessage
+}
+
+// CorrectionLogEntry defines model for CorrectionLogEntry.
+type CorrectionLogEntry struct {
+	// At ISO 8601, UTC
+	At    time.Time `json:"at"`
+	Field string    `json:"field"`
+	From  string    `json:"from"`
+	To    string    `json:"to"`
 }
 
 // ErrorResponse Every error response. Clients branch on `code`, never on `error`.
@@ -595,6 +1096,23 @@ type HealthResponseDatabase string
 
 // HealthResponseStatus defines model for HealthResponse.Status.
 type HealthResponseStatus string
+
+// ImageObject A stored garment image. The full-resolution master is never exposed.
+type ImageObject struct {
+	Height    nullable.Nullable[int] `json:"height"`
+	Id        string                 `json:"id"`
+	IsPrimary bool                   `json:"isPrimary"`
+
+	// ThumbnailUrl Signed URL of the 400 px thumbnail
+	ThumbnailUrl nullable.Nullable[string] `json:"thumbnailUrl"`
+
+	// Url Signed URL of the 1600 px display image (absolute when PUBLIC_BASE_URL is set)
+	Url string `json:"url"`
+
+	// UrlExpiresAt When url and thumbnailUrl stop working; cache images by id + variant
+	UrlExpiresAt time.Time              `json:"urlExpiresAt"`
+	Width        nullable.Nullable[int] `json:"width"`
+}
 
 // LegalConsentRequest defines model for LegalConsentRequest.
 type LegalConsentRequest struct {
@@ -825,6 +1343,98 @@ type SessionUser struct {
 	Name  nullable.Nullable[string] `json:"name"`
 }
 
+// WardrobeItem defines model for WardrobeItem.
+type WardrobeItem struct {
+	Category      string               `json:"category"`
+	Colors        []string             `json:"colors"`
+	Confidences   map[string]float64   `json:"confidences"`
+	CorrectionLog []CorrectionLogEntry `json:"correctionLog"`
+
+	// CreatedAt ISO 8601, UTC
+	CreatedAt    time.Time                      `json:"createdAt"`
+	Fit          nullable.Nullable[string]      `json:"fit"`
+	Formality    nullable.Nullable[string]      `json:"formality"`
+	Gender       nullable.Nullable[string]      `json:"gender"`
+	Id           string                         `json:"id"`
+	Images       []ImageObject                  `json:"images"`
+	Material     nullable.Nullable[string]      `json:"material"`
+	Pattern      nullable.Nullable[string]      `json:"pattern"`
+	PrimaryImage nullable.Nullable[ImageObject] `json:"primaryImage"`
+	Season       []string                       `json:"season"`
+	SleeveLength nullable.Nullable[string]      `json:"sleeveLength"`
+	Style        nullable.Nullable[string]      `json:"style"`
+	Subcategory  nullable.Nullable[string]      `json:"subcategory"`
+
+	// UpdatedAt ISO 8601, UTC
+	UpdatedAt    time.Time `json:"updatedAt"`
+	WasCorrected bool      `json:"wasCorrected"`
+}
+
+// WardrobeItemPatchRequest defines model for WardrobeItemPatchRequest.
+type WardrobeItemPatchRequest struct {
+	Category     *WardrobeItemPatchRequestCategory                       `json:"category,omitempty"`
+	Colors       *[]WardrobeItemPatchRequestColors                       `json:"colors,omitempty"`
+	Fit          nullable.Nullable[WardrobeItemPatchRequestFit]          `json:"fit,omitempty"`
+	Formality    nullable.Nullable[WardrobeItemPatchRequestFormality]    `json:"formality,omitempty"`
+	Gender       nullable.Nullable[WardrobeItemPatchRequestGender]       `json:"gender,omitempty"`
+	Material     nullable.Nullable[WardrobeItemPatchRequestMaterial]     `json:"material,omitempty"`
+	Pattern      nullable.Nullable[WardrobeItemPatchRequestPattern]      `json:"pattern,omitempty"`
+	Season       *[]WardrobeItemPatchRequestSeason                       `json:"season,omitempty"`
+	SleeveLength nullable.Nullable[WardrobeItemPatchRequestSleeveLength] `json:"sleeveLength,omitempty"`
+	Style        nullable.Nullable[WardrobeItemPatchRequestStyle]        `json:"style,omitempty"`
+	Subcategory  nullable.Nullable[WardrobeItemPatchRequestSubcategory]  `json:"subcategory,omitempty"`
+}
+
+// WardrobeItemPatchRequestCategory defines model for WardrobeItemPatchRequest.Category.
+type WardrobeItemPatchRequestCategory string
+
+// WardrobeItemPatchRequestColors defines model for WardrobeItemPatchRequest.Colors.
+type WardrobeItemPatchRequestColors string
+
+// WardrobeItemPatchRequestFit defines model for WardrobeItemPatchRequest.Fit.
+type WardrobeItemPatchRequestFit string
+
+// WardrobeItemPatchRequestFormality defines model for WardrobeItemPatchRequest.Formality.
+type WardrobeItemPatchRequestFormality string
+
+// WardrobeItemPatchRequestGender defines model for WardrobeItemPatchRequest.Gender.
+type WardrobeItemPatchRequestGender string
+
+// WardrobeItemPatchRequestMaterial defines model for WardrobeItemPatchRequest.Material.
+type WardrobeItemPatchRequestMaterial string
+
+// WardrobeItemPatchRequestPattern defines model for WardrobeItemPatchRequest.Pattern.
+type WardrobeItemPatchRequestPattern string
+
+// WardrobeItemPatchRequestSeason defines model for WardrobeItemPatchRequest.Season.
+type WardrobeItemPatchRequestSeason string
+
+// WardrobeItemPatchRequestSleeveLength defines model for WardrobeItemPatchRequest.SleeveLength.
+type WardrobeItemPatchRequestSleeveLength string
+
+// WardrobeItemPatchRequestStyle defines model for WardrobeItemPatchRequest.Style.
+type WardrobeItemPatchRequestStyle string
+
+// WardrobeItemPatchRequestSubcategory defines model for WardrobeItemPatchRequest.Subcategory.
+type WardrobeItemPatchRequestSubcategory string
+
+// WardrobeItemResponse defines model for WardrobeItemResponse.
+type WardrobeItemResponse struct {
+	Item WardrobeItem `json:"item"`
+}
+
+// WardrobeListResponse defines model for WardrobeListResponse.
+type WardrobeListResponse struct {
+	Items      []WardrobeItem            `json:"items"`
+	NextCursor nullable.Nullable[string] `json:"nextCursor"`
+}
+
+// WardrobePatchResponse defines model for WardrobePatchResponse.
+type WardrobePatchResponse struct {
+	Corrections []CorrectionLogEntry `json:"corrections"`
+	Item        WardrobeItem         `json:"item"`
+}
+
 // WebAuthResponse Web mode: tokens are only in HttpOnly cookies
 type WebAuthResponse struct {
 	User SessionUser `json:"user"`
@@ -866,6 +1476,16 @@ type RegisterParams struct {
 // RegisterParamsXAtlasClient defines parameters for Register.
 type RegisterParamsXAtlasClient string
 
+// ListWardrobeItemsParams defines parameters for ListWardrobeItems.
+type ListWardrobeItemsParams struct {
+	Category *ListWardrobeItemsParamsCategory `form:"category,omitempty" json:"category,omitempty"`
+	Limit    *int                             `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor   *string                          `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListWardrobeItemsParamsCategory defines parameters for ListWardrobeItems.
+type ListWardrobeItemsParamsCategory string
+
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody = LoginRequest
 
@@ -889,6 +1509,9 @@ type AcceptLegalDocumentsJSONRequestBody = LegalConsentRequest
 
 // UpdateProfileJSONRequestBody defines body for UpdateProfile for application/json ContentType.
 type UpdateProfileJSONRequestBody = ProfilePatchRequest
+
+// UpdateWardrobeItemJSONRequestBody defines body for UpdateWardrobeItem for application/json ContentType.
+type UpdateWardrobeItemJSONRequestBody = WardrobeItemPatchRequest
 
 // AsMobileAuthResponse returns the union data inside the AuthResponse as a MobileAuthResponse
 func (t AuthResponse) AsMobileAuthResponse() (MobileAuthResponse, error) {
@@ -993,6 +1616,18 @@ type ServerInterface interface {
 	// UpdateProfile Update name, profile fields or preferences
 	// (PATCH /api/v1/profile)
 	UpdateProfile(w http.ResponseWriter, r *http.Request)
+	// ListWardrobeItems Wardrobe items, newest first (cursor pagination)
+	// (GET /api/v1/wardrobe/items)
+	ListWardrobeItems(w http.ResponseWriter, r *http.Request, params ListWardrobeItemsParams)
+	// DeleteWardrobeItem Delete an item and its images
+	// (DELETE /api/v1/wardrobe/items/{id})
+	DeleteWardrobeItem(w http.ResponseWriter, r *http.Request, id string)
+	// GetWardrobeItem One wardrobe item
+	// (GET /api/v1/wardrobe/items/{id})
+	GetWardrobeItem(w http.ResponseWriter, r *http.Request, id string)
+	// UpdateWardrobeItem Correct detected attributes (recorded in correctionLog)
+	// (PATCH /api/v1/wardrobe/items/{id})
+	UpdateWardrobeItem(w http.ResponseWriter, r *http.Request, id string)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -1294,6 +1929,143 @@ func (siw *ServerInterfaceWrapper) UpdateProfile(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
+// ListWardrobeItems operation middleware
+func (siw *ServerInterfaceWrapper) ListWardrobeItems(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListWardrobeItemsParams
+
+	// ------------- Optional query parameter "category" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "category", r.URL.Query(), &params.Category, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "category"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "category", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWardrobeItems(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteWardrobeItem operation middleware
+func (siw *ServerInterfaceWrapper) DeleteWardrobeItem(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteWardrobeItem(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWardrobeItem operation middleware
+func (siw *ServerInterfaceWrapper) GetWardrobeItem(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWardrobeItem(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateWardrobeItem operation middleware
+func (siw *ServerInterfaceWrapper) UpdateWardrobeItem(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateWardrobeItem(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -1427,6 +2199,10 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/legal/consent", wrapper.AcceptLegalDocuments)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/profile", wrapper.GetProfile)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/v1/profile", wrapper.UpdateProfile)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/wardrobe/items", wrapper.ListWardrobeItems)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/wardrobe/items/{id}", wrapper.DeleteWardrobeItem)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/wardrobe/items/{id}", wrapper.GetWardrobeItem)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/v1/wardrobe/items/{id}", wrapper.UpdateWardrobeItem)
 
 	return m
 }
@@ -2572,6 +3348,375 @@ func (response UpdateProfile500JSONResponse) VisitUpdateProfileResponse(w http.R
 	return err
 }
 
+type ListWardrobeItemsRequestObject struct {
+	Params ListWardrobeItemsParams
+}
+
+type ListWardrobeItemsResponseObject interface {
+	VisitListWardrobeItemsResponse(w http.ResponseWriter) error
+}
+
+type ListWardrobeItems200JSONResponse WardrobeListResponse
+
+func (response ListWardrobeItems200JSONResponse) VisitListWardrobeItemsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWardrobeItems400JSONResponse ErrorResponse
+
+func (response ListWardrobeItems400JSONResponse) VisitListWardrobeItemsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWardrobeItems401JSONResponse ErrorResponse
+
+func (response ListWardrobeItems401JSONResponse) VisitListWardrobeItemsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWardrobeItems403JSONResponse ErrorResponse
+
+func (response ListWardrobeItems403JSONResponse) VisitListWardrobeItemsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWardrobeItems500JSONResponse ErrorResponse
+
+func (response ListWardrobeItems500JSONResponse) VisitListWardrobeItemsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWardrobeItemRequestObject struct {
+	Id string `json:"id"`
+}
+
+type DeleteWardrobeItemResponseObject interface {
+	VisitDeleteWardrobeItemResponse(w http.ResponseWriter) error
+}
+
+type DeleteWardrobeItem200JSONResponse OkResponse
+
+func (response DeleteWardrobeItem200JSONResponse) VisitDeleteWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWardrobeItem400JSONResponse ErrorResponse
+
+func (response DeleteWardrobeItem400JSONResponse) VisitDeleteWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWardrobeItem401JSONResponse ErrorResponse
+
+func (response DeleteWardrobeItem401JSONResponse) VisitDeleteWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWardrobeItem403JSONResponse ErrorResponse
+
+func (response DeleteWardrobeItem403JSONResponse) VisitDeleteWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWardrobeItem404JSONResponse ErrorResponse
+
+func (response DeleteWardrobeItem404JSONResponse) VisitDeleteWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWardrobeItem500JSONResponse ErrorResponse
+
+func (response DeleteWardrobeItem500JSONResponse) VisitDeleteWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWardrobeItemRequestObject struct {
+	Id string `json:"id"`
+}
+
+type GetWardrobeItemResponseObject interface {
+	VisitGetWardrobeItemResponse(w http.ResponseWriter) error
+}
+
+type GetWardrobeItem200JSONResponse WardrobeItemResponse
+
+func (response GetWardrobeItem200JSONResponse) VisitGetWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWardrobeItem400JSONResponse ErrorResponse
+
+func (response GetWardrobeItem400JSONResponse) VisitGetWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWardrobeItem401JSONResponse ErrorResponse
+
+func (response GetWardrobeItem401JSONResponse) VisitGetWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWardrobeItem403JSONResponse ErrorResponse
+
+func (response GetWardrobeItem403JSONResponse) VisitGetWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWardrobeItem404JSONResponse ErrorResponse
+
+func (response GetWardrobeItem404JSONResponse) VisitGetWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWardrobeItem500JSONResponse ErrorResponse
+
+func (response GetWardrobeItem500JSONResponse) VisitGetWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWardrobeItemRequestObject struct {
+	Id   string `json:"id"`
+	Body *UpdateWardrobeItemJSONRequestBody
+}
+
+type UpdateWardrobeItemResponseObject interface {
+	VisitUpdateWardrobeItemResponse(w http.ResponseWriter) error
+}
+
+type UpdateWardrobeItem200JSONResponse WardrobePatchResponse
+
+func (response UpdateWardrobeItem200JSONResponse) VisitUpdateWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWardrobeItem400JSONResponse ErrorResponse
+
+func (response UpdateWardrobeItem400JSONResponse) VisitUpdateWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWardrobeItem401JSONResponse ErrorResponse
+
+func (response UpdateWardrobeItem401JSONResponse) VisitUpdateWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWardrobeItem403JSONResponse ErrorResponse
+
+func (response UpdateWardrobeItem403JSONResponse) VisitUpdateWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWardrobeItem404JSONResponse ErrorResponse
+
+func (response UpdateWardrobeItem404JSONResponse) VisitUpdateWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWardrobeItem413JSONResponse ErrorResponse
+
+func (response UpdateWardrobeItem413JSONResponse) VisitUpdateWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWardrobeItem500JSONResponse ErrorResponse
+
+func (response UpdateWardrobeItem500JSONResponse) VisitUpdateWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// GetHealth Liveness and database check
@@ -2613,6 +3758,18 @@ type StrictServerInterface interface {
 	// UpdateProfile Update name, profile fields or preferences
 	// (PATCH /api/v1/profile)
 	UpdateProfile(ctx context.Context, request UpdateProfileRequestObject) (UpdateProfileResponseObject, error)
+	// ListWardrobeItems Wardrobe items, newest first (cursor pagination)
+	// (GET /api/v1/wardrobe/items)
+	ListWardrobeItems(ctx context.Context, request ListWardrobeItemsRequestObject) (ListWardrobeItemsResponseObject, error)
+	// DeleteWardrobeItem Delete an item and its images
+	// (DELETE /api/v1/wardrobe/items/{id})
+	DeleteWardrobeItem(ctx context.Context, request DeleteWardrobeItemRequestObject) (DeleteWardrobeItemResponseObject, error)
+	// GetWardrobeItem One wardrobe item
+	// (GET /api/v1/wardrobe/items/{id})
+	GetWardrobeItem(ctx context.Context, request GetWardrobeItemRequestObject) (GetWardrobeItemResponseObject, error)
+	// UpdateWardrobeItem Correct detected attributes (recorded in correctionLog)
+	// (PATCH /api/v1/wardrobe/items/{id})
+	UpdateWardrobeItem(ctx context.Context, request UpdateWardrobeItemRequestObject) (UpdateWardrobeItemResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -3029,6 +4186,117 @@ func (sh *strictHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateProfileResponseObject); ok {
 		if err := validResponse.VisitUpdateProfileResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWardrobeItems operation middleware
+func (sh *strictHandler) ListWardrobeItems(w http.ResponseWriter, r *http.Request, params ListWardrobeItemsParams) {
+	var request ListWardrobeItemsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWardrobeItems(ctx, request.(ListWardrobeItemsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWardrobeItems")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWardrobeItemsResponseObject); ok {
+		if err := validResponse.VisitListWardrobeItemsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteWardrobeItem operation middleware
+func (sh *strictHandler) DeleteWardrobeItem(w http.ResponseWriter, r *http.Request, id string) {
+	var request DeleteWardrobeItemRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteWardrobeItem(ctx, request.(DeleteWardrobeItemRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteWardrobeItem")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteWardrobeItemResponseObject); ok {
+		if err := validResponse.VisitDeleteWardrobeItemResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWardrobeItem operation middleware
+func (sh *strictHandler) GetWardrobeItem(w http.ResponseWriter, r *http.Request, id string) {
+	var request GetWardrobeItemRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWardrobeItem(ctx, request.(GetWardrobeItemRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWardrobeItem")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWardrobeItemResponseObject); ok {
+		if err := validResponse.VisitGetWardrobeItemResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateWardrobeItem operation middleware
+func (sh *strictHandler) UpdateWardrobeItem(w http.ResponseWriter, r *http.Request, id string) {
+	var request UpdateWardrobeItemRequestObject
+
+	request.Id = id
+
+	var body UpdateWardrobeItemJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateWardrobeItem(ctx, request.(UpdateWardrobeItemRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateWardrobeItem")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateWardrobeItemResponseObject); ok {
+		if err := validResponse.VisitUpdateWardrobeItemResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

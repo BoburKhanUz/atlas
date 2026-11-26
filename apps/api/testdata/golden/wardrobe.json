@@ -1,0 +1,2579 @@
+{
+  "source": "apps/web/src/lib/wardrobe (corrections.ts, serialize.ts)",
+  "now": 1795685415042,
+  "signingSecret": "golden-wardrobe-secret-golden-wardrobe-secret",
+  "at": "2026-11-26T09:30:15.042Z",
+  "existingLog": "[{\"field\":\"fit\",\"from\":\"slim\",\"to\":\"regular\",\"at\":\"2026-01-01T00:00:00.000Z\",\"extra\":\"kept\"}]",
+  "corrections": [
+    {
+      "name": "empty",
+      "current": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual"
+      },
+      "body": {},
+      "mismatch": false,
+      "corrections": [],
+      "update": {},
+      "storedLog": null
+    },
+    {
+      "name": "every field the same",
+      "current": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual"
+      },
+      "body": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "white",
+          "navy"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": [
+          "spring",
+          "summer"
+        ],
+        "gender": "unisex",
+        "formality": "casual"
+      },
+      "mismatch": false,
+      "corrections": [],
+      "update": {},
+      "storedLog": null
+    },
+    {
+      "name": "one colour more",
+      "current": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual"
+      },
+      "body": {
+        "colors": [
+          "white",
+          "navy",
+          "red"
+        ]
+      },
+      "mismatch": false,
+      "corrections": [
+        {
+          "field": "colors",
+          "from": "[\"white\",\"navy\"]",
+          "to": "[\"white\",\"navy\",\"red\"]",
+          "at": "2026-11-26T09:30:15.042Z"
+        }
+      ],
+      "update": {
+        "colors": "[\"white\",\"navy\",\"red\"]"
+      },
+      "storedLog": "[{\"field\":\"fit\",\"from\":\"slim\",\"to\":\"regular\",\"at\":\"2026-01-01T00:00:00.000Z\",\"extra\":\"kept\"},{\"field\":\"colors\",\"from\":\"[\\\"white\\\",\\\"navy\\\"]\",\"to\":\"[\\\"white\\\",\\\"navy\\\",\\\"red\\\"]\",\"at\":\"2026-11-26T09:30:15.042Z\"}]"
+    },
+    {
+      "name": "colours reordered",
+      "current": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual"
+      },
+      "body": {
+        "colors": [
+          "navy",
+          "white"
+        ]
+      },
+      "mismatch": false,
+      "corrections": [
+        {
+          "field": "colors",
+          "from": "[\"white\",\"navy\"]",
+          "to": "[\"navy\",\"white\"]",
+          "at": "2026-11-26T09:30:15.042Z"
+        }
+      ],
+      "update": {
+        "colors": "[\"navy\",\"white\"]"
+      },
+      "storedLog": "[{\"field\":\"fit\",\"from\":\"slim\",\"to\":\"regular\",\"at\":\"2026-01-01T00:00:00.000Z\",\"extra\":\"kept\"},{\"field\":\"colors\",\"from\":\"[\\\"white\\\",\\\"navy\\\"]\",\"to\":\"[\\\"navy\\\",\\\"white\\\"]\",\"at\":\"2026-11-26T09:30:15.042Z\"}]"
+    },
+    {
+      "name": "colours cleared",
+      "current": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual"
+      },
+      "body": {
+        "colors": []
+      },
+      "mismatch": false,
+      "corrections": [
+        {
+          "field": "colors",
+          "from": "[\"white\",\"navy\"]",
+          "to": "[]",
+          "at": "2026-11-26T09:30:15.042Z"
+        }
+      ],
+      "update": {
+        "colors": "[]"
+      },
+      "storedLog": "[{\"field\":\"fit\",\"from\":\"slim\",\"to\":\"regular\",\"at\":\"2026-01-01T00:00:00.000Z\",\"extra\":\"kept\"},{\"field\":\"colors\",\"from\":\"[\\\"white\\\",\\\"navy\\\"]\",\"to\":\"[]\",\"at\":\"2026-11-26T09:30:15.042Z\"}]"
+    },
+    {
+      "name": "season set",
+      "current": {
+        "category": "shoes",
+        "subcategory": null,
+        "colors": "[]",
+        "pattern": null,
+        "material": null,
+        "sleeveLength": null,
+        "fit": null,
+        "style": null,
+        "season": "[]",
+        "gender": null,
+        "formality": null
+      },
+      "body": {
+        "season": [
+          "winter"
+        ]
+      },
+      "mismatch": false,
+      "corrections": [
+        {
+          "field": "season",
+          "from": "[]",
+          "to": "[\"winter\"]",
+          "at": "2026-11-26T09:30:15.042Z"
+        }
+      ],
+      "update": {
+        "season": "[\"winter\"]"
+      },
+      "storedLog": "[{\"field\":\"fit\",\"from\":\"slim\",\"to\":\"regular\",\"at\":\"2026-01-01T00:00:00.000Z\",\"extra\":\"kept\"},{\"field\":\"season\",\"from\":\"[]\",\"to\":\"[\\\"winter\\\"]\",\"at\":\"2026-11-26T09:30:15.042Z\"}]"
+    },
+    {
+      "name": "pattern cleared",
+      "current": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual"
+      },
+      "body": {
+        "pattern": null
+      },
+      "mismatch": false,
+      "corrections": [
+        {
+          "field": "pattern",
+          "from": "solid",
+          "to": "",
+          "at": "2026-11-26T09:30:15.042Z"
+        }
+      ],
+      "update": {
+        "pattern": null
+      },
+      "storedLog": "[{\"field\":\"fit\",\"from\":\"slim\",\"to\":\"regular\",\"at\":\"2026-01-01T00:00:00.000Z\",\"extra\":\"kept\"},{\"field\":\"pattern\",\"from\":\"solid\",\"to\":\"\",\"at\":\"2026-11-26T09:30:15.042Z\"}]"
+    },
+    {
+      "name": "null over null",
+      "current": {
+        "category": "shoes",
+        "subcategory": null,
+        "colors": "[]",
+        "pattern": null,
+        "material": null,
+        "sleeveLength": null,
+        "fit": null,
+        "style": null,
+        "season": "[]",
+        "gender": null,
+        "formality": null
+      },
+      "body": {
+        "pattern": null,
+        "fit": null
+      },
+      "mismatch": false,
+      "corrections": [],
+      "update": {},
+      "storedLog": null
+    },
+    {
+      "name": "set from null",
+      "current": {
+        "category": "shoes",
+        "subcategory": null,
+        "colors": "[]",
+        "pattern": null,
+        "material": null,
+        "sleeveLength": null,
+        "fit": null,
+        "style": null,
+        "season": "[]",
+        "gender": null,
+        "formality": null
+      },
+      "body": {
+        "material": "leather",
+        "gender": "female"
+      },
+      "mismatch": false,
+      "corrections": [
+        {
+          "field": "material",
+          "from": "",
+          "to": "leather",
+          "at": "2026-11-26T09:30:15.042Z"
+        },
+        {
+          "field": "gender",
+          "from": "",
+          "to": "female",
+          "at": "2026-11-26T09:30:15.042Z"
+        }
+      ],
+      "update": {
+        "material": "leather",
+        "gender": "female"
+      },
+      "storedLog": "[{\"field\":\"fit\",\"from\":\"slim\",\"to\":\"regular\",\"at\":\"2026-01-01T00:00:00.000Z\",\"extra\":\"kept\"},{\"field\":\"material\",\"from\":\"\",\"to\":\"leather\",\"at\":\"2026-11-26T09:30:15.042Z\"},{\"field\":\"gender\",\"from\":\"\",\"to\":\"female\",\"at\":\"2026-11-26T09:30:15.042Z\"}]"
+    },
+    {
+      "name": "members in reverse order",
+      "current": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual"
+      },
+      "body": {
+        "formality": "formal",
+        "gender": "male",
+        "style": "formal",
+        "fit": "slim",
+        "sleeveLength": "long",
+        "material": "linen",
+        "pattern": "striped",
+        "season": [
+          "autumn"
+        ],
+        "colors": [
+          "black"
+        ],
+        "subcategory": "oxford_shirt",
+        "category": "shirt"
+      },
+      "mismatch": false,
+      "corrections": [
+        {
+          "field": "subcategory",
+          "from": "tshirt",
+          "to": "oxford_shirt",
+          "at": "2026-11-26T09:30:15.042Z"
+        },
+        {
+          "field": "colors",
+          "from": "[\"white\",\"navy\"]",
+          "to": "[\"black\"]",
+          "at": "2026-11-26T09:30:15.042Z"
+        },
+        {
+          "field": "pattern",
+          "from": "solid",
+          "to": "striped",
+          "at": "2026-11-26T09:30:15.042Z"
+        },
+        {
+          "field": "material",
+          "from": "cotton",
+          "to": "linen",
+          "at": "2026-11-26T09:30:15.042Z"
+        },
+        {
+          "field": "sleeveLength",
+          "from": "short",
+          "to": "long",
+          "at": "2026-11-26T09:30:15.042Z"
+        },
+        {
+          "field": "fit",
+          "from": "regular",
+          "to": "slim",
+          "at": "2026-11-26T09:30:15.042Z"
+        },
+        {
+          "field": "style",
+          "from": "casual",
+          "to": "formal",
+          "at": "2026-11-26T09:30:15.042Z"
+        },
+        {
+          "field": "season",
+          "from": "[\"spring\",\"summer\"]",
+          "to": "[\"autumn\"]",
+          "at": "2026-11-26T09:30:15.042Z"
+        },
+        {
+          "field": "gender",
+          "from": "unisex",
+          "to": "male",
+          "at": "2026-11-26T09:30:15.042Z"
+        },
+        {
+          "field": "formality",
+          "from": "casual",
+          "to": "formal",
+          "at": "2026-11-26T09:30:15.042Z"
+        }
+      ],
+      "update": {
+        "subcategory": "oxford_shirt",
+        "colors": "[\"black\"]",
+        "pattern": "striped",
+        "material": "linen",
+        "sleeveLength": "long",
+        "fit": "slim",
+        "style": "formal",
+        "season": "[\"autumn\"]",
+        "gender": "male",
+        "formality": "formal"
+      },
+      "storedLog": "[{\"field\":\"fit\",\"from\":\"slim\",\"to\":\"regular\",\"at\":\"2026-01-01T00:00:00.000Z\",\"extra\":\"kept\"},{\"field\":\"subcategory\",\"from\":\"tshirt\",\"to\":\"oxford_shirt\",\"at\":\"2026-11-26T09:30:15.042Z\"},{\"field\":\"colors\",\"from\":\"[\\\"white\\\",\\\"navy\\\"]\",\"to\":\"[\\\"black\\\"]\",\"at\":\"2026-11-26T09:30:15.042Z\"},{\"field\":\"pattern\",\"from\":\"solid\",\"to\":\"striped\",\"at\":\"2026-11-26T09:30:15.042Z\"},{\"field\":\"material\",\"from\":\"cotton\",\"to\":\"linen\",\"at\":\"2026-11-26T09:30:15.042Z\"},{\"field\":\"sleeveLength\",\"from\":\"short\",\"to\":\"long\",\"at\":\"2026-11-26T09:30:15.042Z\"},{\"field\":\"fit\",\"from\":\"regular\",\"to\":\"slim\",\"at\":\"2026-11-26T09:30:15.042Z\"},{\"field\":\"style\",\"from\":\"casual\",\"to\":\"formal\",\"at\":\"2026-11-26T09:30:15.042Z\"},{\"field\":\"season\",\"from\":\"[\\\"spring\\\",\\\"summer\\\"]\",\"to\":\"[\\\"autumn\\\"]\",\"at\":\"2026-11-26T09:30:15.042Z\"},{\"field\":\"gender\",\"from\":\"unisex\",\"to\":\"male\",\"at\":\"2026-11-26T09:30:15.042Z\"},{\"field\":\"formality\",\"from\":\"casual\",\"to\":\"formal\",\"at\":\"2026-11-26T09:30:15.042Z\"}]"
+    },
+    {
+      "name": "category and fitting subcategory",
+      "current": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual"
+      },
+      "body": {
+        "category": "pants",
+        "subcategory": "jeans"
+      },
+      "mismatch": false,
+      "corrections": [
+        {
+          "field": "category",
+          "from": "shirt",
+          "to": "pants",
+          "at": "2026-11-26T09:30:15.042Z"
+        },
+        {
+          "field": "subcategory",
+          "from": "tshirt",
+          "to": "jeans",
+          "at": "2026-11-26T09:30:15.042Z"
+        }
+      ],
+      "update": {
+        "category": "pants",
+        "subcategory": "jeans"
+      },
+      "storedLog": "[{\"field\":\"fit\",\"from\":\"slim\",\"to\":\"regular\",\"at\":\"2026-01-01T00:00:00.000Z\",\"extra\":\"kept\"},{\"field\":\"category\",\"from\":\"shirt\",\"to\":\"pants\",\"at\":\"2026-11-26T09:30:15.042Z\"},{\"field\":\"subcategory\",\"from\":\"tshirt\",\"to\":\"jeans\",\"at\":\"2026-11-26T09:30:15.042Z\"}]"
+    },
+    {
+      "name": "category alone, subcategory stale",
+      "current": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual"
+      },
+      "body": {
+        "category": "pants"
+      },
+      "mismatch": true,
+      "corrections": [
+        {
+          "field": "category",
+          "from": "shirt",
+          "to": "pants",
+          "at": "2026-11-26T09:30:15.042Z"
+        }
+      ],
+      "update": {
+        "category": "pants"
+      },
+      "storedLog": null
+    },
+    {
+      "name": "category alone, no subcategory",
+      "current": {
+        "category": "shoes",
+        "subcategory": null,
+        "colors": "[]",
+        "pattern": null,
+        "material": null,
+        "sleeveLength": null,
+        "fit": null,
+        "style": null,
+        "season": "[]",
+        "gender": null,
+        "formality": null
+      },
+      "body": {
+        "category": "shirt"
+      },
+      "mismatch": false,
+      "corrections": [
+        {
+          "field": "category",
+          "from": "shoes",
+          "to": "shirt",
+          "at": "2026-11-26T09:30:15.042Z"
+        }
+      ],
+      "update": {
+        "category": "shirt"
+      },
+      "storedLog": "[{\"field\":\"fit\",\"from\":\"slim\",\"to\":\"regular\",\"at\":\"2026-01-01T00:00:00.000Z\",\"extra\":\"kept\"},{\"field\":\"category\",\"from\":\"shoes\",\"to\":\"shirt\",\"at\":\"2026-11-26T09:30:15.042Z\"}]"
+    },
+    {
+      "name": "subcategory alone, fits",
+      "current": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual"
+      },
+      "body": {
+        "subcategory": "oxford_shirt"
+      },
+      "mismatch": false,
+      "corrections": [
+        {
+          "field": "subcategory",
+          "from": "tshirt",
+          "to": "oxford_shirt",
+          "at": "2026-11-26T09:30:15.042Z"
+        }
+      ],
+      "update": {
+        "subcategory": "oxford_shirt"
+      },
+      "storedLog": "[{\"field\":\"fit\",\"from\":\"slim\",\"to\":\"regular\",\"at\":\"2026-01-01T00:00:00.000Z\",\"extra\":\"kept\"},{\"field\":\"subcategory\",\"from\":\"tshirt\",\"to\":\"oxford_shirt\",\"at\":\"2026-11-26T09:30:15.042Z\"}]"
+    },
+    {
+      "name": "subcategory alone, of another category",
+      "current": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual"
+      },
+      "body": {
+        "subcategory": "jeans"
+      },
+      "mismatch": true,
+      "corrections": [
+        {
+          "field": "subcategory",
+          "from": "tshirt",
+          "to": "jeans",
+          "at": "2026-11-26T09:30:15.042Z"
+        }
+      ],
+      "update": {
+        "subcategory": "jeans"
+      },
+      "storedLog": null
+    },
+    {
+      "name": "subcategory cleared with another category",
+      "current": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual"
+      },
+      "body": {
+        "category": "pants",
+        "subcategory": null
+      },
+      "mismatch": false,
+      "corrections": [
+        {
+          "field": "category",
+          "from": "shirt",
+          "to": "pants",
+          "at": "2026-11-26T09:30:15.042Z"
+        },
+        {
+          "field": "subcategory",
+          "from": "tshirt",
+          "to": "",
+          "at": "2026-11-26T09:30:15.042Z"
+        }
+      ],
+      "update": {
+        "category": "pants",
+        "subcategory": null
+      },
+      "storedLog": "[{\"field\":\"fit\",\"from\":\"slim\",\"to\":\"regular\",\"at\":\"2026-01-01T00:00:00.000Z\",\"extra\":\"kept\"},{\"field\":\"category\",\"from\":\"shirt\",\"to\":\"pants\",\"at\":\"2026-11-26T09:30:15.042Z\"},{\"field\":\"subcategory\",\"from\":\"tshirt\",\"to\":\"\",\"at\":\"2026-11-26T09:30:15.042Z\"}]"
+    },
+    {
+      "name": "category the same, subcategory stale",
+      "current": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual"
+      },
+      "body": {
+        "category": "shirt",
+        "subcategory": "sneakers"
+      },
+      "mismatch": true,
+      "corrections": [
+        {
+          "field": "subcategory",
+          "from": "tshirt",
+          "to": "sneakers",
+          "at": "2026-11-26T09:30:15.042Z"
+        }
+      ],
+      "update": {
+        "subcategory": "sneakers"
+      },
+      "storedLog": null
+    },
+    {
+      "name": "stale stored pair, another field",
+      "current": {
+        "category": "shirt",
+        "subcategory": "jeans",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual"
+      },
+      "body": {
+        "fit": "slim"
+      },
+      "mismatch": false,
+      "corrections": [
+        {
+          "field": "fit",
+          "from": "regular",
+          "to": "slim",
+          "at": "2026-11-26T09:30:15.042Z"
+        }
+      ],
+      "update": {
+        "fit": "slim"
+      },
+      "storedLog": "[{\"field\":\"fit\",\"from\":\"slim\",\"to\":\"regular\",\"at\":\"2026-01-01T00:00:00.000Z\",\"extra\":\"kept\"},{\"field\":\"fit\",\"from\":\"regular\",\"to\":\"slim\",\"at\":\"2026-11-26T09:30:15.042Z\"}]"
+    },
+    {
+      "name": "stale stored pair, category named again",
+      "current": {
+        "category": "shirt",
+        "subcategory": "jeans",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual"
+      },
+      "body": {
+        "category": "shirt"
+      },
+      "mismatch": true,
+      "corrections": [],
+      "update": {},
+      "storedLog": null
+    },
+    {
+      "name": "legacy value with markup characters",
+      "current": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "a<b&c>\"d",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual"
+      },
+      "body": {
+        "pattern": "solid"
+      },
+      "mismatch": false,
+      "corrections": [
+        {
+          "field": "pattern",
+          "from": "a<b&c>\"d",
+          "to": "solid",
+          "at": "2026-11-26T09:30:15.042Z"
+        }
+      ],
+      "update": {
+        "pattern": "solid"
+      },
+      "storedLog": "[{\"field\":\"fit\",\"from\":\"slim\",\"to\":\"regular\",\"at\":\"2026-01-01T00:00:00.000Z\",\"extra\":\"kept\"},{\"field\":\"pattern\",\"from\":\"a<b&c>\\\"d\",\"to\":\"solid\",\"at\":\"2026-11-26T09:30:15.042Z\"}]"
+    },
+    {
+      "name": "season the same, colours differ",
+      "current": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual"
+      },
+      "body": {
+        "season": [
+          "spring",
+          "summer"
+        ],
+        "colors": [
+          "white"
+        ]
+      },
+      "mismatch": false,
+      "corrections": [
+        {
+          "field": "colors",
+          "from": "[\"white\",\"navy\"]",
+          "to": "[\"white\"]",
+          "at": "2026-11-26T09:30:15.042Z"
+        }
+      ],
+      "update": {
+        "colors": "[\"white\"]"
+      },
+      "storedLog": "[{\"field\":\"fit\",\"from\":\"slim\",\"to\":\"regular\",\"at\":\"2026-01-01T00:00:00.000Z\",\"extra\":\"kept\"},{\"field\":\"colors\",\"from\":\"[\\\"white\\\",\\\"navy\\\"]\",\"to\":\"[\\\"white\\\"]\",\"at\":\"2026-11-26T09:30:15.042Z\"}]"
+    }
+  ],
+  "serialized": [
+    {
+      "name": "with variants",
+      "publicBaseUrl": null,
+      "ttlSeconds": 3600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "from before variants (master served)",
+      "publicBaseUrl": null,
+      "ttlSeconds": 3600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.jpg",
+            "displayKey": null,
+            "isPrimary": true,
+            "width": null,
+            "height": null,
+            "mimeType": null,
+            "bytes": null,
+            "sha256": null,
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg?exp=1795689015&sig=0lOBWGT3_OMsxkhEKW045eIyXy6k8GKh0P3GOB4asaI\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.jpg?exp=1795689015&sig=jNmJY6cs4o6ldIFlSjcZ4l_t4PqDIisa2TDtltXyiYE\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":null,\"height\":null}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg?exp=1795689015&sig=0lOBWGT3_OMsxkhEKW045eIyXy6k8GKh0P3GOB4asaI\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.jpg?exp=1795689015&sig=jNmJY6cs4o6ldIFlSjcZ4l_t4PqDIisa2TDtltXyiYE\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":null,\"height\":null},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "no thumbnail",
+      "publicBaseUrl": null,
+      "ttlSeconds": 3600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": null,
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":null,\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":null,\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "no images",
+      "publicBaseUrl": null,
+      "ttlSeconds": 3600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": []
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[],\"primaryImage\":null,\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "two images, the second primary",
+      "publicBaseUrl": null,
+      "ttlSeconds": 3600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": false,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          },
+          {
+            "id": "cimg2",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.png",
+            "thumbnailKey": null,
+            "displayKey": null,
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":false,\"width\":1200,\"height\":1600},{\"id\":\"cimg2\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.png?exp=1795689015&sig=uA2_o-vWWI2_LqJM7OKcGQcsSWtOUPsFdC_PsEsQ9PQ\",\"thumbnailUrl\":null,\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg2\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.png?exp=1795689015&sig=uA2_o-vWWI2_LqJM7OKcGQcsSWtOUPsFdC_PsEsQ9PQ\",\"thumbnailUrl\":null,\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "two images, both primary (the first counts)",
+      "publicBaseUrl": null,
+      "ttlSeconds": 3600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          },
+          {
+            "id": "cimg2",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.png",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": null,
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},{\"id\":\"cimg2\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.png?exp=1795689015&sig=uA2_o-vWWI2_LqJM7OKcGQcsSWtOUPsFdC_PsEsQ9PQ\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "two images, none primary",
+      "publicBaseUrl": null,
+      "ttlSeconds": 3600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": false,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          },
+          {
+            "id": "cimg2",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.png",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": false,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":false,\"width\":1200,\"height\":1600},{\"id\":\"cimg2\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":false,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":false,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "bare, corrected",
+      "publicBaseUrl": null,
+      "ttlSeconds": 3600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shoes",
+        "subcategory": null,
+        "colors": "[]",
+        "pattern": null,
+        "material": null,
+        "sleeveLength": null,
+        "fit": null,
+        "style": null,
+        "season": "[]",
+        "gender": null,
+        "formality": null,
+        "confidences": "{}",
+        "wasCorrected": true,
+        "correctionLog": "[{\"field\":\"pattern\",\"from\":\"solid\",\"to\":\"\",\"at\":\"2026-11-26T09:30:15.042Z\"}]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shoes\",\"subcategory\":null,\"colors\":[],\"pattern\":null,\"material\":null,\"sleeveLength\":null,\"fit\":null,\"style\":null,\"season\":[],\"gender\":null,\"formality\":null,\"confidences\":{},\"wasCorrected\":true,\"correctionLog\":[{\"field\":\"pattern\",\"from\":\"solid\",\"to\":\"\",\"at\":\"2026-11-26T09:30:15.042Z\"}],\"images\":[{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "stored with spaces",
+      "publicBaseUrl": null,
+      "ttlSeconds": 3600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[ \"white\" , \"navy\" ]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{ \"category\" : 1.0 }",
+        "wasCorrected": false,
+        "correctionLog": "[ ]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":1},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "with variants",
+      "publicBaseUrl": null,
+      "ttlSeconds": 600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "from before variants (master served)",
+      "publicBaseUrl": null,
+      "ttlSeconds": 600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.jpg",
+            "displayKey": null,
+            "isPrimary": true,
+            "width": null,
+            "height": null,
+            "mimeType": null,
+            "bytes": null,
+            "sha256": null,
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg?exp=1795686015&sig=_qU_Sd1NAji_69v30ETGTd51BJZHu1Umo8X3cCbf3mM\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.jpg?exp=1795686015&sig=QgrhqghjRPTac8DcsnCvopGF8DWJl0EyrU-vBT3mXEw\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":null,\"height\":null}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg?exp=1795686015&sig=_qU_Sd1NAji_69v30ETGTd51BJZHu1Umo8X3cCbf3mM\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.jpg?exp=1795686015&sig=QgrhqghjRPTac8DcsnCvopGF8DWJl0EyrU-vBT3mXEw\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":null,\"height\":null},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "no thumbnail",
+      "publicBaseUrl": null,
+      "ttlSeconds": 600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": null,
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":null,\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":null,\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "no images",
+      "publicBaseUrl": null,
+      "ttlSeconds": 600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": []
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[],\"primaryImage\":null,\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "two images, the second primary",
+      "publicBaseUrl": null,
+      "ttlSeconds": 600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": false,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          },
+          {
+            "id": "cimg2",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.png",
+            "thumbnailKey": null,
+            "displayKey": null,
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":false,\"width\":1200,\"height\":1600},{\"id\":\"cimg2\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.png?exp=1795686015&sig=l79bmM6TTUYQtyg-neN5fmqk5tjfEE_s4pN4L3pRBJE\",\"thumbnailUrl\":null,\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg2\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.png?exp=1795686015&sig=l79bmM6TTUYQtyg-neN5fmqk5tjfEE_s4pN4L3pRBJE\",\"thumbnailUrl\":null,\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "two images, both primary (the first counts)",
+      "publicBaseUrl": null,
+      "ttlSeconds": 600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          },
+          {
+            "id": "cimg2",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.png",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": null,
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},{\"id\":\"cimg2\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.png?exp=1795686015&sig=l79bmM6TTUYQtyg-neN5fmqk5tjfEE_s4pN4L3pRBJE\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "two images, none primary",
+      "publicBaseUrl": null,
+      "ttlSeconds": 600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": false,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          },
+          {
+            "id": "cimg2",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.png",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": false,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":false,\"width\":1200,\"height\":1600},{\"id\":\"cimg2\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":false,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":false,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "bare, corrected",
+      "publicBaseUrl": null,
+      "ttlSeconds": 600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shoes",
+        "subcategory": null,
+        "colors": "[]",
+        "pattern": null,
+        "material": null,
+        "sleeveLength": null,
+        "fit": null,
+        "style": null,
+        "season": "[]",
+        "gender": null,
+        "formality": null,
+        "confidences": "{}",
+        "wasCorrected": true,
+        "correctionLog": "[{\"field\":\"pattern\",\"from\":\"solid\",\"to\":\"\",\"at\":\"2026-11-26T09:30:15.042Z\"}]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shoes\",\"subcategory\":null,\"colors\":[],\"pattern\":null,\"material\":null,\"sleeveLength\":null,\"fit\":null,\"style\":null,\"season\":[],\"gender\":null,\"formality\":null,\"confidences\":{},\"wasCorrected\":true,\"correctionLog\":[{\"field\":\"pattern\",\"from\":\"solid\",\"to\":\"\",\"at\":\"2026-11-26T09:30:15.042Z\"}],\"images\":[{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "stored with spaces",
+      "publicBaseUrl": null,
+      "ttlSeconds": 600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[ \"white\" , \"navy\" ]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{ \"category\" : 1.0 }",
+        "wasCorrected": false,
+        "correctionLog": "[ ]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":1},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":\"/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "with variants",
+      "publicBaseUrl": "https://lookly.example.uz",
+      "ttlSeconds": 3600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "from before variants (master served)",
+      "publicBaseUrl": "https://lookly.example.uz",
+      "ttlSeconds": 3600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.jpg",
+            "displayKey": null,
+            "isPrimary": true,
+            "width": null,
+            "height": null,
+            "mimeType": null,
+            "bytes": null,
+            "sha256": null,
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg?exp=1795689015&sig=0lOBWGT3_OMsxkhEKW045eIyXy6k8GKh0P3GOB4asaI\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.jpg?exp=1795689015&sig=jNmJY6cs4o6ldIFlSjcZ4l_t4PqDIisa2TDtltXyiYE\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":null,\"height\":null}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg?exp=1795689015&sig=0lOBWGT3_OMsxkhEKW045eIyXy6k8GKh0P3GOB4asaI\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.jpg?exp=1795689015&sig=jNmJY6cs4o6ldIFlSjcZ4l_t4PqDIisa2TDtltXyiYE\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":null,\"height\":null},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "no thumbnail",
+      "publicBaseUrl": "https://lookly.example.uz",
+      "ttlSeconds": 3600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": null,
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":null,\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":null,\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "no images",
+      "publicBaseUrl": "https://lookly.example.uz",
+      "ttlSeconds": 3600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": []
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[],\"primaryImage\":null,\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "two images, the second primary",
+      "publicBaseUrl": "https://lookly.example.uz",
+      "ttlSeconds": 3600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": false,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          },
+          {
+            "id": "cimg2",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.png",
+            "thumbnailKey": null,
+            "displayKey": null,
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":false,\"width\":1200,\"height\":1600},{\"id\":\"cimg2\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.png?exp=1795689015&sig=uA2_o-vWWI2_LqJM7OKcGQcsSWtOUPsFdC_PsEsQ9PQ\",\"thumbnailUrl\":null,\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg2\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.png?exp=1795689015&sig=uA2_o-vWWI2_LqJM7OKcGQcsSWtOUPsFdC_PsEsQ9PQ\",\"thumbnailUrl\":null,\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "two images, both primary (the first counts)",
+      "publicBaseUrl": "https://lookly.example.uz",
+      "ttlSeconds": 3600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          },
+          {
+            "id": "cimg2",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.png",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": null,
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},{\"id\":\"cimg2\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.png?exp=1795689015&sig=uA2_o-vWWI2_LqJM7OKcGQcsSWtOUPsFdC_PsEsQ9PQ\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "two images, none primary",
+      "publicBaseUrl": "https://lookly.example.uz",
+      "ttlSeconds": 3600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": false,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          },
+          {
+            "id": "cimg2",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.png",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": false,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":false,\"width\":1200,\"height\":1600},{\"id\":\"cimg2\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":false,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":false,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "bare, corrected",
+      "publicBaseUrl": "https://lookly.example.uz",
+      "ttlSeconds": 3600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shoes",
+        "subcategory": null,
+        "colors": "[]",
+        "pattern": null,
+        "material": null,
+        "sleeveLength": null,
+        "fit": null,
+        "style": null,
+        "season": "[]",
+        "gender": null,
+        "formality": null,
+        "confidences": "{}",
+        "wasCorrected": true,
+        "correctionLog": "[{\"field\":\"pattern\",\"from\":\"solid\",\"to\":\"\",\"at\":\"2026-11-26T09:30:15.042Z\"}]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shoes\",\"subcategory\":null,\"colors\":[],\"pattern\":null,\"material\":null,\"sleeveLength\":null,\"fit\":null,\"style\":null,\"season\":[],\"gender\":null,\"formality\":null,\"confidences\":{},\"wasCorrected\":true,\"correctionLog\":[{\"field\":\"pattern\",\"from\":\"solid\",\"to\":\"\",\"at\":\"2026-11-26T09:30:15.042Z\"}],\"images\":[{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "stored with spaces",
+      "publicBaseUrl": "https://lookly.example.uz",
+      "ttlSeconds": 3600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[ \"white\" , \"navy\" ]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{ \"category\" : 1.0 }",
+        "wasCorrected": false,
+        "correctionLog": "[ ]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":1},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795689015&sig=-7BAfaxTo0BIncVizVxQeX1MhAYCI03VTP1wTSstE2M\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795689015&sig=q1V0IzEFRvUhAgnRJpfCKs2vx7kbsvsGC7AgLTrxCU4\",\"urlExpiresAt\":\"2026-11-26T10:30:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "with variants",
+      "publicBaseUrl": "https://lookly.example.uz",
+      "ttlSeconds": 600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "from before variants (master served)",
+      "publicBaseUrl": "https://lookly.example.uz",
+      "ttlSeconds": 600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.jpg",
+            "displayKey": null,
+            "isPrimary": true,
+            "width": null,
+            "height": null,
+            "mimeType": null,
+            "bytes": null,
+            "sha256": null,
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg?exp=1795686015&sig=_qU_Sd1NAji_69v30ETGTd51BJZHu1Umo8X3cCbf3mM\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.jpg?exp=1795686015&sig=QgrhqghjRPTac8DcsnCvopGF8DWJl0EyrU-vBT3mXEw\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":null,\"height\":null}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg?exp=1795686015&sig=_qU_Sd1NAji_69v30ETGTd51BJZHu1Umo8X3cCbf3mM\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.jpg?exp=1795686015&sig=QgrhqghjRPTac8DcsnCvopGF8DWJl0EyrU-vBT3mXEw\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":null,\"height\":null},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "no thumbnail",
+      "publicBaseUrl": "https://lookly.example.uz",
+      "ttlSeconds": 600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": null,
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":null,\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":null,\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "no images",
+      "publicBaseUrl": "https://lookly.example.uz",
+      "ttlSeconds": 600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": []
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[],\"primaryImage\":null,\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "two images, the second primary",
+      "publicBaseUrl": "https://lookly.example.uz",
+      "ttlSeconds": 600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": false,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          },
+          {
+            "id": "cimg2",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.png",
+            "thumbnailKey": null,
+            "displayKey": null,
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":false,\"width\":1200,\"height\":1600},{\"id\":\"cimg2\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.png?exp=1795686015&sig=l79bmM6TTUYQtyg-neN5fmqk5tjfEE_s4pN4L3pRBJE\",\"thumbnailUrl\":null,\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg2\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.png?exp=1795686015&sig=l79bmM6TTUYQtyg-neN5fmqk5tjfEE_s4pN4L3pRBJE\",\"thumbnailUrl\":null,\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "two images, both primary (the first counts)",
+      "publicBaseUrl": "https://lookly.example.uz",
+      "ttlSeconds": 600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          },
+          {
+            "id": "cimg2",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.png",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": null,
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},{\"id\":\"cimg2\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.png?exp=1795686015&sig=l79bmM6TTUYQtyg-neN5fmqk5tjfEE_s4pN4L3pRBJE\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "two images, none primary",
+      "publicBaseUrl": "https://lookly.example.uz",
+      "ttlSeconds": 600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[\"white\",\"navy\"]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[\"spring\",\"summer\"]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{\"category\":0.95,\"colors\":0.9,\"material\":0.61}",
+        "wasCorrected": false,
+        "correctionLog": "[]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": false,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          },
+          {
+            "id": "cimg2",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.png",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": false,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"summer\"],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":0.95,\"colors\":0.9,\"material\":0.61},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":false,\"width\":1200,\"height\":1600},{\"id\":\"cimg2\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":false,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":false,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "bare, corrected",
+      "publicBaseUrl": "https://lookly.example.uz",
+      "ttlSeconds": 600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shoes",
+        "subcategory": null,
+        "colors": "[]",
+        "pattern": null,
+        "material": null,
+        "sleeveLength": null,
+        "fit": null,
+        "style": null,
+        "season": "[]",
+        "gender": null,
+        "formality": null,
+        "confidences": "{}",
+        "wasCorrected": true,
+        "correctionLog": "[{\"field\":\"pattern\",\"from\":\"solid\",\"to\":\"\",\"at\":\"2026-11-26T09:30:15.042Z\"}]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shoes\",\"subcategory\":null,\"colors\":[],\"pattern\":null,\"material\":null,\"sleeveLength\":null,\"fit\":null,\"style\":null,\"season\":[],\"gender\":null,\"formality\":null,\"confidences\":{},\"wasCorrected\":true,\"correctionLog\":[{\"field\":\"pattern\",\"from\":\"solid\",\"to\":\"\",\"at\":\"2026-11-26T09:30:15.042Z\"}],\"images\":[{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    },
+    {
+      "name": "stored with spaces",
+      "publicBaseUrl": "https://lookly.example.uz",
+      "ttlSeconds": 600,
+      "row": {
+        "id": "citem1",
+        "userId": "cgolden1",
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": "[ \"white\" , \"navy\" ]",
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "short",
+        "fit": "regular",
+        "style": "casual",
+        "season": "[]",
+        "gender": "unisex",
+        "formality": "casual",
+        "confidences": "{ \"category\" : 1.0 }",
+        "wasCorrected": false,
+        "correctionLog": "[ ]",
+        "analysisProvider": "mock",
+        "analysisModel": null,
+        "analysisVersion": null,
+        "analyzedAt": null,
+        "analysisRawConfidences": null,
+        "createdAt": "2026-11-20T07:00:00.000Z",
+        "updatedAt": "2026-11-25T18:45:03.007Z",
+        "images": [
+          {
+            "id": "cimg1",
+            "wardrobeItemId": "citem1",
+            "storageKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e.jpg",
+            "thumbnailKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp",
+            "displayKey": "users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp",
+            "isPrimary": true,
+            "width": 1200,
+            "height": 1600,
+            "mimeType": "image/jpeg",
+            "bytes": 123456,
+            "sha256": "abababababababababababababababababababababababababababababababab",
+            "createdAt": "2026-11-20T07:00:00.000Z"
+          }
+        ]
+      },
+      "json": "{\"id\":\"citem1\",\"category\":\"shirt\",\"subcategory\":\"tshirt\",\"colors\":[\"white\",\"navy\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":\"short\",\"fit\":\"regular\",\"style\":\"casual\",\"season\":[],\"gender\":\"unisex\",\"formality\":\"casual\",\"confidences\":{\"category\":1},\"wasCorrected\":false,\"correctionLog\":[],\"images\":[{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600}],\"primaryImage\":{\"id\":\"cimg1\",\"url\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_display.webp?exp=1795686015&sig=0uhFPS0JxuoQYxRzdppfGknoK7gtfAWRcDh59lo4xkw\",\"thumbnailUrl\":\"https://lookly.example.uz/api/v1/media/users/cgolden1/0f8fad5b-d9cb-469f-a165-70867728950e_thumb.webp?exp=1795686015&sig=rn31p1IJ_ttMYaFfPxKj8AR7zInodYxEUYEbYbAQdac\",\"urlExpiresAt\":\"2026-11-26T09:40:15.000Z\",\"isPrimary\":true,\"width\":1200,\"height\":1600},\"createdAt\":\"2026-11-20T07:00:00.000Z\",\"updatedAt\":\"2026-11-25T18:45:03.007Z\"}"
+    }
+  ]
+}

@@ -37,3 +37,7 @@ output-options:
     - requestPasswordReset
     - resetPassword
     - deleteAccount
+    - listWardrobeItems
+    - getWardrobeItem
+    - updateWardrobeItem
+    - deleteWardrobeItem

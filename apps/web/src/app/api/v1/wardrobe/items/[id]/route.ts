@@ -3,10 +3,10 @@ import { db } from '@/lib/db'
 import { requireAuth, unauthorized } from '@/lib/api-helpers'
 import { ApiError, withApi, parseJson, validate } from '@/server/http'
 import { WardrobeItemPatchRequest } from '@/server/schemas/requests'
-import { subcategoriesOf } from '@/server/schemas/catalog'
 import { idParamsSchema } from '@/server/schemas/common'
 import { getStorageProvider } from '@/lib/storage/provider'
 import { serializeWardrobeItem } from '@/lib/wardrobe/serialize'
+import { SUBCATEGORY_MISMATCH_MESSAGE, computeCorrections, subcategoryMismatch } from '@/lib/wardrobe/corrections'
 
 export const runtime = 'nodejs'
 
@@ -33,37 +33,14 @@ export const PATCH = withApi<Ctx>(async (req, ctx) => {
   })
   if (!current) throw new ApiError('NOT_FOUND')
 
-  // The subcategory must belong to the category the item ends up with
-  // (either may change alone; a stale subcategory is not kept silently).
-  if (data.category !== undefined || data.subcategory !== undefined) {
-    const category = data.category ?? current.category
-    const subcategory = data.subcategory !== undefined ? data.subcategory : current.subcategory
-    if (subcategory != null && !subcategoriesOf(category).includes(subcategory)) {
-      const message = 'Bu tur tanlangan toifaga mos emas'
-      throw new ApiError('VALIDATION_ERROR', message, [{ path: 'subcategory', message }])
-    }
+  // The subcategory must belong to the category the item ends up with.
+  if (subcategoryMismatch(current, data)) {
+    const message = SUBCATEGORY_MISMATCH_MESSAGE
+    throw new ApiError('VALIDATION_ERROR', message, [{ path: 'subcategory', message }])
   }
 
-  // Compute the list of fields that actually changed
-  const corrections: Array<{ field: string; from: string; to: string; at: string }> = []
-  const now = new Date().toISOString()
-
-  const update: Record<string, unknown> = {}
-  for (const [field, value] of Object.entries(data)) {
-    if (value === undefined) continue
-    const fromValue = (current as unknown as Record<string, unknown>)[field]
-    const fromStr = Array.isArray(fromValue)
-      ? JSON.stringify(fromValue)
-      : String(fromValue ?? '')
-    const toStr = Array.isArray(value) ? JSON.stringify(value) : String(value ?? '')
-    if (fromStr !== toStr) {
-      corrections.push({ field, from: fromStr, to: toStr, at: now })
-      // JSON-array fields need serialisation; primitives can pass through
-      update[field] = ['colors', 'season'].includes(field)
-        ? JSON.stringify(value)
-        : value
-    }
-  }
+  // The fields that actually changed
+  const { corrections, update } = computeCorrections(current, data, new Date().toISOString())
 
   if (Object.keys(update).length === 0) {
     // No-op patch — just return current item (with JSON fields deserialised)
