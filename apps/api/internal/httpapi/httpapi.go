@@ -24,8 +24,8 @@ import (
 
 // DefaultBodyLimit caps every request body (64 KB, the Next.js API's JSON
 // limit). It is enforced while reading, so a body without Content-Length
-// cannot get past it. Routes with larger bodies (uploads) raise it for
-// themselves when they are added.
+// cannot get past it. A route with a larger body (the upload) says so in
+// the gate's table (bodyLimit).
 const DefaultBodyLimit = 64 << 10
 
 // New builds the server's handler: the routes generated from the contract
@@ -45,7 +45,30 @@ func New(server contract.StrictServerInterface, log *slog.Logger, gate *Gate) ht
 	if s, ok := server.(*Server); ok {
 		mediaHandler = http.HandlerFunc(s.serveMedia)
 	}
-	return Wrap(routed(mux, mediaHandler, gate), log)
+	return wrap(routed(mux, mediaHandler, gate), log, func(r *http.Request) budget {
+		_, pattern := mux.Handler(r)
+		return budgetOf(pattern)
+	})
+}
+
+// budget is what a request may use: the size of its body and its time.
+type budget struct {
+	body    int64
+	timeout time.Duration
+}
+
+// budgetOf is the budget of a route: the defaults, or what its rule in the
+// gate's table gives it (the upload).
+func budgetOf(pattern string) budget {
+	b := budget{body: DefaultBodyLimit, timeout: RequestTimeout}
+	rule := routes[pattern]
+	if rule.bodyLimit > 0 {
+		b.body = rule.bodyLimit
+	}
+	if rule.timeout > 0 {
+		b.timeout = rule.timeout
+	}
+	return b
 }
 
 // routed finds the route, records its pattern for the access log and the
@@ -80,28 +103,42 @@ func routed(mux *http.ServeMux, mediaHandler http.Handler, gate *Gate) http.Hand
 // RequestTimeout bounds every request: its context ends then, which cancels
 // its database calls and its wait for a pooled connection. Without it a
 // stalled database would hold each request's goroutine until the client
-// gave up. Operations that need longer (uploads, AI) get their own budget
-// when they are added.
+// gave up. A route that needs longer (the upload) says so in the gate's
+// table (timeout).
 const RequestTimeout = 30 * time.Second
 
 // Wrap adds, outermost first: the request id, the request timeout, the
 // access log, panic recovery and the default body limit.
 func Wrap(next http.Handler, log *slog.Logger) http.Handler {
-	return wrap(next, log, RequestTimeout)
+	return wrap(next, log, func(*http.Request) budget { return budget{body: DefaultBodyLimit, timeout: RequestTimeout} })
 }
 
-func wrap(next http.Handler, log *slog.Logger, timeout time.Duration) http.Handler {
+// deadlineGrace is how long after a request's own time limit the server
+// still lets its answer be written.
+const deadlineGrace = 10 * time.Second
+
+func wrap(next http.Handler, log *slog.Logger, budgetFor func(*http.Request) budget) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		started := time.Now()
 		info := &requestInfo{id: requestID(r), route: "unmatched", log: log}
 		w.Header().Set("X-Request-Id", info.id)
 		rec := &recorder{ResponseWriter: w, status: http.StatusOK}
-		ctx, cancel := context.WithTimeout(context.WithValue(r.Context(), infoKey{}, info), timeout)
+		b := budgetFor(r)
+		if b.timeout > RequestTimeout {
+			// A route with more time than the others (an upload on a slow
+			// connection): the server's own read and write time limits,
+			// set for the usual request, move with it. A writer that has
+			// no deadlines (tests) is left as it is.
+			rc := http.NewResponseController(w)
+			_ = rc.SetReadDeadline(started.Add(b.timeout))
+			_ = rc.SetWriteDeadline(started.Add(b.timeout + deadlineGrace))
+		}
+		ctx, cancel := context.WithTimeout(context.WithValue(r.Context(), infoKey{}, info), b.timeout)
 		defer cancel()
 		r = r.WithContext(ctx)
 		// The real writer, not the recorder: net/http must learn that the
 		// limit was hit, so it closes the connection instead of draining it.
-		r.Body = http.MaxBytesReader(w, r.Body, DefaultBodyLimit)
+		r.Body = http.MaxBytesReader(w, r.Body, b.body)
 
 		defer func() {
 			v := recover()

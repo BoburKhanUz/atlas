@@ -38,6 +38,12 @@ const (
 	MockVersion  = "mock"
 )
 
+// ConfidenceOrder is the attributes a detection has a confidence for, in
+// the order the Next.js mock writes them (the stored JSON keeps it).
+var ConfidenceOrder = []string{
+	"category", "subcategory", "color", "pattern", "material", "style", "season", "sleeveLength", "fit", "formality", "gender",
+}
+
 // hints are the words in a file name that suggest a category, tried in this
 // order (the Next.js mock's: apps/web/src/lib/ai/mock-vision.ts).
 var hints = []struct {

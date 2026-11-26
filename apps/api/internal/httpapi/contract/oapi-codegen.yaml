@@ -41,3 +41,4 @@ output-options:
     - getWardrobeItem
     - updateWardrobeItem
     - deleteWardrobeItem
+    - createWardrobeItem

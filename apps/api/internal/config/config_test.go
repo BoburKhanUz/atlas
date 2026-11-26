@@ -24,7 +24,11 @@ func env(vars map[string]string) func(string) (string, bool) {
 
 // valid is a production configuration with only the required variables.
 func valid() map[string]string {
-	return configtest.Env(map[string]string{"LOOKLY_ENV": "production", "DATABASE_URL": dbURL})
+	return configtest.Env(map[string]string{
+		"LOOKLY_ENV": "production", "DATABASE_URL": dbURL,
+		// Until stage B6 a deployed server analyses garments with the mock, acknowledged.
+		"AI_VISION_PROVIDER": "mock", "AI_ALLOW_MOCK_IN_PRODUCTION": "1",
+	})
 }
 
 func with(changes map[string]string) map[string]string {
@@ -133,6 +137,9 @@ func TestExplicitValues(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if c.VisionProvider != config.VisionMock {
+		t.Errorf("vision provider %q", c.VisionProvider)
+	}
 	if c.MediaURLTTL != 10*time.Minute {
 		t.Errorf("media link lifetime %s", c.MediaURLTTL)
 	}
@@ -148,6 +155,14 @@ func TestExplicitValues(t *testing.T) {
 	for _, e := range []string{"development", "test"} {
 		if _, err := config.Load(env(with(map[string]string{"LOOKLY_ENV": e}))); err != nil {
 			t.Errorf("%s: %v", e, err)
+		}
+		// Outside the deployed environments the mock is the default and
+		// needs no acknowledgement.
+		for _, provider := range []string{"<unset>", "mock", "MOCK"} {
+			c, err := config.Load(env(with(map[string]string{"LOOKLY_ENV": e, "AI_VISION_PROVIDER": provider, "AI_ALLOW_MOCK_IN_PRODUCTION": "<unset>"})))
+			if err != nil || c.VisionProvider != config.VisionMock {
+				t.Errorf("%s with AI_VISION_PROVIDER %s: provider %q, err %v", e, provider, c.VisionProvider, err)
+			}
 		}
 		// Outside production the driver's default is acceptable.
 		if _, err := config.Load(env(with(map[string]string{"LOOKLY_ENV": e, "DATABASE_URL": "postgresql://u@localhost/db"}))); err != nil {
@@ -203,6 +218,15 @@ func TestRefusals(t *testing.T) {
 		{"signing secret is the other shipped default", map[string]string{"JWT_SECRET": "dev-refresh-secret-change-in-production-please-use-env"}, "JWT_SECRET"},
 		// The Next.js server signs with the value as it is; a trimmed copy
 		// would be another key, so the difference is refused, not guessed.
+		{"vision provider missing in production", map[string]string{"AI_VISION_PROVIDER": "<unset>"}, "AI_VISION_PROVIDER"},
+		{"vision provider empty in production", map[string]string{"AI_VISION_PROVIDER": " "}, "AI_VISION_PROVIDER"},
+		{"vision provider missing in staging", map[string]string{"LOOKLY_ENV": "staging", "AI_VISION_PROVIDER": "<unset>"}, "AI_VISION_PROVIDER"},
+		{"mock not acknowledged in production", map[string]string{"AI_ALLOW_MOCK_IN_PRODUCTION": "<unset>"}, "AI_VISION_PROVIDER"},
+		{"mock not acknowledged in staging", map[string]string{"LOOKLY_ENV": "staging", "AI_ALLOW_MOCK_IN_PRODUCTION": "0"}, "AI_VISION_PROVIDER"},
+		{"mock acknowledged with another word", map[string]string{"AI_ALLOW_MOCK_IN_PRODUCTION": "true"}, "AI_VISION_PROVIDER"},
+		{"a real vision provider before B6", map[string]string{"AI_VISION_PROVIDER": "openai"}, "AI_VISION_PROVIDER"},
+		{"a real vision provider in development", map[string]string{"LOOKLY_ENV": "development", "AI_VISION_PROVIDER": "gemini"}, "AI_VISION_PROVIDER"},
+		{"an unknown vision provider", map[string]string{"LOOKLY_ENV": "test", "AI_VISION_PROVIDER": "claude"}, "AI_VISION_PROVIDER"},
 		{"media secret missing", map[string]string{"MEDIA_SIGNING_SECRET": "<unset>"}, "MEDIA_SIGNING_SECRET"},
 		{"media secret empty", map[string]string{"MEDIA_SIGNING_SECRET": ""}, "MEDIA_SIGNING_SECRET"},
 		{"media secret short", map[string]string{"MEDIA_SIGNING_SECRET": strings.Repeat("m", 31)}, "MEDIA_SIGNING_SECRET"},

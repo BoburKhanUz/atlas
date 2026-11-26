@@ -10,6 +10,17 @@ import (
 	"time"
 )
 
+const countWardrobeItemsOfUser = `-- name: CountWardrobeItemsOfUser :one
+SELECT count(*) FROM "WardrobeItem" WHERE "userId" = $1
+`
+
+func (q *Queries) CountWardrobeItemsOfUser(ctx context.Context, userid string) (int64, error) {
+	row := q.db.QueryRow(ctx, countWardrobeItemsOfUser, userid)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const deleteWardrobeItem = `-- name: DeleteWardrobeItem :exec
 DELETE FROM "WardrobeItem" WHERE "id" = $1
 `
@@ -18,6 +29,126 @@ DELETE FROM "WardrobeItem" WHERE "id" = $1
 func (q *Queries) DeleteWardrobeItem(ctx context.Context, id string) error {
 	_, err := q.db.Exec(ctx, deleteWardrobeItem, id)
 	return err
+}
+
+const insertWardrobeImage = `-- name: InsertWardrobeImage :exec
+INSERT INTO "WardrobeImage" ("id", "wardrobeItemId", "storageKey", "displayKey", "thumbnailKey", "isPrimary", "width", "height",
+                             "mimeType", "bytes", "sha256", "createdAt")
+VALUES ($1, $2, $3, $4, $5, true,
+        $6, $7, $8, $9, $10, atlas_now())
+`
+
+type InsertWardrobeImageParams struct {
+	ID           string
+	ItemID       string
+	StorageKey   string
+	DisplayKey   *string
+	ThumbnailKey *string
+	Width        *int32
+	Height       *int32
+	MimeType     *string
+	Bytes        *int32
+	Sha256       *string
+}
+
+func (q *Queries) InsertWardrobeImage(ctx context.Context, arg InsertWardrobeImageParams) error {
+	_, err := q.db.Exec(ctx, insertWardrobeImage,
+		arg.ID,
+		arg.ItemID,
+		arg.StorageKey,
+		arg.DisplayKey,
+		arg.ThumbnailKey,
+		arg.Width,
+		arg.Height,
+		arg.MimeType,
+		arg.Bytes,
+		arg.Sha256,
+	)
+	return err
+}
+
+const insertWardrobeItem = `-- name: InsertWardrobeItem :one
+INSERT INTO "WardrobeItem" ("id", "userId", "category", "subcategory", "colors", "pattern", "material", "sleeveLength", "fit", "style",
+                            "season", "gender", "formality", "confidences", "wasCorrected", "correctionLog",
+                            "analysisProvider", "analysisModel", "analysisVersion", "analyzedAt", "analysisRawConfidences",
+                            "createdAt", "updatedAt")
+VALUES ($1, $2, $3, $4, $5, $6,
+        $7, $8, $9, $10, $11, $12,
+        $13, $14, false, '[]',
+        $15, $16, $17, atlas_now(), NULL,
+        atlas_now(), atlas_now())
+RETURNING id, "userId", category, subcategory, colors, pattern, material, "sleeveLength", fit, style, season, gender, formality, confidences, "wasCorrected", "correctionLog", "createdAt", "updatedAt", "analysisModel", "analysisProvider", "analysisRawConfidences", "analysisVersion", "analyzedAt"
+`
+
+type InsertWardrobeItemParams struct {
+	ID               string
+	UserID           string
+	Category         string
+	Subcategory      *string
+	Colors           string
+	Pattern          *string
+	Material         *string
+	SleeveLength     *string
+	Fit              *string
+	Style            *string
+	Season           string
+	Gender           *string
+	Formality        *string
+	Confidences      string
+	AnalysisProvider *string
+	AnalysisModel    *string
+	AnalysisVersion  *string
+}
+
+// An item as an upload creates it: the detected attributes, nothing
+// corrected yet, and who analysed the photo.
+func (q *Queries) InsertWardrobeItem(ctx context.Context, arg InsertWardrobeItemParams) (WardrobeItem, error) {
+	row := q.db.QueryRow(ctx, insertWardrobeItem,
+		arg.ID,
+		arg.UserID,
+		arg.Category,
+		arg.Subcategory,
+		arg.Colors,
+		arg.Pattern,
+		arg.Material,
+		arg.SleeveLength,
+		arg.Fit,
+		arg.Style,
+		arg.Season,
+		arg.Gender,
+		arg.Formality,
+		arg.Confidences,
+		arg.AnalysisProvider,
+		arg.AnalysisModel,
+		arg.AnalysisVersion,
+	)
+	var i WardrobeItem
+	err := row.Scan(
+		&i.ID,
+		&i.UserId,
+		&i.Category,
+		&i.Subcategory,
+		&i.Colors,
+		&i.Pattern,
+		&i.Material,
+		&i.SleeveLength,
+		&i.Fit,
+		&i.Style,
+		&i.Season,
+		&i.Gender,
+		&i.Formality,
+		&i.Confidences,
+		&i.WasCorrected,
+		&i.CorrectionLog,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.AnalysisModel,
+		&i.AnalysisProvider,
+		&i.AnalysisRawConfidences,
+		&i.AnalysisVersion,
+		&i.AnalyzedAt,
+	)
+	return i, err
 }
 
 const listWardrobeItems = `-- name: ListWardrobeItems :many

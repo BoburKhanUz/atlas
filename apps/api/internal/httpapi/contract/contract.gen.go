@@ -12,11 +12,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"time"
 
 	"github.com/oapi-codegen/nullable"
 	"github.com/oapi-codegen/runtime"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // Defines values for ErrorResponseCode.
@@ -1068,6 +1070,25 @@ type CorrectionLogEntry struct {
 	To    string    `json:"to"`
 }
 
+// Detection Attributes detected from the photo
+type Detection struct {
+	Category   string                    `json:"category"`
+	Colors     []string                  `json:"colors"`
+	Confidence map[string]float64        `json:"confidence"`
+	Fit        nullable.Nullable[string] `json:"fit"`
+	Formality  nullable.Nullable[string] `json:"formality"`
+	Gender     nullable.Nullable[string] `json:"gender"`
+	Material   nullable.Nullable[string] `json:"material"`
+
+	// Mock true when the deterministic development mock produced the attributes; false for a real vision provider
+	Mock         bool                      `json:"mock"`
+	Pattern      nullable.Nullable[string] `json:"pattern"`
+	Season       []string                  `json:"season"`
+	SleeveLength nullable.Nullable[string] `json:"sleeveLength"`
+	Style        nullable.Nullable[string] `json:"style"`
+	Subcategory  nullable.Nullable[string] `json:"subcategory"`
+}
+
 // ErrorResponse Every error response. Clients branch on `code`, never on `error`.
 type ErrorResponse struct {
 	Code    ErrorResponseCode `json:"code"`
@@ -1435,6 +1456,13 @@ type WardrobePatchResponse struct {
 	Item        WardrobeItem         `json:"item"`
 }
 
+// WardrobeUploadResponse defines model for WardrobeUploadResponse.
+type WardrobeUploadResponse struct {
+	// Detection Attributes detected from the photo
+	Detection Detection    `json:"detection"`
+	Item      WardrobeItem `json:"item"`
+}
+
 // WebAuthResponse Web mode: tokens are only in HttpOnly cookies
 type WebAuthResponse struct {
 	User SessionUser `json:"user"`
@@ -1486,6 +1514,21 @@ type ListWardrobeItemsParams struct {
 // ListWardrobeItemsParamsCategory defines parameters for ListWardrobeItems.
 type ListWardrobeItemsParamsCategory string
 
+// CreateWardrobeItemMultipartBody defines parameters for CreateWardrobeItem.
+type CreateWardrobeItemMultipartBody struct {
+	// File JPEG, PNG or WebP, ≤ 8 MB; shortest side ≥ 256 px, sides ≤ 8000 px. HEIC must be converted by the client.
+	File openapi_types.File `json:"file"`
+
+	// Filename Optional name; a hint for the development mock only, never sent to an AI provider (defaults to the file name)
+	Filename *string `json:"filename,omitempty"`
+}
+
+// CreateWardrobeItemParams defines parameters for CreateWardrobeItem.
+type CreateWardrobeItemParams struct {
+	// IdempotencyKey Makes retries safe for 24 h: the same key and payload returns the original result (Idempotent-Replayed: true); a different payload → 409 IDEMPOTENCY_KEY_MISMATCH; still processing → 409 IDEMPOTENCY_IN_PROGRESS with Retry-After.
+	IdempotencyKey *string `json:"Idempotency-Key,omitempty"`
+}
+
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody = LoginRequest
 
@@ -1509,6 +1552,9 @@ type AcceptLegalDocumentsJSONRequestBody = LegalConsentRequest
 
 // UpdateProfileJSONRequestBody defines body for UpdateProfile for application/json ContentType.
 type UpdateProfileJSONRequestBody = ProfilePatchRequest
+
+// CreateWardrobeItemMultipartRequestBody defines body for CreateWardrobeItem for multipart/form-data ContentType.
+type CreateWardrobeItemMultipartRequestBody CreateWardrobeItemMultipartBody
 
 // UpdateWardrobeItemJSONRequestBody defines body for UpdateWardrobeItem for application/json ContentType.
 type UpdateWardrobeItemJSONRequestBody = WardrobeItemPatchRequest
@@ -1619,6 +1665,9 @@ type ServerInterface interface {
 	// ListWardrobeItems Wardrobe items, newest first (cursor pagination)
 	// (GET /api/v1/wardrobe/items)
 	ListWardrobeItems(w http.ResponseWriter, r *http.Request, params ListWardrobeItemsParams)
+	// CreateWardrobeItem Upload a garment photo; returns the item with detected attributes
+	// (POST /api/v1/wardrobe/items)
+	CreateWardrobeItem(w http.ResponseWriter, r *http.Request, params CreateWardrobeItemParams)
 	// DeleteWardrobeItem Delete an item and its images
 	// (DELETE /api/v1/wardrobe/items/{id})
 	DeleteWardrobeItem(w http.ResponseWriter, r *http.Request, id string)
@@ -1988,6 +2037,47 @@ func (siw *ServerInterfaceWrapper) ListWardrobeItems(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// CreateWardrobeItem operation middleware
+func (siw *ServerInterfaceWrapper) CreateWardrobeItem(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateWardrobeItemParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey string
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateWardrobeItem(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // DeleteWardrobeItem operation middleware
 func (siw *ServerInterfaceWrapper) DeleteWardrobeItem(w http.ResponseWriter, r *http.Request) {
 
@@ -2200,6 +2290,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/profile", wrapper.GetProfile)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/v1/profile", wrapper.UpdateProfile)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/wardrobe/items", wrapper.ListWardrobeItems)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/wardrobe/items", wrapper.CreateWardrobeItem)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/wardrobe/items/{id}", wrapper.DeleteWardrobeItem)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/wardrobe/items/{id}", wrapper.GetWardrobeItem)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/v1/wardrobe/items/{id}", wrapper.UpdateWardrobeItem)
@@ -3426,6 +3517,223 @@ func (response ListWardrobeItems500JSONResponse) VisitListWardrobeItemsResponse(
 	return err
 }
 
+type CreateWardrobeItemRequestObject struct {
+	Params CreateWardrobeItemParams
+	Body   *multipart.Reader
+}
+
+type CreateWardrobeItemResponseObject interface {
+	VisitCreateWardrobeItemResponse(w http.ResponseWriter) error
+}
+
+type CreateWardrobeItem201ResponseHeaders struct {
+	IdempotentReplayed *string
+}
+
+type CreateWardrobeItem201JSONResponse struct {
+	Body    WardrobeUploadResponse
+	Headers CreateWardrobeItem201ResponseHeaders
+}
+
+func (response CreateWardrobeItem201JSONResponse) VisitCreateWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.IdempotentReplayed != nil {
+		w.Header().Set("Idempotent-Replayed", fmt.Sprint(*response.Headers.IdempotentReplayed))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWardrobeItem400JSONResponse ErrorResponse
+
+func (response CreateWardrobeItem400JSONResponse) VisitCreateWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWardrobeItem401JSONResponse ErrorResponse
+
+func (response CreateWardrobeItem401JSONResponse) VisitCreateWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWardrobeItem403JSONResponse ErrorResponse
+
+func (response CreateWardrobeItem403JSONResponse) VisitCreateWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWardrobeItem404JSONResponse ErrorResponse
+
+func (response CreateWardrobeItem404JSONResponse) VisitCreateWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWardrobeItem409ResponseHeaders struct {
+	RetryAfter *string
+}
+
+type CreateWardrobeItem409JSONResponse struct {
+	Body    ErrorResponse
+	Headers CreateWardrobeItem409ResponseHeaders
+}
+
+func (response CreateWardrobeItem409JSONResponse) VisitCreateWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWardrobeItem413JSONResponse ErrorResponse
+
+func (response CreateWardrobeItem413JSONResponse) VisitCreateWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWardrobeItem415JSONResponse ErrorResponse
+
+func (response CreateWardrobeItem415JSONResponse) VisitCreateWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(415)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWardrobeItem422JSONResponse ErrorResponse
+
+func (response CreateWardrobeItem422JSONResponse) VisitCreateWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWardrobeItem429ResponseHeaders struct {
+	RetryAfter *string
+}
+
+type CreateWardrobeItem429JSONResponse struct {
+	Body    ErrorResponse
+	Headers CreateWardrobeItem429ResponseHeaders
+}
+
+func (response CreateWardrobeItem429JSONResponse) VisitCreateWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWardrobeItem500JSONResponse ErrorResponse
+
+func (response CreateWardrobeItem500JSONResponse) VisitCreateWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWardrobeItem503ResponseHeaders struct {
+	RetryAfter *string
+}
+
+type CreateWardrobeItem503JSONResponse struct {
+	Body    ErrorResponse
+	Headers CreateWardrobeItem503ResponseHeaders
+}
+
+func (response CreateWardrobeItem503JSONResponse) VisitCreateWardrobeItemResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type DeleteWardrobeItemRequestObject struct {
 	Id string `json:"id"`
 }
@@ -3761,6 +4069,9 @@ type StrictServerInterface interface {
 	// ListWardrobeItems Wardrobe items, newest first (cursor pagination)
 	// (GET /api/v1/wardrobe/items)
 	ListWardrobeItems(ctx context.Context, request ListWardrobeItemsRequestObject) (ListWardrobeItemsResponseObject, error)
+	// CreateWardrobeItem Upload a garment photo; returns the item with detected attributes
+	// (POST /api/v1/wardrobe/items)
+	CreateWardrobeItem(ctx context.Context, request CreateWardrobeItemRequestObject) (CreateWardrobeItemResponseObject, error)
 	// DeleteWardrobeItem Delete an item and its images
 	// (DELETE /api/v1/wardrobe/items/{id})
 	DeleteWardrobeItem(ctx context.Context, request DeleteWardrobeItemRequestObject) (DeleteWardrobeItemResponseObject, error)
@@ -4212,6 +4523,39 @@ func (sh *strictHandler) ListWardrobeItems(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListWardrobeItemsResponseObject); ok {
 		if err := validResponse.VisitListWardrobeItemsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateWardrobeItem operation middleware
+func (sh *strictHandler) CreateWardrobeItem(w http.ResponseWriter, r *http.Request, params CreateWardrobeItemParams) {
+	var request CreateWardrobeItemRequestObject
+
+	request.Params = params
+
+	if reader, err := r.MultipartReader(); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
+		return
+	} else {
+		request.Body = reader
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateWardrobeItem(ctx, request.(CreateWardrobeItemRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateWardrobeItem")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateWardrobeItemResponseObject); ok {
+		if err := validResponse.VisitCreateWardrobeItemResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

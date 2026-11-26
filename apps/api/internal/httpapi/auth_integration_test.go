@@ -37,6 +37,8 @@ import (
 	"lookly/internal/golden"
 	"lookly/internal/health"
 	"lookly/internal/httpapi"
+	"lookly/internal/idempotency"
+	"lookly/internal/imaging"
 	"lookly/internal/jobs"
 	"lookly/internal/legal"
 	"lookly/internal/media"
@@ -120,6 +122,8 @@ type apiOptions struct {
 	// media replaces the link signer; now, the clock the links are signed by.
 	media *media.Signer
 	now   func() time.Time
+	// processor replaces the image processor (two pictures at a time).
+	processor *imaging.Processor
 
 	trustProxy   bool
 	cookieSecure bool
@@ -133,18 +137,20 @@ type apiOptions struct {
 
 // api is the server on its own database.
 type api struct {
-	t        *testing.T
-	pool     *pgxpool.Pool
-	handler  http.Handler
-	tokens   auth.Tokens
-	hasher   *quickHasher
-	images   storage.Store
-	media    *media.Signer
-	sessions *session.Service
-	gate     *httpapi.Gate
-	log      *bytes.Buffer
-	logMu    *sync.Mutex
-	seq      int
+	t         *testing.T
+	pool      *pgxpool.Pool
+	handler   http.Handler
+	tokens    auth.Tokens
+	hasher    *quickHasher
+	images    storage.Store
+	media     *media.Signer
+	processor *imaging.Processor
+	limiter   *ratelimit.Limiter
+	sessions  *session.Service
+	gate      *httpapi.Gate
+	log       *bytes.Buffer
+	logMu     *sync.Mutex
+	seq       int
 }
 
 type lockedWriter struct {
@@ -192,11 +198,16 @@ func newAPI(t *testing.T, o apiOptions) *api {
 		}
 		queue = q
 	}
+	limiter := ratelimit.New(pool, []byte("http-test-secret-http-test-secret-http"))
 	users := accounts.New(accounts.Config{
-		Pool: pool, Sessions: a.sessions, Limiter: ratelimit.New(pool, []byte("http-test-secret-http-test-secret-http")),
+		Pool: pool, Sessions: a.sessions, Limiter: limiter,
 		Consent: consent, Hasher: hasher, Log: log, Queue: queue, MailEnabled: !o.mailDisabled,
 	})
-	a.images, a.media = o.images, o.media
+	a.limiter = limiter
+	a.images, a.media, a.processor = o.images, o.media, o.processor
+	if a.processor == nil {
+		a.processor = imaging.NewProcessor(2)
+	}
 	if a.images == nil {
 		local, err := storage.NewLocal(t.TempDir())
 		if err != nil {
@@ -210,6 +221,9 @@ func newAPI(t *testing.T, o apiOptions) *api {
 	server := httpapi.NewServer(httpapi.Services{
 		Health: health.New(pool, "test", time.Second), Accounts: users, Sessions: a.sessions, Legal: consent, Profile: profile.New(pool),
 		Wardrobe: wardrobe.New(pool, a.images, log), Media: a.media, Images: a.images, Now: o.now,
+		Uploads: wardrobe.NewUploads(wardrobe.UploadsConfig{
+			Pool: pool, Images: a.images, Processor: a.processor, Limiter: limiter, Keys: idempotency.New(pool), Log: log,
+		}),
 		CookieSecure: o.cookieSecure, TrustProxy: o.trustProxy,
 	})
 	a.gate = &httpapi.Gate{Tokens: a.tokens, Sessions: a.sessions, Consent: consent, Users: users, TrustProxy: o.trustProxy, HTTPSOnly: o.cookieSecure}
@@ -274,6 +288,8 @@ func (a *api) do(c call) answer {
 	case nil:
 	case string:
 		body = strings.NewReader(b)
+	case io.Reader:
+		body = b // sent as it is, without a declared length
 	default:
 		encoded, err := json.Marshal(b)
 		if err != nil {

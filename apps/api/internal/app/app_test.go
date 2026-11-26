@@ -324,6 +324,8 @@ func production(t *testing.T, extra map[string]string, during func(addr string))
 		"LOOKLY_HTTP_ADDR":  addr,
 		"DATABASE_URL":      "postgresql://lookly@127.0.0.1:1/lookly?sslmode=disable", // nothing listens there
 		"STORAGE_LOCAL_DIR": t.TempDir(),
+		// Until stage B6 a deployed server needs the mock acknowledged.
+		"AI_VISION_PROVIDER": "mock", "AI_ALLOW_MOCK_IN_PRODUCTION": "1",
 	}
 	for k, v := range extra {
 		vars[k] = v

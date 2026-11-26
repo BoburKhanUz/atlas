@@ -80,6 +80,12 @@ type routeRule struct {
 	// routes that let the user see who they are, review and accept the
 	// texts, or delete the account).
 	consentExempt bool
+	// bodyLimit and timeout replace DefaultBodyLimit and RequestTimeout for
+	// the route (zero: the defaults).
+	bodyLimit int64
+	timeout   time.Duration
+	// request judges the request's headers before anything of it is read.
+	request func(*http.Request) *apierr.Error
 	// itemID: the path ends in an id, judged (ItemID) before the query and
 	// the body, as the Next.js routes do.
 	itemID bool
@@ -118,6 +124,7 @@ var routes = map[string]routeRule{
 	mediaRoute:                          {access: public}, // the signed link is the credential
 
 	"GET /api/v1/wardrobe/items":         {query: WardrobeListQuery},
+	"POST /api/v1/wardrobe/items":        {request: UploadHeaders, bodyLimit: UploadBodyLimit, timeout: UploadTimeout},
 	"GET /api/v1/wardrobe/items/{id}":    {itemID: true},
 	"PATCH /api/v1/wardrobe/items/{id}":  {itemID: true, body: WardrobePatchBody},
 	"DELETE /api/v1/wardrobe/items/{id}": {itemID: true},
@@ -190,6 +197,12 @@ func (g *Gate) middleware(next http.Handler) http.Handler {
 			}
 		}
 
+		if rule.request != nil {
+			if refusal := rule.request(r); refusal != nil {
+				WriteError(w, r, refusal)
+				return
+			}
+		}
 		if rule.itemID {
 			// The id is the last path segment. The router has matched it as
 			// one segment, so the escaped path holds it whole.

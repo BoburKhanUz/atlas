@@ -65,5 +65,14 @@ func TerminalCodes() []string {
 
 // WrapWithTimeout is Wrap with another request timeout.
 func WrapWithTimeout(next http.Handler, log *slog.Logger, timeout time.Duration) http.Handler {
-	return wrap(next, log, timeout)
+	return wrap(next, log, func(*http.Request) budget { return budget{body: DefaultBodyLimit, timeout: timeout} })
+}
+
+// UploadError maps an upload's error to the answer.
+var UploadError = uploadError
+
+// RouteBudget is the body limit and the time limit of a route.
+func RouteBudget(pattern string) (bodyLimit int64, timeout time.Duration) {
+	b := budgetOf(pattern)
+	return b.body, b.timeout
 }

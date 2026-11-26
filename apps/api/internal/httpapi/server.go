@@ -29,6 +29,7 @@ type Services struct {
 	Legal    *legal.Service
 	Profile  *profile.Service
 	Wardrobe *wardrobe.Service
+	Uploads  *wardrobe.Uploads
 	// Media signs and checks the image links; Images holds the images.
 	Media  *media.Signer
 	Images storage.Store

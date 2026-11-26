@@ -102,6 +102,7 @@ before listening. Values that hold credentials are never printed.
 | `SMTP_SECURE` | on for port 465, off otherwise | `1`/`true` (TLS from the first byte) or `0`/`false` (STARTTLS, required unless the host is `localhost`, `127.0.0.1` or `::1`) |
 | `SMTP_USER`, `SMTP_PASSWORD` | none | both or neither; the password is used as given and never printed |
 | `MAIL_OUTBOX_DIR` | `./storage/mail-outbox` | for `outbox`: where messages are written as files |
+| `AI_VISION_PROVIDER` | `mock` in development and test; none (required) in production and staging | `mock` only until the real providers (B6); in production and staging the mock also needs `AI_ALLOW_MOCK_IN_PRODUCTION=1` |
 | `STORAGE_DRIVER` | `local` | `local` only until the R2 driver (B4) |
 | `STORAGE_LOCAL_DIR` | none (required) | absolute path of the directory the images are in (the one the Next.js server writes to); `lookly serve` and `lookly worker` also require that it exists |
 
@@ -314,6 +315,16 @@ the correction body (`WardrobePatchBody`) by the Next.js schemas' golden cases.
 - **Delete**: the item's rows first (its image rows and outfit entries go by cascade),
   then its files, with a context of their own; a file that cannot be removed is logged
   and left to the sweep.
+- **Upload** (`wardrobe.Uploads`, `internal/httpapi/server_upload.go`): the gate's
+  header rule judges the `Idempotency-Key`, the declared length and the form's type
+  before the body is read; the route has its own budget (10 MB, 90 s; the gate's
+  `bodyLimit` and `timeout`). Then, in order: the idempotency claim
+  (`internal/idempotency`: the Next.js API's rows and request hash), the item limit
+  (1000), the day's count (100 a day of Uzbekistan time, in the rate limiter), the
+  picture (`internal/imaging`), the three files, the mock's detection
+  (`internal/vision`), and one transaction that locks the user, checks the item limit
+  again, creates the item and its image row and completes the claim. A failure at any
+  step gives back what was taken before it: the files, the day's count, the claim.
 - **Answers** have the Next.js serializer's shape (`serializeWardrobeItem`): lists
   decoded, times with milliseconds, images as signed links (`url` is the display
   variant, or the master for an image from before the variants). Storage keys never

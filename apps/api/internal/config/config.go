@@ -60,6 +60,10 @@ type Config struct {
 	MediaSigningSecret []byte // secret
 	MediaURLTTL        time.Duration
 
+	// VisionProvider is who analyses the garment photos. Until the real
+	// providers (stage B6) it is the development mock or nothing starts.
+	VisionProvider string
+
 	// PublicBaseURL is the site's public origin (links in e-mails, absolute
 	// image links); "" when not configured.
 	PublicBaseURL string
@@ -69,6 +73,9 @@ type Config struct {
 	// default here: a wrong guess would purge nothing without anyone noticing.
 	StorageLocalDir string
 }
+
+// VisionMock is the development mock of garment analysis.
+const VisionMock = "mock"
 
 const (
 	defaultHTTPAddr      = ":8080"
@@ -293,6 +300,24 @@ func Load(getenv func(string) (string, bool)) (Config, error) {
 	}
 	c.Mail = loadMail(c.Env, c.PublicBaseURL, value, getenv, fail)
 
+	// Garment analysis. The variables are the Next.js server's; until the
+	// real providers are ported (stage B6) only the mock is accepted, and
+	// where the server is deployed only when it is acknowledged, as there.
+	deployed := c.Env == Production || c.Env == Staging
+	provider, set := value("AI_VISION_PROVIDER")
+	provider = strings.ToLower(provider)
+	switch {
+	case !set && deployed:
+		fail("AI_VISION_PROVIDER", "must be set in %s", c.Env)
+	case set && provider != VisionMock:
+		fail("AI_VISION_PROVIDER", "must be mock: the Go server has no other garment analysis before stage B6")
+	default:
+		c.VisionProvider = VisionMock
+		if allow, _ := value("AI_ALLOW_MOCK_IN_PRODUCTION"); deployed && allow != "1" {
+			fail("AI_VISION_PROVIDER", "mock is refused in %s unless AI_ALLOW_MOCK_IN_PRODUCTION=1", c.Env)
+		}
+	}
+
 	// The R2 driver arrives with stage B4; until then anything but the
 	// local driver stops the server rather than being ignored.
 	if v, ok := value("STORAGE_DRIVER"); ok && strings.ToLower(v) != "local" {
@@ -434,6 +459,7 @@ func (c Config) LogValue() slog.Value {
 		slog.String("smtpCredentials", setOrNot(c.Mail.Password)),
 		slog.String("mailOutboxDir", c.Mail.OutboxDir),
 		slog.String("storageLocalDir", c.StorageLocalDir),
+		slog.String("visionProvider", c.VisionProvider),
 	)
 }
 
@@ -442,10 +468,10 @@ func (c Config) String() string {
 	return fmt.Sprintf("Config{Env:%s HTTPAddr:%s DatabaseURL:[set] DBMaxConns:%d LogLevel:%s ShutdownGrace:%s "+
 		"JWTSecret:[set] SessionEncKey:[set] DecryptOnlyKeys:%d AccessTokenTTL:%s RefreshTokenTTL:%s CookieSecure:%t TrustProxy:%t "+
 		"MediaSigningSecret:[set] MediaURLTTL:%s "+
-		"PublicBaseURL:%s %s StorageLocalDir:%s}",
+		"PublicBaseURL:%s %s StorageLocalDir:%s VisionProvider:%s}",
 		c.Env, c.HTTPAddr, c.DBMaxConns, c.LogLevel, c.ShutdownGrace,
 		len(c.SessionDecryptKeys), c.AccessTokenTTL, c.RefreshTokenTTL, c.CookieSecure, c.TrustProxy, c.MediaURLTTL,
-		c.PublicBaseURL, c.Mail, c.StorageLocalDir)
+		c.PublicBaseURL, c.Mail, c.StorageLocalDir, c.VisionProvider)
 }
 
 // GoString keeps the secrets out of %#v.

@@ -28,6 +28,7 @@ import (
 	"lookly/internal/database"
 	"lookly/internal/health"
 	"lookly/internal/httpapi"
+	"lookly/internal/idempotency"
 	"lookly/internal/imaging"
 	"lookly/internal/jobs"
 	"lookly/internal/legal"
@@ -63,6 +64,9 @@ const (
 	writeTimeout      = 60 * time.Second
 	idleTimeout       = 120 * time.Second
 	maxHeaderBytes    = 16 << 10
+	// picturesAtOnce is how many uploaded pictures are processed at a time:
+	// each can take hundreds of megabytes while decoded (ADR 0009).
+	picturesAtOnce = 2
 )
 
 // Run executes one command and returns the process exit code. ctx ends the
@@ -99,17 +103,22 @@ func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger, images storage
 		Log:        log,
 	})
 	consent := legal.NewService(pool)
+	limiter := ratelimit.New(pool, cfg.JWTSecret)
 	users := accounts.New(accounts.Config{
-		Pool: pool, Sessions: sessions, Limiter: ratelimit.New(pool, cfg.JWTSecret), Consent: consent, Hasher: auth.Bcrypt{}, Log: log,
+		Pool: pool, Sessions: sessions, Limiter: limiter, Consent: consent, Hasher: auth.Bcrypt{}, Log: log,
 		Queue: queue, MailEnabled: cfg.Mail.Enabled(),
 	})
 	server := httpapi.NewServer(httpapi.Services{
-		Health:       health.New(pool, version, healthPingTimeout),
-		Accounts:     users,
-		Sessions:     sessions,
-		Legal:        consent,
-		Profile:      profile.New(pool),
-		Wardrobe:     wardrobe.New(pool, images, log),
+		Health:   health.New(pool, version, healthPingTimeout),
+		Accounts: users,
+		Sessions: sessions,
+		Legal:    consent,
+		Profile:  profile.New(pool),
+		Wardrobe: wardrobe.New(pool, images, log),
+		Uploads: wardrobe.NewUploads(wardrobe.UploadsConfig{
+			Pool: pool, Images: images, Processor: imaging.NewProcessor(picturesAtOnce), Limiter: limiter,
+			Keys: idempotency.New(pool), Log: log,
+		}),
 		Media:        media.NewSigner(cfg.MediaSigningSecret, cfg.MediaURLTTL, cfg.PublicBaseURL),
 		Images:       images,
 		CookieSecure: cfg.CookieSecure,

@@ -98,7 +98,10 @@ func (a *api) itemCount(id string) int {
 // by case: what is logged, in which order, and what is written.
 func TestWardrobeCorrectionsAreTheNextServers(t *testing.T) {
 	t.Parallel()
-	a := newAPI(t, apiOptions{})
+	// The links are signed by a clock that stands still: an item answered
+	// twice carries the same links however long the test takes.
+	signedAt := time.Now()
+	a := newAPI(t, apiOptions{now: func() time.Time { return signedAt }})
 	m := a.mobileRegister(nil)
 	user := a.userID(m.email)
 	g := golden.LoadWardrobe(t)
