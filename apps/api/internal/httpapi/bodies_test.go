@@ -181,8 +181,8 @@ func TestCatalogValuesAreTheNextJSCatalog(t *testing.T) {
 // Whatever the body, a rule never panics; what it accepts is canonical JSON
 // that it accepts again, unchanged.
 func FuzzBodyRules(f *testing.F) {
-	g, a := golden.LoadAuthValidation(f), golden.LoadAccountValidation(f)
-	for _, section := range [][]golden.ValidationCase{g.Login, g.Register, g.Refresh, g.Logout, a.Forgot, a.Reset, a.Consent, a.Profile} {
+	g, a, w := golden.LoadAuthValidation(f), golden.LoadAccountValidation(f), golden.LoadWardrobeValidation(f)
+	for _, section := range [][]golden.ValidationCase{g.Login, g.Register, g.Refresh, g.Logout, a.Forgot, a.Reset, a.Consent, a.Profile, w.Patch} {
 		for i, c := range section {
 			if i%3 == 0 {
 				f.Add(c.Body)
@@ -192,6 +192,7 @@ func FuzzBodyRules(f *testing.F) {
 	rules := []httpapi.BodyRule{
 		httpapi.LoginBody, httpapi.RegisterBody, httpapi.RefreshBody, httpapi.LogoutBody,
 		httpapi.PasswordForgotBody, httpapi.PasswordResetBody, httpapi.LegalConsentBody, httpapi.ProfilePatchBody,
+		httpapi.WardrobePatchBody,
 	}
 	f.Fuzz(func(t *testing.T, body string) {
 		for i, rule := range rules {

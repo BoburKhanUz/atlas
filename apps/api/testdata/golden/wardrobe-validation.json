@@ -1,0 +1,2593 @@
+{
+ "generatedBy": "apps/web/scripts/golden-wardrobe-validation.ts",
+ "sourceCommit": "955a1e8470b33d939b05dc3f16ccd185696d12e6",
+ "note": "patch: raw bodies through parseJson. query: the parameters the route passes (an empty one is absent) through validate. id: the path id. idempotencyKey: the header (null: absent; the Headers API trims a value).",
+ "patch": [
+  {
+   "name": "an empty body",
+   "body": "",
+   "ok": true,
+   "value": {}
+  },
+  {
+   "name": "white space only",
+   "body": "  \n",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "not JSON",
+   "body": "{category",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "two JSON values",
+   "body": "{}{}",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "JSON null",
+   "body": "null",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "a JSON array",
+   "body": "[]",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "a JSON number",
+   "body": "12",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "an empty object",
+   "body": "{}",
+   "ok": true,
+   "value": {}
+  },
+  {
+   "name": "every field",
+   "body": "{\"category\":\"pants\",\"subcategory\":\"jeans\",\"colors\":[\"blue\",\"white\"],\"pattern\":\"solid\",\"material\":\"cotton\",\"sleeveLength\":null,\"fit\":\"regular\",\"style\":\"casual\",\"season\":[\"spring\",\"autumn\"],\"gender\":\"male\",\"formality\":\"casual\"}",
+   "ok": true,
+   "value": {
+    "category": "pants",
+    "subcategory": "jeans",
+    "colors": [
+     "blue",
+     "white"
+    ],
+    "pattern": "solid",
+    "material": "cotton",
+    "sleeveLength": null,
+    "fit": "regular",
+    "style": "casual",
+    "season": [
+     "spring",
+     "autumn"
+    ],
+    "gender": "male",
+    "formality": "casual"
+   }
+  },
+  {
+   "name": "unknown fields are dropped",
+   "body": "{\"material\":\"linen\",\"wasCorrected\":false,\"userId\":\"someone\",\"images\":[]}",
+   "ok": true,
+   "value": {
+    "material": "linen"
+   }
+  },
+  {
+   "name": "category: the first value",
+   "body": "{\"category\":\"outerwear\"}",
+   "ok": true,
+   "value": {
+    "category": "outerwear"
+   }
+  },
+  {
+   "name": "category: the last value",
+   "body": "{\"category\":\"accessory\"}",
+   "ok": true,
+   "value": {
+    "category": "accessory"
+   }
+  },
+  {
+   "name": "category: unknown",
+   "body": "{\"category\":\"nope\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\"",
+   "details": [
+    {
+     "path": "category",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\""
+    }
+   ]
+  },
+  {
+   "name": "category: upper case",
+   "body": "{\"category\":\"OUTERWEAR\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\"",
+   "details": [
+    {
+     "path": "category",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\""
+    }
+   ]
+  },
+  {
+   "name": "category: with a space",
+   "body": "{\"category\":\" outerwear\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\"",
+   "details": [
+    {
+     "path": "category",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\""
+    }
+   ]
+  },
+  {
+   "name": "category: empty",
+   "body": "{\"category\":\"\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\"",
+   "details": [
+    {
+     "path": "category",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\""
+    }
+   ]
+  },
+  {
+   "name": "category: null (not allowed)",
+   "body": "{\"category\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\"",
+   "details": [
+    {
+     "path": "category",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\""
+    }
+   ]
+  },
+  {
+   "name": "category is a number",
+   "body": "{\"category\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\"",
+   "details": [
+    {
+     "path": "category",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\""
+    }
+   ]
+  },
+  {
+   "name": "category is true",
+   "body": "{\"category\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\"",
+   "details": [
+    {
+     "path": "category",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\""
+    }
+   ]
+  },
+  {
+   "name": "category is an array",
+   "body": "{\"category\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\"",
+   "details": [
+    {
+     "path": "category",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\""
+    }
+   ]
+  },
+  {
+   "name": "category is an object",
+   "body": "{\"category\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\"",
+   "details": [
+    {
+     "path": "category",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\""
+    }
+   ]
+  },
+  {
+   "name": "subcategory: the first value",
+   "body": "{\"subcategory\":\"jacket\"}",
+   "ok": true,
+   "value": {
+    "subcategory": "jacket"
+   }
+  },
+  {
+   "name": "subcategory: the last value",
+   "body": "{\"subcategory\":\"sunglasses\"}",
+   "ok": true,
+   "value": {
+    "subcategory": "sunglasses"
+   }
+  },
+  {
+   "name": "subcategory: unknown",
+   "body": "{\"subcategory\":\"nope\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"jacket\"|\"blazer\"|\"coat\"|\"windbreaker\"|\"tshirt\"|\"oxford_shirt\"|\"polo\"|\"blouse\"|\"knit\"|\"jeans\"|\"chinos\"|\"trousers\"|\"shorts\"|\"casual_dress\"|\"evening_dress\"|\"midi_dress\"|\"sneakers\"|\"loafers\"|\"oxford_shoes\"|\"boots\"|\"sandals\"|\"tote\"|\"backpack\"|\"crossbody\"|\"clutch\"|\"belt\"|\"scarf\"|\"hat\"|\"watch\"|\"sunglasses\"",
+   "details": [
+    {
+     "path": "subcategory",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"jacket\"|\"blazer\"|\"coat\"|\"windbreaker\"|\"tshirt\"|\"oxford_shirt\"|\"polo\"|\"blouse\"|\"knit\"|\"jeans\"|\"chinos\"|\"trousers\"|\"shorts\"|\"casual_dress\"|\"evening_dress\"|\"midi_dress\"|\"sneakers\"|\"loafers\"|\"oxford_shoes\"|\"boots\"|\"sandals\"|\"tote\"|\"backpack\"|\"crossbody\"|\"clutch\"|\"belt\"|\"scarf\"|\"hat\"|\"watch\"|\"sunglasses\""
+    }
+   ]
+  },
+  {
+   "name": "subcategory: upper case",
+   "body": "{\"subcategory\":\"JACKET\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"jacket\"|\"blazer\"|\"coat\"|\"windbreaker\"|\"tshirt\"|\"oxford_shirt\"|\"polo\"|\"blouse\"|\"knit\"|\"jeans\"|\"chinos\"|\"trousers\"|\"shorts\"|\"casual_dress\"|\"evening_dress\"|\"midi_dress\"|\"sneakers\"|\"loafers\"|\"oxford_shoes\"|\"boots\"|\"sandals\"|\"tote\"|\"backpack\"|\"crossbody\"|\"clutch\"|\"belt\"|\"scarf\"|\"hat\"|\"watch\"|\"sunglasses\"",
+   "details": [
+    {
+     "path": "subcategory",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"jacket\"|\"blazer\"|\"coat\"|\"windbreaker\"|\"tshirt\"|\"oxford_shirt\"|\"polo\"|\"blouse\"|\"knit\"|\"jeans\"|\"chinos\"|\"trousers\"|\"shorts\"|\"casual_dress\"|\"evening_dress\"|\"midi_dress\"|\"sneakers\"|\"loafers\"|\"oxford_shoes\"|\"boots\"|\"sandals\"|\"tote\"|\"backpack\"|\"crossbody\"|\"clutch\"|\"belt\"|\"scarf\"|\"hat\"|\"watch\"|\"sunglasses\""
+    }
+   ]
+  },
+  {
+   "name": "subcategory: with a space",
+   "body": "{\"subcategory\":\" jacket\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"jacket\"|\"blazer\"|\"coat\"|\"windbreaker\"|\"tshirt\"|\"oxford_shirt\"|\"polo\"|\"blouse\"|\"knit\"|\"jeans\"|\"chinos\"|\"trousers\"|\"shorts\"|\"casual_dress\"|\"evening_dress\"|\"midi_dress\"|\"sneakers\"|\"loafers\"|\"oxford_shoes\"|\"boots\"|\"sandals\"|\"tote\"|\"backpack\"|\"crossbody\"|\"clutch\"|\"belt\"|\"scarf\"|\"hat\"|\"watch\"|\"sunglasses\"",
+   "details": [
+    {
+     "path": "subcategory",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"jacket\"|\"blazer\"|\"coat\"|\"windbreaker\"|\"tshirt\"|\"oxford_shirt\"|\"polo\"|\"blouse\"|\"knit\"|\"jeans\"|\"chinos\"|\"trousers\"|\"shorts\"|\"casual_dress\"|\"evening_dress\"|\"midi_dress\"|\"sneakers\"|\"loafers\"|\"oxford_shoes\"|\"boots\"|\"sandals\"|\"tote\"|\"backpack\"|\"crossbody\"|\"clutch\"|\"belt\"|\"scarf\"|\"hat\"|\"watch\"|\"sunglasses\""
+    }
+   ]
+  },
+  {
+   "name": "subcategory: empty",
+   "body": "{\"subcategory\":\"\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"jacket\"|\"blazer\"|\"coat\"|\"windbreaker\"|\"tshirt\"|\"oxford_shirt\"|\"polo\"|\"blouse\"|\"knit\"|\"jeans\"|\"chinos\"|\"trousers\"|\"shorts\"|\"casual_dress\"|\"evening_dress\"|\"midi_dress\"|\"sneakers\"|\"loafers\"|\"oxford_shoes\"|\"boots\"|\"sandals\"|\"tote\"|\"backpack\"|\"crossbody\"|\"clutch\"|\"belt\"|\"scarf\"|\"hat\"|\"watch\"|\"sunglasses\"",
+   "details": [
+    {
+     "path": "subcategory",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"jacket\"|\"blazer\"|\"coat\"|\"windbreaker\"|\"tshirt\"|\"oxford_shirt\"|\"polo\"|\"blouse\"|\"knit\"|\"jeans\"|\"chinos\"|\"trousers\"|\"shorts\"|\"casual_dress\"|\"evening_dress\"|\"midi_dress\"|\"sneakers\"|\"loafers\"|\"oxford_shoes\"|\"boots\"|\"sandals\"|\"tote\"|\"backpack\"|\"crossbody\"|\"clutch\"|\"belt\"|\"scarf\"|\"hat\"|\"watch\"|\"sunglasses\""
+    }
+   ]
+  },
+  {
+   "name": "subcategory: null",
+   "body": "{\"subcategory\":null}",
+   "ok": true,
+   "value": {
+    "subcategory": null
+   }
+  },
+  {
+   "name": "subcategory is a number",
+   "body": "{\"subcategory\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"jacket\"|\"blazer\"|\"coat\"|\"windbreaker\"|\"tshirt\"|\"oxford_shirt\"|\"polo\"|\"blouse\"|\"knit\"|\"jeans\"|\"chinos\"|\"trousers\"|\"shorts\"|\"casual_dress\"|\"evening_dress\"|\"midi_dress\"|\"sneakers\"|\"loafers\"|\"oxford_shoes\"|\"boots\"|\"sandals\"|\"tote\"|\"backpack\"|\"crossbody\"|\"clutch\"|\"belt\"|\"scarf\"|\"hat\"|\"watch\"|\"sunglasses\"",
+   "details": [
+    {
+     "path": "subcategory",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"jacket\"|\"blazer\"|\"coat\"|\"windbreaker\"|\"tshirt\"|\"oxford_shirt\"|\"polo\"|\"blouse\"|\"knit\"|\"jeans\"|\"chinos\"|\"trousers\"|\"shorts\"|\"casual_dress\"|\"evening_dress\"|\"midi_dress\"|\"sneakers\"|\"loafers\"|\"oxford_shoes\"|\"boots\"|\"sandals\"|\"tote\"|\"backpack\"|\"crossbody\"|\"clutch\"|\"belt\"|\"scarf\"|\"hat\"|\"watch\"|\"sunglasses\""
+    }
+   ]
+  },
+  {
+   "name": "subcategory is true",
+   "body": "{\"subcategory\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"jacket\"|\"blazer\"|\"coat\"|\"windbreaker\"|\"tshirt\"|\"oxford_shirt\"|\"polo\"|\"blouse\"|\"knit\"|\"jeans\"|\"chinos\"|\"trousers\"|\"shorts\"|\"casual_dress\"|\"evening_dress\"|\"midi_dress\"|\"sneakers\"|\"loafers\"|\"oxford_shoes\"|\"boots\"|\"sandals\"|\"tote\"|\"backpack\"|\"crossbody\"|\"clutch\"|\"belt\"|\"scarf\"|\"hat\"|\"watch\"|\"sunglasses\"",
+   "details": [
+    {
+     "path": "subcategory",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"jacket\"|\"blazer\"|\"coat\"|\"windbreaker\"|\"tshirt\"|\"oxford_shirt\"|\"polo\"|\"blouse\"|\"knit\"|\"jeans\"|\"chinos\"|\"trousers\"|\"shorts\"|\"casual_dress\"|\"evening_dress\"|\"midi_dress\"|\"sneakers\"|\"loafers\"|\"oxford_shoes\"|\"boots\"|\"sandals\"|\"tote\"|\"backpack\"|\"crossbody\"|\"clutch\"|\"belt\"|\"scarf\"|\"hat\"|\"watch\"|\"sunglasses\""
+    }
+   ]
+  },
+  {
+   "name": "subcategory is an array",
+   "body": "{\"subcategory\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"jacket\"|\"blazer\"|\"coat\"|\"windbreaker\"|\"tshirt\"|\"oxford_shirt\"|\"polo\"|\"blouse\"|\"knit\"|\"jeans\"|\"chinos\"|\"trousers\"|\"shorts\"|\"casual_dress\"|\"evening_dress\"|\"midi_dress\"|\"sneakers\"|\"loafers\"|\"oxford_shoes\"|\"boots\"|\"sandals\"|\"tote\"|\"backpack\"|\"crossbody\"|\"clutch\"|\"belt\"|\"scarf\"|\"hat\"|\"watch\"|\"sunglasses\"",
+   "details": [
+    {
+     "path": "subcategory",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"jacket\"|\"blazer\"|\"coat\"|\"windbreaker\"|\"tshirt\"|\"oxford_shirt\"|\"polo\"|\"blouse\"|\"knit\"|\"jeans\"|\"chinos\"|\"trousers\"|\"shorts\"|\"casual_dress\"|\"evening_dress\"|\"midi_dress\"|\"sneakers\"|\"loafers\"|\"oxford_shoes\"|\"boots\"|\"sandals\"|\"tote\"|\"backpack\"|\"crossbody\"|\"clutch\"|\"belt\"|\"scarf\"|\"hat\"|\"watch\"|\"sunglasses\""
+    }
+   ]
+  },
+  {
+   "name": "subcategory is an object",
+   "body": "{\"subcategory\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"jacket\"|\"blazer\"|\"coat\"|\"windbreaker\"|\"tshirt\"|\"oxford_shirt\"|\"polo\"|\"blouse\"|\"knit\"|\"jeans\"|\"chinos\"|\"trousers\"|\"shorts\"|\"casual_dress\"|\"evening_dress\"|\"midi_dress\"|\"sneakers\"|\"loafers\"|\"oxford_shoes\"|\"boots\"|\"sandals\"|\"tote\"|\"backpack\"|\"crossbody\"|\"clutch\"|\"belt\"|\"scarf\"|\"hat\"|\"watch\"|\"sunglasses\"",
+   "details": [
+    {
+     "path": "subcategory",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"jacket\"|\"blazer\"|\"coat\"|\"windbreaker\"|\"tshirt\"|\"oxford_shirt\"|\"polo\"|\"blouse\"|\"knit\"|\"jeans\"|\"chinos\"|\"trousers\"|\"shorts\"|\"casual_dress\"|\"evening_dress\"|\"midi_dress\"|\"sneakers\"|\"loafers\"|\"oxford_shoes\"|\"boots\"|\"sandals\"|\"tote\"|\"backpack\"|\"crossbody\"|\"clutch\"|\"belt\"|\"scarf\"|\"hat\"|\"watch\"|\"sunglasses\""
+    }
+   ]
+  },
+  {
+   "name": "pattern: the first value",
+   "body": "{\"pattern\":\"solid\"}",
+   "ok": true,
+   "value": {
+    "pattern": "solid"
+   }
+  },
+  {
+   "name": "pattern: the last value",
+   "body": "{\"pattern\":\"denim\"}",
+   "ok": true,
+   "value": {
+    "pattern": "denim"
+   }
+  },
+  {
+   "name": "pattern: unknown",
+   "body": "{\"pattern\":\"nope\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"solid\"|\"striped\"|\"checked\"|\"plaid\"|\"floral\"|\"graphic\"|\"color_block\"|\"denim\"",
+   "details": [
+    {
+     "path": "pattern",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"solid\"|\"striped\"|\"checked\"|\"plaid\"|\"floral\"|\"graphic\"|\"color_block\"|\"denim\""
+    }
+   ]
+  },
+  {
+   "name": "pattern: upper case",
+   "body": "{\"pattern\":\"SOLID\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"solid\"|\"striped\"|\"checked\"|\"plaid\"|\"floral\"|\"graphic\"|\"color_block\"|\"denim\"",
+   "details": [
+    {
+     "path": "pattern",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"solid\"|\"striped\"|\"checked\"|\"plaid\"|\"floral\"|\"graphic\"|\"color_block\"|\"denim\""
+    }
+   ]
+  },
+  {
+   "name": "pattern: with a space",
+   "body": "{\"pattern\":\" solid\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"solid\"|\"striped\"|\"checked\"|\"plaid\"|\"floral\"|\"graphic\"|\"color_block\"|\"denim\"",
+   "details": [
+    {
+     "path": "pattern",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"solid\"|\"striped\"|\"checked\"|\"plaid\"|\"floral\"|\"graphic\"|\"color_block\"|\"denim\""
+    }
+   ]
+  },
+  {
+   "name": "pattern: empty",
+   "body": "{\"pattern\":\"\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"solid\"|\"striped\"|\"checked\"|\"plaid\"|\"floral\"|\"graphic\"|\"color_block\"|\"denim\"",
+   "details": [
+    {
+     "path": "pattern",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"solid\"|\"striped\"|\"checked\"|\"plaid\"|\"floral\"|\"graphic\"|\"color_block\"|\"denim\""
+    }
+   ]
+  },
+  {
+   "name": "pattern: null",
+   "body": "{\"pattern\":null}",
+   "ok": true,
+   "value": {
+    "pattern": null
+   }
+  },
+  {
+   "name": "pattern is a number",
+   "body": "{\"pattern\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"solid\"|\"striped\"|\"checked\"|\"plaid\"|\"floral\"|\"graphic\"|\"color_block\"|\"denim\"",
+   "details": [
+    {
+     "path": "pattern",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"solid\"|\"striped\"|\"checked\"|\"plaid\"|\"floral\"|\"graphic\"|\"color_block\"|\"denim\""
+    }
+   ]
+  },
+  {
+   "name": "pattern is true",
+   "body": "{\"pattern\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"solid\"|\"striped\"|\"checked\"|\"plaid\"|\"floral\"|\"graphic\"|\"color_block\"|\"denim\"",
+   "details": [
+    {
+     "path": "pattern",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"solid\"|\"striped\"|\"checked\"|\"plaid\"|\"floral\"|\"graphic\"|\"color_block\"|\"denim\""
+    }
+   ]
+  },
+  {
+   "name": "pattern is an array",
+   "body": "{\"pattern\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"solid\"|\"striped\"|\"checked\"|\"plaid\"|\"floral\"|\"graphic\"|\"color_block\"|\"denim\"",
+   "details": [
+    {
+     "path": "pattern",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"solid\"|\"striped\"|\"checked\"|\"plaid\"|\"floral\"|\"graphic\"|\"color_block\"|\"denim\""
+    }
+   ]
+  },
+  {
+   "name": "pattern is an object",
+   "body": "{\"pattern\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"solid\"|\"striped\"|\"checked\"|\"plaid\"|\"floral\"|\"graphic\"|\"color_block\"|\"denim\"",
+   "details": [
+    {
+     "path": "pattern",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"solid\"|\"striped\"|\"checked\"|\"plaid\"|\"floral\"|\"graphic\"|\"color_block\"|\"denim\""
+    }
+   ]
+  },
+  {
+   "name": "material: the first value",
+   "body": "{\"material\":\"cotton\"}",
+   "ok": true,
+   "value": {
+    "material": "cotton"
+   }
+  },
+  {
+   "name": "material: the last value",
+   "body": "{\"material\":\"blend\"}",
+   "ok": true,
+   "value": {
+    "material": "blend"
+   }
+  },
+  {
+   "name": "material: unknown",
+   "body": "{\"material\":\"nope\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"cotton\"|\"linen\"|\"denim\"|\"wool\"|\"cashmere\"|\"silk\"|\"polyester\"|\"nylon\"|\"leather\"|\"suede\"|\"knit\"|\"blend\"",
+   "details": [
+    {
+     "path": "material",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"cotton\"|\"linen\"|\"denim\"|\"wool\"|\"cashmere\"|\"silk\"|\"polyester\"|\"nylon\"|\"leather\"|\"suede\"|\"knit\"|\"blend\""
+    }
+   ]
+  },
+  {
+   "name": "material: upper case",
+   "body": "{\"material\":\"COTTON\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"cotton\"|\"linen\"|\"denim\"|\"wool\"|\"cashmere\"|\"silk\"|\"polyester\"|\"nylon\"|\"leather\"|\"suede\"|\"knit\"|\"blend\"",
+   "details": [
+    {
+     "path": "material",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"cotton\"|\"linen\"|\"denim\"|\"wool\"|\"cashmere\"|\"silk\"|\"polyester\"|\"nylon\"|\"leather\"|\"suede\"|\"knit\"|\"blend\""
+    }
+   ]
+  },
+  {
+   "name": "material: with a space",
+   "body": "{\"material\":\" cotton\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"cotton\"|\"linen\"|\"denim\"|\"wool\"|\"cashmere\"|\"silk\"|\"polyester\"|\"nylon\"|\"leather\"|\"suede\"|\"knit\"|\"blend\"",
+   "details": [
+    {
+     "path": "material",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"cotton\"|\"linen\"|\"denim\"|\"wool\"|\"cashmere\"|\"silk\"|\"polyester\"|\"nylon\"|\"leather\"|\"suede\"|\"knit\"|\"blend\""
+    }
+   ]
+  },
+  {
+   "name": "material: empty",
+   "body": "{\"material\":\"\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"cotton\"|\"linen\"|\"denim\"|\"wool\"|\"cashmere\"|\"silk\"|\"polyester\"|\"nylon\"|\"leather\"|\"suede\"|\"knit\"|\"blend\"",
+   "details": [
+    {
+     "path": "material",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"cotton\"|\"linen\"|\"denim\"|\"wool\"|\"cashmere\"|\"silk\"|\"polyester\"|\"nylon\"|\"leather\"|\"suede\"|\"knit\"|\"blend\""
+    }
+   ]
+  },
+  {
+   "name": "material: null",
+   "body": "{\"material\":null}",
+   "ok": true,
+   "value": {
+    "material": null
+   }
+  },
+  {
+   "name": "material is a number",
+   "body": "{\"material\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"cotton\"|\"linen\"|\"denim\"|\"wool\"|\"cashmere\"|\"silk\"|\"polyester\"|\"nylon\"|\"leather\"|\"suede\"|\"knit\"|\"blend\"",
+   "details": [
+    {
+     "path": "material",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"cotton\"|\"linen\"|\"denim\"|\"wool\"|\"cashmere\"|\"silk\"|\"polyester\"|\"nylon\"|\"leather\"|\"suede\"|\"knit\"|\"blend\""
+    }
+   ]
+  },
+  {
+   "name": "material is true",
+   "body": "{\"material\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"cotton\"|\"linen\"|\"denim\"|\"wool\"|\"cashmere\"|\"silk\"|\"polyester\"|\"nylon\"|\"leather\"|\"suede\"|\"knit\"|\"blend\"",
+   "details": [
+    {
+     "path": "material",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"cotton\"|\"linen\"|\"denim\"|\"wool\"|\"cashmere\"|\"silk\"|\"polyester\"|\"nylon\"|\"leather\"|\"suede\"|\"knit\"|\"blend\""
+    }
+   ]
+  },
+  {
+   "name": "material is an array",
+   "body": "{\"material\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"cotton\"|\"linen\"|\"denim\"|\"wool\"|\"cashmere\"|\"silk\"|\"polyester\"|\"nylon\"|\"leather\"|\"suede\"|\"knit\"|\"blend\"",
+   "details": [
+    {
+     "path": "material",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"cotton\"|\"linen\"|\"denim\"|\"wool\"|\"cashmere\"|\"silk\"|\"polyester\"|\"nylon\"|\"leather\"|\"suede\"|\"knit\"|\"blend\""
+    }
+   ]
+  },
+  {
+   "name": "material is an object",
+   "body": "{\"material\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"cotton\"|\"linen\"|\"denim\"|\"wool\"|\"cashmere\"|\"silk\"|\"polyester\"|\"nylon\"|\"leather\"|\"suede\"|\"knit\"|\"blend\"",
+   "details": [
+    {
+     "path": "material",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"cotton\"|\"linen\"|\"denim\"|\"wool\"|\"cashmere\"|\"silk\"|\"polyester\"|\"nylon\"|\"leather\"|\"suede\"|\"knit\"|\"blend\""
+    }
+   ]
+  },
+  {
+   "name": "sleeveLength: the first value",
+   "body": "{\"sleeveLength\":\"short\"}",
+   "ok": true,
+   "value": {
+    "sleeveLength": "short"
+   }
+  },
+  {
+   "name": "sleeveLength: the last value",
+   "body": "{\"sleeveLength\":\"three_quarter\"}",
+   "ok": true,
+   "value": {
+    "sleeveLength": "three_quarter"
+   }
+  },
+  {
+   "name": "sleeveLength: unknown",
+   "body": "{\"sleeveLength\":\"nope\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"short\"|\"long\"|\"sleeveless\"|\"three_quarter\"",
+   "details": [
+    {
+     "path": "sleeveLength",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"short\"|\"long\"|\"sleeveless\"|\"three_quarter\""
+    }
+   ]
+  },
+  {
+   "name": "sleeveLength: upper case",
+   "body": "{\"sleeveLength\":\"SHORT\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"short\"|\"long\"|\"sleeveless\"|\"three_quarter\"",
+   "details": [
+    {
+     "path": "sleeveLength",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"short\"|\"long\"|\"sleeveless\"|\"three_quarter\""
+    }
+   ]
+  },
+  {
+   "name": "sleeveLength: with a space",
+   "body": "{\"sleeveLength\":\" short\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"short\"|\"long\"|\"sleeveless\"|\"three_quarter\"",
+   "details": [
+    {
+     "path": "sleeveLength",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"short\"|\"long\"|\"sleeveless\"|\"three_quarter\""
+    }
+   ]
+  },
+  {
+   "name": "sleeveLength: empty",
+   "body": "{\"sleeveLength\":\"\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"short\"|\"long\"|\"sleeveless\"|\"three_quarter\"",
+   "details": [
+    {
+     "path": "sleeveLength",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"short\"|\"long\"|\"sleeveless\"|\"three_quarter\""
+    }
+   ]
+  },
+  {
+   "name": "sleeveLength: null",
+   "body": "{\"sleeveLength\":null}",
+   "ok": true,
+   "value": {
+    "sleeveLength": null
+   }
+  },
+  {
+   "name": "sleeveLength is a number",
+   "body": "{\"sleeveLength\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"short\"|\"long\"|\"sleeveless\"|\"three_quarter\"",
+   "details": [
+    {
+     "path": "sleeveLength",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"short\"|\"long\"|\"sleeveless\"|\"three_quarter\""
+    }
+   ]
+  },
+  {
+   "name": "sleeveLength is true",
+   "body": "{\"sleeveLength\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"short\"|\"long\"|\"sleeveless\"|\"three_quarter\"",
+   "details": [
+    {
+     "path": "sleeveLength",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"short\"|\"long\"|\"sleeveless\"|\"three_quarter\""
+    }
+   ]
+  },
+  {
+   "name": "sleeveLength is an array",
+   "body": "{\"sleeveLength\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"short\"|\"long\"|\"sleeveless\"|\"three_quarter\"",
+   "details": [
+    {
+     "path": "sleeveLength",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"short\"|\"long\"|\"sleeveless\"|\"three_quarter\""
+    }
+   ]
+  },
+  {
+   "name": "sleeveLength is an object",
+   "body": "{\"sleeveLength\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"short\"|\"long\"|\"sleeveless\"|\"three_quarter\"",
+   "details": [
+    {
+     "path": "sleeveLength",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"short\"|\"long\"|\"sleeveless\"|\"three_quarter\""
+    }
+   ]
+  },
+  {
+   "name": "fit: the first value",
+   "body": "{\"fit\":\"slim\"}",
+   "ok": true,
+   "value": {
+    "fit": "slim"
+   }
+  },
+  {
+   "name": "fit: the last value",
+   "body": "{\"fit\":\"oversized\"}",
+   "ok": true,
+   "value": {
+    "fit": "oversized"
+   }
+  },
+  {
+   "name": "fit: unknown",
+   "body": "{\"fit\":\"nope\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"slim\"|\"regular\"|\"relaxed\"|\"oversized\"",
+   "details": [
+    {
+     "path": "fit",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"slim\"|\"regular\"|\"relaxed\"|\"oversized\""
+    }
+   ]
+  },
+  {
+   "name": "fit: upper case",
+   "body": "{\"fit\":\"SLIM\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"slim\"|\"regular\"|\"relaxed\"|\"oversized\"",
+   "details": [
+    {
+     "path": "fit",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"slim\"|\"regular\"|\"relaxed\"|\"oversized\""
+    }
+   ]
+  },
+  {
+   "name": "fit: with a space",
+   "body": "{\"fit\":\" slim\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"slim\"|\"regular\"|\"relaxed\"|\"oversized\"",
+   "details": [
+    {
+     "path": "fit",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"slim\"|\"regular\"|\"relaxed\"|\"oversized\""
+    }
+   ]
+  },
+  {
+   "name": "fit: empty",
+   "body": "{\"fit\":\"\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"slim\"|\"regular\"|\"relaxed\"|\"oversized\"",
+   "details": [
+    {
+     "path": "fit",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"slim\"|\"regular\"|\"relaxed\"|\"oversized\""
+    }
+   ]
+  },
+  {
+   "name": "fit: null",
+   "body": "{\"fit\":null}",
+   "ok": true,
+   "value": {
+    "fit": null
+   }
+  },
+  {
+   "name": "fit is a number",
+   "body": "{\"fit\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"slim\"|\"regular\"|\"relaxed\"|\"oversized\"",
+   "details": [
+    {
+     "path": "fit",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"slim\"|\"regular\"|\"relaxed\"|\"oversized\""
+    }
+   ]
+  },
+  {
+   "name": "fit is true",
+   "body": "{\"fit\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"slim\"|\"regular\"|\"relaxed\"|\"oversized\"",
+   "details": [
+    {
+     "path": "fit",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"slim\"|\"regular\"|\"relaxed\"|\"oversized\""
+    }
+   ]
+  },
+  {
+   "name": "fit is an array",
+   "body": "{\"fit\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"slim\"|\"regular\"|\"relaxed\"|\"oversized\"",
+   "details": [
+    {
+     "path": "fit",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"slim\"|\"regular\"|\"relaxed\"|\"oversized\""
+    }
+   ]
+  },
+  {
+   "name": "fit is an object",
+   "body": "{\"fit\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"slim\"|\"regular\"|\"relaxed\"|\"oversized\"",
+   "details": [
+    {
+     "path": "fit",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"slim\"|\"regular\"|\"relaxed\"|\"oversized\""
+    }
+   ]
+  },
+  {
+   "name": "style: the first value",
+   "body": "{\"style\":\"casual\"}",
+   "ok": true,
+   "value": {
+    "style": "casual"
+   }
+  },
+  {
+   "name": "style: the last value",
+   "body": "{\"style\":\"preppy\"}",
+   "ok": true,
+   "value": {
+    "style": "preppy"
+   }
+  },
+  {
+   "name": "style: unknown",
+   "body": "{\"style\":\"nope\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\"",
+   "details": [
+    {
+     "path": "style",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    }
+   ]
+  },
+  {
+   "name": "style: upper case",
+   "body": "{\"style\":\"CASUAL\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\"",
+   "details": [
+    {
+     "path": "style",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    }
+   ]
+  },
+  {
+   "name": "style: with a space",
+   "body": "{\"style\":\" casual\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\"",
+   "details": [
+    {
+     "path": "style",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    }
+   ]
+  },
+  {
+   "name": "style: empty",
+   "body": "{\"style\":\"\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\"",
+   "details": [
+    {
+     "path": "style",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    }
+   ]
+  },
+  {
+   "name": "style: null",
+   "body": "{\"style\":null}",
+   "ok": true,
+   "value": {
+    "style": null
+   }
+  },
+  {
+   "name": "style is a number",
+   "body": "{\"style\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\"",
+   "details": [
+    {
+     "path": "style",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    }
+   ]
+  },
+  {
+   "name": "style is true",
+   "body": "{\"style\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\"",
+   "details": [
+    {
+     "path": "style",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    }
+   ]
+  },
+  {
+   "name": "style is an array",
+   "body": "{\"style\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\"",
+   "details": [
+    {
+     "path": "style",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    }
+   ]
+  },
+  {
+   "name": "style is an object",
+   "body": "{\"style\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\"",
+   "details": [
+    {
+     "path": "style",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    }
+   ]
+  },
+  {
+   "name": "gender: the first value",
+   "body": "{\"gender\":\"male\"}",
+   "ok": true,
+   "value": {
+    "gender": "male"
+   }
+  },
+  {
+   "name": "gender: the last value",
+   "body": "{\"gender\":\"unisex\"}",
+   "ok": true,
+   "value": {
+    "gender": "unisex"
+   }
+  },
+  {
+   "name": "gender: unknown",
+   "body": "{\"gender\":\"nope\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"unisex\"",
+   "details": [
+    {
+     "path": "gender",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"unisex\""
+    }
+   ]
+  },
+  {
+   "name": "gender: upper case",
+   "body": "{\"gender\":\"MALE\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"unisex\"",
+   "details": [
+    {
+     "path": "gender",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"unisex\""
+    }
+   ]
+  },
+  {
+   "name": "gender: with a space",
+   "body": "{\"gender\":\" male\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"unisex\"",
+   "details": [
+    {
+     "path": "gender",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"unisex\""
+    }
+   ]
+  },
+  {
+   "name": "gender: empty",
+   "body": "{\"gender\":\"\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"unisex\"",
+   "details": [
+    {
+     "path": "gender",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"unisex\""
+    }
+   ]
+  },
+  {
+   "name": "gender: null",
+   "body": "{\"gender\":null}",
+   "ok": true,
+   "value": {
+    "gender": null
+   }
+  },
+  {
+   "name": "gender is a number",
+   "body": "{\"gender\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"unisex\"",
+   "details": [
+    {
+     "path": "gender",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"unisex\""
+    }
+   ]
+  },
+  {
+   "name": "gender is true",
+   "body": "{\"gender\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"unisex\"",
+   "details": [
+    {
+     "path": "gender",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"unisex\""
+    }
+   ]
+  },
+  {
+   "name": "gender is an array",
+   "body": "{\"gender\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"unisex\"",
+   "details": [
+    {
+     "path": "gender",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"unisex\""
+    }
+   ]
+  },
+  {
+   "name": "gender is an object",
+   "body": "{\"gender\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"unisex\"",
+   "details": [
+    {
+     "path": "gender",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"unisex\""
+    }
+   ]
+  },
+  {
+   "name": "formality: the first value",
+   "body": "{\"formality\":\"casual\"}",
+   "ok": true,
+   "value": {
+    "formality": "casual"
+   }
+  },
+  {
+   "name": "formality: the last value",
+   "body": "{\"formality\":\"black_tie\"}",
+   "ok": true,
+   "value": {
+    "formality": "black_tie"
+   }
+  },
+  {
+   "name": "formality: unknown",
+   "body": "{\"formality\":\"nope\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"black_tie\"",
+   "details": [
+    {
+     "path": "formality",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"black_tie\""
+    }
+   ]
+  },
+  {
+   "name": "formality: upper case",
+   "body": "{\"formality\":\"CASUAL\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"black_tie\"",
+   "details": [
+    {
+     "path": "formality",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"black_tie\""
+    }
+   ]
+  },
+  {
+   "name": "formality: with a space",
+   "body": "{\"formality\":\" casual\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"black_tie\"",
+   "details": [
+    {
+     "path": "formality",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"black_tie\""
+    }
+   ]
+  },
+  {
+   "name": "formality: empty",
+   "body": "{\"formality\":\"\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"black_tie\"",
+   "details": [
+    {
+     "path": "formality",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"black_tie\""
+    }
+   ]
+  },
+  {
+   "name": "formality: null",
+   "body": "{\"formality\":null}",
+   "ok": true,
+   "value": {
+    "formality": null
+   }
+  },
+  {
+   "name": "formality is a number",
+   "body": "{\"formality\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"black_tie\"",
+   "details": [
+    {
+     "path": "formality",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"black_tie\""
+    }
+   ]
+  },
+  {
+   "name": "formality is true",
+   "body": "{\"formality\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"black_tie\"",
+   "details": [
+    {
+     "path": "formality",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"black_tie\""
+    }
+   ]
+  },
+  {
+   "name": "formality is an array",
+   "body": "{\"formality\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"black_tie\"",
+   "details": [
+    {
+     "path": "formality",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"black_tie\""
+    }
+   ]
+  },
+  {
+   "name": "formality is an object",
+   "body": "{\"formality\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"black_tie\"",
+   "details": [
+    {
+     "path": "formality",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"black_tie\""
+    }
+   ]
+  },
+  {
+   "name": "colors: empty",
+   "body": "{\"colors\":[]}",
+   "ok": true,
+   "value": {
+    "colors": []
+   }
+  },
+  {
+   "name": "colors: five",
+   "body": "{\"colors\":[\"white\",\"black\",\"beige\",\"gray\",\"navy\"]}",
+   "ok": true,
+   "value": {
+    "colors": [
+     "white",
+     "black",
+     "beige",
+     "gray",
+     "navy"
+    ]
+   }
+  },
+  {
+   "name": "colors: six",
+   "body": "{\"colors\":[\"white\",\"black\",\"beige\",\"gray\",\"navy\",\"blue\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan array <=5 element bo‘lishi kerak",
+   "details": [
+    {
+     "path": "colors",
+     "message": "Juda katta: kutilgan array <=5 element bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "colors: a repeat (kept)",
+   "body": "{\"colors\":[\"red\",\"red\"]}",
+   "ok": true,
+   "value": {
+    "colors": [
+     "red",
+     "red"
+    ]
+   }
+  },
+  {
+   "name": "colors: unknown inside",
+   "body": "{\"colors\":[\"red\",\"nope\",7]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\"",
+   "details": [
+    {
+     "path": "colors.1",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\""
+    },
+    {
+     "path": "colors.2",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\""
+    }
+   ]
+  },
+  {
+   "name": "colors: null",
+   "body": "{\"colors\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan null",
+   "details": [
+    {
+     "path": "colors",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "colors: a string",
+   "body": "{\"colors\":\"red\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan string",
+   "details": [
+    {
+     "path": "colors",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "colors: seven unknown (problems in item order, then the length)",
+   "body": "{\"colors\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\",\"g\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\"",
+   "details": [
+    {
+     "path": "colors.0",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\""
+    },
+    {
+     "path": "colors.1",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\""
+    },
+    {
+     "path": "colors.2",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\""
+    },
+    {
+     "path": "colors.3",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\""
+    },
+    {
+     "path": "colors.4",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\""
+    },
+    {
+     "path": "colors.5",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\""
+    },
+    {
+     "path": "colors.6",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\""
+    },
+    {
+     "path": "colors",
+     "message": "Juda katta: kutilgan array <=5 element bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "season: four",
+   "body": "{\"season\":[\"spring\",\"summer\",\"autumn\",\"winter\"]}",
+   "ok": true,
+   "value": {
+    "season": [
+     "spring",
+     "summer",
+     "autumn",
+     "winter"
+    ]
+   }
+  },
+  {
+   "name": "season: five",
+   "body": "{\"season\":[\"spring\",\"summer\",\"autumn\",\"winter\",\"spring\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan array <=4 element bo‘lishi kerak",
+   "details": [
+    {
+     "path": "season",
+     "message": "Juda katta: kutilgan array <=4 element bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "season: empty",
+   "body": "{\"season\":[]}",
+   "ok": true,
+   "value": {
+    "season": []
+   }
+  },
+  {
+   "name": "season: unknown",
+   "body": "{\"season\":[\"monsoon\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"spring\"|\"summer\"|\"autumn\"|\"winter\"",
+   "details": [
+    {
+     "path": "season.0",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"spring\"|\"summer\"|\"autumn\"|\"winter\""
+    }
+   ]
+  },
+  {
+   "name": "season: null",
+   "body": "{\"season\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan null",
+   "details": [
+    {
+     "path": "season",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "problems everywhere: reported in schema order",
+   "body": "{\"formality\":\"x\",\"gender\":\"x\",\"season\":\"x\",\"style\":\"x\",\"fit\":\"x\",\"sleeveLength\":\"x\",\"material\":\"x\",\"pattern\":\"x\",\"colors\":\"x\",\"subcategory\":\"x\",\"category\":\"x\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\"",
+   "details": [
+    {
+     "path": "category",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\""
+    },
+    {
+     "path": "subcategory",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"jacket\"|\"blazer\"|\"coat\"|\"windbreaker\"|\"tshirt\"|\"oxford_shirt\"|\"polo\"|\"blouse\"|\"knit\"|\"jeans\"|\"chinos\"|\"trousers\"|\"shorts\"|\"casual_dress\"|\"evening_dress\"|\"midi_dress\"|\"sneakers\"|\"loafers\"|\"oxford_shoes\"|\"boots\"|\"sandals\"|\"tote\"|\"backpack\"|\"crossbody\"|\"clutch\"|\"belt\"|\"scarf\"|\"hat\"|\"watch\"|\"sunglasses\""
+    },
+    {
+     "path": "colors",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan string"
+    },
+    {
+     "path": "pattern",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"solid\"|\"striped\"|\"checked\"|\"plaid\"|\"floral\"|\"graphic\"|\"color_block\"|\"denim\""
+    },
+    {
+     "path": "material",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"cotton\"|\"linen\"|\"denim\"|\"wool\"|\"cashmere\"|\"silk\"|\"polyester\"|\"nylon\"|\"leather\"|\"suede\"|\"knit\"|\"blend\""
+    },
+    {
+     "path": "sleeveLength",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"short\"|\"long\"|\"sleeveless\"|\"three_quarter\""
+    },
+    {
+     "path": "fit",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"slim\"|\"regular\"|\"relaxed\"|\"oversized\""
+    },
+    {
+     "path": "style",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "season",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan string"
+    },
+    {
+     "path": "gender",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"unisex\""
+    },
+    {
+     "path": "formality",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"black_tie\""
+    }
+   ]
+  },
+  {
+   "name": "a field twice: the last one counts",
+   "body": "{\"material\":\"nope\",\"material\":\"cotton\"}",
+   "ok": true,
+   "value": {
+    "material": "cotton"
+   }
+  },
+  {
+   "name": "member names are matched exactly",
+   "body": "{\"Category\":\"pants\",\"CATEGORY\":\"x\"}",
+   "ok": true,
+   "value": {}
+  }
+ ],
+ "query": [
+  {
+   "name": "nothing",
+   "query": {},
+   "ok": true,
+   "value": {
+    "limit": 100
+   }
+  },
+  {
+   "name": "every category",
+   "query": {
+    "category": "all"
+   },
+   "ok": true,
+   "value": {
+    "category": "all",
+    "limit": 100
+   }
+  },
+  {
+   "name": "category outerwear",
+   "query": {
+    "category": "outerwear"
+   },
+   "ok": true,
+   "value": {
+    "category": "outerwear",
+    "limit": 100
+   }
+  },
+  {
+   "name": "category shirt",
+   "query": {
+    "category": "shirt"
+   },
+   "ok": true,
+   "value": {
+    "category": "shirt",
+    "limit": 100
+   }
+  },
+  {
+   "name": "category pants",
+   "query": {
+    "category": "pants"
+   },
+   "ok": true,
+   "value": {
+    "category": "pants",
+    "limit": 100
+   }
+  },
+  {
+   "name": "category dress",
+   "query": {
+    "category": "dress"
+   },
+   "ok": true,
+   "value": {
+    "category": "dress",
+    "limit": 100
+   }
+  },
+  {
+   "name": "category shoes",
+   "query": {
+    "category": "shoes"
+   },
+   "ok": true,
+   "value": {
+    "category": "shoes",
+    "limit": 100
+   }
+  },
+  {
+   "name": "category bag",
+   "query": {
+    "category": "bag"
+   },
+   "ok": true,
+   "value": {
+    "category": "bag",
+    "limit": 100
+   }
+  },
+  {
+   "name": "category accessory",
+   "query": {
+    "category": "accessory"
+   },
+   "ok": true,
+   "value": {
+    "category": "accessory",
+    "limit": 100
+   }
+  },
+  {
+   "name": "category unknown",
+   "query": {
+    "category": "hats"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"all\"|\"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\"",
+   "details": [
+    {
+     "path": "category",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"all\"|\"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\""
+    }
+   ]
+  },
+  {
+   "name": "category upper case",
+   "query": {
+    "category": "Shirt"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"all\"|\"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\"",
+   "details": [
+    {
+     "path": "category",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"all\"|\"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\""
+    }
+   ]
+  },
+  {
+   "name": "limit 1",
+   "query": {
+    "limit": "1"
+   },
+   "ok": true,
+   "value": {
+    "limit": 1
+   }
+  },
+  {
+   "name": "limit 200",
+   "query": {
+    "limit": "200"
+   },
+   "ok": true,
+   "value": {
+    "limit": 200
+   }
+  },
+  {
+   "name": "limit 0",
+   "query": {
+    "limit": "0"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=1",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Juda kichik: kutilgan number >=1"
+    }
+   ]
+  },
+  {
+   "name": "limit 201",
+   "query": {
+    "limit": "201"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=200",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Juda katta: kutilgan number <=200"
+    }
+   ]
+  },
+  {
+   "name": "limit -5",
+   "query": {
+    "limit": "-5"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=1",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Juda kichik: kutilgan number >=1"
+    }
+   ]
+  },
+  {
+   "name": "limit 1.5",
+   "query": {
+    "limit": "1.5"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan int, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Noto‘g‘ri kirish: kutilgan int, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "limit 10.0",
+   "query": {
+    "limit": "10.0"
+   },
+   "ok": true,
+   "value": {
+    "limit": 10
+   }
+  },
+  {
+   "name": "limit 1e2",
+   "query": {
+    "limit": "1e2"
+   },
+   "ok": true,
+   "value": {
+    "limit": 100
+   }
+  },
+  {
+   "name": "limit 0x10",
+   "query": {
+    "limit": "0x10"
+   },
+   "ok": true,
+   "value": {
+    "limit": 16
+   }
+  },
+  {
+   "name": "limit with spaces",
+   "query": {
+    "limit": " 20 "
+   },
+   "ok": true,
+   "value": {
+    "limit": 20
+   }
+  },
+  {
+   "name": "limit abc",
+   "query": {
+    "limit": "abc"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN"
+    }
+   ]
+  },
+  {
+   "name": "limit Infinity",
+   "query": {
+    "limit": "Infinity"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "limit 9e999",
+   "query": {
+    "limit": "9e999"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "limit \"+5\"",
+   "query": {
+    "limit": "+5"
+   },
+   "ok": true,
+   "value": {
+    "limit": 5
+   }
+  },
+  {
+   "name": "limit \"-0\"",
+   "query": {
+    "limit": "-0"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=1",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Juda kichik: kutilgan number >=1"
+    }
+   ]
+  },
+  {
+   "name": "limit \".5e1\"",
+   "query": {
+    "limit": ".5e1"
+   },
+   "ok": true,
+   "value": {
+    "limit": 5
+   }
+  },
+  {
+   "name": "limit \"5.\"",
+   "query": {
+    "limit": "5."
+   },
+   "ok": true,
+   "value": {
+    "limit": 5
+   }
+  },
+  {
+   "name": "limit \"50e-1\"",
+   "query": {
+    "limit": "50e-1"
+   },
+   "ok": true,
+   "value": {
+    "limit": 5
+   }
+  },
+  {
+   "name": "limit \"1e-2\"",
+   "query": {
+    "limit": "1e-2"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan int, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Noto‘g‘ri kirish: kutilgan int, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "limit \"1_0\"",
+   "query": {
+    "limit": "1_0"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN"
+    }
+   ]
+  },
+  {
+   "name": "limit \"0b101\"",
+   "query": {
+    "limit": "0b101"
+   },
+   "ok": true,
+   "value": {
+    "limit": 5
+   }
+  },
+  {
+   "name": "limit \"0o17\"",
+   "query": {
+    "limit": "0o17"
+   },
+   "ok": true,
+   "value": {
+    "limit": 15
+   }
+  },
+  {
+   "name": "limit \"0X1f\"",
+   "query": {
+    "limit": "0X1f"
+   },
+   "ok": true,
+   "value": {
+    "limit": 31
+   }
+  },
+  {
+   "name": "limit \"-0x10\"",
+   "query": {
+    "limit": "-0x10"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN"
+    }
+   ]
+  },
+  {
+   "name": "limit \"0x\"",
+   "query": {
+    "limit": "0x"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN"
+    }
+   ]
+  },
+  {
+   "name": "limit \"0b2\"",
+   "query": {
+    "limit": "0b2"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN"
+    }
+   ]
+  },
+  {
+   "name": "limit \" 0x10 \"",
+   "query": {
+    "limit": " 0x10 "
+   },
+   "ok": true,
+   "value": {
+    "limit": 16
+   }
+  },
+  {
+   "name": "limit \" 20 \"",
+   "query": {
+    "limit": " 20 "
+   },
+   "ok": true,
+   "value": {
+    "limit": 20
+   }
+  },
+  {
+   "name": "limit \"\\t7\\n\"",
+   "query": {
+    "limit": "\t7\n"
+   },
+   "ok": true,
+   "value": {
+    "limit": 7
+   }
+  },
+  {
+   "name": "limit \"+Infinity\"",
+   "query": {
+    "limit": "+Infinity"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "limit \"-Infinity\"",
+   "query": {
+    "limit": "-Infinity"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "limit \"infinity\"",
+   "query": {
+    "limit": "infinity"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN"
+    }
+   ]
+  },
+  {
+   "name": "limit \"NaN\"",
+   "query": {
+    "limit": "NaN"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN"
+    }
+   ]
+  },
+  {
+   "name": "limit \"1e\"",
+   "query": {
+    "limit": "1e"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN"
+    }
+   ]
+  },
+  {
+   "name": "limit \"--5\"",
+   "query": {
+    "limit": "--5"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN"
+    }
+   ]
+  },
+  {
+   "name": "limit \"5 5\"",
+   "query": {
+    "limit": "5 5"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN"
+    }
+   ]
+  },
+  {
+   "name": "limit \"٣\"",
+   "query": {
+    "limit": "٣"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN"
+    }
+   ]
+  },
+  {
+   "name": "limit \"   \"",
+   "query": {
+    "limit": "   "
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=1",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Juda kichik: kutilgan number >=1"
+    }
+   ]
+  },
+  {
+   "name": "limit \"﻿20\"",
+   "query": {
+    "limit": "﻿20"
+   },
+   "ok": true,
+   "value": {
+    "limit": 20
+   }
+  },
+  {
+   "name": "limit \"0x-10\"",
+   "query": {
+    "limit": "0x-10"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN"
+    }
+   ]
+  },
+  {
+   "name": "limit \"0x+1f\"",
+   "query": {
+    "limit": "0x+1f"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN"
+    }
+   ]
+  },
+  {
+   "name": "cursor",
+   "query": {
+    "cursor": "cabc123"
+   },
+   "ok": true,
+   "value": {
+    "limit": 100,
+    "cursor": "cabc123"
+   }
+  },
+  {
+   "name": "cursor with spaces (trimmed)",
+   "query": {
+    "cursor": "  cabc123  "
+   },
+   "ok": true,
+   "value": {
+    "limit": 100,
+    "cursor": "cabc123"
+   }
+  },
+  {
+   "name": "cursor of spaces",
+   "query": {
+    "cursor": "   "
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "cursor",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "cursor of 64",
+   "query": {
+    "cursor": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+   },
+   "ok": true,
+   "value": {
+    "limit": 100,
+    "cursor": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+   }
+  },
+  {
+   "name": "cursor of 65",
+   "query": {
+    "cursor": "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=64 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "cursor",
+     "message": "Juda katta: kutilgan string <=64 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "cursor of 64 and spaces",
+   "query": {
+    "cursor": " cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc "
+   },
+   "ok": true,
+   "value": {
+    "limit": 100,
+    "cursor": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+   }
+  },
+  {
+   "name": "everything wrong",
+   "query": {
+    "category": "x",
+    "limit": "x",
+    "cursor": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"all\"|\"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\"",
+   "details": [
+    {
+     "path": "category",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"all\"|\"outerwear\"|\"shirt\"|\"pants\"|\"dress\"|\"shoes\"|\"bag\"|\"accessory\""
+    },
+    {
+     "path": "limit",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan NaN"
+    },
+    {
+     "path": "cursor",
+     "message": "Juda katta: kutilgan string <=64 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "unknown parameter",
+   "query": {
+    "sort": "asc"
+   },
+   "ok": true,
+   "value": {
+    "limit": 100
+   }
+  }
+ ],
+ "id": [
+  {
+   "id": "cabc",
+   "ok": true,
+   "value": {
+    "id": "cabc"
+   }
+  },
+  {
+   "id": " cabc ",
+   "ok": true,
+   "value": {
+    "id": "cabc"
+   }
+  },
+  {
+   "id": "   ",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "id",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+   "ok": true,
+   "value": {
+    "id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+   }
+  },
+  {
+   "id": "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=64 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "id",
+     "message": "Juda katta: kutilgan string <=64 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc ",
+   "ok": true,
+   "value": {
+    "id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+   }
+  },
+  {
+   "id": "ўзбек",
+   "ok": true,
+   "value": {
+    "id": "ўзбек"
+   }
+  },
+  {
+   "id": "a/b",
+   "ok": true,
+   "value": {
+    "id": "a/b"
+   }
+  },
+  {
+   "id": "a%2Fb",
+   "ok": true,
+   "value": {
+    "id": "a%2Fb"
+   }
+  },
+  {
+   "id": "..",
+   "ok": true,
+   "value": {
+    "id": ".."
+   }
+  }
+ ],
+ "idempotencyKey": [
+  {
+   "key": null,
+   "ok": true,
+   "value": null
+  },
+  {
+   "key": "",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Idempotency-Key: 8–128 ta belgi (A-Z, a-z, 0-9, _ yoki -)",
+   "details": [
+    {
+     "path": "Idempotency-Key",
+     "message": "must match ^[A-Za-z0-9_-]{8,128}$"
+    }
+   ]
+  },
+  {
+   "key": "abcdefgh",
+   "ok": true,
+   "value": "abcdefgh"
+  },
+  {
+   "key": "abcdefg",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Idempotency-Key: 8–128 ta belgi (A-Z, a-z, 0-9, _ yoki -)",
+   "details": [
+    {
+     "path": "Idempotency-Key",
+     "message": "must match ^[A-Za-z0-9_-]{8,128}$"
+    }
+   ]
+  },
+  {
+   "key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+   "ok": true,
+   "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+  },
+  {
+   "key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Idempotency-Key: 8–128 ta belgi (A-Z, a-z, 0-9, _ yoki -)",
+   "details": [
+    {
+     "path": "Idempotency-Key",
+     "message": "must match ^[A-Za-z0-9_-]{8,128}$"
+    }
+   ]
+  },
+  {
+   "key": "key_with-dash_123",
+   "ok": true,
+   "value": "key_with-dash_123"
+  },
+  {
+   "key": "key with space",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Idempotency-Key: 8–128 ta belgi (A-Z, a-z, 0-9, _ yoki -)",
+   "details": [
+    {
+     "path": "Idempotency-Key",
+     "message": "must match ^[A-Za-z0-9_-]{8,128}$"
+    }
+   ]
+  },
+  {
+   "key": "key.dot.is.bad",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Idempotency-Key: 8–128 ta belgi (A-Z, a-z, 0-9, _ yoki -)",
+   "details": [
+    {
+     "path": "Idempotency-Key",
+     "message": "must match ^[A-Za-z0-9_-]{8,128}$"
+    }
+   ]
+  },
+  {
+   "key": " abcdefgh",
+   "ok": true,
+   "value": "abcdefgh"
+  },
+  {
+   "key": "abcdefgh ",
+   "ok": true,
+   "value": "abcdefgh"
+  }
+ ]
+}

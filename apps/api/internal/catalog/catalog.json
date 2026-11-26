@@ -1,0 +1,540 @@
+{
+ "categories": [
+  {
+   "id": "outerwear",
+   "label": "Ustki kiyim"
+  },
+  {
+   "id": "shirt",
+   "label": "Ko‘ylak / Rubah"
+  },
+  {
+   "id": "pants",
+   "label": "Shim"
+  },
+  {
+   "id": "dress",
+   "label": "Ko‘ylak ( ayol )"
+  },
+  {
+   "id": "shoes",
+   "label": "Oyoq kiyim"
+  },
+  {
+   "id": "bag",
+   "label": "Sumka"
+  },
+  {
+   "id": "accessory",
+   "label": "Aksessuar"
+  }
+ ],
+ "subcategories": [
+  {
+   "category": "outerwear",
+   "entries": [
+    {
+     "id": "jacket",
+     "label": "Kurtka"
+    },
+    {
+     "id": "blazer",
+     "label": "Bleyzer"
+    },
+    {
+     "id": "coat",
+     "label": "Palto"
+    },
+    {
+     "id": "windbreaker",
+     "label": "Vetrovka"
+    }
+   ]
+  },
+  {
+   "category": "shirt",
+   "entries": [
+    {
+     "id": "tshirt",
+     "label": "Futbolka"
+    },
+    {
+     "id": "oxford_shirt",
+     "label": "Oksford ko‘ylak"
+    },
+    {
+     "id": "polo",
+     "label": "Polo"
+    },
+    {
+     "id": "blouse",
+     "label": "Bluzka"
+    },
+    {
+     "id": "knit",
+     "label": "Nitki"
+    }
+   ]
+  },
+  {
+   "category": "pants",
+   "entries": [
+    {
+     "id": "jeans",
+     "label": "Jins"
+    },
+    {
+     "id": "chinos",
+     "label": "Chinos"
+    },
+    {
+     "id": "trousers",
+     "label": "Shim (klasik)"
+    },
+    {
+     "id": "shorts",
+     "label": "Shorts"
+    }
+   ]
+  },
+  {
+   "category": "dress",
+   "entries": [
+    {
+     "id": "casual_dress",
+     "label": "Kundalik ko‘ylak"
+    },
+    {
+     "id": "evening_dress",
+     "label": "Kechki ko‘ylak"
+    },
+    {
+     "id": "midi_dress",
+     "label": "Midi ko‘ylak"
+    }
+   ]
+  },
+  {
+   "category": "shoes",
+   "entries": [
+    {
+     "id": "sneakers",
+     "label": "Krossovka"
+    },
+    {
+     "id": "loafers",
+     "label": "Mokasin"
+    },
+    {
+     "id": "oxford_shoes",
+     "label": "Oksford"
+    },
+    {
+     "id": "boots",
+     "label": "Botinka"
+    },
+    {
+     "id": "sandals",
+     "label": "Sandalli"
+    }
+   ]
+  },
+  {
+   "category": "bag",
+   "entries": [
+    {
+     "id": "tote",
+     "label": "Tote sumka"
+    },
+    {
+     "id": "backpack",
+     "label": "Ryukzak"
+    },
+    {
+     "id": "crossbody",
+     "label": "Kross-bodi"
+    },
+    {
+     "id": "clutch",
+     "label": "Klutch"
+    }
+   ]
+  },
+  {
+   "category": "accessory",
+   "entries": [
+    {
+     "id": "belt",
+     "label": "Remen"
+    },
+    {
+     "id": "scarf",
+     "label": "Sharf"
+    },
+    {
+     "id": "hat",
+     "label": "Shlyapa"
+    },
+    {
+     "id": "watch",
+     "label": "Soat"
+    },
+    {
+     "id": "sunglasses",
+     "label": "Quyosh ko‘zoynagi"
+    }
+   ]
+  }
+ ],
+ "colors": [
+  {
+   "id": "white",
+   "label": "Oq",
+   "hex": "#FFFFFF"
+  },
+  {
+   "id": "black",
+   "label": "Qora",
+   "hex": "#111111"
+  },
+  {
+   "id": "beige",
+   "label": "Bej",
+   "hex": "#E8DCC8"
+  },
+  {
+   "id": "gray",
+   "label": "Kulrang",
+   "hex": "#9CA3AF"
+  },
+  {
+   "id": "navy",
+   "label": "Ko‘k (navy)",
+   "hex": "#1E3A5F"
+  },
+  {
+   "id": "blue",
+   "label": "Ko‘k",
+   "hex": "#3B82F6"
+  },
+  {
+   "id": "light_blue",
+   "label": "Och ko‘k",
+   "hex": "#A5C9E8"
+  },
+  {
+   "id": "green",
+   "label": "Yashil",
+   "hex": "#22C55E"
+  },
+  {
+   "id": "olive",
+   "label": "Zaytun",
+   "hex": "#6B7F3C"
+  },
+  {
+   "id": "khaki",
+   "label": "Xaki",
+   "hex": "#BDB76B"
+  },
+  {
+   "id": "brown",
+   "label": "Jigarron",
+   "hex": "#7B4B2A"
+  },
+  {
+   "id": "tan",
+   "label": "Sarg‘ish-jigarron",
+   "hex": "#D2B48C"
+  },
+  {
+   "id": "red",
+   "label": "Qizil",
+   "hex": "#EF4444"
+  },
+  {
+   "id": "burgundy",
+   "label": "Bordo",
+   "hex": "#7E1D2A"
+  },
+  {
+   "id": "pink",
+   "label": "Pushti",
+   "hex": "#F9A8C9"
+  },
+  {
+   "id": "orange",
+   "label": "To‘q sariq",
+   "hex": "#F97316"
+  },
+  {
+   "id": "yellow",
+   "label": "Sariq",
+   "hex": "#FACC15"
+  },
+  {
+   "id": "purple",
+   "label": "Binafsha",
+   "hex": "#8B5CF6"
+  },
+  {
+   "id": "teal",
+   "label": "Zavorq (teal)",
+   "hex": "#0F766E"
+  },
+  {
+   "id": "cream",
+   "label": "Krem",
+   "hex": "#F5F0E1"
+  },
+  {
+   "id": "ivory",
+   "label": "Och krem",
+   "hex": "#FFFFF0"
+  },
+  {
+   "id": "rust",
+   "label": "Zang (rust)",
+   "hex": "#B7410E"
+  },
+  {
+   "id": "mustard",
+   "label": "Xantal",
+   "hex": "#D4A017"
+  }
+ ],
+ "patterns": [
+  {
+   "id": "solid",
+   "label": "Bir rangli"
+  },
+  {
+   "id": "striped",
+   "label": "Chiziqli"
+  },
+  {
+   "id": "checked",
+   "label": "Katakli"
+  },
+  {
+   "id": "plaid",
+   "label": "Plaid"
+  },
+  {
+   "id": "floral",
+   "label": "Gulli"
+  },
+  {
+   "id": "graphic",
+   "label": "Grafikali"
+  },
+  {
+   "id": "color_block",
+   "label": "Rangli blok"
+  },
+  {
+   "id": "denim",
+   "label": "Jins naqshi"
+  }
+ ],
+ "materials": [
+  {
+   "id": "cotton",
+   "label": "Paxta"
+  },
+  {
+   "id": "linen",
+   "label": "Zig‘ir"
+  },
+  {
+   "id": "denim",
+   "label": "Jins matosi"
+  },
+  {
+   "id": "wool",
+   "label": "Jun"
+  },
+  {
+   "id": "cashmere",
+   "label": "Kashmir"
+  },
+  {
+   "id": "silk",
+   "label": "Ipak"
+  },
+  {
+   "id": "polyester",
+   "label": "Poliester"
+  },
+  {
+   "id": "nylon",
+   "label": "Neylon"
+  },
+  {
+   "id": "leather",
+   "label": "Teri"
+  },
+  {
+   "id": "suede",
+   "label": "Zamsh"
+  },
+  {
+   "id": "knit",
+   "label": "Trikotaj"
+  },
+  {
+   "id": "blend",
+   "label": "Aralash"
+  }
+ ],
+ "styles": [
+  {
+   "id": "casual",
+   "label": "Kundalik"
+  },
+  {
+   "id": "smart_casual",
+   "label": "Smart-casual"
+  },
+  {
+   "id": "formal",
+   "label": "Formal"
+  },
+  {
+   "id": "sporty",
+   "label": "Sport"
+  },
+  {
+   "id": "bohemian",
+   "label": "Bohemian"
+  },
+  {
+   "id": "minimal",
+   "label": "Minimal"
+  },
+  {
+   "id": "streetwear",
+   "label": "Streetwear"
+  },
+  {
+   "id": "classic",
+   "label": "Klassik"
+  },
+  {
+   "id": "preppy",
+   "label": "Preppi"
+  }
+ ],
+ "sleeveLengths": [
+  {
+   "id": "short",
+   "label": "Qisqa yeng"
+  },
+  {
+   "id": "long",
+   "label": "Uzun yeng"
+  },
+  {
+   "id": "sleeveless",
+   "label": "Yengsiz"
+  },
+  {
+   "id": "three_quarter",
+   "label": "3/4 yeng"
+  }
+ ],
+ "fits": [
+  {
+   "id": "slim",
+   "label": "Slim"
+  },
+  {
+   "id": "regular",
+   "label": "Regular"
+  },
+  {
+   "id": "relaxed",
+   "label": "Relaxed"
+  },
+  {
+   "id": "oversized",
+   "label": "Oversize"
+  }
+ ],
+ "seasons": [
+  {
+   "id": "spring",
+   "label": "Bahor"
+  },
+  {
+   "id": "summer",
+   "label": "Yoz"
+  },
+  {
+   "id": "autumn",
+   "label": "Kuz"
+  },
+  {
+   "id": "winter",
+   "label": "Qish"
+  }
+ ],
+ "formalities": [
+  {
+   "id": "casual",
+   "label": "Kundalik"
+  },
+  {
+   "id": "smart_casual",
+   "label": "Smart-casual"
+  },
+  {
+   "id": "formal",
+   "label": "Formal"
+  },
+  {
+   "id": "black_tie",
+   "label": "Black tie"
+  }
+ ],
+ "genders": [
+  {
+   "id": "male",
+   "label": "Erkak"
+  },
+  {
+   "id": "female",
+   "label": "Ayol"
+  },
+  {
+   "id": "unisex",
+   "label": "Unisex"
+  }
+ ],
+ "occasions": [
+  {
+   "id": "work",
+   "label": "Ish"
+  },
+  {
+   "id": "wedding",
+   "label": "To‘y"
+  },
+  {
+   "id": "date",
+   "label": "Uchrashuv"
+  },
+  {
+   "id": "travel",
+   "label": "Sayohat"
+  },
+  {
+   "id": "casual",
+   "label": "Kundalik"
+  },
+  {
+   "id": "other",
+   "label": "Boshqa"
+  }
+ ]
+}

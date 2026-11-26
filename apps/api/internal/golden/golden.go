@@ -288,3 +288,52 @@ func LoadPasswordReset(t testing.TB) PasswordReset {
 	}
 	return p
 }
+
+// WardrobeValidation is testdata/golden/wardrobe-validation.json
+// (apps/web/scripts/golden-wardrobe-validation.ts): what the Next.js API
+// answers to the wardrobe's request bodies, list queries, item ids and
+// Idempotency-Key headers.
+type WardrobeValidation struct {
+	GeneratedBy  string           `json:"generatedBy"`
+	SourceCommit string           `json:"sourceCommit"`
+	Note         string           `json:"note"`
+	Patch        []ValidationCase `json:"patch"`
+	Query        []struct {
+		Name  string            `json:"name"`
+		Query map[string]string `json:"query"`
+		Outcome
+	} `json:"query"`
+	ID []struct {
+		ID string `json:"id"`
+		Outcome
+	} `json:"id"`
+	IdempotencyKey []struct {
+		Key *string `json:"key"`
+		Outcome
+	} `json:"idempotencyKey"`
+}
+
+// Outcome is a parsed value, or the error envelope.
+type Outcome struct {
+	OK      bool            `json:"ok"`
+	Value   json.RawMessage `json:"value"`
+	Status  int             `json:"status"`
+	Code    string          `json:"code"`
+	Error   string          `json:"error"`
+	Details []struct {
+		Path    string `json:"path"`
+		Message string `json:"message"`
+	} `json:"details"`
+}
+
+// LoadWardrobeValidation reads testdata/golden/wardrobe-validation.json;
+// unknown fields fail.
+func LoadWardrobeValidation(t testing.TB) WardrobeValidation {
+	t.Helper()
+	var w WardrobeValidation
+	load(t, "wardrobe-validation.json", &w)
+	if len(w.Patch) == 0 || len(w.Query) == 0 || len(w.ID) == 0 || len(w.IdempotencyKey) == 0 {
+		t.Fatal("wardrobe-validation.json: a section is empty")
+	}
+	return w
+}
