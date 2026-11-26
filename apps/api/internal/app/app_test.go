@@ -312,47 +312,85 @@ func TestHealthCommand(t *testing.T) {
 	}
 }
 
+// production runs serve with a production configuration (the database is
+// down: nothing here needs it), calls during once it listens, stops it and
+// returns its log.
+func production(t *testing.T, extra map[string]string, during func(addr string)) string {
+	t.Helper()
+	addr := freeAddr(t)
+	vars := map[string]string{
+		"LOOKLY_ENV":       "production",
+		"LOOKLY_HTTP_ADDR": addr,
+		"DATABASE_URL":     "postgresql://lookly@127.0.0.1:1/lookly?sslmode=disable", // nothing listens there
+	}
+	for k, v := range extra {
+		vars[k] = v
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	stdout, done := &syncBuffer{}, make(chan int, 1)
+	go func() { done <- app.Run(ctx, []string{"serve"}, configtest.Getenv(vars), stdout, &syncBuffer{}) }()
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		if c, err := net.DialTimeout("tcp", addr, 100*time.Millisecond); err == nil {
+			c.Close()
+			break
+		}
+		if time.Now().After(deadline) {
+			cancel()
+			t.Fatalf("server did not start: %s", stdout.String())
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	if during != nil {
+		during(addr)
+	}
+	cancel()
+	<-done
+	return stdout.String()
+}
+
 // In production the server says so, once, when it does not know its clients'
 // addresses: behind the reverse proxy that is a mistake that weakens the
 // rate limits. It is not refused: a server reached directly must not
 // believe forwarding headers.
 func TestServeWarnsInProductionWhenClientAddressesAreUnknown(t *testing.T) {
 	t.Parallel()
-	start := func(extra map[string]string) string {
-		addr := freeAddr(t)
-		vars := map[string]string{
-			"LOOKLY_ENV":       "production",
-			"LOOKLY_HTTP_ADDR": addr,
-			"DATABASE_URL":     "postgresql://lookly@127.0.0.1:1/lookly?sslmode=disable", // nothing listens there
-		}
-		for k, v := range extra {
-			vars[k] = v
-		}
-		ctx, cancel := context.WithCancel(context.Background())
-		stdout, done := &syncBuffer{}, make(chan int, 1)
-		go func() { done <- app.Run(ctx, []string{"serve"}, configtest.Getenv(vars), stdout, &syncBuffer{}) }()
-		deadline := time.Now().Add(5 * time.Second)
-		for {
-			if c, err := net.DialTimeout("tcp", addr, 100*time.Millisecond); err == nil {
-				c.Close()
-				break
-			}
-			if time.Now().After(deadline) {
-				t.Fatalf("server did not start: %s", stdout.String())
-			}
-			time.Sleep(20 * time.Millisecond)
-		}
-		cancel()
-		<-done
-		return stdout.String()
-	}
-	if log := start(nil); strings.Count(log, "TRUST_PROXY is not 1") != 1 {
+	if log := production(t, nil, nil); strings.Count(log, "TRUST_PROXY is not 1") != 1 {
 		t.Errorf("production without TRUST_PROXY: %d warnings in\n%s", strings.Count(log, "TRUST_PROXY is not 1"), log)
 	}
-	if log := start(map[string]string{"TRUST_PROXY": "1"}); strings.Contains(log, "TRUST_PROXY is not 1") {
+	if log := production(t, map[string]string{"TRUST_PROXY": "1"}, nil); strings.Contains(log, "TRUST_PROXY is not 1") {
 		t.Errorf("production with TRUST_PROXY=1 warns:\n%s", log)
 	}
-	if log := start(map[string]string{"LOOKLY_ENV": "staging"}); strings.Contains(log, "TRUST_PROXY is not 1") {
+	if log := production(t, map[string]string{"LOOKLY_ENV": "staging"}, nil); strings.Contains(log, "TRUST_PROXY is not 1") {
 		t.Errorf("staging warns:\n%s", log)
 	}
+}
+
+// Where cookies are Secure (production) the cross-site guard is told the
+// site is https only: a write from our own host name over plain http is
+// refused; the same over https reaches the handler.
+func TestServeInProductionRefusesWritesFromAnHTTPOrigin(t *testing.T) {
+	t.Parallel()
+	production(t, nil, func(addr string) {
+		post := func(origin string) int {
+			req, err := http.NewRequest(http.MethodPost, "http://"+addr+"/api/v1/auth/logout", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			req.Header.Set("Origin", origin)
+			res, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			res.Body.Close()
+			return res.StatusCode
+		}
+		if got := post("http://" + addr); got != http.StatusForbidden {
+			t.Errorf("a write from the http origin of our host: %d, want 403", got)
+		}
+		// Past the guard: the handler then finds the database down.
+		if got := post("https://" + addr); got != http.StatusInternalServerError {
+			t.Errorf("a write from the https origin of our host: %d, want it past the guard (500: the database is down)", got)
+		}
+	})
 }

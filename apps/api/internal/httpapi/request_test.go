@@ -43,7 +43,7 @@ func TestCrossSiteWriteMatchesTheTypeScriptGuard(t *testing.T) {
 	g := golden.LoadAuthHTTP(t)
 	blocked, passed, stricter := 0, 0, 0
 	for _, c := range g.CSRF {
-		got := httpapi.CrossSiteWrite(requestOf(c.Method, c.Headers), c.TrustProxy)
+		got := httpapi.CrossSiteWrite(requestOf(c.Method, c.Headers), c.TrustProxy, false)
 		if guardStricter[c.Name] {
 			if c.CrossOrigin || !got {
 				t.Errorf("%s: listed as stricter in Go; TypeScript refused %v, Go refused %v", c.Name, c.CrossOrigin, got)
@@ -77,7 +77,7 @@ func TestOddOriginsAreCrossOrigin(t *testing.T) {
 		"https://APP.EXAMPLE.UZ:443/", // fine: only here to show the control below works
 	} {
 		r := requestOf(http.MethodPost, [][2]string{{"host", "app.example.uz"}, {"cookie", "atlas_at=a"}, {"origin", origin}})
-		got := httpapi.CrossSiteWrite(r, false)
+		got := httpapi.CrossSiteWrite(r, false, false)
 		want := origin != "https://APP.EXAMPLE.UZ:443/"
 		if got != want {
 			t.Errorf("origin %q: cross-origin %v, want %v", origin, got, want)
@@ -86,7 +86,7 @@ func TestOddOriginsAreCrossOrigin(t *testing.T) {
 	// A request without a Host (HTTP/1.0) and an Origin without one never
 	// meet as "the same, empty, host".
 	r := requestOf(http.MethodPost, [][2]string{{"host", ""}, {"cookie", "atlas_at=a"}, {"origin", "file:///etc/passwd"}})
-	if !httpapi.CrossSiteWrite(r, false) {
+	if !httpapi.CrossSiteWrite(r, false, false) {
 		t.Error("an Origin without a host passed against a request without a Host")
 	}
 }
@@ -206,6 +206,34 @@ func FuzzCredential(f *testing.F) {
 		default:
 			t.Fatalf("via %q", via)
 		}
-		httpapi.CrossSiteWrite(r, true)
+		httpapi.CrossSiteWrite(r, true, false)
 	})
+}
+
+// On an https-only site (Secure cookies) the scheme is part of "our own":
+// the same host over plain http, or under any other scheme, is another site.
+func TestOnAnHTTPSOnlySiteTheOriginMustBeHTTPS(t *testing.T) {
+	t.Parallel()
+	for origin, refused := range map[string]bool{
+		"https://app.example.uz":     false,
+		"https://app.example.uz:443": false,
+		"HTTPS://APP.EXAMPLE.UZ":     false,
+		"http://app.example.uz":      true,
+		"http://app.example.uz:80":   true,
+		"x://app.example.uz":         true,
+		"https://evil.example":       true,
+	} {
+		r := requestOf(http.MethodPost, [][2]string{{"host", "app.example.uz"}, {"origin", origin}})
+		if got := httpapi.CrossSiteWrite(r, false, true); got != refused {
+			t.Errorf("origin %q on an https-only site: refused %v, want %v", origin, got, refused)
+		}
+		// Where plain http is allowed (development, the e2e run) only the host counts.
+		if got := httpapi.CrossSiteWrite(r, false, false); got != (origin == "https://evil.example") {
+			t.Errorf("origin %q where http is allowed: refused %v", origin, got)
+		}
+	}
+	// No Origin still passes: the mobile app sends none.
+	if httpapi.CrossSiteWrite(requestOf(http.MethodPost, [][2]string{{"host", "app.example.uz"}}), false, true) {
+		t.Error("a request without an Origin was refused")
+	}
 }

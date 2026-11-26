@@ -310,3 +310,35 @@ func FuzzBearerToken(f *testing.F) {
 		}
 	})
 }
+
+// The decoys a failed sign-in is compared with: one at the cost of new
+// hashes and one at the cost of the old server's, so that a failure costs
+// the same work whatever the account's hash is.
+func TestDecoysAreOfTheCurrentAndTheLegacyCost(t *testing.T) {
+	t.Parallel()
+	if auth.PasswordCost != 12 || auth.LegacyPasswordCost != 10 {
+		t.Fatalf("costs %d and %d", auth.PasswordCost, auth.LegacyPasswordCost)
+	}
+	current, legacy, err := auth.Bcrypt{}.Decoys()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(current, "$2a$12$") || !strings.HasPrefix(legacy, "$2a$10$") {
+		t.Errorf("decoys %.7q and %.7q, want costs 12 and 10", current, legacy)
+	}
+	// Like the hashes they stand in for: the current one needs no re-hash,
+	// the legacy one does.
+	if (auth.Bcrypt{}).NeedsRehash(current) || !(auth.Bcrypt{}).NeedsRehash(legacy) {
+		t.Error("the decoys do not behave as a new and an old hash")
+	}
+	// Of a password nobody knows, and not the same pair twice.
+	for _, guess := range []string{"", "password", current, legacy} {
+		if (auth.Bcrypt{}).Verify(guess, current) || (auth.Bcrypt{}).Verify(guess, legacy) {
+			t.Errorf("a decoy matches %q", guess)
+		}
+	}
+	again, _, err := auth.Bcrypt{}.Decoys()
+	if err != nil || again == current {
+		t.Errorf("two calls gave the same decoy (%v)", err)
+	}
+}

@@ -45,6 +45,10 @@ type Gate struct {
 	// TrustProxy: the server is behind the reverse proxy that sets the
 	// forwarding headers (TRUST_PROXY=1).
 	TrustProxy bool
+	// HTTPSOnly: the site is served over https only (its cookies are
+	// Secure), so a write from an http page of our own host name is refused
+	// as another site's.
+	HTTPSOnly bool
 	// Now is the clock tokens are checked against (time.Now when nil).
 	Now func() time.Time
 }
@@ -105,7 +109,7 @@ func (g *Gate) middleware(next http.Handler) http.Handler {
 		info := infoFrom(r.Context())
 		rule := routes[info.route]
 
-		if CrossSiteWrite(r, g.TrustProxy) {
+		if CrossSiteWrite(r, g.TrustProxy, g.HTTPSOnly) {
 			info.log.Warn("cross-site write rejected", "requestId", info.id, "method", r.Method, "route", info.route)
 			WriteError(w, r, apierr.New(apierr.Forbidden))
 			return

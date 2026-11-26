@@ -42,7 +42,7 @@ Answer each item yes/no for the areas a change touches. A "no" is a finding.
 ## Web cookies and CSRF
 
 - [ ] Session cookies are HttpOnly, Secure in production, SameSite=Lax, Path=/.
-- [ ] State-changing cookie-authenticated requests check `Origin` (and reject a mismatch); Bearer requests are exempt.
+- [ ] Every state-changing request without an `Authorization` header checks `Origin` and rejects another host, whether or not it carries a session cookie (SameSite=Lax cookies are not sent on cross-site writes, so a cookie-only check never fires: a posted sign-in form would still set them). This includes public writes: sign-in, registration, password reset.
 - [ ] Security headers: HSTS (Caddy), `X-Content-Type-Options`, `Referrer-Policy`, frame-ancestors none, a CSP for web pages.
 - [ ] No CORS wildcard; the API serves the web app from the same origin.
 

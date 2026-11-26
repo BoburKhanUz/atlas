@@ -125,7 +125,8 @@ table with the contract's `security` fields for every route served.
    write, and what such a write could still do is set them (a posted sign-in form that
    leaves the browser signed in to the attacker's account) or clear them. The Next.js API
    guarded only requests that carried a cookie, so it did not stop that; Go does.
-   `Origin: null` is another host; no `Origin` passes (the mobile app sends none). Behind
+   `Origin: null` is another host; no `Origin` passes (the mobile app sends none). Where
+   cookies are Secure, an `Origin` that is not https is another site too. Behind
    the trusted proxy (`TRUST_PROXY=1`) the first `X-Forwarded-Host` is the host.
 2. **Who is calling.** An `Authorization` header, when present, is the only credential
    considered, even when it is empty or invalid: there is no fallback to the cookie.

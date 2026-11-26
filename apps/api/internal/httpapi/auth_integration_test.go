@@ -169,7 +169,7 @@ func newAPI(t *testing.T, o apiOptions) *api {
 		Health: health.New(pool, "test", time.Second), Accounts: users, Sessions: a.sessions,
 		CookieSecure: o.cookieSecure, TrustProxy: o.trustProxy,
 	})
-	a.gate = &httpapi.Gate{Tokens: a.tokens, Sessions: a.sessions, Consent: consent, TrustProxy: o.trustProxy}
+	a.gate = &httpapi.Gate{Tokens: a.tokens, Sessions: a.sessions, Consent: consent, TrustProxy: o.trustProxy, HTTPSOnly: o.cookieSecure}
 	a.handler = httpapi.New(server, log, a.gate)
 	return a
 }
@@ -468,6 +468,11 @@ func TestCookiesAreSecureWhenConfigured(t *testing.T) {
 			t.Errorf("%s is not Secure", name)
 		}
 	}
+	// Where cookies are Secure the site is https: a page served over plain
+	// http under our host name (by someone on the network) is another site.
+	loginBody := map[string]any{"email": s.email, "password": password}
+	a.is(a.do(call{path: "/api/v1/auth/login", headers: map[string]string{"Origin": "http://app.example.uz"}, body: loginBody}), http.StatusForbidden, apierr.Forbidden)
+	a.is(a.do(call{path: "/api/v1/auth/login", headers: map[string]string{"Origin": "https://app.example.uz"}, body: loginBody}), http.StatusOK, "")
 	// The cookies that clear a session are Secure too.
 	out := a.do(call{path: "/api/v1/auth/logout", cookies: map[string]string{httpapi.RefreshCookie: s.rt}})
 	for name, c := range out.cookies {
@@ -1030,14 +1035,14 @@ func TestRegistrationCreatesTheAccountWithItsCompanionRows(t *testing.T) {
 	// registration does not fail on it.
 	odd := registration(a.newEmail())
 	odd["name"] = "Az\u0000iza"
-	stored := a.do(call{path: "/api/v1/auth/register", body: mustJSONRaw(odd)})
+	stored := a.do(call{path: "/api/v1/auth/register", body: odd})
 	a.is(stored, http.StatusCreated, "")
 	if stored.text("user", "name") != "Aziza" {
 		t.Errorf("name stored as %q", stored.text("user", "name"))
 	}
 	onlyNUL := registration(a.newEmail())
 	onlyNUL["name"] = "\u0000"
-	if got := a.do(call{path: "/api/v1/auth/register", body: mustJSONRaw(onlyNUL)}); got.status != http.StatusCreated || got.body["user"].(map[string]any)["name"] != nil {
+	if got := a.do(call{path: "/api/v1/auth/register", body: onlyNUL}); got.status != http.StatusCreated || got.body["user"].(map[string]any)["name"] != nil {
 		t.Errorf("a name of NUL alone: %d %s", got.status, got.raw)
 	}
 	a.exec(`DELETE FROM "User" WHERE "email" <> 'aziza.karimova@example.uz'`)
@@ -1095,12 +1100,6 @@ func TestTwoRegistrationsOfOneEmailAtOnceGiveOneAccount(t *testing.T) {
 	if n := query[int](a, `SELECT (SELECT count(*) FROM "UserProfile") + (SELECT count(*) FROM "UserPreferences") + (SELECT count(*) FROM "LegalConsent") - 3 * (SELECT count(*) FROM "User")`); n != 0 {
 		t.Errorf("rows without their user, or users without their rows: %d", n)
 	}
-}
-
-// mustJSONRaw is a body whose \u0000 escapes stay escapes (json.Marshal
-// would write them as \\u0000, a backslash and text).
-func mustJSONRaw(v map[string]any) string {
-	return strings.ReplaceAll(mustJSON(v), `\\u0000`, `\u0000`)
 }
 
 func mustJSON(v any) string {

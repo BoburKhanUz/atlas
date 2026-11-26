@@ -137,8 +137,10 @@ func ClientAddr(r *http.Request, trustProxy bool) (netip.Addr, bool) {
 // still do is set them (a posted sign-in form) or clear them (sign-out).
 //
 // A request without an Origin header passes. An Origin that cannot be read
-// as scheme://host, "null" included, is never our own.
-func CrossSiteWrite(r *http.Request, trustProxy bool) bool {
+// as scheme://host, "null" included, is never our own. With httpsOnly (the
+// site's cookies are Secure) the scheme counts too: our host name served
+// over plain http, by someone on the network, is another site.
+func CrossSiteWrite(r *http.Request, trustProxy, httpsOnly bool) bool {
 	switch r.Method {
 	case http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete:
 	default:
@@ -151,25 +153,28 @@ func CrossSiteWrite(r *http.Request, trustProxy bool) bool {
 	if origin == "" {
 		return false
 	}
-	host, ok := originHost(origin)
-	return !ok || host != requestHost(r, trustProxy)
+	scheme, host, ok := originHost(origin)
+	if !ok || (httpsOnly && scheme != "https") {
+		return true
+	}
+	return host != requestHost(r, trustProxy)
 }
 
-// originHost is the host[:port] of an Origin header as a browser writes it:
-// lower case, without the scheme's default port.
-func originHost(origin string) (string, bool) {
+// originHost is the scheme and the host[:port] of an Origin header as a
+// browser writes it: lower case, without the scheme's default port.
+func originHost(origin string) (scheme, host string, ok bool) {
 	u, err := url.Parse(origin)
 	if err != nil || u.Scheme == "" || u.Host == "" {
-		return "", false
+		return "", "", false
 	}
-	host := strings.ToLower(u.Host)
+	host = strings.ToLower(u.Host)
 	switch {
 	case u.Scheme == "https" && u.Port() == "443":
 		host = strings.TrimSuffix(host, ":443")
 	case u.Scheme == "http" && u.Port() == "80":
 		host = strings.TrimSuffix(host, ":80")
 	}
-	return host, true
+	return u.Scheme, host, true
 }
 
 // requestHost is the host the client addressed: behind the trusted proxy,

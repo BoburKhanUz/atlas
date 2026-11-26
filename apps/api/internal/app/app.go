@@ -97,7 +97,9 @@ func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger) http.Handler {
 		CookieSecure: cfg.CookieSecure,
 		TrustProxy:   cfg.TrustProxy,
 	})
-	return httpapi.New(server, log, &httpapi.Gate{Tokens: tokens, Sessions: sessions, Consent: consent, TrustProxy: cfg.TrustProxy})
+	return httpapi.New(server, log, &httpapi.Gate{
+		Tokens: tokens, Sessions: sessions, Consent: consent, TrustProxy: cfg.TrustProxy, HTTPSOnly: cfg.CookieSecure,
+	})
 }
 
 func serve(ctx context.Context, getenv func(string) (string, bool), stdout, stderr io.Writer) int {
