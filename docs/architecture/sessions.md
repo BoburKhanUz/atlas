@@ -28,8 +28,10 @@ Golden vectors recorded from the TypeScript code keep the two equal
   AES-256-GCM with `SESSION_ENC_KEY`, bound to both row ids). A successor
   expires at `min(t + 30 days, family limit)`.
 - **Access token**: HS256 JWT with `sid`, valid `min(15 min, family limit)`.
-  Not checked against the database per request — a revoked family keeps API
-  access for at most 15 minutes.
+  The Next.js API does not check it against the database per request: a
+  revoked family keeps API access there for at most 15 minutes. The Go
+  backend checks the session on every request, so a revocation takes effect
+  at once (a rotated session's token stays good until it expires).
 
 ## Refresh protocol
 

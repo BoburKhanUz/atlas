@@ -7,8 +7,10 @@ import (
 	"regexp"
 	"strings"
 
+	"lookly/internal/accounts"
 	"lookly/internal/apierr"
 	"lookly/internal/legal"
+	"lookly/internal/session"
 )
 
 // Request bodies of the auth operations, judged as the Next.js API's
@@ -30,7 +32,7 @@ type BodyRule func(raw []byte) (canonical []byte, err *apierr.Error)
 // Messages of the request schemas.
 const (
 	msgInvalidJSON        = "Yaroqsiz JSON"
-	msgInvalidCredentials = "Email yoki parol noto‘g‘ri"
+	msgInvalidCredentials = accounts.MsgInvalidCredentials
 	msgInvalidEmail       = "Email noto‘g‘ri"
 	msgPasswordTooShort   = "Parol kamida 8 belgi bo‘lishi kerak"
 	msgConsentOutdated    = "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang."
@@ -135,12 +137,12 @@ func LogoutBody(raw []byte) ([]byte, *apierr.Error) {
 	return v.result(out)
 }
 
-// deviceNameRule: trimmed first, then 1–100 (the session protocol's limit).
-var deviceNameRule = textRule{optional: true, trim: true, checks: []check{minLength(1, ""), maxLength(100, "")}}
+// deviceNameRule: trimmed first, then at most the session protocol's limit.
+var deviceNameRule = textRule{optional: true, trim: true, checks: []check{minLength(1, ""), maxLength(session.DeviceNameMax, "")}}
 
-// refreshTokenRule: 1–128, the longest token the session protocol looks up.
+// refreshTokenRule: at most the longest token the session protocol looks up.
 func refreshTokenRule(optional bool) textRule {
-	return textRule{optional: optional, checks: []check{minLength(1, ""), maxLength(128, "")}}
+	return textRule{optional: optional, checks: []check{minLength(1, ""), maxLength(session.RefreshTokenMaxLength, "")}}
 }
 
 // validation collects what is wrong with an object body, in schema order.

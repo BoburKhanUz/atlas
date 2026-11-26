@@ -311,3 +311,48 @@ func TestHealthCommand(t *testing.T) {
 		t.Errorf("no server: exit %d", code)
 	}
 }
+
+// In production the server says so, once, when it does not know its clients'
+// addresses: behind the reverse proxy that is a mistake that weakens the
+// rate limits. It is not refused: a server reached directly must not
+// believe forwarding headers.
+func TestServeWarnsInProductionWhenClientAddressesAreUnknown(t *testing.T) {
+	t.Parallel()
+	start := func(extra map[string]string) string {
+		addr := freeAddr(t)
+		vars := map[string]string{
+			"LOOKLY_ENV":       "production",
+			"LOOKLY_HTTP_ADDR": addr,
+			"DATABASE_URL":     "postgresql://lookly@127.0.0.1:1/lookly?sslmode=disable", // nothing listens there
+		}
+		for k, v := range extra {
+			vars[k] = v
+		}
+		ctx, cancel := context.WithCancel(context.Background())
+		stdout, done := &syncBuffer{}, make(chan int, 1)
+		go func() { done <- app.Run(ctx, []string{"serve"}, configtest.Getenv(vars), stdout, &syncBuffer{}) }()
+		deadline := time.Now().Add(5 * time.Second)
+		for {
+			if c, err := net.DialTimeout("tcp", addr, 100*time.Millisecond); err == nil {
+				c.Close()
+				break
+			}
+			if time.Now().After(deadline) {
+				t.Fatalf("server did not start: %s", stdout.String())
+			}
+			time.Sleep(20 * time.Millisecond)
+		}
+		cancel()
+		<-done
+		return stdout.String()
+	}
+	if log := start(nil); strings.Count(log, "TRUST_PROXY is not 1") != 1 {
+		t.Errorf("production without TRUST_PROXY: %d warnings in\n%s", strings.Count(log, "TRUST_PROXY is not 1"), log)
+	}
+	if log := start(map[string]string{"TRUST_PROXY": "1"}); strings.Contains(log, "TRUST_PROXY is not 1") {
+		t.Errorf("production with TRUST_PROXY=1 warns:\n%s", log)
+	}
+	if log := start(map[string]string{"LOOKLY_ENV": "staging"}); strings.Contains(log, "TRUST_PROXY is not 1") {
+		t.Errorf("staging warns:\n%s", log)
+	}
+}

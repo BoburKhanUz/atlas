@@ -3,6 +3,7 @@ package httpapi
 import (
 	"log/slog"
 	"net/http"
+	"time"
 
 	"lookly/internal/httpapi/contract"
 )
@@ -59,4 +60,9 @@ func TerminalCodes() []string {
 		codes = append(codes, string(code))
 	}
 	return codes
+}
+
+// WrapWithTimeout is Wrap with another request timeout.
+func WrapWithTimeout(next http.Handler, log *slog.Logger, timeout time.Duration) http.Handler {
+	return wrap(next, log, timeout)
 }

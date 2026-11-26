@@ -83,7 +83,7 @@ const (
 // Credential returns the access token a request presents. An Authorization
 // header, when present, is the only credential considered, even if it is
 // empty or of another scheme: there is no fallback to the cookie. That is
-// what makes requests with the header safe to exempt from the cross-origin
+// what makes requests with the header safe to exempt from the cross-site
 // guard (a page of another site cannot add it).
 func Credential(r *http.Request) (token string, via Via) {
 	if value, present := header(r, "Authorization"); present {
@@ -124,24 +124,27 @@ func ClientAddr(r *http.Request, trustProxy bool) (netip.Addr, bool) {
 	return addr.Unmap().WithZone(""), true
 }
 
-// CrossOriginCookieRequest is the cross-site request guard: a state-changing
-// request that rides on a session cookie (no Authorization header) and whose
-// Origin names another host. A request without an Origin header passes
-// (SameSite=Lax already keeps the cookies off cross-site writes in current
-// browsers; this is the second layer). An Origin that cannot be read as
-// scheme://host, "null" included, is never our own.
-func CrossOriginCookieRequest(r *http.Request, trustProxy bool) bool {
+// CrossSiteWrite is the cross-site request guard: a state-changing request
+// without an Authorization header whose Origin names another host. Browsers
+// send Origin on every cross-site write, form posts included, and a page of
+// another site cannot add an Authorization header, so this refuses what
+// another site can make a browser send and nothing our own clients send (the
+// web app is same-origin; the mobile app sends no Origin).
+//
+// It does not look at the cookies. The Next.js API guarded only requests
+// that carried a session cookie, but those cookies are SameSite=Lax and a
+// browser never sends them on a cross-site write; what such a write can
+// still do is set them (a posted sign-in form) or clear them (sign-out).
+//
+// A request without an Origin header passes. An Origin that cannot be read
+// as scheme://host, "null" included, is never our own.
+func CrossSiteWrite(r *http.Request, trustProxy bool) bool {
 	switch r.Method {
 	case http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete:
 	default:
 		return false
 	}
 	if _, present := header(r, "Authorization"); present {
-		return false
-	}
-	_, access := cookie(r, AccessCookie)
-	_, refresh := cookie(r, RefreshCookie)
-	if !access && !refresh {
 		return false
 	}
 	origin, _ := header(r, "Origin")

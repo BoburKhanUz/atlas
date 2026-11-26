@@ -10,6 +10,7 @@ routes traffic to it; each stage adds endpoints behind tests. Rules for working 
 ```
 client ─► Wrap (middleware) ─► routed (404 for unknown routes) ─► generated router
           request id           route pattern for the log            │ header and path parameters
+          30 s time limit                                           │
           access log                                                ▼
           panic → 500                                     gate (per route, in this order)
           64 KB body limit                                 1. cross-site request guard → 403
@@ -58,12 +59,17 @@ client ─► Wrap (middleware) ─► routed (404 for unknown routes) ─► ge
 - Not everything reaches the router: net/http answers some malformed requests itself
   (a bad `Content-Length`: plain 400; headers over 16 KB: 431), and ServeMux redirects
   unclean paths (`//api/health`: 307). The Next.js server has similar edges.
+- **Time limit**: every request's context ends after 30 s (`RequestTimeout`), which
+  cancels its database calls and its wait for a pooled connection, so a stalled database
+  cannot hold requests until their clients give up. The session transaction and the
+  rate limiter have their own, shorter lock and statement timeouts inside it.
 - **Request id**: a single client `X-Request-Id` matching `[A-Za-z0-9-]{8,64}` is kept,
   otherwise (missing, malformed or sent more than once, as the Next.js API) a random UUID
   is used. It is in the response header, the envelope and every request's log lines.
 - **Logs**: JSON on stdout (`log/slog`). There is one `request` line per request with the
   method, the route pattern (not the path, which can hold media keys), status, bytes and
-  duration. Query strings, headers and bodies are never logged. A panic is logged with
+  duration, and the caller's user id once the gate knows it (never the email). Query
+  strings, headers and bodies are never logged. A panic is logged with
   its type and stack, not its value.
 
 ## Configuration
@@ -91,8 +97,10 @@ before listening. Values that hold credentials are never printed.
 The session variables are shared with the Next.js server and follow its rules, with two
 differences: Go refuses a value out of range or malformed, where the Next.js server
 silently used the default or the nearest limit; and Go refuses `COOKIE_SECURE=0` in
-production. Every command (`serve`, `worker`, `migrate river`, `health`) validates the
-whole configuration, so all of them need the secrets.
+production. `serve`, `worker` and `migrate river` validate the whole configuration, so
+all three need the secrets; `health` reads only `LOOKLY_HTTP_ADDR`. In production
+without `TRUST_PROXY=1` the server logs a warning at start: client addresses are then
+unknown, so sign-in is limited per account only and registration shares one limit.
 
 Later stages add their settings (media secret, AI, mail) to the same check.
 
@@ -109,11 +117,16 @@ and the ones served although the user's consent is out of date. **A route that i
 the table is closed**: it needs a session and a current consent. A test compares the
 table with the contract's `security` fields for every route served.
 
-1. **Cross-site request guard.** A state-changing request that carries a session cookie,
-   has no `Authorization` header and whose `Origin` names another host is refused with
-   `FORBIDDEN`, before anything else happens (also on sign-in: another site cannot sign
-   the browser in as someone else). `Origin: null` is another host; no `Origin` passes.
-   Behind the trusted proxy (`TRUST_PROXY=1`) the first `X-Forwarded-Host` is the host.
+1. **Cross-site request guard.** A state-changing request without an `Authorization`
+   header whose `Origin` names another host is refused with `FORBIDDEN`, before anything
+   else happens. Browsers send `Origin` on every cross-site write, form posts included,
+   and another site's page cannot add an `Authorization` header. The guard does not look
+   at the cookies: they are `SameSite=Lax`, so a browser never sends them on a cross-site
+   write, and what such a write could still do is set them (a posted sign-in form that
+   leaves the browser signed in to the attacker's account) or clear them. The Next.js API
+   guarded only requests that carried a cookie, so it did not stop that; Go does.
+   `Origin: null` is another host; no `Origin` passes (the mobile app sends none). Behind
+   the trusted proxy (`TRUST_PROXY=1`) the first `X-Forwarded-Host` is the host.
 2. **Who is calling.** An `Authorization` header, when present, is the only credential
    considered, even when it is empty or invalid: there is no fallback to the cookie.
    Otherwise the `atlas_at` cookie. The token must be ours, unexpired, and name a session
@@ -146,9 +159,11 @@ and the rate limiter.
   one email at once give one `201` and `CONFLICT` for the rest, never a partial account
   (tested with four at once). Ids and times are written by Go until B7: ids as Prisma
   shaped them, times from the database clock in UTC.
-- **Sign-in** counts the attempt, looks the user up, and compares the password. An
-  unknown email is compared against a decoy hash of the current cost, so both failures
-  cost the same work and give the same answer. A success gives the attempt back to the
+- **Sign-in** counts the attempt, looks the user up, and compares the password. Every
+  failed attempt costs one comparison at the current cost and one at the cost of the old
+  server's hashes: the account's own hash is one of the two and a decoy the other, and
+  for an unknown email both are decoys. So the answer and the time it takes say neither
+  whether the email is registered nor how old its hash is. A success gives the attempt back to the
   limiter and, if the stored hash is weaker than the current cost, replaces it (only if
   it is still the hash that was verified). A password over 72 bytes from the old server
   keeps signing in and keeps its hash.
@@ -357,10 +372,12 @@ reads and writes data but changes no schema there.
   `session-recovery` run again with the operations Go already serves answered by Go.
   `apps/web/e2e/go-front.mjs`, a test-only proxy, stands in front of a Next.js server
   and a Go server on one database and the same secrets, and sends those operations to
-  Go and everything else to Next.js. So sessions started by one server are rotated,
-  read and ended by the other (page loads are still rotated by Next.js). Each answer is
+  Go and everything else to Next.js. In this arrangement every session is started by Go
+  (sign-in is Go's); Next.js reads them and rotates them on page loads. Each answer is
   marked with the server that gave it, and `go-mode.spec.ts` checks the routing, so a
-  misrouted run cannot pass. This arrangement is never deployed: production switches
+  misrouted run cannot pass. It also checks the other direction step by step: Next.js
+  rotates a session, then Go serves a grace replay from the ciphertext Next.js stored
+  and rotates the row Next.js wrote, and Next.js goes on from Go's. This arrangement is never deployed: production switches
   in one step (ADR 0002). Locally:
 
   ```bash

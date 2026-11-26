@@ -107,6 +107,11 @@ func serve(ctx context.Context, getenv func(string) (string, bool), stdout, stde
 	}
 	defer pool.Close()
 
+	if cfg.Env == config.Production && !cfg.TrustProxy {
+		// Not refused: a server reached directly must not believe forwarding
+		// headers. But behind the reverse proxy this setting is a mistake.
+		log.Warn("TRUST_PROXY is not 1: client addresses are unknown, so sign-in is limited per account only and registration shares one limit")
+	}
 	handler := api(cfg, pool, log)
 
 	listener, err := net.Listen("tcp", cfg.HTTPAddr)

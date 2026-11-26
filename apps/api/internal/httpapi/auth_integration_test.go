@@ -79,6 +79,30 @@ func (h *quickHasher) NeedsRehash(hash string) bool {
 	return err != nil || cost < quickCost
 }
 
+// Decoys: one at the test's current cost, one at its "legacy" cost.
+func (h *quickHasher) Decoys() (current, legacy string, err error) {
+	password := []byte(auth.NewRefreshToken())
+	c, err := bcrypt.GenerateFromPassword(password, quickCost)
+	if err != nil {
+		return "", "", err
+	}
+	l, err := bcrypt.GenerateFromPassword(password, bcrypt.MinCost)
+	return string(c), string(l), err
+}
+
+// costsSince are the costs of the hashes compared with since the mark, sorted.
+func (h *quickHasher) costsSince(mark int) []int {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	var costs []int
+	for _, hash := range h.verified[mark:] {
+		cost, _ := bcrypt.Cost([]byte(hash))
+		costs = append(costs, cost)
+	}
+	slices.Sort(costs)
+	return costs
+}
+
 func (h *quickHasher) comparisons() int {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -463,27 +487,44 @@ func TestRegisterSignsInAndAWrongPasswordDoesNot(t *testing.T) {
 		t.Fatalf("register: %s, cookies %v", got.raw, got.cookies)
 	}
 
-	before := a.hasher.comparisons()
+	mark := a.hasher.comparisons()
 	wrong := a.do(call{path: "/api/v1/auth/login", body: map[string]any{"email": email, "password": "nope-nope"}})
 	a.is(wrong, http.StatusUnauthorized, apierr.Unauthorized)
 	if len(wrong.cookies) != 0 || wrong.text("error") != "Email yoki parol noto‘g‘ri" {
 		t.Errorf("wrong password: %s, cookies %v", wrong.raw, wrong.cookies)
 	}
-	// An unknown email gets the same answer after the same work: one
-	// password comparison, against a real hash.
+	wrongWork := a.hasher.costsSince(mark)
+
+	// An unknown email gets the same answer after the same work.
+	mark = a.hasher.comparisons()
 	unknown := a.do(call{path: "/api/v1/auth/login", body: map[string]any{"email": "nobody@test.local", "password": "nope-nope"}})
 	a.is(unknown, http.StatusUnauthorized, apierr.Unauthorized)
 	if unknown.text("error") != wrong.text("error") || len(unknown.cookies) != 0 {
 		t.Errorf("unknown email: %s", unknown.raw)
 	}
-	if got := a.hasher.comparisons() - before; got != 2 {
-		t.Errorf("%d password comparisons for a wrong password and an unknown email, want one each", got)
+	unknownWork := a.hasher.costsSince(mark)
+
+	// So does an account whose hash the old server left (a weaker cost):
+	// every account is one of these on the day of the cutover.
+	legacyHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+	if err != nil {
+		t.Fatal(err)
 	}
-	a.hasher.mu.Lock()
-	decoy := a.hasher.verified[len(a.hasher.verified)-1]
-	a.hasher.mu.Unlock()
-	if cost, err := bcrypt.Cost([]byte(decoy)); err != nil || cost != quickCost {
-		t.Errorf("the unknown email was compared with %q (cost %d, %v), not with a hash of the current cost", decoy, cost, err)
+	a.exec(`INSERT INTO "User" ("id","email","passwordHash","updatedAt") VALUES ('u_legacy', 'legacy@test.local', $1, now())`, string(legacyHash))
+	mark = a.hasher.comparisons()
+	legacy := a.do(call{path: "/api/v1/auth/login", body: map[string]any{"email": "legacy@test.local", "password": "nope-nope"}})
+	a.is(legacy, http.StatusUnauthorized, apierr.Unauthorized)
+	legacyWork := a.hasher.costsSince(mark)
+
+	// One comparison at the current cost and one at the legacy cost, each time.
+	want := []int{bcrypt.MinCost, quickCost}
+	for name, work := range map[string][]int{"a wrong password": wrongWork, "an unknown email": unknownWork, "a wrong password on an old hash": legacyWork} {
+		if !slices.Equal(work, want) {
+			t.Errorf("%s compared against hashes of costs %v, want %v", name, work, want)
+		}
+	}
+	if got := query[string](a, `SELECT "passwordHash" FROM "User" WHERE "id" = 'u_legacy'`); got != string(legacyHash) {
+		t.Error("a failed sign-in replaced the stored hash")
 	}
 	// The email is matched whatever its case.
 	upper := a.do(call{path: "/api/v1/auth/login", body: map[string]any{"email": strings.ToUpper(email), "password": password}})
@@ -626,7 +667,16 @@ func TestMeWithTheAccessCookie(t *testing.T) {
 	if err != nil || time.Since(created) > time.Minute || time.Since(created) < -time.Minute {
 		t.Errorf("createdAt %q (%v)", got.text("user", "createdAt"), err)
 	}
+	// The request log names the caller by id (never by email), so an
+	// incident can be traced to an account; an anonymous request names none.
+	claims, _ := a.tokens.Verify(s.at, time.Now())
+	if !strings.Contains(a.logs(), `"route":"GET /api/v1/auth/me","status":200`) || !strings.Contains(a.logs(), `"userId":"`+claims.Sub+`"`) || strings.Contains(a.logs(), s.email) {
+		t.Errorf("the request log does not name the caller by id:\n%s", a.logs())
+	}
 	a.is(a.me(call{}), http.StatusUnauthorized, apierr.Unauthorized)
+	if strings.Count(a.logs(), `"userId"`) != 1 {
+		t.Errorf("an anonymous request has a userId in the log:\n%s", a.logs())
+	}
 	a.is(a.me(call{cookies: map[string]string{httpapi.AccessCookie: "not-a-token"}}), http.StatusUnauthorized, apierr.Unauthorized)
 	// The refresh token is not an access token, in either cookie.
 	a.is(a.me(call{cookies: map[string]string{httpapi.RefreshCookie: s.at}}), http.StatusUnauthorized, apierr.Unauthorized)
@@ -817,7 +867,7 @@ func TestASessionThatEndedIsRefusedAtOnce(t *testing.T) {
 	a.is(a.me(cookieOf(u.at)), http.StatusUnauthorized, apierr.Unauthorized)
 }
 
-func TestCrossSiteRequestsThatRideOnCookiesAreRefused(t *testing.T) {
+func TestWritesFromAnotherSiteAreRefused(t *testing.T) {
 	t.Parallel()
 	a := newAPI(t, apiOptions{})
 	s := a.webLogin()
@@ -836,15 +886,31 @@ func TestCrossSiteRequestsThatRideOnCookiesAreRefused(t *testing.T) {
 	a.is(crossLogin, http.StatusForbidden, apierr.Forbidden)
 	a.is(a.do(call{path: "/api/v1/auth/register", cookies: both, headers: evil, body: registration(a.newEmail())}), http.StatusForbidden, apierr.Forbidden)
 	a.is(a.do(call{path: "/api/v1/auth/logout", cookies: both, headers: map[string]string{"Origin": "null"}}), http.StatusForbidden, apierr.Forbidden)
-	if !strings.Contains(a.logs(), "cross-origin cookie request rejected") {
+	if !strings.Contains(a.logs(), "cross-site write rejected") {
 		t.Error("the refusal is not logged")
 	}
 
-	// The same site, a request without an Origin, one without cookies and
-	// one with an Authorization header all pass.
+	// A browser does not send these cookies (SameSite=Lax) on a write from
+	// another site, so the real attack carries none: a form on another site
+	// posting a sign-in, to leave this browser signed in to the attacker's
+	// account. Refused all the same, with nothing set and nobody signed in.
+	sessions := query[int](a, `SELECT count(*) FROM "Session"`)
+	form := map[string]string{"Origin": "https://evil.example", "Content-Type": "text/plain"}
+	crossForm := a.do(call{path: "/api/v1/auth/login", headers: form, body: loginBody})
+	a.is(crossForm, http.StatusForbidden, apierr.Forbidden)
+	a.is(a.do(call{path: "/api/v1/auth/register", headers: form, body: registration(a.newEmail())}), http.StatusForbidden, apierr.Forbidden)
+	// Nor can another site clear the session cookies through sign-out.
+	crossOut := a.do(call{path: "/api/v1/auth/logout", headers: form})
+	a.is(crossOut, http.StatusForbidden, apierr.Forbidden)
+	if len(crossForm.cookies) != 0 || len(crossOut.cookies) != 0 || query[int](a, `SELECT count(*) FROM "Session"`) != sessions {
+		t.Errorf("a refused cross-site write set cookies (%v, %v) or started a session", crossForm.cookies, crossOut.cookies)
+	}
+
+	// The same site, a request without an Origin (the mobile app sends
+	// none) and one with an Authorization header all pass.
 	a.is(a.do(call{path: "/api/v1/auth/login", cookies: both, headers: map[string]string{"Origin": "https://app.example.uz"}, body: loginBody}), http.StatusOK, "")
 	a.is(a.do(call{path: "/api/v1/auth/login", cookies: both, body: loginBody}), http.StatusOK, "")
-	a.is(a.do(call{path: "/api/v1/auth/login", headers: evil, body: loginBody}), http.StatusOK, "")
+	a.is(a.do(call{path: "/api/v1/auth/login", mobile: true, body: loginBody}), http.StatusOK, "")
 	m := a.mobileRegister(nil)
 	a.is(a.do(call{path: "/api/v1/auth/logout", mobile: true, cookies: both, headers: evil, bearer: m.accessToken}), http.StatusOK, "")
 	// Reading is never refused.
@@ -960,6 +1026,22 @@ func TestRegistrationCreatesTheAccountWithItsCompanionRows(t *testing.T) {
 		t.Errorf("consent time is %v s from UTC now", drift)
 	}
 
+	// A name with a character PostgreSQL cannot store (NUL) loses it; the
+	// registration does not fail on it.
+	odd := registration(a.newEmail())
+	odd["name"] = "Az\u0000iza"
+	stored := a.do(call{path: "/api/v1/auth/register", body: mustJSONRaw(odd)})
+	a.is(stored, http.StatusCreated, "")
+	if stored.text("user", "name") != "Aziza" {
+		t.Errorf("name stored as %q", stored.text("user", "name"))
+	}
+	onlyNUL := registration(a.newEmail())
+	onlyNUL["name"] = "\u0000"
+	if got := a.do(call{path: "/api/v1/auth/register", body: mustJSONRaw(onlyNUL)}); got.status != http.StatusCreated || got.body["user"].(map[string]any)["name"] != nil {
+		t.Errorf("a name of NUL alone: %d %s", got.status, got.raw)
+	}
+	a.exec(`DELETE FROM "User" WHERE "email" <> 'aziza.karimova@example.uz'`)
+
 	// The same email again, in any case: a conflict, with nothing created.
 	again := registration("AZIZA.KARIMOVA@example.uz")
 	conflict := a.do(call{path: "/api/v1/auth/register", body: again})
@@ -1013,6 +1095,12 @@ func TestTwoRegistrationsOfOneEmailAtOnceGiveOneAccount(t *testing.T) {
 	if n := query[int](a, `SELECT (SELECT count(*) FROM "UserProfile") + (SELECT count(*) FROM "UserPreferences") + (SELECT count(*) FROM "LegalConsent") - 3 * (SELECT count(*) FROM "User")`); n != 0 {
 		t.Errorf("rows without their user, or users without their rows: %d", n)
 	}
+}
+
+// mustJSONRaw is a body whose \u0000 escapes stay escapes (json.Marshal
+// would write them as \\u0000, a backslash and text).
+func mustJSONRaw(v map[string]any) string {
+	return strings.ReplaceAll(mustJSON(v), `\\u0000`, `\u0000`)
 }
 
 func mustJSON(v any) string {
@@ -1268,6 +1356,48 @@ func TestABusySessionStoreAnswers503AndKeepsTheCookies(t *testing.T) {
 		t.Fatal(err)
 	}
 	a.is(a.refreshWeb(s.rt), http.StatusOK, "")
+}
+
+// Starting a session can find the store busy too. Both servers then answer
+// 503 on sign-in and registration, which the contract does not list for
+// those operations (knownContractGaps).
+func TestABusyStoreAtSignInAnswers503(t *testing.T) {
+	t.Parallel()
+	a := newAPI(t, apiOptions{lockTimeout: 300 * time.Millisecond})
+	known := a.newEmail()
+	a.is(a.do(call{path: "/api/v1/auth/register", body: registration(known)}), http.StatusCreated, "")
+	ctx := context.Background()
+	conn, err := pgx.Connect(ctx, dbtest.URL(a.pool))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close(ctx)
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tx.Exec(ctx, `LOCK TABLE "SessionFamily" IN ACCESS EXCLUSIVE MODE`); err != nil {
+		t.Fatal(err)
+	}
+	busyLogin := a.do(call{path: "/api/v1/auth/login", body: map[string]any{"email": known, "password": password}})
+	fresh := a.newEmail()
+	busyRegister := a.do(call{path: "/api/v1/auth/register", body: registration(fresh)})
+	for name, busy := range map[string]answer{"login": busyLogin, "register": busyRegister} {
+		a.is(busy, http.StatusServiceUnavailable, apierr.SessionBusy)
+		if busy.header.Get("Retry-After") != "1" || len(busy.cookies) != 0 {
+			t.Errorf("%s: Retry-After %q, cookies %v", name, busy.header.Get("Retry-After"), busy.cookies)
+		}
+	}
+	if err := tx.Rollback(ctx); err != nil {
+		t.Fatal(err)
+	}
+	// The sign-in works once the store is free. The registration had
+	// already created its account (as on the Next.js API, the session
+	// starts after it): the same request again is a conflict, and the
+	// person signs in instead.
+	a.is(a.do(call{path: "/api/v1/auth/login", body: map[string]any{"email": known, "password": password}}), http.StatusOK, "")
+	a.is(a.do(call{path: "/api/v1/auth/register", body: registration(fresh)}), http.StatusConflict, apierr.Conflict)
+	a.is(a.do(call{path: "/api/v1/auth/login", body: map[string]any{"email": fresh, "password": password}}), http.StatusOK, "")
 }
 
 // Bodies through the real router: the gate judges them before the generated

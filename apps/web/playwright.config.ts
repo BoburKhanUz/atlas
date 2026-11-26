@@ -154,7 +154,8 @@ export default defineConfig({
   projects: [
     {
       name: 'main',
-      testIgnore: /session(-[\w-]+)?\.spec\.ts/,
+      // go-mode.spec.ts checks the Go-mode arrangement itself and runs only in it.
+      testIgnore: GO_MODE ? /session(-[\w-]+)?\.spec\.ts/ : /(session(-[\w-]+)?|go-mode)\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], baseURL: `http://127.0.0.1:${PORT}` },
     },
     {

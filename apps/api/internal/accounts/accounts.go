@@ -27,7 +27,7 @@ import (
 
 // The limits (docs/plan/B2.md). Sign-in counts failed attempts: an attempt
 // is counted before the password is checked and given back when it succeeds.
-// Registration counts every attempt that reaches this service.
+// Registration counts every attempt with a valid request, successful or not.
 var (
 	LoginPerAccount    = ratelimit.Rule{Name: "login:account", Limit: 10, Window: 15 * time.Minute}
 	LoginPerAddress    = ratelimit.Rule{Name: "login:address", Limit: 50, Window: 15 * time.Minute}
@@ -39,7 +39,8 @@ var (
 
 // Messages of the account operations (the Next.js API's).
 const (
-	msgInvalidCredentials = "Email yoki parol noto‘g‘ri"
+	// MsgInvalidCredentials answers a wrong email and a wrong password alike.
+	MsgInvalidCredentials = "Email yoki parol noto‘g‘ri"
 	msgEmailTaken         = "Bu email allaqachon ro‘yxatdan o‘tgan"
 	msgUserNotFound       = "Foydalanuvchi topilmadi"
 	// MsgPasswordTooLong: bcrypt reads 72 bytes; a longer password would be
@@ -52,6 +53,9 @@ type Hasher interface {
 	Hash(plain string) (string, error)
 	Verify(plain, hash string) bool
 	NeedsRehash(hash string) bool
+	// Decoys returns hashes of a password nobody knows, one of the current
+	// cost and one of the cost the old server's hashes have.
+	Decoys() (current, legacy string, err error)
 }
 
 // Service is the account use cases.
@@ -63,33 +67,35 @@ type Service struct {
 	hasher   Hasher
 	log      *slog.Logger
 
-	decoyOnce sync.Once
-	decoyHash string
+	decoyOnce                 sync.Once
+	decoyCurrent, decoyLegacy string
 }
 
-// New returns a Service. It starts hashing a random password in the
-// background (the decoy for unknown emails), so that the server does not
-// wait for it to start and the first sign-in rarely does.
+// New returns a Service. It starts hashing the decoy passwords in the
+// background, so that the server does not wait for them to start and the
+// first sign-in rarely does.
 func New(pool *pgxpool.Pool, sessions *session.Service, limiter *ratelimit.Limiter, consent *legal.Service, hasher Hasher, log *slog.Logger) *Service {
 	s := &Service{pool: pool, sessions: sessions, limiter: limiter, consent: consent, hasher: hasher, log: log}
-	go s.decoy()
+	go s.decoys() // short and bounded: two hashes, then it ends
 	return s
 }
 
-// decoy is the hash an unknown email's password is compared with, so that
-// the answer takes the work of a wrong password: a real hash of the current
-// cost, of a password nobody knows.
-func (s *Service) decoy() string {
+// decoys are the hashes a failed sign-in is also compared with. Every failed
+// attempt costs one comparison at the current cost and one at the legacy
+// cost: the account's own hash is one of the two, a decoy the other, and
+// for an unknown email both are decoys. So the time an answer takes says
+// neither whether the email is registered nor how old its hash is.
+func (s *Service) decoys() (current, legacy string) {
 	s.decoyOnce.Do(func() {
-		hash, err := s.hasher.Hash(auth.NewRefreshToken())
+		var err error
+		s.decoyCurrent, s.decoyLegacy, err = s.hasher.Decoys()
 		if err != nil {
-			// A random 43-character password always hashes; if it ever does
-			// not, unknown emails answer faster than wrong passwords.
-			s.log.Error("the decoy password could not be hashed", "err", err.Error())
+			// A random password always hashes; if it ever does not, failed
+			// sign-ins are not equally slow.
+			s.log.Error("the decoy passwords could not be hashed", "err", err.Error())
 		}
-		s.decoyHash = hash
 	})
-	return s.decoyHash
+	return s.decoyCurrent, s.decoyLegacy
 }
 
 // Client is what is known about who is asking.
@@ -154,10 +160,10 @@ func (s *Service) Register(ctx context.Context, in RegisterInput, c Client) (ses
 		return session.User{}, session.Issued{}, fmt.Errorf("hash the password: %w", err)
 	}
 
-	user := session.User{ID: platform.NewID(), Email: email, Name: in.Name}
+	user := session.User{ID: platform.NewID(), Email: email, Name: storable(in.Name)}
 	err = pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{IsoLevel: pgx.ReadCommitted}, func(tx pgx.Tx) error {
 		q := store.New(tx)
-		if err := q.CreateUser(ctx, store.CreateUserParams{ID: user.ID, Email: email, Name: in.Name, PasswordHash: hash}); err != nil {
+		if err := q.CreateUser(ctx, store.CreateUserParams{ID: user.ID, Email: email, Name: user.Name, PasswordHash: hash}); err != nil {
 			return fmt.Errorf("create the user: %w", err)
 		}
 		if err := q.CreateUserProfile(ctx, store.CreateUserProfileParams{ID: platform.NewID(), UserID: user.ID}); err != nil {
@@ -214,14 +220,22 @@ func (s *Service) Login(ctx context.Context, in LoginInput, c Client) (session.U
 
 	q := store.New(s.pool)
 	row, err := q.UserByEmail(ctx, email)
+	decoyCurrent, decoyLegacy := s.decoys()
 	if errors.Is(err, pgx.ErrNoRows) {
-		s.hasher.Verify(in.Password, s.decoy()) // the work of a wrong password
-		return session.User{}, session.Issued{}, apierr.With(apierr.Unauthorized, msgInvalidCredentials)
+		s.hasher.Verify(in.Password, decoyCurrent)
+		s.hasher.Verify(in.Password, decoyLegacy)
+		return session.User{}, session.Issued{}, apierr.With(apierr.Unauthorized, MsgInvalidCredentials)
 	} else if err != nil {
 		return session.User{}, session.Issued{}, fmt.Errorf("look up the user: %w", err)
 	}
 	if !s.hasher.Verify(in.Password, row.PasswordHash) {
-		return session.User{}, session.Issued{}, apierr.With(apierr.Unauthorized, msgInvalidCredentials)
+		// The other half of a failure's work (see decoys).
+		if s.hasher.NeedsRehash(row.PasswordHash) {
+			s.hasher.Verify(in.Password, decoyCurrent)
+		} else {
+			s.hasher.Verify(in.Password, decoyLegacy)
+		}
+		return session.User{}, session.Issued{}, apierr.With(apierr.Unauthorized, MsgInvalidCredentials)
 	}
 
 	// The attempt succeeded: it is not counted. Earlier failures stay.
@@ -284,6 +298,20 @@ func (s *Service) Me(ctx context.Context, userID string) (Me, error) {
 		return Me{}, err
 	}
 	return Me{ID: row.ID, Email: row.Email, Name: row.Name, CreatedAt: row.CreatedAt, ConsentRequired: required}, nil
+}
+
+// storable is a name as it can be stored: PostgreSQL refuses the NUL
+// character in text, so it is removed (as the session protocol removes it
+// from the device name). Nothing left: no name.
+func storable(name *string) *string {
+	if name == nil {
+		return nil
+	}
+	cleaned := strings.ReplaceAll(*name, "\x00", "")
+	if cleaned == "" {
+		return nil
+	}
+	return &cleaned
 }
 
 func passwordTooLong() *apierr.Error {

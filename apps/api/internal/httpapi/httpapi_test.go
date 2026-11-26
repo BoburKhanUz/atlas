@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"lookly/internal/apierr"
 	"lookly/internal/contracttest"
@@ -435,5 +436,43 @@ func TestAnOversizedBodyClosesTheConnection(t *testing.T) {
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusRequestEntityTooLarge || !resp.Close {
 		t.Fatalf("status %d, Connection: close %v", resp.StatusCode, resp.Close)
+	}
+}
+
+// A request is given a bounded time: its context ends, so a handler waiting
+// on the database (a full pool, a stalled query) is released instead of
+// holding its goroutine until the client gives up.
+func TestARequestsContextEndsAfterTheRequestTimeout(t *testing.T) {
+	t.Parallel()
+	if httpapi.RequestTimeout != 30*time.Second {
+		t.Fatalf("request timeout %s", httpapi.RequestTimeout)
+	}
+	l := &logs{}
+	var waited error
+	h := httpapi.WrapWithTimeout(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case <-r.Context().Done():
+			waited = r.Context().Err()
+			httpapi.WriteError(w, r, waited)
+		case <-time.After(5 * time.Second):
+			w.WriteHeader(http.StatusNoContent)
+		}
+	}), slog.New(slog.NewJSONHandler(l, nil)), 50*time.Millisecond)
+	w := do(h, http.MethodGet, "/api/health", nil, nil)
+	if !errors.Is(waited, context.DeadlineExceeded) {
+		t.Fatalf("the handler's context ended with %v", waited)
+	}
+	if e := decodeEnvelope(t, w); w.Code != http.StatusInternalServerError || e.Code != "INTERNAL" {
+		t.Errorf("answer %d %s", w.Code, e.Code)
+	}
+	// A request that finishes in time is not cut.
+	quick := httpapi.WrapWithTimeout(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := r.Context().Err(); err != nil {
+			t.Errorf("context already ended: %v", err)
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}), slog.New(slog.NewJSONHandler(l, nil)), time.Minute)
+	if w := do(quick, http.MethodGet, "/api/health", nil, nil); w.Code != http.StatusNoContent {
+		t.Errorf("status %d", w.Code)
 	}
 }

@@ -61,15 +61,28 @@ func routed(mux *http.ServeMux) http.Handler {
 	})
 }
 
-// Wrap adds, outermost first: the request id, the access log, panic recovery
-// and the default body limit.
+// RequestTimeout bounds every request: its context ends then, which cancels
+// its database calls and its wait for a pooled connection. Without it a
+// stalled database would hold each request's goroutine until the client
+// gave up. Operations that need longer (uploads, AI) get their own budget
+// when they are added.
+const RequestTimeout = 30 * time.Second
+
+// Wrap adds, outermost first: the request id, the request timeout, the
+// access log, panic recovery and the default body limit.
 func Wrap(next http.Handler, log *slog.Logger) http.Handler {
+	return wrap(next, log, RequestTimeout)
+}
+
+func wrap(next http.Handler, log *slog.Logger, timeout time.Duration) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		started := time.Now()
 		info := &requestInfo{id: requestID(r), route: "unmatched", log: log}
 		w.Header().Set("X-Request-Id", info.id)
 		rec := &recorder{ResponseWriter: w, status: http.StatusOK}
-		r = r.WithContext(context.WithValue(r.Context(), infoKey{}, info))
+		ctx, cancel := context.WithTimeout(context.WithValue(r.Context(), infoKey{}, info), timeout)
+		defer cancel()
+		r = r.WithContext(ctx)
 		// The real writer, not the recorder: net/http must learn that the
 		// limit was hit, so it closes the connection instead of draining it.
 		r.Body = http.MaxBytesReader(w, r.Body, DefaultBodyLimit)
@@ -85,14 +98,18 @@ func Wrap(next http.Handler, log *slog.Logger) http.Handler {
 			}
 			// Never the query string, headers or body: they can hold tokens,
 			// signed URLs and personal data. The route is the pattern, not the path.
-			log.Info("request",
+			attrs := []any{
 				"requestId", info.id,
 				"method", r.Method,
 				"route", info.route,
 				"status", rec.status,
 				"bytes", rec.bytes,
-				"durationMs", float64(time.Since(started).Microseconds())/1000,
-			)
+				"durationMs", float64(time.Since(started).Microseconds()) / 1000,
+			}
+			if info.userID != "" {
+				attrs = append(attrs, "userId", info.userID) // the id, never the email
+			}
+			log.Info("request", attrs...)
 			if v == http.ErrAbortHandler {
 				panic(v) // the client went away: net/http closes the connection quietly
 			}
@@ -225,9 +242,10 @@ func writeEnvelope(w http.ResponseWriter, info *requestInfo, e *apierr.Error) {
 
 // requestInfo travels in the request context.
 type requestInfo struct {
-	id    string
-	route string
-	log   *slog.Logger
+	id     string
+	route  string
+	userID string // set by the gate once it knows the caller
+	log    *slog.Logger
 }
 
 type infoKey struct{}

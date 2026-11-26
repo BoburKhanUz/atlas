@@ -25,14 +25,34 @@ func requestOf(method string, headers [][2]string) *http.Request {
 	return r
 }
 
-func TestCrossOriginCookieRequestMatchesTheTypeScriptGuard(t *testing.T) {
+// guardStricter: writes from another site that the Next.js API let through
+// because they carried no session cookie. It guarded only requests that ride
+// on a cookie, but a browser never sends these SameSite=Lax cookies on a
+// cross-site write, so in a real browser that guard never fired: another
+// site could still post a sign-in form and leave the browser signed in to an
+// account of its own choosing, or clear the session cookies through
+// sign-out. Go refuses every write whose Origin names another host.
+var guardStricter = map[string]bool{
+	"another site, no cookie":                             true,
+	"another site, an unrelated cookie":                   true,
+	"another site, a cookie whose name only starts alike": true,
+}
+
+func TestCrossSiteWriteMatchesTheTypeScriptGuard(t *testing.T) {
 	t.Parallel()
 	g := golden.LoadAuthHTTP(t)
-	blocked, passed := 0, 0
+	blocked, passed, stricter := 0, 0, 0
 	for _, c := range g.CSRF {
-		got := httpapi.CrossOriginCookieRequest(requestOf(c.Method, c.Headers), c.TrustProxy)
+		got := httpapi.CrossSiteWrite(requestOf(c.Method, c.Headers), c.TrustProxy)
+		if guardStricter[c.Name] {
+			if c.CrossOrigin || !got {
+				t.Errorf("%s: listed as stricter in Go; TypeScript refused %v, Go refused %v", c.Name, c.CrossOrigin, got)
+			}
+			stricter++
+			continue
+		}
 		if got != c.CrossOrigin {
-			t.Errorf("%s: cross-origin %v, want %v", c.Name, got, c.CrossOrigin)
+			t.Errorf("%s: refused %v, want %v", c.Name, got, c.CrossOrigin)
 		}
 		if c.CrossOrigin {
 			blocked++
@@ -40,8 +60,8 @@ func TestCrossOriginCookieRequestMatchesTheTypeScriptGuard(t *testing.T) {
 			passed++
 		}
 	}
-	if blocked < 10 || passed < 10 {
-		t.Errorf("%d blocked and %d passed vectors", blocked, passed)
+	if blocked < 10 || passed < 10 || stricter != len(guardStricter) {
+		t.Errorf("%d blocked, %d passed and %d of %d stricter vectors", blocked, passed, stricter, len(guardStricter))
 	}
 }
 
@@ -57,7 +77,7 @@ func TestOddOriginsAreCrossOrigin(t *testing.T) {
 		"https://APP.EXAMPLE.UZ:443/", // fine: only here to show the control below works
 	} {
 		r := requestOf(http.MethodPost, [][2]string{{"host", "app.example.uz"}, {"cookie", "atlas_at=a"}, {"origin", origin}})
-		got := httpapi.CrossOriginCookieRequest(r, false)
+		got := httpapi.CrossSiteWrite(r, false)
 		want := origin != "https://APP.EXAMPLE.UZ:443/"
 		if got != want {
 			t.Errorf("origin %q: cross-origin %v, want %v", origin, got, want)
@@ -66,7 +86,7 @@ func TestOddOriginsAreCrossOrigin(t *testing.T) {
 	// A request without a Host (HTTP/1.0) and an Origin without one never
 	// meet as "the same, empty, host".
 	r := requestOf(http.MethodPost, [][2]string{{"host", ""}, {"cookie", "atlas_at=a"}, {"origin", "file:///etc/passwd"}})
-	if !httpapi.CrossOriginCookieRequest(r, false) {
+	if !httpapi.CrossSiteWrite(r, false) {
 		t.Error("an Origin without a host passed against a request without a Host")
 	}
 }
@@ -186,6 +206,6 @@ func FuzzCredential(f *testing.F) {
 		default:
 			t.Fatalf("via %q", via)
 		}
-		httpapi.CrossOriginCookieRequest(r, true)
+		httpapi.CrossSiteWrite(r, true)
 	})
 }

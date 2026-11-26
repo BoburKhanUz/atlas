@@ -22,7 +22,7 @@ type Identity struct {
 
 // Gate is what every request passes before its handler runs, in this order:
 //
-//  1. the cross-site request guard (CrossOriginCookieRequest): 403 FORBIDDEN;
+//  1. the cross-site request guard (CrossSiteWrite): 403 FORBIDDEN;
 //  2. for a route that is not public: the access token (Credential) must be
 //     ours and unexpired, and its session must still stand: 401 UNAUTHORIZED;
 //  3. unless the route is exempt: the user's consent to the legal texts must
@@ -105,8 +105,8 @@ func (g *Gate) middleware(next http.Handler) http.Handler {
 		info := infoFrom(r.Context())
 		rule := routes[info.route]
 
-		if CrossOriginCookieRequest(r, g.TrustProxy) {
-			info.log.Warn("cross-origin cookie request rejected", "requestId", info.id, "method", r.Method, "route", info.route)
+		if CrossSiteWrite(r, g.TrustProxy) {
+			info.log.Warn("cross-site write rejected", "requestId", info.id, "method", r.Method, "route", info.route)
 			WriteError(w, r, apierr.New(apierr.Forbidden))
 			return
 		}
@@ -134,6 +134,7 @@ func (g *Gate) middleware(next http.Handler) http.Handler {
 			}
 			if ok {
 				ctx = context.WithValue(ctx, identityKey{}, id)
+				info.userID = id.UserID // for the request log
 			}
 		}
 

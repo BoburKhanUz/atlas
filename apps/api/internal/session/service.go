@@ -59,7 +59,10 @@ const (
 	DefaultStatementTimeout = 10 * time.Second
 	DefaultAcquireTimeout   = 5 * time.Second
 
-	// transactionTimeout bounds a whole transaction.
+	// transactionTimeout bounds starting and committing a transaction (the
+	// wait for a connection has its own, shorter limit). The statements
+	// inside run on the request's context, each under the statement and
+	// lock timeouts.
 	transactionTimeout = 20 * time.Second
 )
 

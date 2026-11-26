@@ -11,6 +11,10 @@ import (
 // for their replacement after a successful sign-in.
 const PasswordCost = 12
 
+// LegacyPasswordCost is the cost of the hashes the Next.js API stored. They
+// stay until their owners next sign in.
+const LegacyPasswordCost = 10
+
 // MaxPasswordBytes is the most bcrypt reads: anything after byte 72 would
 // be ignored silently, so a longer password is refused when it is set.
 const MaxPasswordBytes = 72
@@ -62,3 +66,20 @@ func (Bcrypt) Verify(plain, hash string) bool { return VerifyPassword(plain, has
 
 // NeedsRehash is NeedsRehash.
 func (Bcrypt) NeedsRehash(hash string) bool { return NeedsRehash(hash) }
+
+// Decoys returns two hashes of a random password nobody knows: one of the
+// current cost and one of the legacy cost. A failed sign-in is compared
+// against them so that it costs the same work whatever the account's hash
+// is, and whether the account exists at all.
+func (Bcrypt) Decoys() (current, legacy string, err error) {
+	password := []byte(NewRefreshToken())
+	c, err := bcrypt.GenerateFromPassword(password, PasswordCost)
+	if err != nil {
+		return "", "", err
+	}
+	l, err := bcrypt.GenerateFromPassword(password, LegacyPasswordCost)
+	if err != nil {
+		return "", "", err
+	}
+	return string(c), string(l), nil
+}
