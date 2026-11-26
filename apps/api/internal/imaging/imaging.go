@@ -84,17 +84,22 @@ func CheckEncoder() error {
 	return nil
 }
 
-// Process checks and converts one picture. It waits for a free slot within
-// ctx. The refusals are ErrUnsupported, ErrInvalid and ErrDimensions; any
-// other error is the server's.
+// Process checks and converts one picture. The header is checked at once;
+// a picture that passes waits for a free slot within ctx, so a refusal
+// never waits behind other pictures. The refusals are ErrUnsupported,
+// ErrInvalid and ErrDimensions; any other error is the server's.
 func (p *Processor) Process(ctx context.Context, data []byte) (Variants, error) {
+	h, err := inspect(data)
+	if err != nil {
+		return Variants{}, err
+	}
 	select {
 	case p.slots <- struct{}{}:
 	case <-ctx.Done():
 		return Variants{}, ctx.Err()
 	}
 	defer func() { <-p.slots }()
-	return process(data)
+	return render(data, h)
 }
 
 // Hold takes a slot until the returned function is called (tests).
@@ -103,32 +108,49 @@ func (p *Processor) Hold() func() {
 	return func() { <-p.slots }
 }
 
-func process(data []byte) (v Variants, err error) {
+// header is what a picture's header says: read before any pixel is decoded.
+type header struct {
+	format      Format
+	cfg         image.Config // as stored
+	orientation int
+	w, h        int // upright
+}
+
+// The decoders are the standard library's, but a picture is untrusted:
+// should one of them fail in an unforeseen way, the upload is refused, the
+// server goes on.
+func refuseOnPanic(err *error) {
+	if r := recover(); r != nil {
+		*err = fmt.Errorf("%w (decoder panic)", ErrInvalid)
+	}
+}
+
+// inspect reads the format, the dimensions and the orientation, and applies
+// the limits: cheap, whatever the picture claims.
+func inspect(data []byte) (h header, err error) {
+	defer refuseOnPanic(&err)
 	format, err := sniff(data)
 	if err != nil {
-		return Variants{}, err
+		return header{}, err
 	}
 	cfg, err := decodeConfig(format, data)
 	if err != nil {
-		return Variants{}, ErrInvalid
+		return header{}, ErrInvalid
 	}
-	orientation := orientationOf(format, data)
-	w, h := cfg.Width, cfg.Height
-	if orientation >= 5 {
-		w, h = h, w
+	h = header{format: format, cfg: cfg, orientation: orientationOf(format, data), w: cfg.Width, h: cfg.Height}
+	if h.orientation >= 5 {
+		h.w, h.h = h.h, h.w
 	}
-	if min(w, h) < MinSide || max(w, h) > MaxSide || w*h > MaxPixels {
-		return Variants{}, ErrDimensions
+	if min(h.w, h.h) < MinSide || max(h.w, h.h) > MaxSide || h.w*h.h > MaxPixels {
+		return header{}, ErrDimensions
 	}
+	return h, nil
+}
 
-	// The decoders are the standard library's, but a picture is untrusted:
-	// should one of them fail in an unforeseen way, the upload is refused,
-	// the server goes on.
-	defer func() {
-		if r := recover(); r != nil {
-			v, err = Variants{}, fmt.Errorf("%w (decoder panic)", ErrInvalid)
-		}
-	}()
+// render decodes a picture inspect accepted and writes its variants.
+func render(data []byte, hd header) (v Variants, err error) {
+	defer refuseOnPanic(&err)
+	format, cfg, orientation, w, h := hd.format, hd.cfg, hd.orientation, hd.w, hd.h
 	src, err := decode(format, data)
 	if err != nil {
 		return Variants{}, ErrInvalid

@@ -250,6 +250,19 @@ func TestProcessingIsBounded(t *testing.T) {
 	if _, err := p.Process(ctx, fixture(t, "marked.png")); !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("while the slot is taken: err %v", err)
 	}
+	// A refusal does not wait for a slot: the header alone decides it.
+	refusals := map[string][]byte{
+		"too small":   solidPNG(t, 100, 100),
+		"unsupported": []byte("GIF89a................................"),
+		"unreadable":  []byte("\x89PNG\r\n\x1a\n not really"),
+	}
+	for name, data := range refusals {
+		start := time.Now()
+		_, err := p.Process(context.Background(), data)
+		if err == nil || errors.Is(err, context.DeadlineExceeded) || time.Since(start) > time.Second {
+			t.Errorf("%s while the slot is taken: err %v after %s", name, err, time.Since(start))
+		}
+	}
 	release()
 	var wg sync.WaitGroup
 	for range 4 {
