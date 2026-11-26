@@ -48,7 +48,8 @@ func (s *Server) serveMedia(w http.ResponseWriter, r *http.Request) {
 	// As the Next.js server: an hour in the client's own cache, whatever the
 	// link's lifetime; never in a shared one.
 	h.Set("Cache-Control", "private, max-age=3600")
-	h.Set("X-Content-Type-Options", "nosniff")
+	// Nothing an image could carry is run or loaded (nosniff is set for
+	// every answer, in Wrap).
 	h.Set("Content-Security-Policy", "default-src 'none'")
 	w.WriteHeader(http.StatusOK)
 	if r.Method != http.MethodHead {

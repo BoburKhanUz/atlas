@@ -283,3 +283,44 @@ func TestMediaWithoutSettingsServesNothing(t *testing.T) {
 		}
 	}
 }
+
+// Every answer of the server carries the headers the Next.js server sends
+// with every response (apps/web/next.config.ts): no type sniffing, no
+// framing, a restrained referrer. A media path is the exception for the
+// content security policy: an image sets its own, stricter one.
+func TestEveryAnswerCarriesTheSecurityHeaders(t *testing.T) {
+	t.Parallel()
+	m := newMediaServer(t, nil)
+	m.put(t, ownKey, []byte("image"))
+	always := map[string]string{
+		"X-Content-Type-Options": "nosniff",
+		"X-Frame-Options":        "DENY",
+		"Referrer-Policy":        "strict-origin-when-cross-origin",
+	}
+	cases := []struct {
+		name, method, target string
+		status               int
+		policy               string // Content-Security-Policy ("" for none)
+	}{
+		{"an unknown path", http.MethodGet, "/api/v1/nothing", http.StatusNotFound, "frame-ancestors 'none'"},
+		{"an unknown method", http.MethodPut, "/api/health", http.StatusNotFound, "frame-ancestors 'none'"},
+		{"a route that needs a session", http.MethodGet, "/api/v1/profile", http.StatusUnauthorized, "frame-ancestors 'none'"},
+		{"a public route", http.MethodGet, "/api/v1/legal", http.StatusOK, "frame-ancestors 'none'"},
+		{"an image", http.MethodGet, m.link(t, ownKey, mediaNow), http.StatusOK, "default-src 'none'"},
+		{"a media link that is refused", http.MethodGet, media.PathPrefix + ownKey + "?exp=1&sig=AAAA", http.StatusNotFound, ""},
+	}
+	for _, c := range cases {
+		w := m.get(t, c.method, c.target, nil)
+		if w.Code != c.status {
+			t.Errorf("%s: status %d, want %d (%s)", c.name, w.Code, c.status, w.Body.String())
+		}
+		for name, value := range always {
+			if got := w.Header().Values(name); len(got) != 1 || got[0] != value {
+				t.Errorf("%s: %s is %q, want %q once", c.name, name, got, value)
+			}
+		}
+		if got := w.Header().Get("Content-Security-Policy"); got != c.policy || len(w.Header().Values("Content-Security-Policy")) > 1 {
+			t.Errorf("%s: Content-Security-Policy %q, want %q", c.name, w.Header().Values("Content-Security-Policy"), c.policy)
+		}
+	}
+}

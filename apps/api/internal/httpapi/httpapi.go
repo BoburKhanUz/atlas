@@ -16,10 +16,12 @@ import (
 	"regexp"
 	"runtime/debug"
 	"strconv"
+	"strings"
 	"time"
 
 	"lookly/internal/apierr"
 	"lookly/internal/httpapi/contract"
+	"lookly/internal/media"
 )
 
 // DefaultBodyLimit caps every request body (64 KB, the Next.js API's JSON
@@ -113,6 +115,20 @@ func Wrap(next http.Handler, log *slog.Logger) http.Handler {
 	return wrap(next, log, func(*http.Request) budget { return budget{body: DefaultBodyLimit, timeout: RequestTimeout} })
 }
 
+// securityHeaders sets what the Next.js server sends with every response
+// (apps/web/next.config.ts): no type sniffing, no framing, a restrained
+// referrer. A media path gets no content security policy here: an image
+// sets its own, stricter one (and "frame-ancestors" must not replace it).
+// Strict-Transport-Security is the reverse proxy's, where HTTPS ends.
+func securityHeaders(h http.Header, r *http.Request) {
+	h.Set("X-Content-Type-Options", "nosniff")
+	h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+	h.Set("X-Frame-Options", "DENY")
+	if !strings.HasPrefix(r.URL.Path, media.PathPrefix) {
+		h.Set("Content-Security-Policy", "frame-ancestors 'none'")
+	}
+}
+
 // deadlineGrace is how long after a request's own time limit the server
 // still lets its answer be written.
 const deadlineGrace = 10 * time.Second
@@ -122,6 +138,7 @@ func wrap(next http.Handler, log *slog.Logger, budgetFor func(*http.Request) bud
 		started := time.Now()
 		info := &requestInfo{id: requestID(r), route: "unmatched", log: log}
 		w.Header().Set("X-Request-Id", info.id)
+		securityHeaders(w.Header(), r)
 		rec := &recorder{ResponseWriter: w, status: http.StatusOK}
 		b := budgetFor(r)
 		if b.timeout > RequestTimeout {
