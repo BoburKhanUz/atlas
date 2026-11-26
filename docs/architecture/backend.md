@@ -116,7 +116,7 @@ before listening. Values that hold credentials are never printed.
 | `R2_BUCKET` | none (required for `r2`) | 3–63 lower-case letters, digits and hyphens |
 | `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | none (required for `r2`) | an R2 API token's S3 credentials; the secret is used as given (no white space around it) and never printed |
 | `R2_REGION` | `auto` | the region requests are signed for |
-| `STORAGE_SWEEP_MAX_REMOVALS` | `1000` | how many orphaned image files one storage sweep removes at most: whole number, 1 – 1 000 000. A sweep that finds more removes nothing and fails; raise it for a run only after checking that the worker's database is the right one |
+| `STORAGE_SWEEP_MAX_REMOVALS` | none | how many orphaned image files one storage sweep removes at most: whole number, 1 – 1 000 000. Unset, a run removes at most as many orphans as it found old files with an image row, never more than 1000, and always up to 50. A sweep that finds more removes nothing and fails; set it for a run only after checking that the worker's database is the right one |
 
 The session variables are shared with the Next.js server and follow its rules, with two
 differences: Go refuses a value out of range or malformed, where the Next.js server
@@ -294,7 +294,7 @@ library only.
 | `maintenance_cleanup` | the worker, hourly and at start | removes expired rows (B1) | 3 |
 | `password_reset_mail` | a reset request | makes a link and e-mails it; carries a user id or nothing | 4 |
 | `account_purge_images` | an account deletion, in its transaction | removes `users/<id>` from the storage directory | River's default (25, over about three weeks) |
-| `storage_sweep` | the worker, hourly and at start | removes stored image files no image row names and older than an hour (`wardrobe.Sweeper`), each asked about once more just before it is removed; removes nothing and fails when it finds more than 1000 of them (`STORAGE_SWEEP_MAX_REMOVALS`) or when the database holds no image row at all; names we never make are logged, never removed | 3 |
+| `storage_sweep` | the worker, hourly and at start | removes stored image files no image row names and older than an hour (`wardrobe.Sweeper`), each asked about once more just before it is removed; removes nothing and fails when it finds more of them than it may remove (more than the known files, more than 1000, or more than `STORAGE_SWEEP_MAX_REMOVALS`) or when the database holds no image row at all; names we never make are logged, never removed | 3 |
 
 Job rows hold user ids, never addresses or tokens. River keeps finished jobs for a day.
 
@@ -490,8 +490,9 @@ memory.
 - The storage sweep compares the storage with the worker's database. Stop the worker
   while a database is restored or replaced: against an older copy, the files uploaded
   since look like orphans. The sweep refuses to remove anything when the database holds
-  no image row at all or when it finds more orphans than `STORAGE_SWEEP_MAX_REMOVALS`,
-  and fails its job (`storage sweep failed` in the log) until somebody has looked.
+  no image row at all or when it finds more orphans than it may remove (see
+  `STORAGE_SWEEP_MAX_REMOVALS`), and fails its job (`storage sweep failed` in the log)
+  until somebody has looked.
 - Mail: choose the provider, create its account and set SPF and DKIM for the sender's
   domain (owner). Send the first message on staging with the owner's approval; nothing
   here was verified against a real provider. The privacy policy names the provider.

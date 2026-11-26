@@ -141,12 +141,19 @@ func (r *R2) do(ctx context.Context, method, key string, query url.Values, body 
 	return data, nil
 }
 
-// notFound: the service says the object is not there. A bucket that is not
+// absent: the service says the object is not there. A bucket that is not
 // there (NoSuchBucket) is a failure, not an absent object: a read must not
 // answer "no such picture", a deletion must not count as done.
+func absent(err error) bool {
+	var e *serviceError
+	return errors.As(err, &e) && e.Status == http.StatusNotFound && e.Code == "NoSuchKey"
+}
+
+// notFound: a read's "not there": the service's own word for it, or a 404
+// without one (a read of nothing is the same either way).
 func notFound(err error) bool {
 	var e *serviceError
-	return errors.As(err, &e) && e.Status == http.StatusNotFound && (e.Code == "NoSuchKey" || e.Code == "")
+	return absent(err) || errors.As(err, &e) && e.Status == http.StatusNotFound && e.Code == ""
 }
 
 // Put writes the object whole: a reader gets the old object or the new
@@ -191,7 +198,9 @@ func (r *R2) Delete(ctx context.Context, keys ...string) error {
 }
 
 func (r *R2) remove(ctx context.Context, key string) error {
-	if _, err := r.do(ctx, http.MethodDelete, key, nil, nil); err != nil && !notFound(err) {
+	// The service answers 204 for an object that was not there; a 404 that
+	// does not name the object as missing is not a deletion done.
+	if _, err := r.do(ctx, http.MethodDelete, key, nil, nil); err != nil && !absent(err) {
 		return fmt.Errorf("storage: delete %s: %w", key, err)
 	}
 	return nil

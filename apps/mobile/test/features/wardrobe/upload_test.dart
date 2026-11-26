@@ -369,7 +369,9 @@ void main() {
             .having((f) => f.code, 'code', ApiErrorCode.aiUnavailable)
             .having((f) => f.retryable, 'retryable', true),
       );
-      expect(s.state.failure!.userMessage, contains('AI xizmati hozir ishlamayapti'));
+      // For an upload this code means "busy, try again" (the server could not
+      // take or process the picture now): the screen does not say the AI is down.
+      expect(WardrobeMessages.uploadFailed(s.state.failure), 'Xizmat hozir band. Birozdan so‘ng qayta urinib ko‘ring.');
       expect(s.uploads, hasLength(1));
       await s.c.upload(); // Retry
       expect(s.uploads, hasLength(2));

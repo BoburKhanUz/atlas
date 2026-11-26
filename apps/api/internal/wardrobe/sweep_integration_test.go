@@ -241,53 +241,78 @@ func TestSweepRefusesToEmptyTheStorageForAnEmptyDatabase(t *testing.T) {
 	}
 }
 
+// referenced stores n old files of one user, each with its image row.
+func (w *sweepWorld) referenced(n int) {
+	w.t.Helper()
+	for i := range n {
+		k := key("u_keep", 100000+i, ".jpg")
+		w.image("u_keep", k, "", "")
+		w.file(k, 2*time.Hour)
+	}
+}
+
+// orphans stores n old files nobody names, of several users.
+func (w *sweepWorld) orphans(n int) {
+	w.t.Helper()
+	for i := range n {
+		w.file(key(fmt.Sprintf("u_%03d", i%60), i, ".jpg"), 2*time.Hour)
+	}
+}
+
 // More orphans than a run may remove are not what a crashed upload or a
 // failed removal leaves: the database may be another one, or an older copy
 // of this one. Nothing is removed, and the run fails, until somebody has
-// looked and raised the limit.
+// looked and said how many may go.
 func TestSweepRemovesNothingWhenThereAreTooManyOrphans(t *testing.T) {
 	t.Parallel()
-	w := newSweepWorld(t)
-	w.image("u_keep", key("u_keep", 1, ".jpg"), "", "")
-	w.file(key("u_keep", 1, ".jpg"), 2*time.Hour)
-	// More owners than one batch asks about; one orphan more than the limit.
-	const owners = 60
-	total := wardrobe.SweepMaxRemovals + 1
-	for n := range total {
-		w.file(key(fmt.Sprintf("u_%03d", n%owners), n, ".jpg"), 2*time.Hour)
+	for name, c := range map[string]struct {
+		referenced, orphans int // one orphan more than may be removed
+		limit               int // the operator's (0: none)
+	}{
+		"a storage of hardly any known files": {1, wardrobe.SweepSmallRun + 1, 0},
+		"more orphans than known files":       {120, 121, 0},
+		"more than a thousand":                {wardrobe.SweepMaxRemovals + 5, wardrobe.SweepMaxRemovals + 1, 0},
+		"more than the operator said":         {1, 5, 4},
+		"the operator's number is the limit":  {500, 81, 80},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			w := newSweepWorld(t)
+			w.max = c.limit
+			w.referenced(c.referenced)
+			w.orphans(c.orphans)
+			report, err := w.sweep()
+			if !errors.Is(err, wardrobe.ErrSweepTooMany) || !strings.Contains(err.Error(), fmt.Sprintf("%d orphans", c.orphans)) || !strings.Contains(err.Error(), "STORAGE_SWEEP_MAX_REMOVALS") {
+				t.Fatalf("err %v", err)
+			}
+			if report.Removed != 0 || report.NotRemoved != c.orphans || report.Referenced != c.referenced || len(w.stored()) != c.referenced+c.orphans {
+				t.Fatalf("report %+v, %d stored", report, len(w.stored()))
+			}
+			// One orphan less, and they go.
+			if err := os.Remove(filepath.Join(w.root, filepath.FromSlash(key("u_000", 0, ".jpg")))); err != nil {
+				t.Fatal(err)
+			}
+			report, err = w.sweep()
+			if err != nil || report.Removed != c.orphans-1 || report.NotRemoved != 0 || len(w.stored()) != c.referenced {
+				t.Fatalf("at the limit: %+v, %v, %d stored", report, err, len(w.stored()))
+			}
+		})
 	}
-	report, err := w.sweep()
-	if !errors.Is(err, wardrobe.ErrSweepTooMany) || !strings.Contains(err.Error(), "1001") || !strings.Contains(err.Error(), "STORAGE_SWEEP_MAX_REMOVALS") {
-		t.Fatalf("err %v", err)
-	}
-	if report.Removed != 0 || report.NotRemoved != total || report.Referenced != 1 || len(w.stored()) != total+1 {
-		t.Fatalf("report %+v, %d stored", report, len(w.stored()))
-	}
-	// At the limit itself the orphans go.
-	if err := os.Remove(filepath.Join(w.root, filepath.FromSlash(key("u_000", 0, ".jpg")))); err != nil {
-		t.Fatal(err)
-	}
-	report, err = w.sweep()
-	if err != nil || report.Removed != wardrobe.SweepMaxRemovals || report.NotRemoved != 0 {
-		t.Fatalf("at the limit: %+v, %v", report, err)
-	}
-	if got := w.stored(); !slices.Equal(got, []string{key("u_keep", 1, ".jpg")}) {
-		t.Fatalf("stored %v", got)
-	}
+}
 
-	// The limit is the operator's to raise for a run.
-	raised := newSweepWorld(t)
-	raised.image("u_keep", key("u_keep", 1, ".jpg"), "", "")
-	for n := range 5 {
-		raised.file(key("u_one", n, ".jpg"), 2*time.Hour)
+// The operator's number lets a run remove more than the sweep would by
+// itself.
+func TestSweepWithTheOperatorsLimit(t *testing.T) {
+	t.Parallel()
+	w := newSweepWorld(t)
+	w.referenced(1)
+	w.orphans(wardrobe.SweepSmallRun + 30)
+	if _, err := w.sweep(); !errors.Is(err, wardrobe.ErrSweepTooMany) {
+		t.Fatalf("by itself: %v", err)
 	}
-	raised.max = 4
-	if report, err := raised.sweep(); !errors.Is(err, wardrobe.ErrSweepTooMany) || report.Removed != 0 || len(raised.stored()) != 5 {
-		t.Fatalf("over a limit of 4: %+v, %v", report, err)
-	}
-	raised.max = 5
-	if report, err := raised.sweep(); err != nil || report.Removed != 5 || len(raised.stored()) != 0 {
-		t.Fatalf("with a limit of 5: %+v, %v", report, err)
+	w.max = wardrobe.SweepSmallRun + 30
+	if report, err := w.sweep(); err != nil || report.Removed != wardrobe.SweepSmallRun+30 || len(w.stored()) != 1 {
+		t.Fatalf("with the operator's limit: %+v, %v", report, err)
 	}
 }
 
@@ -316,6 +341,7 @@ func TestSweepAsksAgainBeforeRemoving(t *testing.T) {
 	for n := range owners {
 		w.file(key(fmt.Sprintf("u_%03d", n), n, ".jpg"), 2*time.Hour)
 	}
+	w.max = owners // more than a run removes by itself in a storage this small
 	late := key(fmt.Sprintf("u_%03d", owners-1), owners-1, ".jpg")
 	w.images = namedMeanwhile{w.images, &sync.Once{}, func() { w.image(fmt.Sprintf("u_%03d", owners-1), late, "", "") }}
 	report, err := w.sweep()
@@ -381,7 +407,7 @@ func TestSweepFailsWhenTheStorageCannotBeListed(t *testing.T) {
 // The limits are part of the sweep's safety.
 func TestSweepLimits(t *testing.T) {
 	t.Parallel()
-	if wardrobe.SweepMinAge != time.Hour || wardrobe.SweepMaxRemovals != 1000 {
-		t.Fatalf("minimum age %s, at most %d removals", wardrobe.SweepMinAge, wardrobe.SweepMaxRemovals)
+	if wardrobe.SweepMinAge != time.Hour || wardrobe.SweepMaxRemovals != 1000 || wardrobe.SweepSmallRun != 50 {
+		t.Fatalf("minimum age %s, at most %d removals, %d always", wardrobe.SweepMinAge, wardrobe.SweepMaxRemovals, wardrobe.SweepSmallRun)
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"context"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -269,5 +270,67 @@ func TestWorkerSaysWhyTheDatabaseRefusedWithoutConnectionDetails(t *testing.T) {
 		if leak != "" && strings.Contains(msg, leak) {
 			t.Errorf("stderr shows %q: %s", leak, msg)
 		}
+	}
+}
+
+// The worker's storage sweep runs at start with the operator's limit
+// (STORAGE_SWEEP_MAX_REMOVALS): over it the sweep removes nothing and its
+// job fails; within it the orphaned files go.
+func TestWorkerSweepsTheStorageWithTheOperatorsLimit(t *testing.T) {
+	t.Parallel()
+	pool := schemaDB(t)
+	migrateRiver(t, pool)
+	uploads := t.TempDir()
+	const kept = "users/u/00000001-4e5f-4a6b-8c7d-9e0f1a2b3c4d.jpg"
+	ctx := context.Background()
+	for _, sql := range []string{
+		`INSERT INTO "User" ("id","email","passwordHash","updatedAt") VALUES ('u','u@test.local','x',now())`,
+		`INSERT INTO "WardrobeItem" ("id","userId","category","updatedAt") VALUES ('item1','u','shirt',now())`,
+		`INSERT INTO "WardrobeImage" ("id","wardrobeItemId","storageKey") VALUES ('img1','item1','` + kept + `')`,
+	} {
+		if _, err := pool.Exec(ctx, sql); err != nil {
+			t.Fatal(err)
+		}
+	}
+	old := time.Now().Add(-2 * time.Hour)
+	orphans := []string{"users/u/00000002-4e5f-4a6b-8c7d-9e0f1a2b3c4d.jpg", "users/u/00000003-4e5f-4a6b-8c7d-9e0f1a2b3c4d.jpg", "users/v/00000004-4e5f-4a6b-8c7d-9e0f1a2b3c4d.jpg"}
+	for _, key := range append([]string{kept}, orphans...) {
+		path := filepath.Join(uploads, filepath.FromSlash(key))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte("image"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chtimes(path, old, old); err != nil {
+			t.Fatal(err)
+		}
+	}
+	stored := func() int {
+		n := 0
+		for _, key := range append([]string{kept}, orphans...) {
+			if _, err := os.Stat(filepath.Join(uploads, filepath.FromSlash(key))); err == nil {
+				n++
+			}
+		}
+		return n
+	}
+
+	strict := startWorker(t, pool, map[string]string{"STORAGE_LOCAL_DIR": uploads, "STORAGE_SWEEP_MAX_REMOVALS": "2"})
+	waitFor(t, "the refused sweep", func() bool { return strings.Contains(strict.stdout.String(), `"msg":"storage sweep failed"`) })
+	if stored() != 4 || !strings.Contains(strict.stdout.String(), "3 orphans") {
+		t.Fatalf("%d files left; log:\n%s", stored(), strict.stdout.String())
+	}
+	if code, _ := strict.stopAndWait(t); code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+
+	enough := startWorker(t, pool, map[string]string{"STORAGE_LOCAL_DIR": uploads, "STORAGE_SWEEP_MAX_REMOVALS": "3"})
+	waitFor(t, "the sweep", func() bool { return strings.Contains(enough.stdout.String(), `"msg":"storage sweep done"`) })
+	if _, err := os.Stat(filepath.Join(uploads, filepath.FromSlash(kept))); err != nil || stored() != 1 {
+		t.Fatalf("%d files left (the named one: %v); log:\n%s", stored(), err, enough.stdout.String())
+	}
+	if code, _ := enough.stopAndWait(t); code != 0 {
+		t.Fatalf("exit %d", code)
 	}
 }

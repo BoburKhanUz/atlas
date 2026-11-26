@@ -19,12 +19,16 @@ const (
 	// SweepMinAge is how old an unreferenced file must be to be removed: an
 	// upload stores its files before its rows are committed.
 	SweepMinAge = time.Hour
-	// SweepMaxRemovals is how many orphans a run removes at most, unless
-	// the operator sets another number. Orphans are few (a crashed upload,
-	// a deletion whose files could not be removed); a run that finds more
-	// is more likely looking at another database, or an older copy of this
-	// one, than at that many orphans: it removes nothing (ErrSweepTooMany).
+	// SweepMaxRemovals and SweepSmallRun bound what a run removes, unless
+	// the operator sets a number: at most as many orphans as there are old
+	// files with an image row, never more than SweepMaxRemovals, and
+	// always up to SweepSmallRun. Orphans are few (a crashed upload, a
+	// deletion whose files could not be removed); a run that finds more
+	// orphans than files it knows, or more than a thousand, is more likely
+	// looking at another database, or an older copy of this one: it
+	// removes nothing (ErrSweepTooMany).
 	SweepMaxRemovals = 1000
+	SweepSmallRun    = 50
 	// sweepBatchOwners and sweepBatchKeys bound what is held in memory and
 	// asked of the database at once.
 	sweepBatchOwners = 50
@@ -73,15 +77,22 @@ type Sweeper struct {
 
 // NewSweeper returns the sweep over the storage and the database. now is
 // the clock files' ages are measured by (nil: time.Now); maxRemovals, how
-// many orphans a run removes at most (0: SweepMaxRemovals).
+// many orphans a run removes at most when the operator has said so (0: the
+// sweep's own rule, see SweepMaxRemovals).
 func NewSweeper(pool *pgxpool.Pool, images storage.Store, log *slog.Logger, now func() time.Time, maxRemovals int) *Sweeper {
 	if now == nil {
 		now = time.Now
 	}
-	if maxRemovals <= 0 {
-		maxRemovals = SweepMaxRemovals
+	return &Sweeper{pool: pool, images: images, log: log, now: now, max: max(maxRemovals, 0)}
+}
+
+// limit is how many orphans a run may remove, given how many old files it
+// found named by an image row.
+func (s *Sweeper) limit(referenced int) int {
+	if s.max > 0 {
+		return s.max
 	}
-	return &Sweeper{pool: pool, images: images, log: log, now: now, max: maxRemovals}
+	return min(SweepMaxRemovals, max(SweepSmallRun, referenced))
 }
 
 // candidate is an old file of a name we make, by its owner.
@@ -128,7 +139,9 @@ func (s *Sweeper) unreferenced(ctx context.Context, q *store.Queries, candidates
 // SweepMinAge. Nothing is removed when the database holds no image at all
 // (ErrSweepRefused) or when there are more orphans than a run may remove
 // (ErrSweepTooMany); otherwise each orphan is removed after the database
-// was asked once more whether it is named.
+// was asked once more whether it is named. These guards catch a database
+// that is plainly not this storage's; they cannot tell an older copy that
+// lacks a few of its newest rows (the worker is stopped for a restore).
 func (s *Sweeper) Sweep(ctx context.Context) (SweepReport, error) {
 	var report SweepReport
 	q := store.New(s.pool)
@@ -147,8 +160,8 @@ func (s *Sweeper) Sweep(ctx context.Context) (SweepReport, error) {
 		err := s.unreferenced(ctx, q, batch, func(c candidate, referenced bool) {
 			if referenced {
 				report.Referenced++
-			} else if found++; found <= s.max {
-				orphans = append(orphans, c)
+			} else if found++; found <= max(s.max, SweepMaxRemovals) {
+				orphans = append(orphans, c) // more than could ever be removed are only counted
 			}
 		})
 		batch = batch[:0]
@@ -183,15 +196,17 @@ func (s *Sweeper) Sweep(ctx context.Context) (SweepReport, error) {
 	if err != nil {
 		return report, fmt.Errorf("wardrobe: sweep: %w", err)
 	}
+	limit := s.limit(report.Referenced)
 	switch {
 	case found == 0:
 		return report, nil
 	case !hasImages:
 		report.NotRemoved = found
 		return report, ErrSweepRefused
-	case found > s.max:
+	case found > limit:
 		report.NotRemoved = found
-		return report, fmt.Errorf("%w: %d orphans, at most %d a run (if the database is the right one, set STORAGE_SWEEP_MAX_REMOVALS for a run)", ErrSweepTooMany, found, s.max)
+		return report, fmt.Errorf("%w: %d orphans beside %d files with an image row, at most %d a run (if the database is the right one, set STORAGE_SWEEP_MAX_REMOVALS for a run)",
+			ErrSweepTooMany, found, report.Referenced, limit)
 	}
 
 	// The removal, each file asked about once more: an upload may have

@@ -77,6 +77,8 @@ func (l *Local) Put(ctx context.Context, key string, data []byte) error {
 		return errors.New("storage: invalid key")
 	}
 	dir := filepath.Dir(path)
+	_, statErr := os.Stat(dir)
+	newOwner := errors.Is(statErr, fs.ErrNotExist)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return fmt.Errorf("storage: make the owner's directory: %w", err)
 	}
@@ -107,6 +109,11 @@ func (l *Local) Put(ctx context.Context, key string, data []byte) error {
 	}
 	if err := syncDir(dir); err != nil {
 		return fmt.Errorf("storage: write %s: %w", key, err)
+	}
+	if newOwner { // the owner's directory is itself a new name
+		if err := syncDir(filepath.Dir(dir)); err != nil {
+			return fmt.Errorf("storage: write %s: %w", key, err)
+		}
 	}
 	return nil
 }

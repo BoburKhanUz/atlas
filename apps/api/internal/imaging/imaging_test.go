@@ -217,46 +217,90 @@ func TestATwelveBitJPEGIsRefused(t *testing.T) {
 	}
 }
 
-// A file whose header promises one size and whose pixels have another is
-// refused: the limits were checked against the header.
+// A decoder whose pixels have another size than its header promised is not
+// believed: the limits were checked against the header. (No file we have
+// makes the real decoders disagree; they are replaced here.)
 func TestAHeaderThatDisagreesWithThePixelsIsRefused(t *testing.T) {
 	t.Parallel()
-	b := bytes.Clone(fixture(t, "orientation-6.webp"))
-	// The extended header's canvas: width-1 and height-1, three bytes each.
-	if string(b[12:16]) != "VP8X" || int(b[24])|int(b[25])<<8|int(b[26])<<16 != 299 {
-		t.Fatal("the fixture is not a 300 pixel wide WebP with an extended header")
+	data := fixture(t, "marked.png") // 300×400
+	for name, size := range map[string]image.Point{"larger": {600, 800}, "wider": {301, 400}, "shorter": {300, 399}} {
+		p := imaging.NewProcessorWithDecoders(1, nil, func([]byte) (image.Image, error) {
+			return image.NewNRGBA(image.Rectangle{Max: size}), nil
+		})
+		if _, err := p.Process(context.Background(), data); !errors.Is(err, imaging.ErrInvalid) {
+			t.Errorf("%s pixels: err %v, want an unreadable picture", name, err)
+		}
 	}
-	b[24], b[25], b[26] = 0xf3, 0x01, 0 // 500 wide
-	if err := imaging.Inspect(b); err != nil {
-		t.Fatalf("the header alone: %v", err)
-	}
-	if _, err := processor.Process(context.Background(), b); !errors.Is(err, imaging.ErrInvalid) {
-		t.Fatalf("err %v, want an unreadable picture", err)
+	// The same decoder with the promised size is taken.
+	p := imaging.NewProcessorWithDecoders(1, nil, func([]byte) (image.Image, error) {
+		return image.NewNRGBA(image.Rect(0, 0, 300, 400)), nil
+	})
+	if v, err := p.Process(context.Background(), data); err != nil || v.Width != 300 || v.Height != 400 {
+		t.Errorf("pixels as promised: %dx%d, %v", v.Width, v.Height, err)
 	}
 }
 
-// A decoder that panics on a picture refuses the picture; the panic is kept
-// for the log, with where it happened. A decoder's ordinary error carries
-// nothing.
+// brokenPixels is a decoded picture that cannot be read.
+type brokenPixels struct{ image.Image }
+
+func (brokenPixels) At(int, int) color.Color { panic("broken pixels") }
+
+// A decoder that panics on a picture, at its header or at its pixels,
+// refuses the picture; the panic is kept for the log, with where it
+// happened. A decoder's ordinary error carries nothing. A panic after the
+// decoders, in this package's own work, is a bug and is not turned into a
+// refusal.
 func TestADecodersPanicRefusesThePicture(t *testing.T) {
 	t.Parallel()
-	err := imaging.Guarded(func() (int, error) {
+	data := fixture(t, "marked.png")
+	outOfRange := func() int {
 		var table []int
-		return table[3], nil
+		return table[3]
+	}
+	for name, p := range map[string]*imaging.Processor{
+		"at the header": imaging.NewProcessorWithDecoders(1, func([]byte) (image.Config, error) { return image.Config{Width: outOfRange()}, nil }, nil),
+		"at the pixels": imaging.NewProcessorWithDecoders(1, nil, func([]byte) (image.Image, error) { return image.NewGray(image.Rect(0, 0, outOfRange(), 1)), nil }),
+	} {
+		// Twice: the first panic did not keep the only slot.
+		for range 2 {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			_, err := p.Process(ctx, data)
+			cancel()
+			var panicked *imaging.DecoderPanic
+			if !errors.Is(err, imaging.ErrInvalid) || !errors.As(err, &panicked) {
+				t.Errorf("%s: err %v", name, err)
+				continue
+			}
+			if !strings.Contains(panicked.Value, "index out of range") || !strings.Contains(string(panicked.Stack), "TestADecodersPanicRefusesThePicture") {
+				t.Errorf("%s: the panic kept: %q\n%s", name, panicked.Value, panicked.Stack)
+			}
+		}
+	}
+	for name, p := range map[string]*imaging.Processor{
+		"at the header": imaging.NewProcessorWithDecoders(1, func([]byte) (image.Config, error) { return image.Config{}, errors.New("bad Huffman code") }, nil),
+		"at the pixels": imaging.NewProcessorWithDecoders(1, nil, func([]byte) (image.Image, error) { return nil, errors.New("bad Huffman code") }),
+	} {
+		if _, err := p.Process(context.Background(), data); err != imaging.ErrInvalid { //nolint:errorlint // exactly the refusal, nothing wrapped
+			t.Errorf("an ordinary error %s: %v", name, err)
+		}
+	}
+
+	ours := imaging.NewProcessorWithDecoders(1, nil, func([]byte) (image.Image, error) {
+		return brokenPixels{image.NewNRGBA(image.Rect(0, 0, 300, 400))}, nil
 	})
-	var panicked *imaging.DecoderPanic
-	if !errors.Is(err, imaging.ErrInvalid) || !errors.As(err, &panicked) {
-		t.Fatalf("err %v", err)
-	}
-	if !strings.Contains(panicked.Value, "index out of range") || !strings.Contains(string(panicked.Stack), "TestADecodersPanicRefusesThePicture") {
-		t.Errorf("the panic kept: %q\n%s", panicked.Value, panicked.Stack)
-	}
-	err = imaging.Guarded(func() (int, error) { return 0, errors.New("bad Huffman code") })
-	if err != imaging.ErrInvalid { //nolint:errorlint // exactly the refusal, nothing wrapped
-		t.Errorf("an ordinary error: %v", err)
-	}
-	if err := imaging.Guarded(func() (int, error) { return 1, nil }); err != nil {
-		t.Errorf("no error: %v", err)
+	// Twice: the first panic did not keep the only slot.
+	for range 2 {
+		func() {
+			defer func() {
+				if r := recover(); r != "broken pixels" {
+					t.Errorf("a panic in the package's own work: recovered %v", r)
+				}
+			}()
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			_, err := ours.Process(ctx, data)
+			t.Errorf("a panic in the package's own work became an answer: %v", err)
+		}()
 	}
 }
 
@@ -371,7 +415,7 @@ func TestProcessingIsBounded(t *testing.T) {
 	release := p.Hold()
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
-	if _, err := p.Process(ctx, fixture(t, "marked.png")); !errors.Is(err, context.DeadlineExceeded) {
+	if _, err := p.Process(ctx, fixture(t, "marked.png")); !errors.Is(err, imaging.ErrBusy) || !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("while the slot is taken: err %v", err)
 	}
 	// A refusal does not wait for a slot: the header alone decides it.

@@ -29,6 +29,10 @@ var (
 	ErrInvalid = errors.New("imaging: not a readable image")
 	// ErrDimensions: a side or the pixel count out of bounds: IMAGE_DIMENSIONS.
 	ErrDimensions = errors.New("imaging: image dimensions out of bounds")
+	// ErrBusy: every slot stayed taken until the caller's time ran out, or
+	// the caller left; the picture was not touched. It wraps the context's
+	// error.
+	ErrBusy = errors.New("imaging: no free slot in time")
 )
 
 // The limits, the Next.js server's (apps/web/src/lib/storage/provider.ts).
@@ -77,10 +81,24 @@ const SampleSide = 32
 
 // Processor processes pictures, at most n at a time: a decoded picture can
 // take hundreds of megabytes.
-type Processor struct{ slots chan struct{} }
+type Processor struct {
+	slots chan struct{}
+	d     decoders
+}
+
+// decoders read a picture of a format we accept: its header, its pixels.
+type decoders struct {
+	config func(Format, []byte) (image.Config, error)
+	pixels func(Format, []byte) (image.Image, error)
+}
+
+// standard are the decoders of the standard library and x/image.
+var standard = decoders{config: decodeConfig, pixels: decode}
 
 // NewProcessor returns a Processor that works on at most n pictures at once.
-func NewProcessor(n int) *Processor { return &Processor{slots: make(chan struct{}, max(n, 1))} }
+func NewProcessor(n int) *Processor {
+	return &Processor{slots: make(chan struct{}, max(n, 1)), d: standard}
+}
 
 // CheckEncoder fails when the WebP encoder would be a libwebp of the machine
 // rather than the transpiled one this project ships (ADR 0009): a build
@@ -95,19 +113,20 @@ func CheckEncoder() error {
 // Process checks and converts one picture. The header is checked at once;
 // a picture that passes waits for a free slot within ctx, so a refusal
 // never waits behind other pictures. The refusals are ErrUnsupported,
-// ErrInvalid and ErrDimensions; any other error is the server's.
+// ErrInvalid and ErrDimensions; ErrBusy when no slot came free within ctx;
+// any other error is the server's.
 func (p *Processor) Process(ctx context.Context, data []byte) (Variants, error) {
-	h, err := inspect(data)
+	h, err := inspect(data, p.d)
 	if err != nil {
 		return Variants{}, err
 	}
 	select {
 	case p.slots <- struct{}{}:
 	case <-ctx.Done():
-		return Variants{}, ctx.Err()
+		return Variants{}, fmt.Errorf("%w: %w", ErrBusy, ctx.Err())
 	}
 	defer func() { <-p.slots }()
-	return render(data, h)
+	return render(data, h, p.d)
 }
 
 // Hold takes a slot until the returned function is called: for tests of
@@ -166,18 +185,18 @@ func unreadable(err error) error {
 // anything else: the format, the dimensions, the pixel count. It is cheap
 // whatever the picture claims to be.
 func Inspect(data []byte) error {
-	_, err := inspect(data)
+	_, err := inspect(data, standard)
 	return err
 }
 
 // inspect reads the format, the dimensions and the orientation, and applies
 // the limits: cheap, whatever the picture claims.
-func inspect(data []byte) (header, error) {
+func inspect(data []byte, d decoders) (header, error) {
 	format, err := sniff(data)
 	if err != nil {
 		return header{}, err
 	}
-	cfg, err := guarded(func() (image.Config, error) { return decodeConfig(format, data) })
+	cfg, err := guarded(func() (image.Config, error) { return d.config(format, data) })
 	if err != nil {
 		return header{}, unreadable(err)
 	}
@@ -192,9 +211,9 @@ func inspect(data []byte) (header, error) {
 }
 
 // render decodes a picture inspect accepted and writes its variants.
-func render(data []byte, hd header) (Variants, error) {
+func render(data []byte, hd header, d decoders) (Variants, error) {
 	format, cfg, orientation, w, h := hd.format, hd.cfg, hd.orientation, hd.w, hd.h
-	src, err := guarded(func() (image.Image, error) { return decode(format, data) })
+	src, err := guarded(func() (image.Image, error) { return d.pixels(format, data) })
 	if err != nil {
 		return Variants{}, unreadable(err)
 	}

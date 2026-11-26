@@ -44,6 +44,8 @@ type formPart struct {
 	data     []byte
 	// disposition, when set, is the part's Content-Disposition as it is.
 	disposition string
+	// encoding, when set, is the part's Content-Transfer-Encoding.
+	encoding string
 }
 
 func filePart(filename, typ string, data []byte) formPart {
@@ -71,6 +73,9 @@ func form(t *testing.T, parts ...formPart) (string, string) {
 		h.Set("Content-Disposition", disposition)
 		if p.typ != "" {
 			h.Set("Content-Type", p.typ)
+		}
+		if p.encoding != "" {
+			h.Set("Content-Transfer-Encoding", p.encoding)
 		}
 		part, err := w.CreatePart(h)
 		if err != nil {
@@ -803,7 +808,7 @@ func TestUploadThatCannotBeProcessedInTimeLeavesNothing(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
 	defer cancel()
 	_, err := uploads.Create(ctx, wardrobe.Upload{UserID: w.user, File: picture(t, whiteShirt), FileName: "shirt.png", HintName: "shirt.png", Fields: map[string]string{}, IdempotencyKey: "upload-key-0001"})
-	if !errors.Is(err, context.DeadlineExceeded) {
+	if !errors.Is(err, imaging.ErrBusy) || !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("err %v", err)
 	}
 	w.nothingLeft("out of time", 0, 0, 0, wardrobe.DailyUploads)
@@ -901,6 +906,15 @@ func TestUploadIdentityIsTheNextJSAPIs(t *testing.T) {
 		},
 		"text that is not UTF-8": {
 			[]formPart{filePart("a.png", "image/png", good), textPart("note", "a\xffb")}, "a.png", map[string]string{"note": "a\ufffdb"},
+		},
+		"text with a byte order mark": {
+			[]formPart{filePart("a.png", "image/png", good), textPart("note", "\ufeffx\ufeff")}, "a.png", map[string]string{"note": "x\ufeff"},
+		},
+		// No transfer encoding is undone: the bytes are the picture, the
+		// text is the text ("=41" would be "A").
+		"parts declared quoted-printable": {
+			[]formPart{{name: "file", filename: ptr("a.png"), typ: "image/png", data: good, encoding: "quoted-printable"}, {name: "note", data: []byte("x=41"), encoding: "quoted-printable"}},
+			"a.png", map[string]string{"note": "x=41"},
 		},
 	} {
 		key := "identity-" + strconv.Itoa(len(name))
@@ -1154,4 +1168,92 @@ func TestUploadsOfAUserAtATimeAreBounded(t *testing.T) {
 	// The places are free again.
 	w.is(w.do(uploadCall(t, w.m, "", filePart("shirt.png", "image/png", good))), http.StatusCreated, "")
 	w.nothingLeft("in the end", 3, 9+3, 0, wardrobe.DailyUploads-3) // and the other user's three files
+}
+
+// stalledPuts is a store whose writes run out of time.
+type stalledPuts struct{ storage.Store }
+
+func (stalledPuts) Put(context.Context, string, []byte) error {
+	return fmt.Errorf("storage: write: the bucket did not answer: %w", context.DeadlineExceeded)
+}
+
+// A storage (or a database) that does not answer in time is answered "try
+// again", like a busy server, and what did not answer is logged: only the
+// wait for a processing slot is an everyday "busy".
+func TestUploadThatRunsOutOfTimeElsewhereIsLoggedWithItsCause(t *testing.T) {
+	t.Parallel()
+	local, err := storage.NewLocal(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	w := newUploadWorld(t, apiOptions{images: stalledPuts{local}})
+	got := w.do(uploadCall(t, w.m, "upload-key-0001", filePart("shirt.png", "image/png", picture(t, whiteShirt))))
+	w.is(got, http.StatusServiceUnavailable, "AI_UNAVAILABLE")
+	if got.header.Get("Retry-After") != "15" || strings.Contains(string(got.raw), "bucket") {
+		t.Errorf("answer %s, Retry-After %q", got.raw, got.header.Get("Retry-After"))
+	}
+	for _, want := range []string{`"level":"ERROR","msg":"an upload ran out of time"`, "the bucket did not answer", `"userId":"` + w.user + `"`} {
+		if !strings.Contains(w.logs(), want) {
+			t.Errorf("the log lacks %q: %s", want, w.logs())
+		}
+	}
+	w.nothingLeft("out of time in the storage", 0, 0, 0, wardrobe.DailyUploads)
+}
+
+// leavingPuts is a store during whose write the client goes away.
+type leavingPuts struct {
+	storage.Store
+	leave context.CancelFunc
+}
+
+func (s leavingPuts) Put(ctx context.Context, _ string, _ []byte) error {
+	s.leave()
+	<-ctx.Done()
+	return fmt.Errorf("storage: write: %w", ctx.Err())
+}
+
+// The everyday ends of an upload are not logged as failures: no processing
+// slot within the request's time, and a client that went away.
+func TestUploadThatWaitsInVainOrIsAbandonedIsNotLoggedAsAFailure(t *testing.T) {
+	t.Parallel()
+	request := func(w *uploadWorld, ctx context.Context) *httptest.ResponseRecorder {
+		body, contentType := form(t, filePart("shirt.png", "image/png", picture(t, whiteShirt)))
+		r := httptest.NewRequest(http.MethodPost, "http://app.example.uz"+itemsPath, strings.NewReader(body)).WithContext(ctx)
+		r.Header.Set("Content-Type", contentType)
+		r.Header.Set("X-Atlas-Client", "mobile")
+		r.Header.Set("Authorization", "Bearer "+w.m.accessToken)
+		rec := httptest.NewRecorder()
+		w.handler.ServeHTTP(rec, r)
+		return rec
+	}
+	busy := func(what string, w *uploadWorld, rec *httptest.ResponseRecorder) {
+		t.Helper()
+		if rec.Code != http.StatusServiceUnavailable || rec.Header().Get("Retry-After") != "15" || !strings.Contains(rec.Body.String(), `"AI_UNAVAILABLE"`) {
+			t.Errorf("%s: %d %s", what, rec.Code, rec.Body.String())
+		}
+		if strings.Contains(w.logs(), "ran out of time") || strings.Contains(w.logs(), "internal error") {
+			t.Errorf("%s is logged as a failure: %s", what, w.logs())
+		}
+		w.nothingLeft(what, 0, 0, 0, wardrobe.DailyUploads)
+	}
+
+	// Every slot taken for as long as this request has.
+	processor := imaging.NewProcessor(1)
+	waiting := newUploadWorld(t, apiOptions{processor: processor})
+	release := processor.Hold()
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
+	rec := request(waiting, ctx)
+	cancel()
+	release()
+	busy("no slot in time", waiting, rec)
+
+	// The client leaves while a file is stored.
+	local, err := storage.NewLocal(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, leave := context.WithCancel(context.Background())
+	defer leave()
+	abandoned := newUploadWorld(t, apiOptions{images: leavingPuts{local, leave}})
+	busy("a client that left", abandoned, request(abandoned, ctx))
 }

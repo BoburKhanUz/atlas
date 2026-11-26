@@ -45,6 +45,9 @@ var (
 	ErrReplayGone = errors.New("wardrobe: the item this request created was deleted")
 	// ErrNoUser: the account does not exist (any more).
 	ErrNoUser = errors.New("wardrobe: no such user")
+	// ErrOutcomeUnknown: the creating transaction failed, and whether the
+	// item exists could not be found out. The stored files were left.
+	ErrOutcomeUnknown = errors.New("wardrobe: whether the item was created is not known")
 )
 
 // DailyLimitError: the user has uploaded DailyUploads pictures today.
@@ -80,21 +83,28 @@ type Created struct {
 	Replayed bool
 }
 
+// Processor checks and converts a picture (*imaging.Processor).
+type Processor interface {
+	Process(ctx context.Context, data []byte) (imaging.Variants, error)
+}
+
 // Uploads creates items from uploaded pictures.
 type Uploads struct {
 	pool      *pgxpool.Pool
 	images    storage.Store
-	processor *imaging.Processor
+	processor Processor
 	limiter   *ratelimit.Limiter
 	keys      *idempotency.Service
 	log       *slog.Logger
+	// inTx runs the transaction that creates an item's rows.
+	inTx func(ctx context.Context, pool *pgxpool.Pool, options pgx.TxOptions, fn func(pgx.Tx) error) error
 }
 
 // UploadsConfig is what Uploads works with.
 type UploadsConfig struct {
 	Pool      *pgxpool.Pool
 	Images    storage.Store
-	Processor *imaging.Processor
+	Processor Processor
 	Limiter   *ratelimit.Limiter
 	Keys      *idempotency.Service
 	Log       *slog.Logger
@@ -102,7 +112,12 @@ type UploadsConfig struct {
 
 // NewUploads returns the upload use case.
 func NewUploads(c UploadsConfig) *Uploads {
-	return &Uploads{pool: c.Pool, images: c.Images, processor: c.Processor, limiter: c.Limiter, keys: c.Keys, log: c.Log}
+	return &Uploads{
+		pool: c.Pool, images: c.Images, processor: c.Processor, limiter: c.Limiter, keys: c.Keys, log: c.Log,
+		inTx: func(ctx context.Context, pool *pgxpool.Pool, options pgx.TxOptions, fn func(pgx.Tx) error) error {
+			return pgx.BeginTxFunc(ctx, pool, options, fn)
+		},
+	}
 }
 
 // uzbekistanOffset is the zone the upload day is counted in: UTC+5, no
@@ -127,6 +142,12 @@ func DailyUploadHit(userID string, now time.Time) ratelimit.Hit {
 // too, with one exception: a picture whose header passed and whose pixels
 // did not decode stays counted, because it took a processing slot (else a
 // stream of such files would keep the slots busy at no cost).
+//
+// One failure is of another kind: the creating transaction ended without
+// its answer (a timeout during the commit, a lost connection). The item is
+// then looked up: if it is there, the upload succeeded; if whether it is
+// there cannot be told either, the files and the count are kept, for the
+// sweep to judge, and the error says so (ErrOutcomeUnknown).
 //
 // The refusals: imaging.ErrUnsupported, imaging.ErrInvalid and
 // imaging.ErrDimensions for the picture; ErrWardrobeFull and
@@ -223,6 +244,9 @@ const createTimeout = 10 * time.Second
 func (u *Uploads) create(ctx context.Context, up Upload, claim *idempotency.Claim) (created Created, undo func(ctx context.Context, cause error), err error) {
 	var undos []func(context.Context, error)
 	undo = func(ctx context.Context, cause error) {
+		if errors.Is(cause, ErrOutcomeUnknown) {
+			return // the item may exist: its files and its count stay
+		}
 		for i := len(undos) - 1; i >= 0; i-- {
 			undos[i](ctx, cause)
 		}
@@ -302,9 +326,10 @@ func (u *Uploads) create(ctx context.Context, up Upload, claim *idempotency.Clai
 	}
 
 	var item Item
+	itemID := platform.NewID()
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), createTimeout)
 	defer cancel()
-	err = pgx.BeginTxFunc(ctx, u.pool, pgx.TxOptions{IsoLevel: pgx.ReadCommitted}, func(tx pgx.Tx) error {
+	err = u.inTx(ctx, u.pool, pgx.TxOptions{IsoLevel: pgx.ReadCommitted}, func(tx pgx.Tx) error {
 		q := store.New(tx)
 		// The user's uploads go one at a time from here on, so the count
 		// below is the wardrobe's, and not while the account is deleted.
@@ -322,7 +347,7 @@ func (u *Uploads) create(ctx context.Context, up Upload, claim *idempotency.Clai
 			return ErrWardrobeFull
 		}
 		row, err := q.InsertWardrobeItem(ctx, store.InsertWardrobeItemParams{
-			ID: platform.NewID(), UserID: up.UserID,
+			ID: itemID, UserID: up.UserID,
 			Category: detection.Category, Subcategory: detection.Subcategory, Colors: jsonText(detection.Colors),
 			Pattern: detection.Pattern, Material: detection.Material, SleeveLength: detection.SleeveLength, Fit: detection.Fit,
 			Style: detection.Style, Season: jsonText(detection.Season), Gender: detection.Gender, Formality: detection.Formality,
@@ -350,9 +375,41 @@ func (u *Uploads) create(ctx context.Context, up Upload, claim *idempotency.Clai
 				return Created{}, undo, err
 			}
 		}
-		return Created{}, undo, fmt.Errorf("wardrobe: create the item: %w", err)
+		// The transaction ended without its answer: the commit may have
+		// been done all the same.
+		found, lookErr := u.created(ctx, up.UserID, itemID)
+		switch {
+		case lookErr != nil:
+			u.log.Error("wardrobe: an upload's item may or may not exist; its files are left to the sweep",
+				"userId", up.UserID, "itemId", itemID, "err", err.Error(), "lookupErr", lookErr.Error())
+			return Created{}, undo, fmt.Errorf("%w: %w", ErrOutcomeUnknown, err)
+		case found == nil:
+			return Created{}, undo, fmt.Errorf("wardrobe: create the item: %w", err)
+		}
+		u.log.Warn("wardrobe: an upload's transaction reported a failure after its commit", "userId", up.UserID, "itemId", itemID, "err", err.Error())
+		item = *found
 	}
 	return Created{Item: item, Detection: detection}, undo, nil
+}
+
+// created looks an item up after its transaction failed: nil when it is not
+// there. It asks with time of its own; the transaction's may be used up.
+func (u *Uploads) created(ctx context.Context, userID, itemID string) (*Item, error) {
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), removeTimeout)
+	defer cancel()
+	q := store.New(u.pool)
+	row, err := q.WardrobeItemOfUser(ctx, store.WardrobeItemOfUserParams{ID: itemID, UserId: userID})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	item, err := one(ctx, q, row)
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
 }
 
 // confidencesText is the confidences as the Next.js API stores them: a JSON

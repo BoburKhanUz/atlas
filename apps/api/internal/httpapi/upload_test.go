@@ -26,19 +26,20 @@ func TestUploadErrorsAndTheirAnswers(t *testing.T) {
 		code       apierr.Code
 		retryAfter int
 	}{
-		"another format":            {imaging.ErrUnsupported, 415, apierr.UnsupportedImageFormat, 0},
-		"wrong dimensions":          {imaging.ErrDimensions, 422, apierr.ImageDimensions, 0},
-		"unreadable":                {imaging.ErrInvalid, 422, apierr.InvalidImage, 0},
-		"a decoder panicked":        {fmt.Errorf("process: %w", &imaging.DecoderPanic{Value: "index out of range"}), 422, apierr.InvalidImage, 0},
-		"a full wardrobe":           {wardrobe.ErrWardrobeFull, 400, apierr.ValidationError, 0},
-		"the day's uploads used up": {&wardrobe.DailyLimitError{RetryAfter: 90 * time.Second}, 429, apierr.AiQuotaExceeded, 90},
-		"another request's key":     {idempotency.ErrMismatch, 409, apierr.IdempotencyKeyMismatch, 0},
-		"the same request running":  {&idempotency.InProgressError{RetryAfter: 5 * time.Second}, 409, apierr.IdempotencyInProgress, 5},
-		"the claim taken over":      {fmt.Errorf("create: %w", idempotency.ErrClaimLost), 409, apierr.IdempotencyInProgress, 5},
-		"the replayed item deleted": {wardrobe.ErrReplayGone, 404, apierr.NotFound, 0},
-		"the account deleted":       {wardrobe.ErrNoUser, 401, apierr.Unauthorized, 0},
-		"out of time":               {fmt.Errorf("wait: %w", context.DeadlineExceeded), 503, apierr.AiUnavailable, 15},
-		"the client left":           {fmt.Errorf("store: %w", context.Canceled), 503, apierr.AiUnavailable, 15},
+		"another format":             {imaging.ErrUnsupported, 415, apierr.UnsupportedImageFormat, 0},
+		"wrong dimensions":           {imaging.ErrDimensions, 422, apierr.ImageDimensions, 0},
+		"unreadable":                 {imaging.ErrInvalid, 422, apierr.InvalidImage, 0},
+		"a decoder panicked":         {fmt.Errorf("process: %w", &imaging.DecoderPanic{Value: "index out of range"}), 422, apierr.InvalidImage, 0},
+		"a full wardrobe":            {wardrobe.ErrWardrobeFull, 400, apierr.ValidationError, 0},
+		"the day's uploads used up":  {&wardrobe.DailyLimitError{RetryAfter: 90 * time.Second}, 429, apierr.AiQuotaExceeded, 90},
+		"another request's key":      {idempotency.ErrMismatch, 409, apierr.IdempotencyKeyMismatch, 0},
+		"the same request running":   {&idempotency.InProgressError{RetryAfter: 5 * time.Second}, 409, apierr.IdempotencyInProgress, 5},
+		"the claim taken over":       {fmt.Errorf("create: %w", idempotency.ErrClaimLost), 409, apierr.IdempotencyInProgress, 5},
+		"the replayed item deleted":  {wardrobe.ErrReplayGone, 404, apierr.NotFound, 0},
+		"the account deleted":        {wardrobe.ErrNoUser, 401, apierr.Unauthorized, 0},
+		"no processing slot in time": {fmt.Errorf("%w: %w", imaging.ErrBusy, context.DeadlineExceeded), 503, apierr.AiUnavailable, 15},
+		"out of time":                {fmt.Errorf("wait: %w", context.DeadlineExceeded), 503, apierr.AiUnavailable, 15},
+		"the client left":            {fmt.Errorf("store: %w", context.Canceled), 503, apierr.AiUnavailable, 15},
 	} {
 		var answered *apierr.Error
 		if !errors.As(httpapi.UploadError(c.err), &answered) {
@@ -49,8 +50,12 @@ func TestUploadErrorsAndTheirAnswers(t *testing.T) {
 			t.Errorf("%s: %d %s, Retry-After %d", name, answered.Status(), answered.Code, answered.RetryAfterSeconds())
 		}
 	}
-	if got := httpapi.UploadError(unknown); got != unknown { //nolint:errorlint // the error itself, untouched
-		t.Errorf("an unforeseen error became %v", got)
+	// What is not a refusal stays the server's error: an unforeseen failure,
+	// and an item that may or may not have been created.
+	for _, err := range []error{unknown, fmt.Errorf("%w: %w", wardrobe.ErrOutcomeUnknown, unknown)} {
+		if got := httpapi.UploadError(err); got != err { //nolint:errorlint // the error itself, untouched
+			t.Errorf("%v became %v", err, got)
+		}
 	}
 	// The two limits are told in the product's words, with the numbers the
 	// limits have.

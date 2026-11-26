@@ -1,10 +1,17 @@
 package imaging
 
-// Guarded runs a decoder as the package runs its decoders, and gives the
-// refusal a failed one becomes.
-func Guarded(decoder func() (int, error)) error {
-	if _, err := guarded(decoder); err != nil {
-		return unreadable(err)
+import "image"
+
+// NewProcessorWithDecoders is a Processor whose decoders are replaced (nil:
+// the standard one): for what the package does with a decoder that fails
+// in ways no file we have makes the real ones fail.
+func NewProcessorWithDecoders(n int, config func([]byte) (image.Config, error), pixels func([]byte) (image.Image, error)) *Processor {
+	p := NewProcessor(n)
+	if config != nil {
+		p.d.config = func(_ Format, data []byte) (image.Config, error) { return config(data) }
 	}
-	return nil
+	if pixels != nil {
+		p.d.pixels = func(_ Format, data []byte) (image.Image, error) { return pixels(data) }
+	}
+	return p
 }

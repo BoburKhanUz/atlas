@@ -166,6 +166,14 @@ func (s *Server) CreateWardrobeItem(ctx context.Context, request contract.Create
 	}
 	created, err := s.s.Uploads.Create(ctx, up)
 	if err != nil {
+		// Out of time anywhere but in the wait for a processing slot (the
+		// storage, the database) is answered "try again" too, and is ours
+		// to know; a client that left is not.
+		if outOfTime(err) && !errors.Is(err, imaging.ErrBusy) && !errors.Is(ctx.Err(), context.Canceled) {
+			if info := infoFrom(ctx); info != nil {
+				info.log.Error("an upload ran out of time", "requestId", info.id, "userId", id.UserID, "err", err.Error())
+			}
+		}
 		return nil, uploadError(err)
 	}
 	return uploadResponse{
@@ -219,13 +227,17 @@ func uploadError(err error) error {
 	case errors.Is(err, wardrobe.ErrNoUser):
 		// The account was deleted after the gate let the request in.
 		return apierr.New(apierr.Unauthorized)
-	case errors.Is(err, context.DeadlineExceeded), errors.Is(err, context.Canceled):
+	case errors.Is(err, imaging.ErrBusy), outOfTime(err):
 		// The picture could not be processed within the request's time
-		// (every slot busy), or the request ended first: nothing was
-		// stored; the client tries again.
+		// (every slot busy), a step ran out of time, or the request ended
+		// first: the client tries again, with the same key.
 		return serverBusy()
 	}
 	return err
+}
+
+func outOfTime(err error) bool {
+	return errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled)
 }
 
 // uploadedFile is the picture of an upload form.
@@ -254,16 +266,17 @@ type uploadForm struct {
 var formText = strings.NewReplacer("%22", `"`, "%0A", "\n", "%0a", "\n", "%0D", "\r", "%0d", "\r")
 
 // readUploadForm reads a multipart form as the Fetch API's FormData reads
-// it: a part with a file name is a file, any other a text field. A part
-// must have a name. (Go's reader takes some spellings of a part's header
-// that the Next.js API refused as a bad form: an unquoted name, a
-// backslash-escaped quote, filename*. No client of ours writes them.)
+// it: a part with a file name is a file, any other a text field, each as
+// its bytes are (no transfer encoding is undone). A part must have a name.
+// (Go's reader takes some spellings of a part's header that the Next.js API
+// refused as a bad form: an unquoted name, a backslash-escaped quote,
+// filename*. No client of ours writes them.)
 func readUploadForm(reader *multipart.Reader) (uploadForm, *apierr.Error) {
 	form := uploadForm{fields: map[string]string{}}
 	bad := apierr.With(apierr.BadRequest, msgBadForm)
 	seenFile, seenHint := false, false
 	for {
-		part, err := reader.NextPart()
+		part, err := reader.NextRawPart()
 		if err == io.EOF { // the end of the form itself (a body that breaks off wraps it: not errors.Is)
 			return form, nil
 		}
@@ -298,7 +311,8 @@ func readUploadForm(reader *multipart.Reader) (uploadForm, *apierr.Error) {
 			if err != nil {
 				return uploadForm{}, bad
 			}
-			text := strings.ToValidUTF8(string(value), "�")
+			// As the Fetch API reads text: without a leading byte order mark.
+			text := strings.TrimPrefix(strings.ToValidUTF8(string(value), "�"), "\ufeff")
 			if name == "file" {
 				seenFile = true // the form's "file" is text: there is no picture
 			} else {

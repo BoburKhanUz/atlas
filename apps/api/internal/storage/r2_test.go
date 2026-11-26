@@ -422,17 +422,17 @@ func TestR2FailuresAreReportedWithoutSecrets(t *testing.T) {
 	check("the service down, read", err, "status 503")
 	check("the service down, delete", r.Delete(ctx, r2Key, r2Thumb), "delete "+r2Thumb)
 
-	// "Not found" without the service's own word for it is taken for the
-	// object's absence.
+	// "Not found" without the service's own word for it is, for a read,
+	// the object's absence.
 	f.mu.Lock()
 	f.fail, f.bare = 0, http.StatusNotFound
 	f.mu.Unlock()
 	if _, err := r.Get(ctx, r2Key); !errors.Is(err, ErrNotFound) {
 		t.Errorf("a bare 404, read: %v", err)
 	}
-	if err := r.Delete(ctx, r2Key); err != nil {
-		t.Errorf("a bare 404, delete: %v", err)
-	}
+	// A deletion is not done by it: the service answers 204 for an object
+	// that was not there, so this 404 is somebody else's.
+	check("a bare 404, delete", r.Delete(ctx, r2Key), "status 404")
 
 	// Nothing listening: the cause, without the address.
 	server.Close()

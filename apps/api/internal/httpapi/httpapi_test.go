@@ -510,3 +510,43 @@ func TestALongerTimeLimitMovesTheConnectionsDeadlines(t *testing.T) {
 		t.Errorf("with the usual time: %q", got)
 	}
 }
+
+// deadlineWriter is a response writer whose connection takes no new read
+// deadline.
+type deadlineWriter struct {
+	*httptest.ResponseRecorder
+	readErr error
+}
+
+func (w deadlineWriter) SetReadDeadline(time.Time) error  { return w.readErr }
+func (w deadlineWriter) SetWriteDeadline(time.Time) error { return nil }
+
+// A connection that refuses the longer time limit is logged; a writer that
+// has no deadlines at all (a test's) is not, and the usual request sets
+// none.
+func TestAConnectionThatRefusesTheLongerTimeLimitIsLogged(t *testing.T) {
+	t.Parallel()
+	served := func(w http.ResponseWriter, timeout time.Duration) string {
+		l := &logs{}
+		h := httpapi.WrapWithTimeout(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) }),
+			slog.New(slog.NewJSONHandler(l, nil)), timeout)
+		h.ServeHTTP(w, httptest.NewRequest(http.MethodPost, "/api/v1/wardrobe/items", nil))
+		return l.String()
+	}
+	gone := errors.New("use of closed network connection")
+	longer := httpapi.RequestTimeout + time.Minute
+	if log := served(deadlineWriter{httptest.NewRecorder(), gone}, longer); strings.Count(log, "could not be set on its connection") != 1 ||
+		!strings.Contains(log, `"level":"WARN"`) || !strings.Contains(log, "use of closed network connection") {
+		t.Errorf("a refused deadline: %s", log)
+	}
+	for name, log := range map[string]string{
+		"a connection that takes it":  served(deadlineWriter{httptest.NewRecorder(), nil}, longer),
+		"a writer without deadlines":  served(httptest.NewRecorder(), longer),
+		"the usual time limit":        served(deadlineWriter{httptest.NewRecorder(), gone}, httpapi.RequestTimeout),
+		"deadlines are not supported": served(deadlineWriter{httptest.NewRecorder(), fmt.Errorf("wrapped: %w", http.ErrNotSupported)}, longer),
+	} {
+		if strings.Contains(log, "could not be set") {
+			t.Errorf("%s: %s", name, log)
+		}
+	}
+}

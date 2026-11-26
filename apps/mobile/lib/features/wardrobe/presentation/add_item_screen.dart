@@ -4,7 +4,6 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../app/router.dart';
 import '../../../core/design/tokens.dart';
-import '../../../core/network/api_failure.dart';
 import '../../../core/widgets/atlas_button.dart';
 import '../data/photo_picker.dart';
 import '../providers.dart';
@@ -185,11 +184,7 @@ class _Upload extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                switch (state.failure) {
-                  CancelledFailure() => WardrobeMessages.uploadCancelled,
-                  final f? => f.userMessage,
-                  null => 'Yuklab bo‘lmadi.',
-                },
+                WardrobeMessages.uploadFailed(state.failure),
                 key: const Key('add.failure'),
                 style: text.bodyMedium?.copyWith(color: AtlasColors.error),
               ),
