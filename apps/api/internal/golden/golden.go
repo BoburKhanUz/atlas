@@ -223,3 +223,34 @@ func LoadAuthValidation(t testing.TB) AuthValidation {
 	}
 	return a
 }
+
+// AccountValidation is testdata/golden/account-validation.json
+// (apps/web/scripts/golden-account-validation.ts): what the Next.js API
+// answers to request bodies of the account operations, and the catalog
+// values its profile schema accepts.
+type AccountValidation struct {
+	GeneratedBy  string           `json:"generatedBy"`
+	SourceCommit string           `json:"sourceCommit"`
+	Note         string           `json:"note"`
+	LegalVersion string           `json:"legalVersion"`
+	Styles       []string         `json:"styles"`
+	Colors       []string         `json:"colors"`
+	Fits         []string         `json:"fits"`
+	Forgot       []ValidationCase `json:"forgot"`
+	Reset        []ValidationCase `json:"reset"`
+	Consent      []ValidationCase `json:"consent"`
+	Profile      []ValidationCase `json:"profile"`
+}
+
+// LoadAccountValidation reads testdata/golden/account-validation.json;
+// unknown fields fail.
+func LoadAccountValidation(t testing.TB) AccountValidation {
+	t.Helper()
+	var a AccountValidation
+	load(t, "account-validation.json", &a)
+	if len(a.Forgot) == 0 || len(a.Reset) == 0 || len(a.Consent) == 0 || len(a.Profile) == 0 ||
+		len(a.Styles) == 0 || len(a.Colors) == 0 || len(a.Fits) == 0 {
+		t.Fatal("account-validation.json: a section is empty")
+	}
+	return a
+}

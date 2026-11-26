@@ -1,0 +1,4962 @@
+{
+ "generatedBy": "apps/web/scripts/golden-account-validation.ts",
+ "sourceCommit": "ccc1dfde1f000a339935c25200b8a6dc357879fe",
+ "note": "body is the raw request body. ok: the parsed value; otherwise the error envelope. consent was recorded with legalVersion as the current version. styles, colors and fits are the catalog values the profile schema accepts.",
+ "legalVersion": "2026-11-24.1-draft",
+ "styles": [
+  "casual",
+  "smart_casual",
+  "formal",
+  "sporty",
+  "bohemian",
+  "minimal",
+  "streetwear",
+  "classic",
+  "preppy"
+ ],
+ "colors": [
+  "white",
+  "black",
+  "beige",
+  "gray",
+  "navy",
+  "blue",
+  "light_blue",
+  "green",
+  "olive",
+  "khaki",
+  "brown",
+  "tan",
+  "red",
+  "burgundy",
+  "pink",
+  "orange",
+  "yellow",
+  "purple",
+  "teal",
+  "cream",
+  "ivory",
+  "rust",
+  "mustard"
+ ],
+ "fits": [
+  "slim",
+  "regular",
+  "relaxed",
+  "oversized"
+ ],
+ "forgot": [
+  {
+   "name": "an empty body",
+   "body": "",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "white space only",
+   "body": "  \n",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "not JSON",
+   "body": "{email",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "truncated JSON",
+   "body": "{\"email\":\"a@test.uz\"",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "two JSON values",
+   "body": "{}{}",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "JSON null",
+   "body": "null",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "a JSON string",
+   "body": "\"text\"",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "a JSON number",
+   "body": "12",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "a JSON array",
+   "body": "[]",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "JSON true",
+   "body": "true",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "an empty object",
+   "body": "{}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "a byte order mark before the object",
+   "body": "﻿{}",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "valid",
+   "body": "{\"email\":\"aziza@example.uz\"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz"
+   }
+  },
+  {
+   "name": "upper case is accepted (normalised by the handler)",
+   "body": "{\"email\":\"AZIZA@Example.UZ\"}",
+   "ok": true,
+   "value": {
+    "email": "AZIZA@Example.UZ"
+   }
+  },
+  {
+   "name": "unknown fields are dropped",
+   "body": "{\"email\":\"aziza@example.uz\",\"token\":\"x\"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz"
+   }
+  },
+  {
+   "name": "no email",
+   "body": "{\"other\":1}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "an empty email",
+   "body": "{\"email\":\"\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "not an address",
+   "body": "{\"email\":\"aziza\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "a space before the address",
+   "body": "{\"email\":\" aziza@example.uz\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "a line break after the address",
+   "body": "{\"email\":\"aziza@example.uz\\n\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "two dots",
+   "body": "{\"email\":\"a..b@example.uz\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Email noto‘g‘ri",
+   "details": [
+    {
+     "path": "email",
+     "message": "Email noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "name": "a long address",
+   "body": "{\"email\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.uz\"}",
+   "ok": true,
+   "value": {
+    "email": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.uz"
+   }
+  },
+  {
+   "name": "email is null",
+   "body": "{\"email\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "email is a number",
+   "body": "{\"email\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "email is true",
+   "body": "{\"email\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "email is false",
+   "body": "{\"email\":false}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "email is an array",
+   "body": "{\"email\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "email is an object",
+   "body": "{\"email\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "email",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "the email twice: the last one counts",
+   "body": "{\"email\":\"nope\",\"email\":\"aziza@example.uz\"}",
+   "ok": true,
+   "value": {
+    "email": "aziza@example.uz"
+   }
+  }
+ ],
+ "reset": [
+  {
+   "name": "an empty body",
+   "body": "",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "token",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    },
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "white space only",
+   "body": "  \n",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "not JSON",
+   "body": "{email",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "truncated JSON",
+   "body": "{\"email\":\"a@test.uz\"",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "two JSON values",
+   "body": "{}{}",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "JSON null",
+   "body": "null",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "a JSON string",
+   "body": "\"text\"",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "a JSON number",
+   "body": "12",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "a JSON array",
+   "body": "[]",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "JSON true",
+   "body": "true",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "an empty object",
+   "body": "{}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "token",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    },
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "a byte order mark before the object",
+   "body": "﻿{}",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "valid",
+   "body": "{\"token\":\"ttttttttttttttttttttttttttttttttttttttttttt\",\"password\":\"parol1234\"}",
+   "ok": true,
+   "value": {
+    "token": "ttttttttttttttttttttttttttttttttttttttttttt",
+    "password": "parol1234"
+   }
+  },
+  {
+   "name": "unknown fields are dropped",
+   "body": "{\"token\":\"ttttttttttttttttttttttttttttttttttttttttttt\",\"password\":\"parol1234\",\"email\":\"aziza@example.uz\"}",
+   "ok": true,
+   "value": {
+    "token": "ttttttttttttttttttttttttttttttttttttttttttt",
+    "password": "parol1234"
+   }
+  },
+  {
+   "name": "no token",
+   "body": "{\"password\":\"parol1234\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "token",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "no password",
+   "body": "{\"token\":\"ttttttttttttttttttttttttttttttttttttttttttt\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "an empty token",
+   "body": "{\"token\":\"\",\"password\":\"parol1234\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "token",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a token of 1 character",
+   "body": "{\"token\":\"t\",\"password\":\"parol1234\"}",
+   "ok": true,
+   "value": {
+    "token": "t",
+    "password": "parol1234"
+   }
+  },
+  {
+   "name": "a token of spaces (not trimmed)",
+   "body": "{\"token\":\"  \",\"password\":\"parol1234\"}",
+   "ok": true,
+   "value": {
+    "token": "  ",
+    "password": "parol1234"
+   }
+  },
+  {
+   "name": "a token of 200 characters",
+   "body": "{\"token\":\"tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt\",\"password\":\"parol1234\"}",
+   "ok": true,
+   "value": {
+    "token": "tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt",
+    "password": "parol1234"
+   }
+  },
+  {
+   "name": "a token of 201 characters",
+   "body": "{\"token\":\"ttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt\",\"password\":\"parol1234\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=200 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "token",
+     "message": "Juda katta: kutilgan string <=200 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a token of 100 characters outside the basic plane (200 units)",
+   "body": "{\"token\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"password\":\"parol1234\"}",
+   "ok": true,
+   "value": {
+    "token": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+    "password": "parol1234"
+   }
+  },
+  {
+   "name": "a token of 101 characters outside the basic plane (202 units)",
+   "body": "{\"token\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"password\":\"parol1234\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=200 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "token",
+     "message": "Juda katta: kutilgan string <=200 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a password of 7 characters",
+   "body": "{\"token\":\"ttttttttttttttttttttttttttttttttttttttttttt\",\"password\":\"ppppppp\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Parol kamida 8 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "password",
+     "message": "Parol kamida 8 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a password of 8 characters",
+   "body": "{\"token\":\"ttttttttttttttttttttttttttttttttttttttttttt\",\"password\":\"pppppppp\"}",
+   "ok": true,
+   "value": {
+    "token": "ttttttttttttttttttttttttttttttttttttttttttt",
+    "password": "pppppppp"
+   }
+  },
+  {
+   "name": "a password of 4 characters outside the basic plane (8 units)",
+   "body": "{\"token\":\"ttttttttttttttttttttttttttttttttttttttttttt\",\"password\":\"😀😀😀😀\"}",
+   "ok": true,
+   "value": {
+    "token": "ttttttttttttttttttttttttttttttttttttttttttt",
+    "password": "😀😀😀😀"
+   }
+  },
+  {
+   "name": "a password of 200 characters",
+   "body": "{\"token\":\"ttttttttttttttttttttttttttttttttttttttttttt\",\"password\":\"pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp\"}",
+   "ok": true,
+   "value": {
+    "token": "ttttttttttttttttttttttttttttttttttttttttttt",
+    "password": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp"
+   }
+  },
+  {
+   "name": "a password of 201 characters",
+   "body": "{\"token\":\"ttttttttttttttttttttttttttttttttttttttttttt\",\"password\":\"ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=200 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "password",
+     "message": "Juda katta: kutilgan string <=200 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "an empty password",
+   "body": "{\"token\":\"ttttttttttttttttttttttttttttttttttttttttttt\",\"password\":\"\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Parol kamida 8 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "password",
+     "message": "Parol kamida 8 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a password of 8 spaces (not trimmed)",
+   "body": "{\"token\":\"ttttttttttttttttttttttttttttttttttttttttttt\",\"password\":\"        \"}",
+   "ok": true,
+   "value": {
+    "token": "ttttttttttttttttttttttttttttttttttttttttttt",
+    "password": "        "
+   }
+  },
+  {
+   "name": "both wrong",
+   "body": "{\"token\":\"\",\"password\":\"short\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "token",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    },
+    {
+     "path": "password",
+     "message": "Parol kamida 8 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "token is null",
+   "body": "{\"token\":null,\"password\":\"parol1234\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "token",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "password is null",
+   "body": "{\"token\":\"ttttttttttttttttttttttttttttttttttttttttttt\",\"password\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "token is a number",
+   "body": "{\"token\":7,\"password\":\"parol1234\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "token",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "password is a number",
+   "body": "{\"token\":\"ttttttttttttttttttttttttttttttttttttttttttt\",\"password\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "token is true",
+   "body": "{\"token\":true,\"password\":\"parol1234\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "token",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "password is true",
+   "body": "{\"token\":\"ttttttttttttttttttttttttttttttttttttttttttt\",\"password\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "token is false",
+   "body": "{\"token\":false,\"password\":\"parol1234\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "token",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "password is false",
+   "body": "{\"token\":\"ttttttttttttttttttttttttttttttttttttttttttt\",\"password\":false}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "token is an array",
+   "body": "{\"token\":[\"x\"],\"password\":\"parol1234\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "token",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "password is an array",
+   "body": "{\"token\":\"ttttttttttttttttttttttttttttttttttttttttttt\",\"password\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    },
+    {
+     "path": "password",
+     "message": "Parol kamida 8 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "token is an object",
+   "body": "{\"token\":{\"a\":1},\"password\":\"parol1234\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "token",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "password is an object",
+   "body": "{\"token\":\"ttttttttttttttttttttttttttttttttttttttttttt\",\"password\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "password",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  }
+ ],
+ "consent": [
+  {
+   "name": "an empty body",
+   "body": "",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    },
+    {
+     "path": "ageConfirmed",
+     "message": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "white space only",
+   "body": "  \n",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "not JSON",
+   "body": "{email",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "truncated JSON",
+   "body": "{\"email\":\"a@test.uz\"",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "two JSON values",
+   "body": "{}{}",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "JSON null",
+   "body": "null",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "a JSON string",
+   "body": "\"text\"",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "a JSON number",
+   "body": "12",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "a JSON array",
+   "body": "[]",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "JSON true",
+   "body": "true",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "an empty object",
+   "body": "{}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    },
+    {
+     "path": "ageConfirmed",
+     "message": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "a byte order mark before the object",
+   "body": "﻿{}",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "valid",
+   "body": "{\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true}",
+   "ok": true,
+   "value": {
+    "acceptedLegalVersion": "2026-11-24.1-draft",
+    "ageConfirmed": true
+   }
+  },
+  {
+   "name": "unknown fields are dropped",
+   "body": "{\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":true,\"userId\":\"someone-else\"}",
+   "ok": true,
+   "value": {
+    "acceptedLegalVersion": "2026-11-24.1-draft",
+    "ageConfirmed": true
+   }
+  },
+  {
+   "name": "no accepted version",
+   "body": "{\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "no age confirmation",
+   "body": "{\"acceptedLegalVersion\":\"2026-11-24.1-draft\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "ageConfirmed",
+     "message": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "age not confirmed",
+   "body": "{\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":false}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "18 yoshdan kattaligingizni tasdiqlang.",
+   "details": [
+    {
+     "path": "ageConfirmed",
+     "message": "18 yoshdan kattaligingizni tasdiqlang."
+    }
+   ]
+  },
+  {
+   "name": "an older accepted version",
+   "body": "{\"acceptedLegalVersion\":\"2026-10-17.2-draft\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang."
+    }
+   ]
+  },
+  {
+   "name": "an empty accepted version",
+   "body": "{\"acceptedLegalVersion\":\"\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang."
+    }
+   ]
+  },
+  {
+   "name": "an accepted version with a space",
+   "body": "{\"acceptedLegalVersion\":\"2026-11-24.1-draft \",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang."
+    }
+   ]
+  },
+  {
+   "name": "an accepted version of 40 characters",
+   "body": "{\"acceptedLegalVersion\":\"vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang."
+    }
+   ]
+  },
+  {
+   "name": "an accepted version of 41 characters",
+   "body": "{\"acceptedLegalVersion\":\"vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\",\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang."
+    },
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang."
+    }
+   ]
+  },
+  {
+   "name": "an old version and age not confirmed",
+   "body": "{\"acceptedLegalVersion\":\"old\",\"ageConfirmed\":false}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Foydalanish shartlari yangilangan. Ularni qayta ko‘rib chiqing va tasdiqlang."
+    },
+    {
+     "path": "ageConfirmed",
+     "message": "18 yoshdan kattaligingizni tasdiqlang."
+    }
+   ]
+  },
+  {
+   "name": "acceptedLegalVersion is null",
+   "body": "{\"acceptedLegalVersion\":null,\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "acceptedLegalVersion is a number",
+   "body": "{\"acceptedLegalVersion\":7,\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "acceptedLegalVersion is true",
+   "body": "{\"acceptedLegalVersion\":true,\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "acceptedLegalVersion is false",
+   "body": "{\"acceptedLegalVersion\":false,\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "acceptedLegalVersion is an array",
+   "body": "{\"acceptedLegalVersion\":[\"x\"],\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "acceptedLegalVersion is an object",
+   "body": "{\"acceptedLegalVersion\":{\"a\":1},\"ageConfirmed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "acceptedLegalVersion",
+     "message": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "ageConfirmed is null",
+   "body": "{\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "ageConfirmed",
+     "message": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "ageConfirmed is a number",
+   "body": "{\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "ageConfirmed",
+     "message": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "ageConfirmed is a string",
+   "body": "{\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":\"text\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "ageConfirmed",
+     "message": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "ageConfirmed is an array",
+   "body": "{\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "ageConfirmed",
+     "message": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "ageConfirmed is an object",
+   "body": "{\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "ageConfirmed",
+     "message": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "ageConfirmed is the string \"true\"",
+   "body": "{\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":\"true\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "ageConfirmed",
+     "message": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  },
+  {
+   "name": "ageConfirmed is 1",
+   "body": "{\"acceptedLegalVersion\":\"2026-11-24.1-draft\",\"ageConfirmed\":1}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
+   "details": [
+    {
+     "path": "ageConfirmed",
+     "message": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering."
+    }
+   ]
+  }
+ ],
+ "profile": [
+  {
+   "name": "an empty body",
+   "body": "",
+   "ok": true,
+   "value": {}
+  },
+  {
+   "name": "white space only",
+   "body": "  \n",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "not JSON",
+   "body": "{email",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "truncated JSON",
+   "body": "{\"email\":\"a@test.uz\"",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "two JSON values",
+   "body": "{}{}",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "JSON null",
+   "body": "null",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "a JSON string",
+   "body": "\"text\"",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "a JSON number",
+   "body": "12",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "a JSON array",
+   "body": "[]",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "JSON true",
+   "body": "true",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "an empty object",
+   "body": "{}",
+   "ok": true,
+   "value": {}
+  },
+  {
+   "name": "a byte order mark before the object",
+   "body": "﻿{}",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "a name only",
+   "body": "{\"name\":\"Aziza\"}",
+   "ok": true,
+   "value": {
+    "name": "Aziza"
+   }
+  },
+  {
+   "name": "every section",
+   "body": "{\"name\":\"Aziza\",\"profile\":{\"gender\":\"female\",\"ageRange\":\"25-34\",\"height\":165,\"weight\":58.5,\"bodyShape\":\"hourglass\",\"skinTone\":\"medium\",\"skinUndertone\":\"warm\",\"hairColor\":\"qora\",\"eyeColor\":\"jigarrang\",\"clothingSize\":\"M\",\"preferredFit\":\"slim\",\"typicalBudget\":500000},\"preferences\":{\"preferredStyles\":[\"casual\",\"smart_casual\"],\"dislikedStyles\":[],\"favoriteColors\":[\"white\"],\"dislikedColors\":[\"black\"],\"language\":\"uz\"}}",
+   "ok": true,
+   "value": {
+    "name": "Aziza",
+    "profile": {
+     "gender": "female",
+     "ageRange": "25-34",
+     "height": 165,
+     "weight": 58.5,
+     "bodyShape": "hourglass",
+     "skinTone": "medium",
+     "skinUndertone": "warm",
+     "hairColor": "qora",
+     "eyeColor": "jigarrang",
+     "clothingSize": "M",
+     "preferredFit": "slim",
+     "typicalBudget": 500000
+    },
+    "preferences": {
+     "preferredStyles": [
+      "casual",
+      "smart_casual"
+     ],
+     "dislikedStyles": [],
+     "favoriteColors": [
+      "white"
+     ],
+     "dislikedColors": [
+      "black"
+     ],
+     "language": "uz"
+    }
+   }
+  },
+  {
+   "name": "unknown fields are dropped at every level",
+   "body": "{\"name\":\"Aziza\",\"role\":\"admin\",\"profile\":{\"height\":170,\"userId\":\"x\",\"colorProfileId\":\"y\"},\"preferences\":{\"language\":\"ru\",\"id\":\"z\"}}",
+   "ok": true,
+   "value": {
+    "name": "Aziza",
+    "profile": {
+     "height": 170
+    },
+    "preferences": {
+     "language": "ru"
+    }
+   }
+  },
+  {
+   "name": "empty sections",
+   "body": "{\"profile\":{},\"preferences\":{}}",
+   "ok": true,
+   "value": {
+    "profile": {},
+    "preferences": {}
+   }
+  },
+  {
+   "name": "every profile field null",
+   "body": "{\"profile\":{\"gender\":null,\"ageRange\":null,\"bodyShape\":null,\"skinTone\":null,\"skinUndertone\":null,\"hairColor\":null,\"eyeColor\":null,\"clothingSize\":null,\"height\":null,\"weight\":null,\"preferredFit\":null,\"typicalBudget\":null}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "gender": null,
+     "ageRange": null,
+     "height": null,
+     "weight": null,
+     "bodyShape": null,
+     "skinTone": null,
+     "skinUndertone": null,
+     "hairColor": null,
+     "eyeColor": null,
+     "clothingSize": null,
+     "preferredFit": null,
+     "typicalBudget": null
+    }
+   }
+  },
+  {
+   "name": "an empty name",
+   "body": "{\"name\":\"\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "name",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a name of spaces",
+   "body": "{\"name\":\"   \"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "name",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a name with spaces around (trimmed)",
+   "body": "{\"name\":\"  Aziza  \"}",
+   "ok": true,
+   "value": {
+    "name": "Aziza"
+   }
+  },
+  {
+   "name": "a name with other white space around",
+   "body": "{\"name\":\"﻿\\tAziza \"}",
+   "ok": true,
+   "value": {
+    "name": "Aziza"
+   }
+  },
+  {
+   "name": "a name of 60 characters",
+   "body": "{\"name\":\"nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn\"}",
+   "ok": true,
+   "value": {
+    "name": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+   }
+  },
+  {
+   "name": "a name of 61 characters",
+   "body": "{\"name\":\"nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "name",
+     "message": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a name of 60 characters and spaces around",
+   "body": "{\"name\":\" nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn \"}",
+   "ok": true,
+   "value": {
+    "name": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+   }
+  },
+  {
+   "name": "a name of 30 characters outside the basic plane (60 units)",
+   "body": "{\"name\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+   "ok": true,
+   "value": {
+    "name": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+   }
+  },
+  {
+   "name": "a name of 31 characters outside the basic plane (62 units)",
+   "body": "{\"name\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "name",
+     "message": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a name with an apostrophe and Cyrillic",
+   "body": "{\"name\":\"O‘g‘iloy Ўткир\"}",
+   "ok": true,
+   "value": {
+    "name": "O‘g‘iloy Ўткир"
+   }
+  },
+  {
+   "name": "name is null",
+   "body": "{\"name\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "name is a number",
+   "body": "{\"name\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "name is true",
+   "body": "{\"name\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "name is false",
+   "body": "{\"name\":false}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "name is an array",
+   "body": "{\"name\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "name is an object",
+   "body": "{\"name\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "profile is null",
+   "body": "{\"profile\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null",
+   "details": [
+    {
+     "path": "profile",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "preferences is null",
+   "body": "{\"preferences\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null",
+   "details": [
+    {
+     "path": "preferences",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "profile is a number",
+   "body": "{\"profile\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "profile",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "preferences is a number",
+   "body": "{\"preferences\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "preferences",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "profile is true",
+   "body": "{\"profile\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "profile",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "preferences is true",
+   "body": "{\"preferences\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "preferences",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "profile is false",
+   "body": "{\"profile\":false}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "profile",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "preferences is false",
+   "body": "{\"preferences\":false}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "preferences",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "profile is a string",
+   "body": "{\"profile\":\"text\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string",
+   "details": [
+    {
+     "path": "profile",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "preferences is a string",
+   "body": "{\"preferences\":\"text\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string",
+   "details": [
+    {
+     "path": "preferences",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "profile is an array",
+   "body": "{\"profile\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "profile",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "preferences is an array",
+   "body": "{\"preferences\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "preferences",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "gender male",
+   "body": "{\"profile\":{\"gender\":\"male\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "gender": "male"
+    }
+   }
+  },
+  {
+   "name": "gender female",
+   "body": "{\"profile\":{\"gender\":\"female\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "gender": "female"
+    }
+   }
+  },
+  {
+   "name": "gender other",
+   "body": "{\"profile\":{\"gender\":\"other\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "gender": "other"
+    }
+   }
+  },
+  {
+   "name": "gender unisex",
+   "body": "{\"profile\":{\"gender\":\"unisex\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "gender": "unisex"
+    }
+   }
+  },
+  {
+   "name": "gender null",
+   "body": "{\"profile\":{\"gender\":null}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "gender": null
+    }
+   }
+  },
+  {
+   "name": "gender unknown",
+   "body": "{\"profile\":{\"gender\":\"robot\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"other\"|\"unisex\"",
+   "details": [
+    {
+     "path": "profile.gender",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"other\"|\"unisex\""
+    }
+   ]
+  },
+  {
+   "name": "gender in upper case",
+   "body": "{\"profile\":{\"gender\":\"Male\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"other\"|\"unisex\"",
+   "details": [
+    {
+     "path": "profile.gender",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"other\"|\"unisex\""
+    }
+   ]
+  },
+  {
+   "name": "gender empty",
+   "body": "{\"profile\":{\"gender\":\"\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"other\"|\"unisex\"",
+   "details": [
+    {
+     "path": "profile.gender",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"other\"|\"unisex\""
+    }
+   ]
+  },
+  {
+   "name": "gender with a space",
+   "body": "{\"profile\":{\"gender\":\"male \"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"other\"|\"unisex\"",
+   "details": [
+    {
+     "path": "profile.gender",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"other\"|\"unisex\""
+    }
+   ]
+  },
+  {
+   "name": "gender is a number",
+   "body": "{\"profile\":{\"gender\":7}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"other\"|\"unisex\"",
+   "details": [
+    {
+     "path": "profile.gender",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"other\"|\"unisex\""
+    }
+   ]
+  },
+  {
+   "name": "gender is true",
+   "body": "{\"profile\":{\"gender\":true}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"other\"|\"unisex\"",
+   "details": [
+    {
+     "path": "profile.gender",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"other\"|\"unisex\""
+    }
+   ]
+  },
+  {
+   "name": "gender is false",
+   "body": "{\"profile\":{\"gender\":false}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"other\"|\"unisex\"",
+   "details": [
+    {
+     "path": "profile.gender",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"other\"|\"unisex\""
+    }
+   ]
+  },
+  {
+   "name": "gender is an array",
+   "body": "{\"profile\":{\"gender\":[\"x\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"other\"|\"unisex\"",
+   "details": [
+    {
+     "path": "profile.gender",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"other\"|\"unisex\""
+    }
+   ]
+  },
+  {
+   "name": "gender is an object",
+   "body": "{\"profile\":{\"gender\":{\"a\":1}}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"other\"|\"unisex\"",
+   "details": [
+    {
+     "path": "profile.gender",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"other\"|\"unisex\""
+    }
+   ]
+  },
+  {
+   "name": "ageRange valid",
+   "body": "{\"profile\":{\"ageRange\":\"qiymat\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "ageRange": "qiymat"
+    }
+   }
+  },
+  {
+   "name": "ageRange null",
+   "body": "{\"profile\":{\"ageRange\":null}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "ageRange": null
+    }
+   }
+  },
+  {
+   "name": "ageRange empty",
+   "body": "{\"profile\":{\"ageRange\":\"\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "ageRange": ""
+    }
+   }
+  },
+  {
+   "name": "ageRange of spaces (trimmed to empty)",
+   "body": "{\"profile\":{\"ageRange\":\"   \"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "ageRange": ""
+    }
+   }
+  },
+  {
+   "name": "ageRange with spaces around (trimmed)",
+   "body": "{\"profile\":{\"ageRange\":\"  qiymat  \"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "ageRange": "qiymat"
+    }
+   }
+  },
+  {
+   "name": "ageRange of 60 characters",
+   "body": "{\"profile\":{\"ageRange\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "ageRange": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    }
+   }
+  },
+  {
+   "name": "ageRange of 61 characters",
+   "body": "{\"profile\":{\"ageRange\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "profile.ageRange",
+     "message": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "ageRange of 60 characters and spaces around",
+   "body": "{\"profile\":{\"ageRange\":\"  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  \"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "ageRange": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    }
+   }
+  },
+  {
+   "name": "ageRange is a number",
+   "body": "{\"profile\":{\"ageRange\":7}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "profile.ageRange",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "bodyShape valid",
+   "body": "{\"profile\":{\"bodyShape\":\"qiymat\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "bodyShape": "qiymat"
+    }
+   }
+  },
+  {
+   "name": "bodyShape null",
+   "body": "{\"profile\":{\"bodyShape\":null}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "bodyShape": null
+    }
+   }
+  },
+  {
+   "name": "bodyShape empty",
+   "body": "{\"profile\":{\"bodyShape\":\"\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "bodyShape": ""
+    }
+   }
+  },
+  {
+   "name": "bodyShape of spaces (trimmed to empty)",
+   "body": "{\"profile\":{\"bodyShape\":\"   \"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "bodyShape": ""
+    }
+   }
+  },
+  {
+   "name": "bodyShape with spaces around (trimmed)",
+   "body": "{\"profile\":{\"bodyShape\":\"  qiymat  \"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "bodyShape": "qiymat"
+    }
+   }
+  },
+  {
+   "name": "bodyShape of 60 characters",
+   "body": "{\"profile\":{\"bodyShape\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "bodyShape": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    }
+   }
+  },
+  {
+   "name": "bodyShape of 61 characters",
+   "body": "{\"profile\":{\"bodyShape\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "profile.bodyShape",
+     "message": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "bodyShape of 60 characters and spaces around",
+   "body": "{\"profile\":{\"bodyShape\":\"  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  \"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "bodyShape": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    }
+   }
+  },
+  {
+   "name": "bodyShape is a number",
+   "body": "{\"profile\":{\"bodyShape\":7}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "profile.bodyShape",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "skinTone valid",
+   "body": "{\"profile\":{\"skinTone\":\"qiymat\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "skinTone": "qiymat"
+    }
+   }
+  },
+  {
+   "name": "skinTone null",
+   "body": "{\"profile\":{\"skinTone\":null}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "skinTone": null
+    }
+   }
+  },
+  {
+   "name": "skinTone empty",
+   "body": "{\"profile\":{\"skinTone\":\"\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "skinTone": ""
+    }
+   }
+  },
+  {
+   "name": "skinTone of spaces (trimmed to empty)",
+   "body": "{\"profile\":{\"skinTone\":\"   \"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "skinTone": ""
+    }
+   }
+  },
+  {
+   "name": "skinTone with spaces around (trimmed)",
+   "body": "{\"profile\":{\"skinTone\":\"  qiymat  \"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "skinTone": "qiymat"
+    }
+   }
+  },
+  {
+   "name": "skinTone of 60 characters",
+   "body": "{\"profile\":{\"skinTone\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "skinTone": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    }
+   }
+  },
+  {
+   "name": "skinTone of 61 characters",
+   "body": "{\"profile\":{\"skinTone\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "profile.skinTone",
+     "message": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "skinTone of 60 characters and spaces around",
+   "body": "{\"profile\":{\"skinTone\":\"  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  \"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "skinTone": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    }
+   }
+  },
+  {
+   "name": "skinTone is a number",
+   "body": "{\"profile\":{\"skinTone\":7}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "profile.skinTone",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "skinUndertone valid",
+   "body": "{\"profile\":{\"skinUndertone\":\"qiymat\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "skinUndertone": "qiymat"
+    }
+   }
+  },
+  {
+   "name": "skinUndertone null",
+   "body": "{\"profile\":{\"skinUndertone\":null}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "skinUndertone": null
+    }
+   }
+  },
+  {
+   "name": "skinUndertone empty",
+   "body": "{\"profile\":{\"skinUndertone\":\"\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "skinUndertone": ""
+    }
+   }
+  },
+  {
+   "name": "skinUndertone of spaces (trimmed to empty)",
+   "body": "{\"profile\":{\"skinUndertone\":\"   \"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "skinUndertone": ""
+    }
+   }
+  },
+  {
+   "name": "skinUndertone with spaces around (trimmed)",
+   "body": "{\"profile\":{\"skinUndertone\":\"  qiymat  \"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "skinUndertone": "qiymat"
+    }
+   }
+  },
+  {
+   "name": "skinUndertone of 60 characters",
+   "body": "{\"profile\":{\"skinUndertone\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "skinUndertone": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    }
+   }
+  },
+  {
+   "name": "skinUndertone of 61 characters",
+   "body": "{\"profile\":{\"skinUndertone\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "profile.skinUndertone",
+     "message": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "skinUndertone of 60 characters and spaces around",
+   "body": "{\"profile\":{\"skinUndertone\":\"  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  \"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "skinUndertone": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    }
+   }
+  },
+  {
+   "name": "skinUndertone is a number",
+   "body": "{\"profile\":{\"skinUndertone\":7}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "profile.skinUndertone",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "hairColor valid",
+   "body": "{\"profile\":{\"hairColor\":\"qiymat\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "hairColor": "qiymat"
+    }
+   }
+  },
+  {
+   "name": "hairColor null",
+   "body": "{\"profile\":{\"hairColor\":null}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "hairColor": null
+    }
+   }
+  },
+  {
+   "name": "hairColor empty",
+   "body": "{\"profile\":{\"hairColor\":\"\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "hairColor": ""
+    }
+   }
+  },
+  {
+   "name": "hairColor of spaces (trimmed to empty)",
+   "body": "{\"profile\":{\"hairColor\":\"   \"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "hairColor": ""
+    }
+   }
+  },
+  {
+   "name": "hairColor with spaces around (trimmed)",
+   "body": "{\"profile\":{\"hairColor\":\"  qiymat  \"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "hairColor": "qiymat"
+    }
+   }
+  },
+  {
+   "name": "hairColor of 60 characters",
+   "body": "{\"profile\":{\"hairColor\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "hairColor": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    }
+   }
+  },
+  {
+   "name": "hairColor of 61 characters",
+   "body": "{\"profile\":{\"hairColor\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "profile.hairColor",
+     "message": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "hairColor of 60 characters and spaces around",
+   "body": "{\"profile\":{\"hairColor\":\"  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  \"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "hairColor": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    }
+   }
+  },
+  {
+   "name": "hairColor is a number",
+   "body": "{\"profile\":{\"hairColor\":7}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "profile.hairColor",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "eyeColor valid",
+   "body": "{\"profile\":{\"eyeColor\":\"qiymat\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "eyeColor": "qiymat"
+    }
+   }
+  },
+  {
+   "name": "eyeColor null",
+   "body": "{\"profile\":{\"eyeColor\":null}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "eyeColor": null
+    }
+   }
+  },
+  {
+   "name": "eyeColor empty",
+   "body": "{\"profile\":{\"eyeColor\":\"\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "eyeColor": ""
+    }
+   }
+  },
+  {
+   "name": "eyeColor of spaces (trimmed to empty)",
+   "body": "{\"profile\":{\"eyeColor\":\"   \"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "eyeColor": ""
+    }
+   }
+  },
+  {
+   "name": "eyeColor with spaces around (trimmed)",
+   "body": "{\"profile\":{\"eyeColor\":\"  qiymat  \"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "eyeColor": "qiymat"
+    }
+   }
+  },
+  {
+   "name": "eyeColor of 60 characters",
+   "body": "{\"profile\":{\"eyeColor\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "eyeColor": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    }
+   }
+  },
+  {
+   "name": "eyeColor of 61 characters",
+   "body": "{\"profile\":{\"eyeColor\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "profile.eyeColor",
+     "message": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "eyeColor of 60 characters and spaces around",
+   "body": "{\"profile\":{\"eyeColor\":\"  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  \"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "eyeColor": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    }
+   }
+  },
+  {
+   "name": "eyeColor is a number",
+   "body": "{\"profile\":{\"eyeColor\":7}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "profile.eyeColor",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "clothingSize valid",
+   "body": "{\"profile\":{\"clothingSize\":\"qiymat\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "clothingSize": "qiymat"
+    }
+   }
+  },
+  {
+   "name": "clothingSize null",
+   "body": "{\"profile\":{\"clothingSize\":null}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "clothingSize": null
+    }
+   }
+  },
+  {
+   "name": "clothingSize empty",
+   "body": "{\"profile\":{\"clothingSize\":\"\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "clothingSize": ""
+    }
+   }
+  },
+  {
+   "name": "clothingSize of spaces (trimmed to empty)",
+   "body": "{\"profile\":{\"clothingSize\":\"   \"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "clothingSize": ""
+    }
+   }
+  },
+  {
+   "name": "clothingSize with spaces around (trimmed)",
+   "body": "{\"profile\":{\"clothingSize\":\"  qiymat  \"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "clothingSize": "qiymat"
+    }
+   }
+  },
+  {
+   "name": "clothingSize of 60 characters",
+   "body": "{\"profile\":{\"clothingSize\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "clothingSize": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    }
+   }
+  },
+  {
+   "name": "clothingSize of 61 characters",
+   "body": "{\"profile\":{\"clothingSize\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "profile.clothingSize",
+     "message": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "clothingSize of 60 characters and spaces around",
+   "body": "{\"profile\":{\"clothingSize\":\"  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  \"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "clothingSize": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    }
+   }
+  },
+  {
+   "name": "clothingSize is a number",
+   "body": "{\"profile\":{\"clothingSize\":7}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "profile.clothingSize",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "ageRange is a number",
+   "body": "{\"profile\":{\"ageRange\":7}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "profile.ageRange",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "ageRange is true",
+   "body": "{\"profile\":{\"ageRange\":true}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "profile.ageRange",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "ageRange is false",
+   "body": "{\"profile\":{\"ageRange\":false}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "profile.ageRange",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "ageRange is an array",
+   "body": "{\"profile\":{\"ageRange\":[\"x\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "profile.ageRange",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "ageRange is an object",
+   "body": "{\"profile\":{\"ageRange\":{\"a\":1}}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "profile.ageRange",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "ageRange of 31 characters outside the basic plane (62 units)",
+   "body": "{\"profile\":{\"ageRange\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "profile.ageRange",
+     "message": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "height at the minimum",
+   "body": "{\"profile\":{\"height\":50}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "height": 50
+    }
+   }
+  },
+  {
+   "name": "height at the maximum",
+   "body": "{\"profile\":{\"height\":250}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "height": 250
+    }
+   }
+  },
+  {
+   "name": "height is null",
+   "body": "{\"profile\":{\"height\":null}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "height": null
+    }
+   }
+  },
+  {
+   "name": "height just below the minimum",
+   "body": "{\"profile\":{\"height\":49.999}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=50",
+   "details": [
+    {
+     "path": "profile.height",
+     "message": "Juda kichik: kutilgan number >=50"
+    }
+   ]
+  },
+  {
+   "name": "height just above the maximum",
+   "body": "{\"profile\":{\"height\":250.001}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=250",
+   "details": [
+    {
+     "path": "profile.height",
+     "message": "Juda katta: kutilgan number <=250"
+    }
+   ]
+  },
+  {
+   "name": "height is negative",
+   "body": "{\"profile\":{\"height\":-1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=50",
+   "details": [
+    {
+     "path": "profile.height",
+     "message": "Juda kichik: kutilgan number >=50"
+    }
+   ]
+  },
+  {
+   "name": "height is minus zero",
+   "body": "{\"profile\":{\"height\":-0}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=50",
+   "details": [
+    {
+     "path": "profile.height",
+     "message": "Juda kichik: kutilgan number >=50"
+    }
+   ]
+  },
+  {
+   "name": "height with an exponent",
+   "body": "{\"profile\":{\"height\":1e2}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "height": 100
+    }
+   }
+  },
+  {
+   "name": "height with a fraction of zeros",
+   "body": "{\"profile\":{\"height\":100.0}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "height": 100
+    }
+   }
+  },
+  {
+   "name": "height with a fraction",
+   "body": "{\"profile\":{\"height\":100.5}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "height": 100.5
+    }
+   }
+  },
+  {
+   "name": "height past the largest double",
+   "body": "{\"profile\":{\"height\":1e400}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "profile.height",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "height below the smallest double",
+   "body": "{\"profile\":{\"height\":-1e400}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "profile.height",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "height is a tiny number",
+   "body": "{\"profile\":{\"height\":1e-400}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=50",
+   "details": [
+    {
+     "path": "profile.height",
+     "message": "Juda kichik: kutilgan number >=50"
+    }
+   ]
+  },
+  {
+   "name": "height with many digits",
+   "body": "{\"profile\":{\"height\":100.00000000000000000000000000001}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "height": 100
+    }
+   }
+  },
+  {
+   "name": "height is true",
+   "body": "{\"profile\":{\"height\":true}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "profile.height",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "height is false",
+   "body": "{\"profile\":{\"height\":false}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "profile.height",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "height is a string",
+   "body": "{\"profile\":{\"height\":\"text\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "profile.height",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "height is an array",
+   "body": "{\"profile\":{\"height\":[\"x\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "profile.height",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "height is an object",
+   "body": "{\"profile\":{\"height\":{\"a\":1}}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan object",
+   "details": [
+    {
+     "path": "profile.height",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "height is a string of digits",
+   "body": "{\"profile\":{\"height\":\"100\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "profile.height",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "weight at the minimum",
+   "body": "{\"profile\":{\"weight\":20}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "weight": 20
+    }
+   }
+  },
+  {
+   "name": "weight at the maximum",
+   "body": "{\"profile\":{\"weight\":300}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "weight": 300
+    }
+   }
+  },
+  {
+   "name": "weight is null",
+   "body": "{\"profile\":{\"weight\":null}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "weight": null
+    }
+   }
+  },
+  {
+   "name": "weight just below the minimum",
+   "body": "{\"profile\":{\"weight\":19.999}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=20",
+   "details": [
+    {
+     "path": "profile.weight",
+     "message": "Juda kichik: kutilgan number >=20"
+    }
+   ]
+  },
+  {
+   "name": "weight just above the maximum",
+   "body": "{\"profile\":{\"weight\":300.001}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=300",
+   "details": [
+    {
+     "path": "profile.weight",
+     "message": "Juda katta: kutilgan number <=300"
+    }
+   ]
+  },
+  {
+   "name": "weight is negative",
+   "body": "{\"profile\":{\"weight\":-1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=20",
+   "details": [
+    {
+     "path": "profile.weight",
+     "message": "Juda kichik: kutilgan number >=20"
+    }
+   ]
+  },
+  {
+   "name": "weight is minus zero",
+   "body": "{\"profile\":{\"weight\":-0}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=20",
+   "details": [
+    {
+     "path": "profile.weight",
+     "message": "Juda kichik: kutilgan number >=20"
+    }
+   ]
+  },
+  {
+   "name": "weight with an exponent",
+   "body": "{\"profile\":{\"weight\":1e2}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "weight": 100
+    }
+   }
+  },
+  {
+   "name": "weight with a fraction of zeros",
+   "body": "{\"profile\":{\"weight\":100.0}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "weight": 100
+    }
+   }
+  },
+  {
+   "name": "weight with a fraction",
+   "body": "{\"profile\":{\"weight\":100.5}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "weight": 100.5
+    }
+   }
+  },
+  {
+   "name": "weight past the largest double",
+   "body": "{\"profile\":{\"weight\":1e400}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "profile.weight",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "weight below the smallest double",
+   "body": "{\"profile\":{\"weight\":-1e400}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "profile.weight",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "weight is a tiny number",
+   "body": "{\"profile\":{\"weight\":1e-400}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=20",
+   "details": [
+    {
+     "path": "profile.weight",
+     "message": "Juda kichik: kutilgan number >=20"
+    }
+   ]
+  },
+  {
+   "name": "weight with many digits",
+   "body": "{\"profile\":{\"weight\":100.00000000000000000000000000001}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "weight": 100
+    }
+   }
+  },
+  {
+   "name": "weight is true",
+   "body": "{\"profile\":{\"weight\":true}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "profile.weight",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "weight is false",
+   "body": "{\"profile\":{\"weight\":false}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "profile.weight",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "weight is a string",
+   "body": "{\"profile\":{\"weight\":\"text\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "profile.weight",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "weight is an array",
+   "body": "{\"profile\":{\"weight\":[\"x\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "profile.weight",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "weight is an object",
+   "body": "{\"profile\":{\"weight\":{\"a\":1}}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan object",
+   "details": [
+    {
+     "path": "profile.weight",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "weight is a string of digits",
+   "body": "{\"profile\":{\"weight\":\"100\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "profile.weight",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "typicalBudget zero",
+   "body": "{\"profile\":{\"typicalBudget\":0}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "typicalBudget": 0
+    }
+   }
+  },
+  {
+   "name": "typicalBudget at the maximum",
+   "body": "{\"profile\":{\"typicalBudget\":1000000000}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "typicalBudget": 1000000000
+    }
+   }
+  },
+  {
+   "name": "typicalBudget above the maximum",
+   "body": "{\"profile\":{\"typicalBudget\":1000000001}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=1000000000",
+   "details": [
+    {
+     "path": "profile.typicalBudget",
+     "message": "Juda katta: kutilgan number <=1000000000"
+    }
+   ]
+  },
+  {
+   "name": "typicalBudget negative",
+   "body": "{\"profile\":{\"typicalBudget\":-1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=0",
+   "details": [
+    {
+     "path": "profile.typicalBudget",
+     "message": "Juda kichik: kutilgan number >=0"
+    }
+   ]
+  },
+  {
+   "name": "typicalBudget null",
+   "body": "{\"profile\":{\"typicalBudget\":null}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "typicalBudget": null
+    }
+   }
+  },
+  {
+   "name": "typicalBudget with a fraction",
+   "body": "{\"profile\":{\"typicalBudget\":1.5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan int, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "profile.typicalBudget",
+     "message": "Noto‘g‘ri kirish: kutilgan int, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "typicalBudget with a fraction of zeros",
+   "body": "{\"profile\":{\"typicalBudget\":250000.0}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "typicalBudget": 250000
+    }
+   }
+  },
+  {
+   "name": "typicalBudget with an exponent",
+   "body": "{\"profile\":{\"typicalBudget\":2.5e5}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "typicalBudget": 250000
+    }
+   }
+  },
+  {
+   "name": "typicalBudget with a negative exponent",
+   "body": "{\"profile\":{\"typicalBudget\":5e-1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan int, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "profile.typicalBudget",
+     "message": "Noto‘g‘ri kirish: kutilgan int, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "typicalBudget minus zero",
+   "body": "{\"profile\":{\"typicalBudget\":-0}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "typicalBudget": 0
+    }
+   }
+  },
+  {
+   "name": "typicalBudget past the safe integers",
+   "body": "{\"profile\":{\"typicalBudget\":9007199254740993}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan int <=9007199254740991",
+   "details": [
+    {
+     "path": "profile.typicalBudget",
+     "message": "Juda katta: kutilgan int <=9007199254740991"
+    },
+    {
+     "path": "profile.typicalBudget",
+     "message": "Juda katta: kutilgan number <=1000000000"
+    }
+   ]
+  },
+  {
+   "name": "typicalBudget past the largest double",
+   "body": "{\"profile\":{\"typicalBudget\":1e400}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "profile.typicalBudget",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "typicalBudget below the safe integers",
+   "body": "{\"profile\":{\"typicalBudget\":-9007199254740993}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan int >=-9007199254740991",
+   "details": [
+    {
+     "path": "profile.typicalBudget",
+     "message": "Juda kichik: kutilgan int >=-9007199254740991"
+    },
+    {
+     "path": "profile.typicalBudget",
+     "message": "Juda kichik: kutilgan number >=0"
+    }
+   ]
+  },
+  {
+   "name": "typicalBudget a whole number past the safe integers, written with an exponent",
+   "body": "{\"profile\":{\"typicalBudget\":1e300}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan int <=9007199254740991",
+   "details": [
+    {
+     "path": "profile.typicalBudget",
+     "message": "Juda katta: kutilgan int <=9007199254740991"
+    },
+    {
+     "path": "profile.typicalBudget",
+     "message": "Juda katta: kutilgan number <=1000000000"
+    }
+   ]
+  },
+  {
+   "name": "typicalBudget negative and fractional",
+   "body": "{\"profile\":{\"typicalBudget\":-1.5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan int, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "profile.typicalBudget",
+     "message": "Noto‘g‘ri kirish: kutilgan int, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "typicalBudget fractional and above the maximum",
+   "body": "{\"profile\":{\"typicalBudget\":1000000000.5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan int, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "profile.typicalBudget",
+     "message": "Noto‘g‘ri kirish: kutilgan int, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "typicalBudget is true",
+   "body": "{\"profile\":{\"typicalBudget\":true}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "profile.typicalBudget",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "typicalBudget is false",
+   "body": "{\"profile\":{\"typicalBudget\":false}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "profile.typicalBudget",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "typicalBudget is a string",
+   "body": "{\"profile\":{\"typicalBudget\":\"text\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "profile.typicalBudget",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "typicalBudget is an array",
+   "body": "{\"profile\":{\"typicalBudget\":[\"x\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "profile.typicalBudget",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "typicalBudget is an object",
+   "body": "{\"profile\":{\"typicalBudget\":{\"a\":1}}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan object",
+   "details": [
+    {
+     "path": "profile.typicalBudget",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "preferredFit slim",
+   "body": "{\"profile\":{\"preferredFit\":\"slim\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "preferredFit": "slim"
+    }
+   }
+  },
+  {
+   "name": "preferredFit regular",
+   "body": "{\"profile\":{\"preferredFit\":\"regular\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "preferredFit": "regular"
+    }
+   }
+  },
+  {
+   "name": "preferredFit relaxed",
+   "body": "{\"profile\":{\"preferredFit\":\"relaxed\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "preferredFit": "relaxed"
+    }
+   }
+  },
+  {
+   "name": "preferredFit oversized",
+   "body": "{\"profile\":{\"preferredFit\":\"oversized\"}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "preferredFit": "oversized"
+    }
+   }
+  },
+  {
+   "name": "preferredFit null",
+   "body": "{\"profile\":{\"preferredFit\":null}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "preferredFit": null
+    }
+   }
+  },
+  {
+   "name": "preferredFit unknown",
+   "body": "{\"profile\":{\"preferredFit\":\"baggy\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"slim\"|\"regular\"|\"relaxed\"|\"oversized\"",
+   "details": [
+    {
+     "path": "profile.preferredFit",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"slim\"|\"regular\"|\"relaxed\"|\"oversized\""
+    }
+   ]
+  },
+  {
+   "name": "preferredFit is a number",
+   "body": "{\"profile\":{\"preferredFit\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"slim\"|\"regular\"|\"relaxed\"|\"oversized\"",
+   "details": [
+    {
+     "path": "profile.preferredFit",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"slim\"|\"regular\"|\"relaxed\"|\"oversized\""
+    }
+   ]
+  },
+  {
+   "name": "preferredStyles empty",
+   "body": "{\"preferences\":{\"preferredStyles\":[]}}",
+   "ok": true,
+   "value": {
+    "preferences": {
+     "preferredStyles": []
+    }
+   }
+  },
+  {
+   "name": "preferredStyles every value",
+   "body": "{\"preferences\":{\"preferredStyles\":[\"casual\",\"smart_casual\",\"formal\",\"sporty\",\"bohemian\",\"minimal\",\"streetwear\",\"classic\",\"preppy\"]}}",
+   "ok": true,
+   "value": {
+    "preferences": {
+     "preferredStyles": [
+      "casual",
+      "smart_casual",
+      "formal",
+      "sporty",
+      "bohemian",
+      "minimal",
+      "streetwear",
+      "classic",
+      "preppy"
+     ]
+    }
+   }
+  },
+  {
+   "name": "preferredStyles of 20 items",
+   "body": "{\"preferences\":{\"preferredStyles\":[\"casual\",\"smart_casual\",\"formal\",\"sporty\",\"bohemian\",\"minimal\",\"streetwear\",\"classic\",\"preppy\",\"casual\",\"smart_casual\",\"formal\",\"sporty\",\"bohemian\",\"minimal\",\"streetwear\",\"classic\",\"preppy\",\"casual\",\"smart_casual\"]}}",
+   "ok": true,
+   "value": {
+    "preferences": {
+     "preferredStyles": [
+      "casual",
+      "smart_casual",
+      "formal",
+      "sporty",
+      "bohemian",
+      "minimal",
+      "streetwear",
+      "classic",
+      "preppy",
+      "casual",
+      "smart_casual",
+      "formal",
+      "sporty",
+      "bohemian",
+      "minimal",
+      "streetwear",
+      "classic",
+      "preppy",
+      "casual",
+      "smart_casual"
+     ]
+    }
+   }
+  },
+  {
+   "name": "preferredStyles of 21 items",
+   "body": "{\"preferences\":{\"preferredStyles\":[\"casual\",\"smart_casual\",\"formal\",\"sporty\",\"bohemian\",\"minimal\",\"streetwear\",\"classic\",\"preppy\",\"casual\",\"smart_casual\",\"formal\",\"sporty\",\"bohemian\",\"minimal\",\"streetwear\",\"classic\",\"preppy\",\"casual\",\"smart_casual\",\"formal\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan array <=20 element bo‘lishi kerak",
+   "details": [
+    {
+     "path": "preferences.preferredStyles",
+     "message": "Juda katta: kutilgan array <=20 element bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "preferredStyles with a repeated value (kept)",
+   "body": "{\"preferences\":{\"preferredStyles\":[\"casual\",\"casual\"]}}",
+   "ok": true,
+   "value": {
+    "preferences": {
+     "preferredStyles": [
+      "casual",
+      "casual"
+     ]
+    }
+   }
+  },
+  {
+   "name": "preferredStyles with an unknown value",
+   "body": "{\"preferences\":{\"preferredStyles\":[\"casual\",\"nope\",\"smart_casual\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\"",
+   "details": [
+    {
+     "path": "preferences.preferredStyles.1",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    }
+   ]
+  },
+  {
+   "name": "preferredStyles with a value of the other list",
+   "body": "{\"preferences\":{\"preferredStyles\":[\"blue\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\"",
+   "details": [
+    {
+     "path": "preferences.preferredStyles.0",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    }
+   ]
+  },
+  {
+   "name": "preferredStyles with a number and a null inside",
+   "body": "{\"preferences\":{\"preferredStyles\":[\"casual\",5,null]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\"",
+   "details": [
+    {
+     "path": "preferences.preferredStyles.1",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.preferredStyles.2",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    }
+   ]
+  },
+  {
+   "name": "preferredStyles null",
+   "body": "{\"preferences\":{\"preferredStyles\":null}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan null",
+   "details": [
+    {
+     "path": "preferences.preferredStyles",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "preferredStyles is a string",
+   "body": "{\"preferences\":{\"preferredStyles\":\"casual\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan string",
+   "details": [
+    {
+     "path": "preferences.preferredStyles",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "preferredStyles is an object",
+   "body": "{\"preferences\":{\"preferredStyles\":{\"0\":\"casual\",\"length\":1}}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan object",
+   "details": [
+    {
+     "path": "preferences.preferredStyles",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "preferredStyles of 21 items, some unknown",
+   "body": "{\"preferences\":{\"preferredStyles\":[\"casual\",\"smart_casual\",\"formal\",\"sporty\",\"bohemian\",\"minimal\",\"streetwear\",\"classic\",\"preppy\",\"casual\",\"smart_casual\",\"formal\",\"sporty\",\"bohemian\",\"minimal\",\"streetwear\",\"classic\",\"preppy\",\"casual\",\"nope\",\"nope2\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\"",
+   "details": [
+    {
+     "path": "preferences.preferredStyles.19",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.preferredStyles.20",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.preferredStyles",
+     "message": "Juda katta: kutilgan array <=20 element bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "dislikedStyles empty",
+   "body": "{\"preferences\":{\"dislikedStyles\":[]}}",
+   "ok": true,
+   "value": {
+    "preferences": {
+     "dislikedStyles": []
+    }
+   }
+  },
+  {
+   "name": "dislikedStyles every value",
+   "body": "{\"preferences\":{\"dislikedStyles\":[\"casual\",\"smart_casual\",\"formal\",\"sporty\",\"bohemian\",\"minimal\",\"streetwear\",\"classic\",\"preppy\"]}}",
+   "ok": true,
+   "value": {
+    "preferences": {
+     "dislikedStyles": [
+      "casual",
+      "smart_casual",
+      "formal",
+      "sporty",
+      "bohemian",
+      "minimal",
+      "streetwear",
+      "classic",
+      "preppy"
+     ]
+    }
+   }
+  },
+  {
+   "name": "dislikedStyles of 20 items",
+   "body": "{\"preferences\":{\"dislikedStyles\":[\"casual\",\"smart_casual\",\"formal\",\"sporty\",\"bohemian\",\"minimal\",\"streetwear\",\"classic\",\"preppy\",\"casual\",\"smart_casual\",\"formal\",\"sporty\",\"bohemian\",\"minimal\",\"streetwear\",\"classic\",\"preppy\",\"casual\",\"smart_casual\"]}}",
+   "ok": true,
+   "value": {
+    "preferences": {
+     "dislikedStyles": [
+      "casual",
+      "smart_casual",
+      "formal",
+      "sporty",
+      "bohemian",
+      "minimal",
+      "streetwear",
+      "classic",
+      "preppy",
+      "casual",
+      "smart_casual",
+      "formal",
+      "sporty",
+      "bohemian",
+      "minimal",
+      "streetwear",
+      "classic",
+      "preppy",
+      "casual",
+      "smart_casual"
+     ]
+    }
+   }
+  },
+  {
+   "name": "dislikedStyles of 21 items",
+   "body": "{\"preferences\":{\"dislikedStyles\":[\"casual\",\"smart_casual\",\"formal\",\"sporty\",\"bohemian\",\"minimal\",\"streetwear\",\"classic\",\"preppy\",\"casual\",\"smart_casual\",\"formal\",\"sporty\",\"bohemian\",\"minimal\",\"streetwear\",\"classic\",\"preppy\",\"casual\",\"smart_casual\",\"formal\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan array <=20 element bo‘lishi kerak",
+   "details": [
+    {
+     "path": "preferences.dislikedStyles",
+     "message": "Juda katta: kutilgan array <=20 element bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "dislikedStyles with a repeated value (kept)",
+   "body": "{\"preferences\":{\"dislikedStyles\":[\"casual\",\"casual\"]}}",
+   "ok": true,
+   "value": {
+    "preferences": {
+     "dislikedStyles": [
+      "casual",
+      "casual"
+     ]
+    }
+   }
+  },
+  {
+   "name": "dislikedStyles with an unknown value",
+   "body": "{\"preferences\":{\"dislikedStyles\":[\"casual\",\"nope\",\"smart_casual\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\"",
+   "details": [
+    {
+     "path": "preferences.dislikedStyles.1",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    }
+   ]
+  },
+  {
+   "name": "dislikedStyles with a value of the other list",
+   "body": "{\"preferences\":{\"dislikedStyles\":[\"blue\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\"",
+   "details": [
+    {
+     "path": "preferences.dislikedStyles.0",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    }
+   ]
+  },
+  {
+   "name": "dislikedStyles with a number and a null inside",
+   "body": "{\"preferences\":{\"dislikedStyles\":[\"casual\",5,null]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\"",
+   "details": [
+    {
+     "path": "preferences.dislikedStyles.1",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.dislikedStyles.2",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    }
+   ]
+  },
+  {
+   "name": "dislikedStyles null",
+   "body": "{\"preferences\":{\"dislikedStyles\":null}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan null",
+   "details": [
+    {
+     "path": "preferences.dislikedStyles",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "dislikedStyles is a string",
+   "body": "{\"preferences\":{\"dislikedStyles\":\"casual\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan string",
+   "details": [
+    {
+     "path": "preferences.dislikedStyles",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "dislikedStyles is an object",
+   "body": "{\"preferences\":{\"dislikedStyles\":{\"0\":\"casual\",\"length\":1}}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan object",
+   "details": [
+    {
+     "path": "preferences.dislikedStyles",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "dislikedStyles of 21 items, some unknown",
+   "body": "{\"preferences\":{\"dislikedStyles\":[\"casual\",\"smart_casual\",\"formal\",\"sporty\",\"bohemian\",\"minimal\",\"streetwear\",\"classic\",\"preppy\",\"casual\",\"smart_casual\",\"formal\",\"sporty\",\"bohemian\",\"minimal\",\"streetwear\",\"classic\",\"preppy\",\"casual\",\"nope\",\"nope2\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\"",
+   "details": [
+    {
+     "path": "preferences.dislikedStyles.19",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.dislikedStyles.20",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.dislikedStyles",
+     "message": "Juda katta: kutilgan array <=20 element bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "favoriteColors empty",
+   "body": "{\"preferences\":{\"favoriteColors\":[]}}",
+   "ok": true,
+   "value": {
+    "preferences": {
+     "favoriteColors": []
+    }
+   }
+  },
+  {
+   "name": "favoriteColors every value",
+   "body": "{\"preferences\":{\"favoriteColors\":[\"white\",\"black\",\"beige\",\"gray\",\"navy\",\"blue\",\"light_blue\",\"green\",\"olive\",\"khaki\",\"brown\",\"tan\",\"red\",\"burgundy\",\"pink\",\"orange\",\"yellow\",\"purple\",\"teal\",\"cream\",\"ivory\",\"rust\",\"mustard\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan array <=20 element bo‘lishi kerak",
+   "details": [
+    {
+     "path": "preferences.favoriteColors",
+     "message": "Juda katta: kutilgan array <=20 element bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "favoriteColors of 20 items",
+   "body": "{\"preferences\":{\"favoriteColors\":[\"white\",\"black\",\"beige\",\"gray\",\"navy\",\"blue\",\"light_blue\",\"green\",\"olive\",\"khaki\",\"brown\",\"tan\",\"red\",\"burgundy\",\"pink\",\"orange\",\"yellow\",\"purple\",\"teal\",\"cream\"]}}",
+   "ok": true,
+   "value": {
+    "preferences": {
+     "favoriteColors": [
+      "white",
+      "black",
+      "beige",
+      "gray",
+      "navy",
+      "blue",
+      "light_blue",
+      "green",
+      "olive",
+      "khaki",
+      "brown",
+      "tan",
+      "red",
+      "burgundy",
+      "pink",
+      "orange",
+      "yellow",
+      "purple",
+      "teal",
+      "cream"
+     ]
+    }
+   }
+  },
+  {
+   "name": "favoriteColors of 21 items",
+   "body": "{\"preferences\":{\"favoriteColors\":[\"white\",\"black\",\"beige\",\"gray\",\"navy\",\"blue\",\"light_blue\",\"green\",\"olive\",\"khaki\",\"brown\",\"tan\",\"red\",\"burgundy\",\"pink\",\"orange\",\"yellow\",\"purple\",\"teal\",\"cream\",\"ivory\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan array <=20 element bo‘lishi kerak",
+   "details": [
+    {
+     "path": "preferences.favoriteColors",
+     "message": "Juda katta: kutilgan array <=20 element bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "favoriteColors with a repeated value (kept)",
+   "body": "{\"preferences\":{\"favoriteColors\":[\"white\",\"white\"]}}",
+   "ok": true,
+   "value": {
+    "preferences": {
+     "favoriteColors": [
+      "white",
+      "white"
+     ]
+    }
+   }
+  },
+  {
+   "name": "favoriteColors with an unknown value",
+   "body": "{\"preferences\":{\"favoriteColors\":[\"white\",\"nope\",\"black\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\"",
+   "details": [
+    {
+     "path": "preferences.favoriteColors.1",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\""
+    }
+   ]
+  },
+  {
+   "name": "favoriteColors with a value of the other list",
+   "body": "{\"preferences\":{\"favoriteColors\":[\"minimal\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\"",
+   "details": [
+    {
+     "path": "preferences.favoriteColors.0",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\""
+    }
+   ]
+  },
+  {
+   "name": "favoriteColors with a number and a null inside",
+   "body": "{\"preferences\":{\"favoriteColors\":[\"white\",5,null]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\"",
+   "details": [
+    {
+     "path": "preferences.favoriteColors.1",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\""
+    },
+    {
+     "path": "preferences.favoriteColors.2",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\""
+    }
+   ]
+  },
+  {
+   "name": "favoriteColors null",
+   "body": "{\"preferences\":{\"favoriteColors\":null}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan null",
+   "details": [
+    {
+     "path": "preferences.favoriteColors",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "favoriteColors is a string",
+   "body": "{\"preferences\":{\"favoriteColors\":\"white\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan string",
+   "details": [
+    {
+     "path": "preferences.favoriteColors",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "favoriteColors is an object",
+   "body": "{\"preferences\":{\"favoriteColors\":{\"0\":\"white\",\"length\":1}}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan object",
+   "details": [
+    {
+     "path": "preferences.favoriteColors",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "favoriteColors of 21 items, some unknown",
+   "body": "{\"preferences\":{\"favoriteColors\":[\"white\",\"black\",\"beige\",\"gray\",\"navy\",\"blue\",\"light_blue\",\"green\",\"olive\",\"khaki\",\"brown\",\"tan\",\"red\",\"burgundy\",\"pink\",\"orange\",\"yellow\",\"purple\",\"teal\",\"nope\",\"nope2\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\"",
+   "details": [
+    {
+     "path": "preferences.favoriteColors.19",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\""
+    },
+    {
+     "path": "preferences.favoriteColors.20",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\""
+    },
+    {
+     "path": "preferences.favoriteColors",
+     "message": "Juda katta: kutilgan array <=20 element bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "dislikedColors empty",
+   "body": "{\"preferences\":{\"dislikedColors\":[]}}",
+   "ok": true,
+   "value": {
+    "preferences": {
+     "dislikedColors": []
+    }
+   }
+  },
+  {
+   "name": "dislikedColors every value",
+   "body": "{\"preferences\":{\"dislikedColors\":[\"white\",\"black\",\"beige\",\"gray\",\"navy\",\"blue\",\"light_blue\",\"green\",\"olive\",\"khaki\",\"brown\",\"tan\",\"red\",\"burgundy\",\"pink\",\"orange\",\"yellow\",\"purple\",\"teal\",\"cream\",\"ivory\",\"rust\",\"mustard\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan array <=20 element bo‘lishi kerak",
+   "details": [
+    {
+     "path": "preferences.dislikedColors",
+     "message": "Juda katta: kutilgan array <=20 element bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "dislikedColors of 20 items",
+   "body": "{\"preferences\":{\"dislikedColors\":[\"white\",\"black\",\"beige\",\"gray\",\"navy\",\"blue\",\"light_blue\",\"green\",\"olive\",\"khaki\",\"brown\",\"tan\",\"red\",\"burgundy\",\"pink\",\"orange\",\"yellow\",\"purple\",\"teal\",\"cream\"]}}",
+   "ok": true,
+   "value": {
+    "preferences": {
+     "dislikedColors": [
+      "white",
+      "black",
+      "beige",
+      "gray",
+      "navy",
+      "blue",
+      "light_blue",
+      "green",
+      "olive",
+      "khaki",
+      "brown",
+      "tan",
+      "red",
+      "burgundy",
+      "pink",
+      "orange",
+      "yellow",
+      "purple",
+      "teal",
+      "cream"
+     ]
+    }
+   }
+  },
+  {
+   "name": "dislikedColors of 21 items",
+   "body": "{\"preferences\":{\"dislikedColors\":[\"white\",\"black\",\"beige\",\"gray\",\"navy\",\"blue\",\"light_blue\",\"green\",\"olive\",\"khaki\",\"brown\",\"tan\",\"red\",\"burgundy\",\"pink\",\"orange\",\"yellow\",\"purple\",\"teal\",\"cream\",\"ivory\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan array <=20 element bo‘lishi kerak",
+   "details": [
+    {
+     "path": "preferences.dislikedColors",
+     "message": "Juda katta: kutilgan array <=20 element bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "dislikedColors with a repeated value (kept)",
+   "body": "{\"preferences\":{\"dislikedColors\":[\"white\",\"white\"]}}",
+   "ok": true,
+   "value": {
+    "preferences": {
+     "dislikedColors": [
+      "white",
+      "white"
+     ]
+    }
+   }
+  },
+  {
+   "name": "dislikedColors with an unknown value",
+   "body": "{\"preferences\":{\"dislikedColors\":[\"white\",\"nope\",\"black\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\"",
+   "details": [
+    {
+     "path": "preferences.dislikedColors.1",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\""
+    }
+   ]
+  },
+  {
+   "name": "dislikedColors with a value of the other list",
+   "body": "{\"preferences\":{\"dislikedColors\":[\"minimal\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\"",
+   "details": [
+    {
+     "path": "preferences.dislikedColors.0",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\""
+    }
+   ]
+  },
+  {
+   "name": "dislikedColors with a number and a null inside",
+   "body": "{\"preferences\":{\"dislikedColors\":[\"white\",5,null]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\"",
+   "details": [
+    {
+     "path": "preferences.dislikedColors.1",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\""
+    },
+    {
+     "path": "preferences.dislikedColors.2",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\""
+    }
+   ]
+  },
+  {
+   "name": "dislikedColors null",
+   "body": "{\"preferences\":{\"dislikedColors\":null}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan null",
+   "details": [
+    {
+     "path": "preferences.dislikedColors",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "dislikedColors is a string",
+   "body": "{\"preferences\":{\"dislikedColors\":\"white\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan string",
+   "details": [
+    {
+     "path": "preferences.dislikedColors",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "dislikedColors is an object",
+   "body": "{\"preferences\":{\"dislikedColors\":{\"0\":\"white\",\"length\":1}}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan object",
+   "details": [
+    {
+     "path": "preferences.dislikedColors",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "dislikedColors of 21 items, some unknown",
+   "body": "{\"preferences\":{\"dislikedColors\":[\"white\",\"black\",\"beige\",\"gray\",\"navy\",\"blue\",\"light_blue\",\"green\",\"olive\",\"khaki\",\"brown\",\"tan\",\"red\",\"burgundy\",\"pink\",\"orange\",\"yellow\",\"purple\",\"teal\",\"nope\",\"nope2\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\"",
+   "details": [
+    {
+     "path": "preferences.dislikedColors.19",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\""
+    },
+    {
+     "path": "preferences.dislikedColors.20",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\""
+    },
+    {
+     "path": "preferences.dislikedColors",
+     "message": "Juda katta: kutilgan array <=20 element bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a list with 25 unknown values (more than twenty problems)",
+   "body": "{\"preferences\":{\"preferredStyles\":[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\",\"x8\",\"x9\",\"x10\",\"x11\",\"x12\",\"x13\",\"x14\",\"x15\",\"x16\",\"x17\",\"x18\",\"x19\",\"x20\",\"x21\",\"x22\",\"x23\",\"x24\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\"",
+   "details": [
+    {
+     "path": "preferences.preferredStyles.0",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.preferredStyles.1",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.preferredStyles.2",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.preferredStyles.3",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.preferredStyles.4",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.preferredStyles.5",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.preferredStyles.6",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.preferredStyles.7",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.preferredStyles.8",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.preferredStyles.9",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.preferredStyles.10",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.preferredStyles.11",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.preferredStyles.12",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.preferredStyles.13",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.preferredStyles.14",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.preferredStyles.15",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.preferredStyles.16",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.preferredStyles.17",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.preferredStyles.18",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    },
+    {
+     "path": "preferences.preferredStyles.19",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    }
+   ]
+  },
+  {
+   "name": "a value with upper case",
+   "body": "{\"preferences\":{\"preferredStyles\":[\"Casual\"]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\"",
+   "details": [
+    {
+     "path": "preferences.preferredStyles.0",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"casual\"|\"smart_casual\"|\"formal\"|\"sporty\"|\"bohemian\"|\"minimal\"|\"streetwear\"|\"classic\"|\"preppy\""
+    }
+   ]
+  },
+  {
+   "name": "a nested list",
+   "body": "{\"preferences\":{\"favoriteColors\":[[\"white\"]]}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\"",
+   "details": [
+    {
+     "path": "preferences.favoriteColors.0",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\""
+    }
+   ]
+  },
+  {
+   "name": "language uz",
+   "body": "{\"preferences\":{\"language\":\"uz\"}}",
+   "ok": true,
+   "value": {
+    "preferences": {
+     "language": "uz"
+    }
+   }
+  },
+  {
+   "name": "language ru",
+   "body": "{\"preferences\":{\"language\":\"ru\"}}",
+   "ok": true,
+   "value": {
+    "preferences": {
+     "language": "ru"
+    }
+   }
+  },
+  {
+   "name": "language en",
+   "body": "{\"preferences\":{\"language\":\"en\"}}",
+   "ok": true,
+   "value": {
+    "preferences": {
+     "language": "en"
+    }
+   }
+  },
+  {
+   "name": "language unknown",
+   "body": "{\"preferences\":{\"language\":\"de\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"uz\"|\"ru\"|\"en\"",
+   "details": [
+    {
+     "path": "preferences.language",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"uz\"|\"ru\"|\"en\""
+    }
+   ]
+  },
+  {
+   "name": "language in upper case",
+   "body": "{\"preferences\":{\"language\":\"UZ\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"uz\"|\"ru\"|\"en\"",
+   "details": [
+    {
+     "path": "preferences.language",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"uz\"|\"ru\"|\"en\""
+    }
+   ]
+  },
+  {
+   "name": "language null",
+   "body": "{\"preferences\":{\"language\":null}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"uz\"|\"ru\"|\"en\"",
+   "details": [
+    {
+     "path": "preferences.language",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"uz\"|\"ru\"|\"en\""
+    }
+   ]
+  },
+  {
+   "name": "language is a number",
+   "body": "{\"preferences\":{\"language\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"uz\"|\"ru\"|\"en\"",
+   "details": [
+    {
+     "path": "preferences.language",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"uz\"|\"ru\"|\"en\""
+    }
+   ]
+  },
+  {
+   "name": "problems in every section",
+   "body": "{\"preferences\":{\"language\":\"xx\",\"dislikedColors\":[\"nope\"],\"preferredStyles\":\"casual\"},\"profile\":{\"typicalBudget\":1.5,\"preferredFit\":\"baggy\",\"eyeColor\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\"height\":10,\"gender\":\"robot\"},\"name\":\"\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "name",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    },
+    {
+     "path": "profile.gender",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"other\"|\"unisex\""
+    },
+    {
+     "path": "profile.height",
+     "message": "Juda kichik: kutilgan number >=50"
+    },
+    {
+     "path": "profile.eyeColor",
+     "message": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak"
+    },
+    {
+     "path": "profile.preferredFit",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"slim\"|\"regular\"|\"relaxed\"|\"oversized\""
+    },
+    {
+     "path": "profile.typicalBudget",
+     "message": "Noto‘g‘ri kirish: kutilgan int, qabul qilingan raqam"
+    },
+    {
+     "path": "preferences.preferredStyles",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan string"
+    },
+    {
+     "path": "preferences.dislikedColors.0",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"white\"|\"black\"|\"beige\"|\"gray\"|\"navy\"|\"blue\"|\"light_blue\"|\"green\"|\"olive\"|\"khaki\"|\"brown\"|\"tan\"|\"red\"|\"burgundy\"|\"pink\"|\"orange\"|\"yellow\"|\"purple\"|\"teal\"|\"cream\"|\"ivory\"|\"rust\"|\"mustard\""
+    },
+    {
+     "path": "preferences.language",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"uz\"|\"ru\"|\"en\""
+    }
+   ]
+  },
+  {
+   "name": "every profile field wrong: reported in schema order",
+   "body": "{\"profile\":{\"typicalBudget\":true,\"preferredFit\":true,\"clothingSize\":true,\"eyeColor\":true,\"hairColor\":true,\"skinUndertone\":true,\"skinTone\":true,\"bodyShape\":true,\"weight\":true,\"height\":true,\"ageRange\":true,\"gender\":true}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"other\"|\"unisex\"",
+   "details": [
+    {
+     "path": "profile.gender",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"male\"|\"female\"|\"other\"|\"unisex\""
+    },
+    {
+     "path": "profile.ageRange",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    },
+    {
+     "path": "profile.height",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean"
+    },
+    {
+     "path": "profile.weight",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean"
+    },
+    {
+     "path": "profile.bodyShape",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    },
+    {
+     "path": "profile.skinTone",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    },
+    {
+     "path": "profile.skinUndertone",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    },
+    {
+     "path": "profile.hairColor",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    },
+    {
+     "path": "profile.eyeColor",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    },
+    {
+     "path": "profile.clothingSize",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    },
+    {
+     "path": "profile.preferredFit",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"slim\"|\"regular\"|\"relaxed\"|\"oversized\""
+    },
+    {
+     "path": "profile.typicalBudget",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "every preference wrong: reported in schema order",
+   "body": "{\"preferences\":{\"language\":5,\"dislikedColors\":5,\"favoriteColors\":5,\"dislikedStyles\":5,\"preferredStyles\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "preferences.preferredStyles",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan raqam"
+    },
+    {
+     "path": "preferences.dislikedStyles",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan raqam"
+    },
+    {
+     "path": "preferences.favoriteColors",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan raqam"
+    },
+    {
+     "path": "preferences.dislikedColors",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan raqam"
+    },
+    {
+     "path": "preferences.language",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"uz\"|\"ru\"|\"en\""
+    }
+   ]
+  },
+  {
+   "name": "a section twice: the last one counts",
+   "body": "{\"profile\":{\"height\":10},\"profile\":{\"height\":170}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "height": 170
+    }
+   }
+  },
+  {
+   "name": "a field twice: the last one counts",
+   "body": "{\"profile\":{\"height\":10,\"height\":170}}",
+   "ok": true,
+   "value": {
+    "profile": {
+     "height": 170
+    }
+   }
+  },
+  {
+   "name": "member names are matched exactly",
+   "body": "{\"Name\":\"x\",\"PROFILE\":{\"height\":1},\"profile\":{\"Height\":1}}",
+   "ok": true,
+   "value": {
+    "profile": {}
+   }
+  }
+ ]
+}

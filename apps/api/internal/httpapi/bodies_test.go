@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"reflect"
+	"slices"
 	"testing"
 	"unicode/utf8"
 
 	"lookly/internal/apierr"
+	"lookly/internal/catalog"
 	"lookly/internal/golden"
 	"lookly/internal/httpapi"
 	"lookly/internal/legal"
@@ -62,23 +64,22 @@ func sameDetails(c golden.ValidationCase, got []apierr.Detail) (same, simplified
 	return true, simplified
 }
 
-func TestRequestBodiesAreJudgedAsTheNextJSAPIJudgesThem(t *testing.T) {
-	t.Parallel()
-	g := golden.LoadAuthValidation(t)
-	if g.LegalVersion != legal.Version {
-		t.Fatalf("auth-validation.json was recorded with legal version %q; it is %q now: run apps/web/scripts/golden-auth-validation.ts again", g.LegalVersion, legal.Version)
-	}
-	simplifiedCases := 0
-	for _, section := range []struct {
-		name  string
-		rule  httpapi.BodyRule
-		cases []golden.ValidationCase
-	}{
-		{"login", httpapi.LoginBody, g.Login},
-		{"register", httpapi.RegisterBody, g.Register},
-		{"refresh", httpapi.RefreshBody, g.Refresh},
-		{"logout", httpapi.LogoutBody, g.Logout},
-	} {
+// goldenSection is one request schema's vectors and the rule that must
+// reproduce them. exact: every detail must match as recorded (for a schema
+// with sections, whose vectors hold no case of zod's length report on a
+// wrong type; sameDetails reads top-level members only).
+type goldenSection struct {
+	name  string
+	rule  httpapi.BodyRule
+	cases []golden.ValidationCase
+	exact bool
+}
+
+// judge runs every vector of the sections and returns how many showed the
+// zod difference sameDetails describes.
+func judge(t *testing.T, sections []goldenSection) (simplifiedCases int) {
+	t.Helper()
+	for _, section := range sections {
 		accepted, refused := 0, 0
 		for _, c := range section.cases {
 			canonical, err := section.rule([]byte(c.Body))
@@ -107,6 +108,12 @@ func TestRequestBodiesAreJudgedAsTheNextJSAPIJudgesThem(t *testing.T) {
 				t.Errorf("%s: %d %s %q, want %d %s %q", name, err.Status(), err.Code, err.Message, c.Status, c.Code, c.Error)
 			}
 			same, simplified := sameDetails(c, err.Details)
+			if section.exact {
+				same, simplified = len(err.Details) == len(c.Details), false
+				for i := 0; same && i < len(c.Details); i++ {
+					same = err.Details[i].Path == c.Details[i].Path && err.Details[i].Message == c.Details[i].Message
+				}
+			}
 			if !same {
 				t.Errorf("%s: details %+v, want %+v", name, err.Details, c.Details)
 			}
@@ -118,23 +125,74 @@ func TestRequestBodiesAreJudgedAsTheNextJSAPIJudgesThem(t *testing.T) {
 			t.Errorf("%s: %d accepted and %d refused vectors", section.name, accepted, refused)
 		}
 	}
+	return simplifiedCases
+}
+
+func TestRequestBodiesAreJudgedAsTheNextJSAPIJudgesThem(t *testing.T) {
+	t.Parallel()
+	g := golden.LoadAuthValidation(t)
+	if g.LegalVersion != legal.Version {
+		t.Fatalf("auth-validation.json was recorded with legal version %q; it is %q now: run apps/web/scripts/golden-auth-validation.ts again", g.LegalVersion, legal.Version)
+	}
+	simplifiedCases := judge(t, []goldenSection{
+		{name: "login", rule: httpapi.LoginBody, cases: g.Login},
+		{name: "register", rule: httpapi.RegisterBody, cases: g.Register},
+		{name: "refresh", rule: httpapi.RefreshBody, cases: g.Refresh},
+		{name: "logout", rule: httpapi.LogoutBody, cases: g.Logout},
+	})
 	if simplifiedCases == 0 {
 		t.Error("no vector shows zod's length report on a wrong type: the note about it is stale")
+	}
+}
+
+func TestAccountRequestBodiesAreJudgedAsTheNextJSAPIJudgesThem(t *testing.T) {
+	t.Parallel()
+	g := golden.LoadAccountValidation(t)
+	if g.LegalVersion != legal.Version {
+		t.Fatalf("account-validation.json was recorded with legal version %q; it is %q now: run apps/web/scripts/golden-account-validation.ts again", g.LegalVersion, legal.Version)
+	}
+	judge(t, []goldenSection{
+		{name: "forgot", rule: httpapi.PasswordForgotBody, cases: g.Forgot},
+		{name: "reset", rule: httpapi.PasswordResetBody, cases: g.Reset},
+		{name: "consent", rule: httpapi.LegalConsentBody, cases: g.Consent},
+		{name: "profile", rule: httpapi.ProfilePatchBody, cases: g.Profile, exact: true},
+	})
+}
+
+// The catalog values the profile accepts are the ones the Next.js schemas
+// accept, in their order (the order is part of the refusal's message).
+func TestCatalogValuesAreTheNextJSCatalog(t *testing.T) {
+	t.Parallel()
+	g := golden.LoadAccountValidation(t)
+	for _, list := range []struct {
+		name      string
+		got, want []string
+	}{
+		{"styles", catalog.Styles, g.Styles},
+		{"colors", catalog.Colors, g.Colors},
+		{"fits", catalog.Fits, g.Fits},
+	} {
+		if !slices.Equal(list.got, list.want) {
+			t.Errorf("%s: %v, want %v", list.name, list.got, list.want)
+		}
 	}
 }
 
 // Whatever the body, a rule never panics; what it accepts is canonical JSON
 // that it accepts again, unchanged.
 func FuzzBodyRules(f *testing.F) {
-	g := golden.LoadAuthValidation(f)
-	for _, section := range [][]golden.ValidationCase{g.Login, g.Register, g.Refresh, g.Logout} {
+	g, a := golden.LoadAuthValidation(f), golden.LoadAccountValidation(f)
+	for _, section := range [][]golden.ValidationCase{g.Login, g.Register, g.Refresh, g.Logout, a.Forgot, a.Reset, a.Consent, a.Profile} {
 		for i, c := range section {
 			if i%3 == 0 {
 				f.Add(c.Body)
 			}
 		}
 	}
-	rules := []httpapi.BodyRule{httpapi.LoginBody, httpapi.RegisterBody, httpapi.RefreshBody, httpapi.LogoutBody}
+	rules := []httpapi.BodyRule{
+		httpapi.LoginBody, httpapi.RegisterBody, httpapi.RefreshBody, httpapi.LogoutBody,
+		httpapi.PasswordForgotBody, httpapi.PasswordResetBody, httpapi.LegalConsentBody, httpapi.ProfilePatchBody,
+	}
 	f.Fuzz(func(t *testing.T, body string) {
 		for i, rule := range rules {
 			canonical, err := rule([]byte(body))
