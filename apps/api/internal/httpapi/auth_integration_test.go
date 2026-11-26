@@ -166,7 +166,7 @@ func newAPI(t *testing.T, o apiOptions) *api {
 	}
 	users := accounts.New(pool, a.sessions, ratelimit.New(pool, []byte("http-test-secret-http-test-secret-http")), consent, hasher, log)
 	server := httpapi.NewServer(httpapi.Services{
-		Health: health.New(pool, "test", time.Second), Accounts: users, Sessions: a.sessions,
+		Health: health.New(pool, "test", time.Second), Accounts: users, Sessions: a.sessions, Legal: consent,
 		CookieSecure: o.cookieSecure, TrustProxy: o.trustProxy,
 	})
 	a.gate = &httpapi.Gate{Tokens: a.tokens, Sessions: a.sessions, Consent: consent, TrustProxy: o.trustProxy, HTTPSOnly: o.cookieSecure}

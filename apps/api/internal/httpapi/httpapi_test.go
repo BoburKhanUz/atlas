@@ -21,36 +21,16 @@ import (
 	"lookly/internal/httpapi/contract"
 )
 
-// fakeServer answers GetHealth with whatever the test needs.
+// fakeServer answers GetHealth with whatever the test needs. The other
+// operations are not what these tests are about: the embedded interface is
+// nil, so calling one of them fails the test loudly.
 type fakeServer struct {
+	contract.StrictServerInterface
 	health func(ctx context.Context) (contract.GetHealthResponseObject, error)
 }
 
 func (f fakeServer) GetHealth(ctx context.Context, _ contract.GetHealthRequestObject) (contract.GetHealthResponseObject, error) {
 	return f.health(ctx)
-}
-
-// The other operations are not what these tests are about.
-var errNotUsed = errors.New("operation not used in this test")
-
-func (fakeServer) Register(context.Context, contract.RegisterRequestObject) (contract.RegisterResponseObject, error) {
-	return nil, errNotUsed
-}
-
-func (fakeServer) Login(context.Context, contract.LoginRequestObject) (contract.LoginResponseObject, error) {
-	return nil, errNotUsed
-}
-
-func (fakeServer) Logout(context.Context, contract.LogoutRequestObject) (contract.LogoutResponseObject, error) {
-	return nil, errNotUsed
-}
-
-func (fakeServer) GetMe(context.Context, contract.GetMeRequestObject) (contract.GetMeResponseObject, error) {
-	return nil, errNotUsed
-}
-
-func (fakeServer) RefreshSession(context.Context, contract.RefreshSessionRequestObject) (contract.RefreshSessionResponseObject, error) {
-	return nil, errNotUsed
 }
 
 func ok(context.Context) (contract.GetHealthResponseObject, error) {

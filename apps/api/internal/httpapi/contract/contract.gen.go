@@ -160,6 +160,24 @@ func (e HealthResponseStatus) Valid() bool {
 	}
 }
 
+// Defines values for LegalDocumentId.
+const (
+	Privacy LegalDocumentId = "privacy"
+	Terms   LegalDocumentId = "terms"
+)
+
+// Valid indicates whether the value is a known member of the LegalDocumentId enum.
+func (e LegalDocumentId) Valid() bool {
+	switch e {
+	case Privacy:
+		return true
+	case Terms:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for OkResponseOk.
 const (
 	True OkResponseOk = true
@@ -268,6 +286,47 @@ type HealthResponseDatabase string
 
 // HealthResponseStatus defines model for HealthResponse.Status.
 type HealthResponseStatus string
+
+// LegalConsentRequest defines model for LegalConsentRequest.
+type LegalConsentRequest struct {
+	// AcceptedLegalVersion The `version` from GET /api/v1/legal that the user accepted; it must be the current one.
+	AcceptedLegalVersion string `json:"acceptedLegalVersion"`
+
+	// AgeConfirmed The user confirmed being 18 or older; must be true.
+	AgeConfirmed bool `json:"ageConfirmed"`
+}
+
+// LegalDocument defines model for LegalDocument.
+type LegalDocument struct {
+	Id       LegalDocumentId `json:"id"`
+	Sections []LegalSection  `json:"sections"`
+	Title    string          `json:"title"`
+}
+
+// LegalDocumentId defines model for LegalDocument.Id.
+type LegalDocumentId string
+
+// LegalResponse defines model for LegalResponse.
+type LegalResponse struct {
+	Documents []LegalDocument `json:"documents"`
+
+	// Draft True while the texts await legal review: clients show a draft notice
+	Draft bool `json:"draft"`
+
+	// EffectiveDate YYYY-MM-DD
+	EffectiveDate string `json:"effectiveDate"`
+
+	// Version Send it back as acceptedLegalVersion when registering
+	Version string `json:"version"`
+}
+
+// LegalSection defines model for LegalSection.
+type LegalSection struct {
+	Heading string `json:"heading"`
+
+	// Paragraphs Plain text; a paragraph starting with "• " is a list item
+	Paragraphs []string `json:"paragraphs"`
+}
 
 // LoginRequest defines model for LoginRequest.
 type LoginRequest struct {
@@ -399,6 +458,9 @@ type RefreshSessionJSONRequestBody = MobileRefreshRequest
 // RegisterJSONRequestBody defines body for Register for application/json ContentType.
 type RegisterJSONRequestBody = RegisterRequest
 
+// AcceptLegalDocumentsJSONRequestBody defines body for AcceptLegalDocuments for application/json ContentType.
+type AcceptLegalDocumentsJSONRequestBody = LegalConsentRequest
+
 // AsMobileAuthResponse returns the union data inside the AuthResponse as a MobileAuthResponse
 func (t AuthResponse) AsMobileAuthResponse() (MobileAuthResponse, error) {
 	var body MobileAuthResponse
@@ -481,6 +543,12 @@ type ServerInterface interface {
 	// Register Create an account and sign in (web: cookies; mobile: tokens in the body)
 	// (POST /api/v1/auth/register)
 	Register(w http.ResponseWriter, r *http.Request, params RegisterParams)
+	// GetLegalDocuments The current privacy policy and terms of use (versioned; registration accepts the version)
+	// (GET /api/v1/legal)
+	GetLegalDocuments(w http.ResponseWriter, r *http.Request)
+	// AcceptLegalDocuments Accept the current legal texts after they changed (ends CONSENT_REQUIRED)
+	// (POST /api/v1/legal/consent)
+	AcceptLegalDocuments(w http.ResponseWriter, r *http.Request)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -684,6 +752,34 @@ func (siw *ServerInterfaceWrapper) Register(w http.ResponseWriter, r *http.Reque
 	handler.ServeHTTP(w, r)
 }
 
+// GetLegalDocuments operation middleware
+func (siw *ServerInterfaceWrapper) GetLegalDocuments(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetLegalDocuments(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AcceptLegalDocuments operation middleware
+func (siw *ServerInterfaceWrapper) AcceptLegalDocuments(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AcceptLegalDocuments(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -810,6 +906,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/auth/me", wrapper.GetMe)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/auth/refresh", wrapper.RefreshSession)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/auth/register", wrapper.Register)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/legal", wrapper.GetLegalDocuments)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/legal/consent", wrapper.AcceptLegalDocuments)
 
 	return m
 }
@@ -1368,6 +1466,133 @@ func (response Register500JSONResponse) VisitRegisterResponse(w http.ResponseWri
 	return err
 }
 
+type GetLegalDocumentsRequestObject struct {
+}
+
+type GetLegalDocumentsResponseObject interface {
+	VisitGetLegalDocumentsResponse(w http.ResponseWriter) error
+}
+
+type GetLegalDocuments200JSONResponse LegalResponse
+
+func (response GetLegalDocuments200JSONResponse) VisitGetLegalDocumentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetLegalDocuments500JSONResponse ErrorResponse
+
+func (response GetLegalDocuments500JSONResponse) VisitGetLegalDocumentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptLegalDocumentsRequestObject struct {
+	Body *AcceptLegalDocumentsJSONRequestBody
+}
+
+type AcceptLegalDocumentsResponseObject interface {
+	VisitAcceptLegalDocumentsResponse(w http.ResponseWriter) error
+}
+
+type AcceptLegalDocuments200JSONResponse OkResponse
+
+func (response AcceptLegalDocuments200JSONResponse) VisitAcceptLegalDocumentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptLegalDocuments400JSONResponse ErrorResponse
+
+func (response AcceptLegalDocuments400JSONResponse) VisitAcceptLegalDocumentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptLegalDocuments401JSONResponse ErrorResponse
+
+func (response AcceptLegalDocuments401JSONResponse) VisitAcceptLegalDocumentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptLegalDocuments403JSONResponse ErrorResponse
+
+func (response AcceptLegalDocuments403JSONResponse) VisitAcceptLegalDocumentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptLegalDocuments413JSONResponse ErrorResponse
+
+func (response AcceptLegalDocuments413JSONResponse) VisitAcceptLegalDocumentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptLegalDocuments500JSONResponse ErrorResponse
+
+func (response AcceptLegalDocuments500JSONResponse) VisitAcceptLegalDocumentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// GetHealth Liveness and database check
@@ -1388,6 +1613,12 @@ type StrictServerInterface interface {
 	// Register Create an account and sign in (web: cookies; mobile: tokens in the body)
 	// (POST /api/v1/auth/register)
 	Register(ctx context.Context, request RegisterRequestObject) (RegisterResponseObject, error)
+	// GetLegalDocuments The current privacy policy and terms of use (versioned; registration accepts the version)
+	// (GET /api/v1/legal)
+	GetLegalDocuments(ctx context.Context, request GetLegalDocumentsRequestObject) (GetLegalDocumentsResponseObject, error)
+	// AcceptLegalDocuments Accept the current legal texts after they changed (ends CONSENT_REQUIRED)
+	// (POST /api/v1/legal/consent)
+	AcceptLegalDocuments(ctx context.Context, request AcceptLegalDocumentsRequestObject) (AcceptLegalDocumentsResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -1608,6 +1839,61 @@ func (sh *strictHandler) Register(w http.ResponseWriter, r *http.Request, params
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RegisterResponseObject); ok {
 		if err := validResponse.VisitRegisterResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetLegalDocuments operation middleware
+func (sh *strictHandler) GetLegalDocuments(w http.ResponseWriter, r *http.Request) {
+	var request GetLegalDocumentsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetLegalDocuments(ctx, request.(GetLegalDocumentsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetLegalDocuments")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetLegalDocumentsResponseObject); ok {
+		if err := validResponse.VisitGetLegalDocumentsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AcceptLegalDocuments operation middleware
+func (sh *strictHandler) AcceptLegalDocuments(w http.ResponseWriter, r *http.Request) {
+	var request AcceptLegalDocumentsRequestObject
+
+	var body AcceptLegalDocumentsJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AcceptLegalDocuments(ctx, request.(AcceptLegalDocumentsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AcceptLegalDocuments")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AcceptLegalDocumentsResponseObject); ok {
+		if err := validResponse.VisitAcceptLegalDocumentsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

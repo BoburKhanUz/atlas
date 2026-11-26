@@ -94,6 +94,7 @@ func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger) http.Handler {
 		Health:       health.New(pool, version, healthPingTimeout),
 		Accounts:     users,
 		Sessions:     sessions,
+		Legal:        consent,
 		CookieSecure: cfg.CookieSecure,
 		TrustProxy:   cfg.TrustProxy,
 	})

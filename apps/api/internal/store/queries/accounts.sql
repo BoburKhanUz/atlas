@@ -32,5 +32,15 @@ UPDATE "User" SET "passwordHash" = sqlc.arg(new_hash), "updatedAt" = atlas_now()
  WHERE "id" = sqlc.arg(id) AND "passwordHash" = sqlc.arg(old_hash);
 
 -- name: ConsentVersions :many
--- Every version of the legal texts the user accepted.
-SELECT "version" FROM "LegalConsent" WHERE "userId" = $1;
+-- The versions of the legal texts the user accepted, the newest consents
+-- first, at most "limit" of them.
+SELECT "version" FROM "LegalConsent" WHERE "userId" = sqlc.arg(user_id)
+ ORDER BY "acceptedAt" DESC, "id" DESC LIMIT sqlc.arg('limit');
+
+-- name: ConsentRecorded :one
+SELECT EXISTS (SELECT 1 FROM "LegalConsent" WHERE "userId" = sqlc.arg(user_id) AND "version" = sqlc.arg(version));
+
+-- name: LockUser :one
+-- The user's row, locked until the transaction ends: what changes an
+-- account one request at a time (consent, password reset, deletion).
+SELECT "id" FROM "User" WHERE "id" = $1 FOR UPDATE;

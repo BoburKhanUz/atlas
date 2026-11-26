@@ -10,13 +10,36 @@ import (
 	"time"
 )
 
-const consentVersions = `-- name: ConsentVersions :many
-SELECT "version" FROM "LegalConsent" WHERE "userId" = $1
+const consentRecorded = `-- name: ConsentRecorded :one
+SELECT EXISTS (SELECT 1 FROM "LegalConsent" WHERE "userId" = $1 AND "version" = $2)
 `
 
-// Every version of the legal texts the user accepted.
-func (q *Queries) ConsentVersions(ctx context.Context, userid string) ([]string, error) {
-	rows, err := q.db.Query(ctx, consentVersions, userid)
+type ConsentRecordedParams struct {
+	UserID  string
+	Version string
+}
+
+func (q *Queries) ConsentRecorded(ctx context.Context, arg ConsentRecordedParams) (bool, error) {
+	row := q.db.QueryRow(ctx, consentRecorded, arg.UserID, arg.Version)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const consentVersions = `-- name: ConsentVersions :many
+SELECT "version" FROM "LegalConsent" WHERE "userId" = $1
+ ORDER BY "acceptedAt" DESC, "id" DESC LIMIT $2
+`
+
+type ConsentVersionsParams struct {
+	UserID string
+	Limit  int32
+}
+
+// The versions of the legal texts the user accepted, the newest consents
+// first, at most "limit" of them.
+func (q *Queries) ConsentVersions(ctx context.Context, arg ConsentVersionsParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, consentVersions, arg.UserID, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -107,6 +130,19 @@ type CreateUserProfileParams struct {
 func (q *Queries) CreateUserProfile(ctx context.Context, arg CreateUserProfileParams) error {
 	_, err := q.db.Exec(ctx, createUserProfile, arg.ID, arg.UserID)
 	return err
+}
+
+const lockUser = `-- name: LockUser :one
+SELECT "id" FROM "User" WHERE "id" = $1 FOR UPDATE
+`
+
+// The user's row, locked until the transaction ends: what changes an
+// account one request at a time (consent, password reset, deletion).
+func (q *Queries) LockUser(ctx context.Context, id string) (string, error) {
+	row := q.db.QueryRow(ctx, lockUser, id)
+	var id_2 string
+	err := row.Scan(&id_2)
+	return id_2, err
 }
 
 const replacePasswordHash = `-- name: ReplacePasswordHash :execrows

@@ -86,6 +86,8 @@ var routes = map[string]routeRule{
 	"POST /api/v1/auth/refresh":  {access: public, body: RefreshBody, mobileBodyOnly: true},
 	"POST /api/v1/auth/logout":   {access: sessionOptional, body: LogoutBody, mobileBodyOnly: true},
 	"GET /api/v1/auth/me":        {consentExempt: true},
+	"GET /api/v1/legal":          {access: public},
+	"POST /api/v1/legal/consent": {consentExempt: true, body: LegalConsentBody},
 }
 
 type identityKey struct{}
