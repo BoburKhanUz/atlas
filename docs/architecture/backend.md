@@ -486,7 +486,9 @@ reads and writes data but changes no schema there.
   (a PostgreSQL 16). They fail, never skip, when it is missing.
 - CI job `api` does the following:
   - checks the generated code, `gofmt`, `go vet`, staticcheck v0.8.2 and govulncheck v1.9.0;
-  - runs `go test -race -tags integration ./...` against a PostgreSQL 16 service;
+  - runs `go test -race -tags integration,nodynamic ./...` against a PostgreSQL 16 service
+    (`nodynamic` on every build and test: the WebP encoder is the transpiled one, never
+    a libwebp of the machine; ADR 0009);
   - builds the binary.
 
   The `docker` job builds the image.
@@ -506,7 +508,7 @@ reads and writes data but changes no schema there.
   in one step (ADR 0002). Locally:
 
   ```bash
-  cd apps/api && go build -o /tmp/lookly-e2e ./cmd/lookly
+  cd apps/api && go build -tags nodynamic -o /tmp/lookly-e2e ./cmd/lookly
   cd ../web && E2E_GO=1 E2E_GO_BINARY=/tmp/lookly-e2e e2e/run-local.sh \
     auth.spec.ts session.spec.ts session-recovery.spec.ts go-mode.spec.ts \
     password-reset.spec.ts reconsent.spec.ts navigation-responsive.spec.ts

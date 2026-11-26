@@ -83,10 +83,11 @@ bun run test:e2e            # e2e/run-local.sh: expects a trust-auth PostgreSQL 
                             # (defaults /var/tmp/atlas-pg, port 55432; override PGHOST_DIR/PGPORT_NUM)
 
 # Go backend (apps/api); full list in apps/api/README.md
-scripts/generate.sh --check && go vet ./... \
-  && go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 -tags integration ./... \
-  && go test -race ./...
-LOOKLY_TEST_DATABASE_URL=... go test -race -tags integration ./...   # needs a PostgreSQL 16
+# -tags nodynamic: always (the WebP encoder must be the built-in one, ADR 0009)
+scripts/generate.sh --check && go vet -tags nodynamic ./... \
+  && go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 -tags integration,nodynamic ./... \
+  && go test -race -tags nodynamic ./...
+LOOKLY_TEST_DATABASE_URL=... go test -race -tags integration,nodynamic ./...   # needs a PostgreSQL 16
 go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
 ```
 

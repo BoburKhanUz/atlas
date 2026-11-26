@@ -109,7 +109,7 @@ jobs:
       # toolchain pinned in go.mod.
       - name: Build the Go server
         working-directory: apps/api
-        run: CGO_ENABLED=0 go build -trimpath -o "$RUNNER_TEMP/lookly" ./cmd/lookly
+        run: CGO_ENABLED=0 go build -trimpath -tags nodynamic -o "$RUNNER_TEMP/lookly" ./cmd/lookly
       - name: Run the session and account e2e specs in Go mode
         run: |
           JWT_SECRET="$(openssl rand -hex 32)"
@@ -336,15 +336,17 @@ jobs:
           unformatted=$(gofmt -l .)
           if [ -n "$unformatted" ]; then echo "$unformatted"; exit 1; fi
       - name: Vet
-        run: go vet ./... && go vet -tags integration ./...
+        run: go vet -tags nodynamic ./... && go vet -tags integration,nodynamic ./...
       - name: staticcheck
-        run: go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 -tags integration ./...
+        run: go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 -tags integration,nodynamic ./...
       - name: Tests, with the integration tests against PostgreSQL 16
-        run: go test -race -tags integration ./...
+        # nodynamic: the WebP encoder is the transpiled one, never a libwebp
+        # of the runner (ADR 0009); without it the imaging and server tests fail.
+        run: go test -race -tags integration,nodynamic ./...
       - name: govulncheck
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
       - name: Build
-        run: CGO_ENABLED=0 go build -trimpath -o "$RUNNER_TEMP/lookly" ./cmd/lookly
+        run: CGO_ENABLED=0 go build -trimpath -tags nodynamic -o "$RUNNER_TEMP/lookly" ./cmd/lookly
 
   repo-rules:
     # Workflow security (actionlint, zizmor) and the Claude Code project

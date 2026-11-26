@@ -1,0 +1,752 @@
+{
+ "generatedBy": "apps/web/scripts/golden-images.ts",
+ "sourceCommit": "2451f7beb5ae9f45f9a43a6e4a1889ba4adabc73",
+ "note": "fixtures: files in testdata/images, through LocalStorageProvider.saveImage. large: solid red PNGs of the given size, made by each test. redCorner: the corner of the display variant the red quarter (top-left in the unturned picture) is in.",
+ "fixtures": [
+  {
+   "file": "orientation-1.jpg",
+   "about": "JPEG, EXIF orientation 1",
+   "outcome": "ok",
+   "width": 300,
+   "height": 400,
+   "mimeType": "image/jpeg",
+   "master": {
+    "ext": "jpg",
+    "format": "jpeg",
+    "width": 300,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "display": {
+    "format": "webp",
+    "width": 300,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 300,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "redCorner": "top-left"
+  },
+  {
+   "file": "orientation-2.jpg",
+   "about": "JPEG, EXIF orientation 2",
+   "outcome": "ok",
+   "width": 300,
+   "height": 400,
+   "mimeType": "image/jpeg",
+   "master": {
+    "ext": "jpg",
+    "format": "jpeg",
+    "width": 300,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "display": {
+    "format": "webp",
+    "width": 300,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 300,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "redCorner": "top-right"
+  },
+  {
+   "file": "orientation-3.jpg",
+   "about": "JPEG, EXIF orientation 3",
+   "outcome": "ok",
+   "width": 300,
+   "height": 400,
+   "mimeType": "image/jpeg",
+   "master": {
+    "ext": "jpg",
+    "format": "jpeg",
+    "width": 300,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "display": {
+    "format": "webp",
+    "width": 300,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 300,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "redCorner": "bottom-right"
+  },
+  {
+   "file": "orientation-4.jpg",
+   "about": "JPEG, EXIF orientation 4",
+   "outcome": "ok",
+   "width": 300,
+   "height": 400,
+   "mimeType": "image/jpeg",
+   "master": {
+    "ext": "jpg",
+    "format": "jpeg",
+    "width": 300,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "display": {
+    "format": "webp",
+    "width": 300,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 300,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "redCorner": "bottom-left"
+  },
+  {
+   "file": "orientation-5.jpg",
+   "about": "JPEG, EXIF orientation 5",
+   "outcome": "ok",
+   "width": 400,
+   "height": 300,
+   "mimeType": "image/jpeg",
+   "master": {
+    "ext": "jpg",
+    "format": "jpeg",
+    "width": 400,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "display": {
+    "format": "webp",
+    "width": 400,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 400,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "redCorner": "top-left"
+  },
+  {
+   "file": "orientation-6.jpg",
+   "about": "JPEG, EXIF orientation 6",
+   "outcome": "ok",
+   "width": 400,
+   "height": 300,
+   "mimeType": "image/jpeg",
+   "master": {
+    "ext": "jpg",
+    "format": "jpeg",
+    "width": 400,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "display": {
+    "format": "webp",
+    "width": 400,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 400,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "redCorner": "top-right"
+  },
+  {
+   "file": "orientation-7.jpg",
+   "about": "JPEG, EXIF orientation 7",
+   "outcome": "ok",
+   "width": 400,
+   "height": 300,
+   "mimeType": "image/jpeg",
+   "master": {
+    "ext": "jpg",
+    "format": "jpeg",
+    "width": 400,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "display": {
+    "format": "webp",
+    "width": 400,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 400,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "redCorner": "bottom-right"
+  },
+  {
+   "file": "orientation-8.jpg",
+   "about": "JPEG, EXIF orientation 8",
+   "outcome": "ok",
+   "width": 400,
+   "height": 300,
+   "mimeType": "image/jpeg",
+   "master": {
+    "ext": "jpg",
+    "format": "jpeg",
+    "width": 400,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "display": {
+    "format": "webp",
+    "width": 400,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 400,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "redCorner": "bottom-left"
+  },
+  {
+   "file": "orientation-6.webp",
+   "about": "WebP with EXIF orientation 6",
+   "outcome": "ok",
+   "width": 400,
+   "height": 300,
+   "mimeType": "image/webp",
+   "master": {
+    "ext": "webp",
+    "format": "webp",
+    "width": 400,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "display": {
+    "format": "webp",
+    "width": 400,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 400,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "redCorner": "top-right"
+  },
+  {
+   "file": "orientation-6.png",
+   "about": "PNG with EXIF orientation 6 (eXIf chunk)",
+   "outcome": "ok",
+   "width": 400,
+   "height": 300,
+   "mimeType": "image/png",
+   "master": {
+    "ext": "png",
+    "format": "png",
+    "width": 400,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "display": {
+    "format": "webp",
+    "width": 400,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 400,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "redCorner": "top-right"
+  },
+  {
+   "file": "marked.png",
+   "about": "PNG, no metadata",
+   "outcome": "ok",
+   "width": 300,
+   "height": 400,
+   "mimeType": "image/png",
+   "master": {
+    "ext": "png",
+    "format": "png",
+    "width": 300,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "display": {
+    "format": "webp",
+    "width": 300,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 300,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "redCorner": "top-left"
+  },
+  {
+   "file": "marked-lossless.webp",
+   "about": "WebP lossless",
+   "outcome": "ok",
+   "width": 300,
+   "height": 400,
+   "mimeType": "image/webp",
+   "master": {
+    "ext": "webp",
+    "format": "webp",
+    "width": 300,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "display": {
+    "format": "webp",
+    "width": 300,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 300,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "redCorner": "top-left"
+  },
+  {
+   "file": "marked-progressive.jpg",
+   "about": "progressive JPEG",
+   "outcome": "ok",
+   "width": 300,
+   "height": 400,
+   "mimeType": "image/jpeg",
+   "master": {
+    "ext": "jpg",
+    "format": "jpeg",
+    "width": 300,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "display": {
+    "format": "webp",
+    "width": 300,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 300,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "redCorner": "top-left"
+  },
+  {
+   "file": "alpha.png",
+   "about": "PNG with alpha",
+   "outcome": "ok",
+   "width": 300,
+   "height": 300,
+   "mimeType": "image/png",
+   "master": {
+    "ext": "png",
+    "format": "png",
+    "width": 300,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "display": {
+    "format": "webp",
+    "width": 300,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 300,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   }
+  },
+  {
+   "file": "alpha.webp",
+   "about": "WebP with alpha",
+   "outcome": "ok",
+   "width": 300,
+   "height": 300,
+   "mimeType": "image/webp",
+   "master": {
+    "ext": "webp",
+    "format": "webp",
+    "width": 300,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "display": {
+    "format": "webp",
+    "width": 300,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 300,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   }
+  },
+  {
+   "file": "gray.png",
+   "about": "grey PNG",
+   "outcome": "ok",
+   "width": 300,
+   "height": 300,
+   "mimeType": "image/png",
+   "master": {
+    "ext": "png",
+    "format": "png",
+    "width": 300,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "display": {
+    "format": "webp",
+    "width": 300,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 300,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   }
+  },
+  {
+   "file": "deep.png",
+   "about": "16-bit PNG",
+   "outcome": "ok",
+   "width": 300,
+   "height": 300,
+   "mimeType": "image/png",
+   "master": {
+    "ext": "png",
+    "format": "png",
+    "width": 300,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "display": {
+    "format": "webp",
+    "width": 300,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 300,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   }
+  },
+  {
+   "file": "gps.jpg",
+   "about": "JPEG with EXIF text and GPS",
+   "outcome": "ok",
+   "width": 300,
+   "height": 400,
+   "mimeType": "image/jpeg",
+   "master": {
+    "ext": "jpg",
+    "format": "jpeg",
+    "width": 300,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "display": {
+    "format": "webp",
+    "width": 300,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 300,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "redCorner": "top-left"
+  },
+  {
+   "file": "tiny.png",
+   "about": "shortest side 255",
+   "outcome": "IMAGE_DIMENSIONS"
+  },
+  {
+   "file": "min.png",
+   "about": "shortest side 256",
+   "outcome": "ok",
+   "width": 256,
+   "height": 256,
+   "mimeType": "image/png",
+   "master": {
+    "ext": "png",
+    "format": "png",
+    "width": 256,
+    "height": 256,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "display": {
+    "format": "webp",
+    "width": 256,
+    "height": 256,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 256,
+    "height": 256,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   }
+  },
+  {
+   "file": "tiny-turned.jpg",
+   "about": "400×255 turned to 255×400",
+   "outcome": "IMAGE_DIMENSIONS"
+  },
+  {
+   "file": "picture.gif",
+   "about": "GIF",
+   "outcome": "UNSUPPORTED_IMAGE_FORMAT"
+  },
+  {
+   "file": "picture.tif",
+   "about": "TIFF",
+   "outcome": "UNSUPPORTED_IMAGE_FORMAT"
+  },
+  {
+   "file": "picture.avif",
+   "about": "AVIF",
+   "outcome": "UNSUPPORTED_IMAGE_FORMAT"
+  },
+  {
+   "file": "picture.svg",
+   "about": "SVG",
+   "outcome": "UNSUPPORTED_IMAGE_FORMAT"
+  },
+  {
+   "file": "heic-brand.bin",
+   "about": "HEIC container header only",
+   "outcome": "UNSUPPORTED_IMAGE_FORMAT"
+  },
+  {
+   "file": "garbage.bin",
+   "about": "not an image",
+   "outcome": "INVALID_IMAGE"
+  },
+  {
+   "file": "truncated.jpg",
+   "about": "JPEG cut in half",
+   "outcome": "INVALID_IMAGE"
+  },
+  {
+   "file": "empty.bin",
+   "about": "no bytes",
+   "outcome": "INVALID_IMAGE"
+  }
+ ],
+ "large": [
+  {
+   "width": 8000,
+   "height": 300,
+   "outcome": "ok",
+   "display": {
+    "format": "webp",
+    "width": 1600,
+    "height": 60,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 400,
+    "height": 15,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   }
+  },
+  {
+   "width": 8001,
+   "height": 300,
+   "outcome": "IMAGE_DIMENSIONS"
+  },
+  {
+   "width": 6400,
+   "height": 6250,
+   "outcome": "ok",
+   "display": {
+    "format": "webp",
+    "width": 1600,
+    "height": 1563,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 400,
+    "height": 391,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   }
+  },
+  {
+   "width": 6400,
+   "height": 6251,
+   "outcome": "INVALID_IMAGE"
+  }
+ ]
+}

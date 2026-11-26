@@ -10,7 +10,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 ARG VERSION=dev
-RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X lookly/internal/app.version=${VERSION}" \
+RUN CGO_ENABLED=0 go build -trimpath -tags nodynamic -ldflags "-s -w -X lookly/internal/app.version=${VERSION}" \
     -o /out/lookly ./cmd/lookly
 
 # Static binary on a minimal, non-root base: no shell, no package manager.

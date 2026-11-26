@@ -337,3 +337,57 @@ func LoadWardrobeValidation(t testing.TB) WardrobeValidation {
 	}
 	return w
 }
+
+// Images is testdata/golden/images.json (apps/web/scripts/golden-images.ts):
+// how the Next.js server's image processing answers each fixture in
+// testdata/images, and large images described by their size.
+type Images struct {
+	GeneratedBy  string         `json:"generatedBy"`
+	SourceCommit string         `json:"sourceCommit"`
+	Note         string         `json:"note"`
+	Fixtures     []ImageOutcome `json:"fixtures"`
+	Large        []struct {
+		Width     int            `json:"width"`
+		Height    int            `json:"height"`
+		Outcome   string         `json:"outcome"`
+		Display   *ImageMetadata `json:"display"`
+		Thumbnail *ImageMetadata `json:"thumbnail"`
+	} `json:"large"`
+}
+
+// ImageOutcome is one fixture's outcome: "ok" with what was stored, or the
+// refusal's code.
+type ImageOutcome struct {
+	File      string         `json:"file"`
+	About     string         `json:"about"`
+	Outcome   string         `json:"outcome"`
+	Width     int            `json:"width"`
+	Height    int            `json:"height"`
+	MimeType  string         `json:"mimeType"`
+	Master    *ImageMetadata `json:"master"`
+	Display   *ImageMetadata `json:"display"`
+	Thumbnail *ImageMetadata `json:"thumbnail"`
+	RedCorner string         `json:"redCorner"`
+}
+
+// ImageMetadata describes a stored variant.
+type ImageMetadata struct {
+	Ext    string `json:"ext"`
+	Format string `json:"format"`
+	Width  int    `json:"width"`
+	Height int    `json:"height"`
+	EXIF   bool   `json:"exif"`
+	ICC    bool   `json:"icc"`
+	XMP    bool   `json:"xmp"`
+}
+
+// LoadImages reads testdata/golden/images.json; unknown fields fail.
+func LoadImages(t testing.TB) Images {
+	t.Helper()
+	var i Images
+	load(t, "images.json", &i)
+	if len(i.Fixtures) == 0 || len(i.Large) == 0 {
+		t.Fatal("images.json: a section is empty")
+	}
+	return i
+}

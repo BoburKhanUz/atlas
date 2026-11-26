@@ -27,9 +27,10 @@ bytes from any client. Go's standard library decodes JPEG and PNG and encodes th
 - Resizing uses `golang.org/x/image/draw` (Catmull-Rom), never enlarging.
 - WebP is encoded with `github.com/gen2brain/webp`: libwebp compiled to WebAssembly and
   transpiled to Go (no cgo). It only ever encodes pixels we produced. Its optional path
-  through a system libwebp (`purego`) cannot work in the static binary, and the server
-  refuses to start if it ever reports one loaded, so the code that runs is the code
-  that was reviewed and tested.
+  through a system libwebp (`purego`) is compiled out with the build tag `nodynamic`,
+  which every build and test command carries; it cannot work in the static binary
+  anyway, and `lookly` refuses to start if one is ever reported loaded, so the code that
+  runs is the code that was reviewed and tested.
 - Masters are re-encoded in their own format: JPEG quality 92 (Go's encoder), PNG,
   WebP lossless.
 
@@ -40,8 +41,11 @@ bytes from any client. Go's standard library decodes JPEG and PNG and encodes th
   limits and orientation are the same, and tests compare those, not bytes. The mock
   vision's colour reading works on a 32×32 resample of its own and is compared with the
   TypeScript one on the e2e fixtures and solid images.
-- WebP encoding in transpiled code is slower than native libwebp (measured in B4; the
-  upload's time limit and a bound on concurrent image work keep it in check).
+- WebP encoding in transpiled code is slower than native libwebp. Measured in B4: a
+  12-megapixel phone photo (4032×3024) takes about 2.6 s and 300 MB of allocations on
+  one core of the CI-sized machine (40 % WebP encoding, 25 % resizing, 20 % re-encoding
+  the JPEG master); the apps resize photos before upload. At most two pictures are
+  processed at once per server, within the upload's time limit.
 - Differences from sharp to accept: animated WebP is refused (sharp took the first
   frame); CMYK JPEG is converted without its colour profile; 12-bit JPEG is refused.
 - A new dependency to watch (`gen2brain/webp`, MIT; libwebp, BSD) and `x/image`.

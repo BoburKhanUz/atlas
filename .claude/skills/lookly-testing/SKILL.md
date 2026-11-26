@@ -39,8 +39,8 @@ session is not a result.
 ## Go backend (`apps/api`)
 
 ```bash
-go vet ./... && go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 -tags integration ./... && go test -race ./...
-LOOKLY_TEST_DATABASE_URL=... go test -race -tags integration ./...   # real PostgreSQL 16
+go vet -tags nodynamic ./... && go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 -tags integration,nodynamic ./... && go test -race -tags nodynamic ./...
+LOOKLY_TEST_DATABASE_URL=... go test -race -tags integration,nodynamic ./...   # real PostgreSQL 16
 ```
 
 - Table-driven tests; `t.Parallel()` where the test owns its data.

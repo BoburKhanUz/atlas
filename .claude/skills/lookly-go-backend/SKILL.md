@@ -143,7 +143,7 @@ are in `references/porting.md`. Parity testing is described in
 
 ## Done when
 
-- `scripts/generate.sh --check`, `go vet ./...`, staticcheck, `go test -race -tags integration ./...` and govulncheck pass (exact commands: `apps/api/README.md`).
+- `scripts/generate.sh --check`, `go vet ./...`, staticcheck, `go test -race -tags integration,nodynamic ./...` and govulncheck pass (exact commands: `apps/api/README.md`).
 - The touched endpoints pass their contract tests and the relevant Playwright e2e specs
   against the Go server.
 - `lookly-security` ran if auth, sessions, uploads, AI, quotas, admin or config changed.

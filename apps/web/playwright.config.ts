@@ -30,7 +30,7 @@ const SESSION_PORT = PORT + 1
 const GO_MODE = process.env.E2E_GO === '1'
 const GO_BINARY = process.env.E2E_GO_BINARY
 if (GO_MODE && !GO_BINARY) {
-  throw new Error('E2E_GO=1 needs E2E_GO_BINARY (cd apps/api && go build -o <path> ./cmd/lookly)')
+  throw new Error('E2E_GO=1 needs E2E_GO_BINARY (cd apps/api && go build -tags nodynamic -o <path> ./cmd/lookly)')
 }
 const secret = (name: string) => process.env[name] || randomBytes(32).toString('hex')
 

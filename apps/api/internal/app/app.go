@@ -28,6 +28,7 @@ import (
 	"lookly/internal/database"
 	"lookly/internal/health"
 	"lookly/internal/httpapi"
+	"lookly/internal/imaging"
 	"lookly/internal/jobs"
 	"lookly/internal/legal"
 	"lookly/internal/mail"
@@ -299,6 +300,11 @@ func migrateRiver(ctx context.Context, getenv func(string) (string, bool), stdou
 func open(ctx context.Context, getenv func(string) (string, bool), stdout, stderr io.Writer) (config.Config, *slog.Logger, *pgxpool.Pool, int) {
 	cfg, err := config.Load(getenv)
 	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return config.Config{}, nil, nil, exitUsage
+	}
+	// The WebP encoder must be the one this project ships (ADR 0009).
+	if err := imaging.CheckEncoder(); err != nil {
 		fmt.Fprintln(stderr, err)
 		return config.Config{}, nil, nil, exitUsage
 	}
