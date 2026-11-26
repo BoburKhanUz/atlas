@@ -236,7 +236,9 @@ schemas judge them (`testdata/golden/account-validation.json`).
   queues the job that removes the images, and deletes the user's row; the schema's
   cascades remove everything the user owns (a test walks the foreign keys). Every token
   of the account stops working with the commit. The job exists if and only if the
-  deletion commits.
+  deletion commits. Asked again with a token of the deleted account (the app's check
+  after a lost answer), the route answers 404 `NOT_FOUND`: the gate's `goneIsNotFound`
+  rule, which looks the account up for a token of ours whose session is gone.
 - **Locks**: what changes all of a user's sessions takes the families' locks before the
   user's row, as a refresh takes its family first (`docs/architecture/sessions.md`).
   What changes an account locks the user's row `FOR NO KEY UPDATE`: such changes go one

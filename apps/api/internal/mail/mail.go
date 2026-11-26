@@ -48,7 +48,7 @@ func (Disabled) Send(context.Context, Message) error { return ErrDisabled }
 func New(c config.Mail) Sender {
 	switch c.Transport {
 	case config.MailSMTP:
-		return &SMTP{Host: c.Host, Port: c.Port, Secure: c.Secure, RequireTLS: c.RequireTLS, User: c.User, Password: c.Password, From: c.From}
+		return &SMTP{Host: c.Host, Port: c.Port, Secure: c.Secure, User: c.User, Password: c.Password, From: c.From}
 	case config.MailOutbox:
 		return &Outbox{Dir: c.OutboxDir, From: c.From}
 	default:

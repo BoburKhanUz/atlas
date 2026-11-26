@@ -110,7 +110,7 @@ func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger) (http.Handler,
 		TrustProxy:   cfg.TrustProxy,
 	})
 	return httpapi.New(server, log, &httpapi.Gate{
-		Tokens: tokens, Sessions: sessions, Consent: consent, TrustProxy: cfg.TrustProxy, HTTPSOnly: cfg.CookieSecure,
+		Tokens: tokens, Sessions: sessions, Consent: consent, Users: users, TrustProxy: cfg.TrustProxy, HTTPSOnly: cfg.CookieSecure,
 	}), nil
 }
 

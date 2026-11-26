@@ -28,8 +28,11 @@ func NewLocal(root string) (*Local, error) {
 		return nil, errors.New("storage: the directory must be an absolute path")
 	}
 	info, err := os.Stat(root)
-	if err != nil || !info.IsDir() {
-		return nil, fmt.Errorf("storage: %s is not an existing directory", root)
+	if err != nil {
+		return nil, fmt.Errorf("storage: %w", err) // names the path and the reason (missing, permission)
+	}
+	if !info.IsDir() {
+		return nil, fmt.Errorf("storage: %s is not a directory", root)
 	}
 	return &Local{root: filepath.Clean(root)}, nil
 }

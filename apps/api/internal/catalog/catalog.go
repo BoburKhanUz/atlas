@@ -1,6 +1,6 @@
 // Package catalog holds the fixed vocabularies of the product: the values
 // clients may send and the database stores. Until the cutover (B7) the
-// Next.js app owns them (apps/web/src/lib/catalog); a test compares these
+// Next.js app owns them (apps/web/src/lib/ai/catalog.ts); a test compares these
 // lists with the ones its request schemas accept. Later stages add the
 // wardrobe vocabularies (categories, patterns, materials, ...).
 package catalog

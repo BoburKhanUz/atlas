@@ -139,6 +139,10 @@ func TestTheStorageDirectoryMustExist(t *testing.T) {
 	if _, err := storage.NewLocal(dir); err != nil {
 		t.Errorf("an existing directory: %v", err)
 	}
+	// The reason is said: a missing directory is not "not a directory".
+	if _, err := storage.NewLocal(filepath.Join(dir, "missing")); err == nil || !strings.Contains(err.Error(), "no such file or directory") {
+		t.Errorf("missing: %v", err)
+	}
 }
 
 func TestDeleteOwnerStopsWithItsContext(t *testing.T) {

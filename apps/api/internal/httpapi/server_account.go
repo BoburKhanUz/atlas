@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -66,22 +67,10 @@ func (s *Server) GetProfile(ctx context.Context, _ contract.GetProfileRequestObj
 	if err != nil {
 		return nil, err
 	}
-	body := profileBody{Profile: profileRow(view.Profile)}
+	body := profileBody{Profile: profileRow(view.Profile), Preferences: preferencesWithLists(view.Preferences)}
 	body.User.ID, body.User.Email, body.User.Name = view.User.ID, view.User.Email, view.User.Name
 	body.User.CreatedAt = isoMillis(view.User.CreatedAt)
 	body.User.Profile, body.User.Preferences = profileRow(view.Profile), preferencesRow(view.Preferences)
-	if p := view.Preferences; p != nil {
-		lists, err := profile.ListsOf(*p)
-		if err != nil {
-			return nil, err
-		}
-		body.Preferences = &preferencesBody{
-			ID: p.ID, UserID: p.UserId,
-			PreferredStyles: lists.PreferredStyles, DislikedStyles: lists.DislikedStyles,
-			FavoriteColors: lists.FavoriteColors, DislikedColors: lists.DislikedColors,
-			Language: p.Language, CreatedAt: isoMillis(p.CreatedAt), UpdatedAt: isoMillis(p.UpdatedAt),
-		}
-	}
 	return profileResponse{body}, nil
 }
 
@@ -187,15 +176,15 @@ type profileRowBody struct {
 	UpdatedAt      string   `json:"updatedAt"`
 }
 
-func profileRow(r *profile.Row) *profileRowBody {
-	if r == nil {
+func profileRow(p *profile.Profile) *profileRowBody {
+	if p == nil {
 		return nil
 	}
 	return &profileRowBody{
-		ID: r.ID, UserID: r.UserId, Gender: r.Gender, AgeRange: r.AgeRange, Height: r.Height, Weight: r.Weight,
-		BodyShape: r.BodyShape, SkinTone: r.SkinTone, SkinUndertone: r.SkinUndertone, HairColor: r.HairColor, EyeColor: r.EyeColor,
-		ClothingSize: r.ClothingSize, PreferredFit: r.PreferredFit, TypicalBudget: r.TypicalBudget, ColorProfileID: r.ColorProfileId,
-		CreatedAt: isoMillis(r.CreatedAt), UpdatedAt: isoMillis(r.UpdatedAt),
+		ID: p.ID, UserID: p.UserID, Gender: p.Gender, AgeRange: p.AgeRange, Height: p.Height, Weight: p.Weight,
+		BodyShape: p.BodyShape, SkinTone: p.SkinTone, SkinUndertone: p.SkinUndertone, HairColor: p.HairColor, EyeColor: p.EyeColor,
+		ClothingSize: p.ClothingSize, PreferredFit: p.PreferredFit, TypicalBudget: p.TypicalBudget, ColorProfileID: p.ColorProfileID,
+		CreatedAt: isoMillis(p.CreatedAt), UpdatedAt: isoMillis(p.UpdatedAt),
 	}
 }
 
@@ -212,14 +201,35 @@ type preferencesRowBody struct {
 	UpdatedAt       string `json:"updatedAt"`
 }
 
-func preferencesRow(r *profile.PreferencesRow) *preferencesRowBody {
-	if r == nil {
+func preferencesRow(p *profile.Preferences) *preferencesRowBody {
+	if p == nil {
 		return nil
 	}
 	return &preferencesRowBody{
-		ID: r.ID, UserID: r.UserId, PreferredStyles: r.PreferredStyles, DislikedStyles: r.DislikedStyles,
-		FavoriteColors: r.FavoriteColors, DislikedColors: r.DislikedColors, Language: r.Language,
-		CreatedAt: isoMillis(r.CreatedAt), UpdatedAt: isoMillis(r.UpdatedAt),
+		ID: p.ID, UserID: p.UserID,
+		PreferredStyles: jsonText(p.Lists.PreferredStyles), DislikedStyles: jsonText(p.Lists.DislikedStyles),
+		FavoriteColors: jsonText(p.Lists.FavoriteColors), DislikedColors: jsonText(p.Lists.DislikedColors),
+		Language: p.Language, CreatedAt: isoMillis(p.CreatedAt), UpdatedAt: isoMillis(p.UpdatedAt),
+	}
+}
+
+// jsonText is a list as the row stores it until the cutover, and as
+// JSON.stringify writes it: the values are catalog ids, which need no
+// escaping.
+func jsonText(list []string) string {
+	encoded, _ := json.Marshal(list) // a list of strings always encodes
+	return string(encoded)
+}
+
+func preferencesWithLists(p *profile.Preferences) *preferencesBody {
+	if p == nil {
+		return nil
+	}
+	return &preferencesBody{
+		ID: p.ID, UserID: p.UserID,
+		PreferredStyles: p.Lists.PreferredStyles, DislikedStyles: p.Lists.DislikedStyles,
+		FavoriteColors: p.Lists.FavoriteColors, DislikedColors: p.Lists.DislikedColors,
+		Language: p.Language, CreatedAt: isoMillis(p.CreatedAt), UpdatedAt: isoMillis(p.UpdatedAt),
 	}
 }
 

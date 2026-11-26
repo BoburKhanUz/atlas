@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"lookly/internal/accounts"
 	"lookly/internal/apierr"
 	"lookly/internal/auth"
 	"lookly/internal/session"
@@ -41,6 +42,10 @@ type Gate struct {
 	}
 	Consent interface {
 		ConsentRequired(ctx context.Context, userID string) (bool, error)
+	}
+	// Users says whether an account still exists (see goneIsNotFound).
+	Users interface {
+		Exists(ctx context.Context, userID string) (bool, error)
 	}
 	// TrustProxy: the server is behind the reverse proxy that sets the
 	// forwarding headers (TRUST_PROXY=1).
@@ -76,6 +81,13 @@ type routeRule struct {
 	// mobileBodyOnly: the body belongs to mobile mode; in web mode the
 	// cookies carry everything and a body is not read at all.
 	mobileBodyOnly bool
+	// goneIsNotFound: a token of ours whose session is gone because its
+	// account was deleted is answered NOT_FOUND, not UNAUTHORIZED. The
+	// account deletion only: the app asks again after a lost answer, and
+	// "the account is gone" is what lets it clear the user's data (the
+	// Next.js API, which did not check sessions, answered so for as long as
+	// the token lived).
+	goneIsNotFound bool
 }
 
 // routes are the rules of the routes served, keyed by the router's pattern.
@@ -90,7 +102,7 @@ var routes = map[string]routeRule{
 	"POST /api/v1/auth/password/reset":  {access: public, body: PasswordResetBody},
 	"GET /api/v1/legal":                 {access: public},
 	"POST /api/v1/legal/consent":        {consentExempt: true, body: LegalConsentBody},
-	"DELETE /api/v1/account":            {consentExempt: true},
+	"DELETE /api/v1/account":            {consentExempt: true, goneIsNotFound: true},
 	"GET /api/v1/profile":               {},
 	"PATCH /api/v1/profile":             {body: ProfilePatchBody},
 }
@@ -124,10 +136,23 @@ func (g *Gate) middleware(next http.Handler) http.Handler {
 
 		ctx := r.Context()
 		if rule.access != public {
-			id, ok, err := g.authenticate(r)
+			id, ok, orphan, err := g.authenticate(r)
 			switch {
 			case err != nil:
 				WriteError(w, r, err)
+				return
+			case !ok && rule.goneIsNotFound && orphan != "":
+				// The token is ours and unexpired; only its session is gone.
+				refusal := apierr.New(apierr.Unauthorized)
+				exists, err := g.Users.Exists(ctx, orphan)
+				switch {
+				case err != nil:
+					WriteError(w, r, err)
+					return
+				case !exists:
+					refusal = apierr.With(apierr.NotFound, accounts.MsgUserNotFound)
+				}
+				WriteError(w, r, refusal)
 				return
 			case !ok && rule.access != sessionOptional:
 				WriteError(w, r, apierr.New(apierr.Unauthorized))
@@ -180,24 +205,29 @@ func (g *Gate) middleware(next http.Handler) http.Handler {
 
 // authenticate finds the caller: the token must verify, name a session, and
 // that session must still stand. ok is false for "nobody"; err is a failure
-// to find out.
-func (g *Gate) authenticate(r *http.Request) (Identity, bool, error) {
+// to find out. orphan is the user id of a token that verifies but whose
+// session is gone (goneIsNotFound needs it); such a token is never an
+// identity.
+func (g *Gate) authenticate(r *http.Request) (id Identity, ok bool, orphan string, err error) {
 	token, via := Credential(r)
 	if via == ViaNone {
-		return Identity{}, false, nil
+		return Identity{}, false, "", nil
 	}
 	now := time.Now
 	if g.Now != nil {
 		now = g.Now
 	}
-	claims, ok := g.Tokens.Verify(token, now())
-	if !ok {
-		return Identity{}, false, nil
+	claims, verified := g.Tokens.Verify(token, now())
+	if !verified {
+		return Identity{}, false, "", nil
 	}
 	// A token without a session id names no session: Alive answers no.
 	alive, err := g.Sessions.Alive(r.Context(), claims.SID, claims.Sub)
-	if err != nil || !alive {
-		return Identity{}, false, err
+	switch {
+	case err != nil:
+		return Identity{}, false, "", err
+	case !alive:
+		return Identity{}, false, claims.Sub, nil
 	}
-	return Identity{UserID: claims.Sub, Email: claims.Email, SessionID: claims.SID}, true, nil
+	return Identity{UserID: claims.Sub, Email: claims.Email, SessionID: claims.SID}, true, "", nil
 }

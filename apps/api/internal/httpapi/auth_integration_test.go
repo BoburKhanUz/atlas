@@ -189,7 +189,7 @@ func newAPI(t *testing.T, o apiOptions) *api {
 		Health: health.New(pool, "test", time.Second), Accounts: users, Sessions: a.sessions, Legal: consent, Profile: profile.New(pool),
 		CookieSecure: o.cookieSecure, TrustProxy: o.trustProxy,
 	})
-	a.gate = &httpapi.Gate{Tokens: a.tokens, Sessions: a.sessions, Consent: consent, TrustProxy: o.trustProxy, HTTPSOnly: o.cookieSecure}
+	a.gate = &httpapi.Gate{Tokens: a.tokens, Sessions: a.sessions, Consent: consent, Users: users, TrustProxy: o.trustProxy, HTTPSOnly: o.cookieSecure}
 	a.handler = httpapi.New(server, log, a.gate)
 	return a
 }

@@ -21,7 +21,7 @@ Every stage ends with the stage gate in `.claude/skills/lookly-workflow/SKILL.md
 | B0 | Skeleton: module, config, logging, error envelope, health, CI job, Dockerfile (spec `B0.md`; started at `409d7aa`, **done** 2026-11-25: review and security gate in `B0.md`). Starts with a spike: generate the server interface from the OpenAPI 3.1 contract with oapi-codegen; if 3.1 support is not enough, choose the workaround (as the Dart client does with `prepare_spec.dart`) and record it in an ADR | CI job green; missing config stops the server (tested); codegen approach recorded |
 | B1 | Data layer: sqlc queries, migration tool, River tables, scheduled cleanup jobs (spec `B1.md`; started at `f7a9826`, **done** 2026-11-25: review and security gate in `B1.md`) | See ADR 0007; Go schema equals the Prisma schema (checked in CI) |
 | B2 | Auth and sessions (spec `B2.md`; started at `aa42fbf`, **done** 2026-11-26: review and security gate in `B2.md`) | 9 session vectors and the session e2e specs pass against Go |
-| B3 | Profile, consent, password reset, mail, account deletion (spec `B3.md`; started at `7f169e8`, in progress) | Their e2e specs pass against Go |
+| B3 | Profile, consent, password reset, mail, account deletion (spec `B3.md`; started at `7f169e8`, **done** 2026-11-26: review and security gate in `B3.md`) | Their e2e specs pass against Go |
 | B4 | Wardrobe and media, R2 driver, upload limits and quotas | Wardrobe e2e specs pass; refusal paths tested |
 | B5 | Weather, outfit engine, outfits | Engine golden vectors 100% equal; outfit e2e specs pass |
 | B6 | AI: providers, vision, stylist, jobs, monitoring, `eval` command | AI e2e specs pass with mock providers; offline evaluation tests pass against Go |

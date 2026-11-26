@@ -36,23 +36,24 @@ type Mail struct {
 	Host string
 	Port int
 	// Secure: TLS from the first byte (usual on port 465). Otherwise the
-	// connection is upgraded with STARTTLS, and RequireTLS says it must be:
-	// always, except for a relay on this machine.
-	Secure     bool
-	RequireTLS bool
-	User       string
-	Password   string // secret
+	// connection is upgraded with STARTTLS, which the sender requires of
+	// every server but a relay on this machine (internal/mail).
+	Secure   bool
+	User     string
+	Password string // secret
 	// Outbox.
 	OutboxDir string
 }
 
 // Enabled reports whether messages can be sent at all.
-func (m Mail) Enabled() bool { return m.Transport != MailDisabled }
+// A Mail that names no transport (its zero value) is disabled, as mail.New
+// treats it.
+func (m Mail) Enabled() bool { return m.Transport == MailSMTP || m.Transport == MailOutbox }
 
 // String keeps the password out of fmt output.
 func (m Mail) String() string {
-	return fmt.Sprintf("Mail{Transport:%s From:%s Host:%s Port:%d Secure:%t RequireTLS:%t User:%s Password:%s OutboxDir:%s}",
-		m.Transport, m.From.Address, m.Host, m.Port, m.Secure, m.RequireTLS, setOrNot(m.User), setOrNot(m.Password), m.OutboxDir)
+	return fmt.Sprintf("Mail{Transport:%s From:%s Host:%s Port:%d Secure:%t User:%s Password:%s OutboxDir:%s}",
+		m.Transport, m.From.Address, m.Host, m.Port, m.Secure, setOrNot(m.User), setOrNot(m.Password), m.OutboxDir)
 }
 
 // GoString keeps the password out of %#v.
@@ -77,7 +78,6 @@ const (
 
 var (
 	defaultOutboxFrom = netmail.Address{Name: "Lookly", Address: "no-reply@localhost"}
-	localSMTPHosts    = map[string]bool{"localhost": true, "127.0.0.1": true, "::1": true}
 	bareAddress       = regexp.MustCompile(`^[^\s@<>"]+@[^\s@<>"]+$`)
 	namedAddress      = regexp.MustCompile(`^[^<>]*<([^<>]+)>$`)
 	portDigits        = regexp.MustCompile(`^[0-9]{1,5}$`)
@@ -210,8 +210,6 @@ func loadMail(env Env, publicBaseURL string, value func(string) (string, bool), 
 			fail("SMTP_SECURE", "must be 1 or 0")
 		}
 	}
-	// Credentials and links never travel in clear text to a remote server.
-	m.RequireTLS = !m.Secure && !localSMTPHosts[m.Host]
 	m.User, _ = value("SMTP_USER")
 	m.Password, _ = raw("SMTP_PASSWORD")
 	if (m.User == "") != (m.Password == "") {

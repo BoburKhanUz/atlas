@@ -46,26 +46,6 @@ var (
 	ResetShared     = ratelimit.Rule{Name: "password-reset:shared", Limit: 300, Window: time.Hour}
 )
 
-// perClient is the bucket of the caller: its address when that is known,
-// the shared bucket otherwise.
-func perClient(c Client, perAddress, shared ratelimit.Rule) ratelimit.Hit {
-	if c.HasAddr {
-		return perAddress.For(addressSubject(c.Addr))
-	}
-	return shared.For("all")
-}
-
-func (s *Service) take(ctx context.Context, hits ...ratelimit.Hit) error {
-	decision, err := s.limiter.Take(ctx, hits...)
-	if err != nil {
-		return err
-	}
-	if !decision.Allowed {
-		return apierr.TooManyAttempts(decision.RetryAfter)
-	}
-	return nil
-}
-
 // RequestPasswordReset queues a reset link for the account of the address,
 // if there is one. The caller learns nothing about that.
 func (s *Service) RequestPasswordReset(ctx context.Context, email string, c Client) error {

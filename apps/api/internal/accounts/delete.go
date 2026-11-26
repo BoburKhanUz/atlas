@@ -45,7 +45,7 @@ func (s *Service) DeleteAccount(ctx context.Context, userID string) error {
 		return nil
 	})
 	if errors.Is(err, errNoSuchUser) {
-		return apierr.With(apierr.NotFound, msgUserNotFound)
+		return apierr.With(apierr.NotFound, MsgUserNotFound)
 	}
 	if err != nil {
 		return err

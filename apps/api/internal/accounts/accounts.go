@@ -42,7 +42,8 @@ const (
 	// MsgInvalidCredentials answers a wrong email and a wrong password alike.
 	MsgInvalidCredentials = "Email yoki parol noto‘g‘ri"
 	msgEmailTaken         = "Bu email allaqachon ro‘yxatdan o‘tgan"
-	msgUserNotFound       = "Foydalanuvchi topilmadi"
+	// MsgUserNotFound answers for an account that is gone.
+	MsgUserNotFound = "Foydalanuvchi topilmadi"
 	// MsgPasswordTooLong: bcrypt reads 72 bytes; a longer password would be
 	// cut silently, so it is refused when it is set.
 	MsgPasswordTooLong = "Parol juda uzun. Qisqaroq parol tanlang: lotin harflarida ko‘pi bilan 72 ta, kirill harflarida 36 ta belgi."
@@ -149,6 +150,26 @@ func addressSubject(addr netip.Addr) string {
 	return addr.String()
 }
 
+// perClient is the bucket of the caller: its address when that is known,
+// the shared bucket otherwise.
+func perClient(c Client, perAddress, shared ratelimit.Rule) ratelimit.Hit {
+	if c.HasAddr {
+		return perAddress.For(addressSubject(c.Addr))
+	}
+	return shared.For("all")
+}
+
+func (s *Service) take(ctx context.Context, hits ...ratelimit.Hit) error {
+	decision, err := s.limiter.Take(ctx, hits...)
+	if err != nil {
+		return err
+	}
+	if !decision.Allowed {
+		return apierr.TooManyAttempts(decision.RetryAfter)
+	}
+	return nil
+}
+
 // normalizeEmail is how an email is stored and looked up.
 func normalizeEmail(email string) string { return strings.ToLower(strings.TrimSpace(email)) }
 
@@ -169,16 +190,8 @@ func (s *Service) Register(ctx context.Context, in RegisterInput, c Client) (ses
 	if len(in.Password) > auth.MaxPasswordBytes {
 		return session.User{}, session.Issued{}, passwordTooLong()
 	}
-	hit := RegisterShared.For("all")
-	if c.HasAddr {
-		hit = RegisterPerAddress.For(addressSubject(c.Addr))
-	}
-	decision, err := s.limiter.Take(ctx, hit)
-	if err != nil {
+	if err := s.take(ctx, perClient(c, RegisterPerAddress, RegisterShared)); err != nil {
 		return session.User{}, session.Issued{}, err
-	}
-	if !decision.Allowed {
-		return session.User{}, session.Issued{}, apierr.TooManyAttempts(decision.RetryAfter)
 	}
 
 	// Whether the email is taken is decided by the database alone (the
@@ -240,12 +253,8 @@ func (s *Service) Login(ctx context.Context, in LoginInput, c Client) (session.U
 	if c.HasAddr {
 		hits = append(hits, LoginPerAddress.For(addressSubject(c.Addr)))
 	}
-	decision, err := s.limiter.Take(ctx, hits...)
-	if err != nil {
+	if err := s.take(ctx, hits...); err != nil {
 		return session.User{}, session.Issued{}, err
-	}
-	if !decision.Allowed {
-		return session.User{}, session.Issued{}, apierr.TooManyAttempts(decision.RetryAfter)
 	}
 
 	q := store.New(s.pool)
@@ -325,11 +334,24 @@ type Me struct {
 	ConsentRequired bool
 }
 
+// Exists reports whether the account is there.
+func (s *Service) Exists(ctx context.Context, userID string) (bool, error) {
+	_, err := store.New(s.pool).UserByID(ctx, userID)
+	switch {
+	case err == nil:
+		return true, nil
+	case errors.Is(err, pgx.ErrNoRows):
+		return false, nil
+	default:
+		return false, fmt.Errorf("look up the user: %w", err)
+	}
+}
+
 // Me returns the user of an authenticated request.
 func (s *Service) Me(ctx context.Context, userID string) (Me, error) {
 	row, err := store.New(s.pool).UserByID(ctx, userID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return Me{}, apierr.With(apierr.NotFound, msgUserNotFound)
+		return Me{}, apierr.With(apierr.NotFound, MsgUserNotFound)
 	} else if err != nil {
 		return Me{}, fmt.Errorf("load the user: %w", err)
 	}

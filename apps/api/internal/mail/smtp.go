@@ -24,10 +24,11 @@ const (
 type SMTP struct {
 	Host string
 	Port int
-	// Secure: TLS from the first byte. Otherwise STARTTLS is used when the
-	// server offers it, and RequireTLS refuses to go on without it.
-	Secure     bool
-	RequireTLS bool
+	// Secure: TLS from the first byte. Otherwise the connection is upgraded
+	// with STARTTLS, and a server that does not offer it gets nothing:
+	// except a relay on this machine (localhost, 127.0.0.1, ::1), which may
+	// be spoken to in plain text.
+	Secure bool
 	// User and Password: both or neither. They are sent only over TLS, or to
 	// a server on this machine.
 	User     string
@@ -61,18 +62,42 @@ type withoutAddress struct {
 }
 
 func (e withoutAddress) Error() string {
-	// Addresses are ASCII here (recipient), so lower-casing keeps positions.
-	text, address := e.err.Error(), strings.ToLower(e.address)
-	var out strings.Builder
-	for {
-		i := strings.Index(strings.ToLower(text), address)
-		if i < 0 {
-			out.WriteString(text)
-			return out.String()
-		}
-		out.WriteString(text[:i] + "[recipient]")
-		text = text[i+len(address):]
+	// Compared byte by byte, ASCII letters folded: the address is ASCII
+	// (recipient), and the text around it may hold anything a server sent.
+	// Lower-casing the whole text would move byte positions.
+	text, address := e.err.Error(), e.address
+	if address == "" {
+		return text
 	}
+	var out strings.Builder
+	for i := 0; i < len(text); {
+		if i+len(address) <= len(text) && asciiEqualFold(text[i:i+len(address)], address) {
+			out.WriteString("[recipient]")
+			i += len(address)
+			continue
+		}
+		out.WriteByte(text[i])
+		i++
+	}
+	return out.String()
+}
+
+// asciiEqualFold reports whether a and b, of one length, are equal with
+// ASCII letters compared without case; other bytes must be equal.
+func asciiEqualFold(a, b string) bool {
+	for i := 0; i < len(a); i++ {
+		x, y := a[i], b[i]
+		if 'A' <= x && x <= 'Z' {
+			x += 'a' - 'A'
+		}
+		if 'A' <= y && y <= 'Z' {
+			y += 'a' - 'A'
+		}
+		if x != y {
+			return false
+		}
+	}
+	return true
 }
 
 func (e withoutAddress) Unwrap() error { return e.err }
@@ -117,7 +142,7 @@ func (s *SMTP) deliver(ctx context.Context, to string, m Message) error {
 			if err := c.StartTLS(tlsConfig); err != nil {
 				return fmt.Errorf("mail: STARTTLS: %w", err)
 			}
-		case s.RequireTLS:
+		case !isLocal(s.Host):
 			return errors.New("mail: the SMTP server does not offer STARTTLS, and the connection must be encrypted")
 		}
 	}

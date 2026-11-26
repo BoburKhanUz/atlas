@@ -27,30 +27,44 @@ type User struct {
 	CreatedAt time.Time
 }
 
-// Row is a user's profile as stored. PreferencesRow is a user's preferences
-// as stored: until the cutover (B7) its lists are JSON text.
-type (
-	Row            = store.UserProfile
-	PreferencesRow = store.UserPreferences
-)
-
-// View is a user with the two rows; a user from before registration made
-// them may have neither.
-type View struct {
-	User        User
-	Profile     *Row
-	Preferences *PreferencesRow
+// Profile is a user's profile.
+type Profile struct {
+	ID, UserID                                              string
+	Gender, AgeRange                                        *string
+	Height, Weight                                          *float64
+	BodyShape, SkinTone, SkinUndertone, HairColor, EyeColor *string
+	ClothingSize, PreferredFit                              *string
+	TypicalBudget                                           *int32
+	ColorProfileID                                          *string
+	CreatedAt, UpdatedAt                                    time.Time
 }
 
-// Lists are the style and colour lists of a preferences row.
+// Lists are the style and colour lists of a user's preferences.
 type Lists struct {
 	PreferredStyles, DislikedStyles, FavoriteColors, DislikedColors []string
 }
 
-// ListsOf reads the row's lists. Only this server and the Next.js API write
-// them, from validated values: text that is not a JSON list of strings is
-// an error, not an empty list.
-func ListsOf(p PreferencesRow) (Lists, error) {
+// Preferences are a user's style preferences, with their lists read.
+type Preferences struct {
+	ID, UserID           string
+	Lists                Lists
+	Language             string
+	CreatedAt, UpdatedAt time.Time
+}
+
+// View is a user with the profile and the preferences; a user from before
+// registration made them may have neither.
+type View struct {
+	User        User
+	Profile     *Profile
+	Preferences *Preferences
+}
+
+// listsOf reads a stored row's lists, which are JSON text until the
+// cutover (B7). Only this server and the Next.js API write them, from
+// validated values: text that is not a JSON list of strings is an error,
+// not an empty list.
+func listsOf(p store.UserPreferences) (Lists, error) {
 	var l Lists
 	for _, column := range []struct {
 		name string
@@ -163,15 +177,24 @@ func load(ctx context.Context, q *store.Queries, userID string) (View, error) {
 		return View{}, fmt.Errorf("load the user: %w", err)
 	}
 	view := View{User: User{ID: user.ID, Email: user.Email, Name: user.Name, CreatedAt: user.CreatedAt}}
-	switch row, err := q.UserProfileByUser(ctx, userID); {
+	switch r, err := q.UserProfileByUser(ctx, userID); {
 	case err == nil:
-		view.Profile = &row
+		view.Profile = &Profile{
+			ID: r.ID, UserID: r.UserId, Gender: r.Gender, AgeRange: r.AgeRange, Height: r.Height, Weight: r.Weight,
+			BodyShape: r.BodyShape, SkinTone: r.SkinTone, SkinUndertone: r.SkinUndertone, HairColor: r.HairColor, EyeColor: r.EyeColor,
+			ClothingSize: r.ClothingSize, PreferredFit: r.PreferredFit, TypicalBudget: r.TypicalBudget, ColorProfileID: r.ColorProfileId,
+			CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt,
+		}
 	case !errors.Is(err, pgx.ErrNoRows):
 		return View{}, fmt.Errorf("load the profile: %w", err)
 	}
-	switch row, err := q.UserPreferencesByUser(ctx, userID); {
+	switch r, err := q.UserPreferencesByUser(ctx, userID); {
 	case err == nil:
-		view.Preferences = &row
+		lists, err := listsOf(r)
+		if err != nil {
+			return View{}, err
+		}
+		view.Preferences = &Preferences{ID: r.ID, UserID: r.UserId, Lists: lists, Language: r.Language, CreatedAt: r.CreatedAt, UpdatedAt: r.UpdatedAt}
 	case !errors.Is(err, pgx.ErrNoRows):
 		return View{}, fmt.Errorf("load the preferences: %w", err)
 	}

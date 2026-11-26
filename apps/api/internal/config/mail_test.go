@@ -32,6 +32,9 @@ func smtp(changes map[string]string) map[string]string {
 
 func TestMailIsOffUnlessConfigured(t *testing.T) {
 	t.Parallel()
+	if (config.Mail{}).Enabled() {
+		t.Error("a Mail that names no transport is enabled")
+	}
 	for _, e := range []string{"production", "staging"} {
 		c, err := config.Load(env(with(map[string]string{"LOOKLY_ENV": e})))
 		if err != nil {
@@ -81,7 +84,7 @@ func TestSMTPSettings(t *testing.T) {
 		t.Fatal(err)
 	}
 	m := c.Mail
-	if m.Transport != config.MailSMTP || !m.Enabled() || m.Host != "smtp.example.uz" || m.Port != 587 || m.Secure || !m.RequireTLS {
+	if m.Transport != config.MailSMTP || !m.Enabled() || m.Host != "smtp.example.uz" || m.Port != 587 || m.Secure {
 		t.Errorf("defaults: %+v", m)
 	}
 	// The password is used as given; the user name is trimmed.
@@ -93,27 +96,24 @@ func TestSMTPSettings(t *testing.T) {
 	}
 
 	for _, tc := range []struct {
-		name               string
-		changes            map[string]string
-		port               int
-		secure, requireTLS bool
+		name    string
+		changes map[string]string
+		port    int
+		secure  bool
 	}{
-		{"port 465 is TLS from the first byte", map[string]string{"SMTP_PORT": "465"}, 465, true, false},
-		{"port 465 with STARTTLS asked for", map[string]string{"SMTP_PORT": "465", "SMTP_SECURE": "0"}, 465, false, true},
-		{"another port with TLS asked for", map[string]string{"SMTP_PORT": "2465", "SMTP_SECURE": "TRUE"}, 2465, true, false},
-		{"false spelled out", map[string]string{"SMTP_SECURE": "false"}, 587, false, true},
-		{"a relay on localhost needs no TLS", map[string]string{"SMTP_HOST": "localhost", "SMTP_PORT": "25", "SMTP_USER": "<unset>", "SMTP_PASSWORD": "<unset>"}, 25, false, false},
-		{"a relay on 127.0.0.1", map[string]string{"SMTP_HOST": "127.0.0.1"}, 587, false, false},
-		{"a relay on ::1", map[string]string{"SMTP_HOST": "::1"}, 587, false, false},
-		{"a host that only looks local", map[string]string{"SMTP_HOST": "localhost.example.uz"}, 587, false, true},
+		{"port 465 is TLS from the first byte", map[string]string{"SMTP_PORT": "465"}, 465, true},
+		{"port 465 with STARTTLS asked for", map[string]string{"SMTP_PORT": "465", "SMTP_SECURE": "0"}, 465, false},
+		{"another port with TLS asked for", map[string]string{"SMTP_PORT": "2465", "SMTP_SECURE": "TRUE"}, 2465, true},
+		{"false spelled out", map[string]string{"SMTP_SECURE": "false"}, 587, false},
+		{"a relay on localhost without credentials", map[string]string{"SMTP_HOST": "localhost", "SMTP_PORT": "25", "SMTP_USER": "<unset>", "SMTP_PASSWORD": "<unset>"}, 25, false},
 	} {
 		c, err := config.Load(env(smtp(tc.changes)))
 		if err != nil {
 			t.Errorf("%s: %v", tc.name, err)
 			continue
 		}
-		if c.Mail.Port != tc.port || c.Mail.Secure != tc.secure || c.Mail.RequireTLS != tc.requireTLS {
-			t.Errorf("%s: port %d, secure %v, require TLS %v", tc.name, c.Mail.Port, c.Mail.Secure, c.Mail.RequireTLS)
+		if c.Mail.Port != tc.port || c.Mail.Secure != tc.secure {
+			t.Errorf("%s: port %d, secure %v", tc.name, c.Mail.Port, c.Mail.Secure)
 		}
 	}
 	// No credentials: both empty.

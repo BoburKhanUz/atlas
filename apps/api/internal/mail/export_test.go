@@ -13,3 +13,8 @@ func (s *SMTP) TrustOnly(pool *x509.CertPool) { s.rootCAs = pool }
 func LoginAuth(user, password, host string) smtp.Auth {
 	return &loginAuth{user: user, password: password, host: host}
 }
+
+// WithoutAddress is an error whose text has the recipient's address replaced.
+func WithoutAddress(err error, address string) error {
+	return withoutAddress{err: err, address: address}
+}

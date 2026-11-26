@@ -67,6 +67,10 @@ type fakeServer struct {
 	cert     tls.Certificate
 	roots    *x509.CertPool
 
+	// addr is where it listens: 127.0.0.1 (a relay on this machine) unless
+	// a test needs a server that is not, to the sender (127.0.0.2: another
+	// loopback address, which the sender does not count as local).
+	addr        string
 	implicitTLS bool
 	startTLS    bool
 	mechanisms  string // "" offers no AUTH
@@ -92,7 +96,7 @@ func newFakeServer(t *testing.T, configure func(*fakeServer)) *fakeServer {
 		NotBefore: time.Now().Add(-time.Hour), NotAfter: time.Now().Add(time.Hour),
 		KeyUsage: x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign, ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		IsCA: true, BasicConstraintsValid: true,
-		IPAddresses: []net.IP{net.ParseIP("127.0.0.1")}, DNSNames: []string{"localhost"},
+		IPAddresses: []net.IP{net.ParseIP("127.0.0.1"), net.ParseIP("127.0.0.2")}, DNSNames: []string{"localhost"},
 	}
 	der, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
 	if err != nil {
@@ -104,8 +108,9 @@ func newFakeServer(t *testing.T, configure func(*fakeServer)) *fakeServer {
 	}
 	s := &fakeServer{t: t, cert: tls.Certificate{Certificate: [][]byte{der}, PrivateKey: key}, roots: x509.NewCertPool(), user: "mailer", pass: "smtp pass-word"}
 	s.roots.AddCert(parsed)
+	s.addr = "127.0.0.1"
 	configure(s)
-	s.listener, err = net.Listen("tcp", "127.0.0.1:0")
+	s.listener, err = net.Listen("tcp", net.JoinHostPort(s.addr, "0"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -242,7 +247,10 @@ func (s *fakeServer) serve(conn net.Conn) {
 		case "RCPT":
 			record(line)
 			if s.rejectRcpt {
-				reply("550 5.1.1 " + rest[3:] + ": no such mailbox " + strings.ToUpper(rest[3:]))
+				// What real servers do: quote the address, in other cases,
+				// next to bytes that are not UTF-8 and letters whose lower
+				// case is longer or shorter than they are.
+				reply("550 5.1.1 \xff\xff\xff\xff İȺ " + rest[3:] + ": no such mailbox \xff" + strings.ToUpper(rest[3:]) + "İ" + rest[4:len(rest)-1])
 				continue
 			}
 			s.mu.Lock()
@@ -280,7 +288,7 @@ func (s *fakeServer) serve(conn net.Conn) {
 }
 
 func (s *fakeServer) sender(change func(*mail.SMTP)) *mail.SMTP {
-	out := &mail.SMTP{Host: "127.0.0.1", Port: s.port(), From: from, User: s.user, Password: s.pass}
+	out := &mail.SMTP{Host: s.addr, Port: s.port(), From: from, User: s.user, Password: s.pass}
 	out.TrustOnly(s.roots)
 	if change != nil {
 		change(out)
@@ -384,7 +392,7 @@ func checkDelivered(t *testing.T, d *delivery) {
 func TestSMTPWithSTARTTLSAndASignIn(t *testing.T) {
 	t.Parallel()
 	server := newFakeServer(t, func(s *fakeServer) { s.startTLS, s.mechanisms = true, "LOGIN PLAIN" })
-	if err := server.sender(func(s *mail.SMTP) { s.RequireTLS = true }).Send(context.Background(), message); err != nil {
+	if err := server.sender(nil).Send(context.Background(), message); err != nil {
 		t.Fatal(err)
 	}
 	all := server.all()
@@ -429,8 +437,10 @@ func TestSMTPWithTLSFromTheFirstByteAndTheLoginMethod(t *testing.T) {
 func TestSMTPToALocalRelayWithoutTLSOrSignIn(t *testing.T) {
 	t.Parallel()
 	server := newFakeServer(t, func(s *fakeServer) {})
-	if err := server.sender(func(s *mail.SMTP) { s.User, s.Password = "", "" }).Send(context.Background(), message); err != nil {
-		t.Fatal(err)
+	for _, host := range []string{"127.0.0.1", "localhost"} {
+		if err := server.sender(func(s *mail.SMTP) { s.Host, s.User, s.Password = host, "", "" }).Send(context.Background(), message); err != nil {
+			t.Fatalf("%s: %v", host, err)
+		}
 	}
 	d := server.all()[0]
 	checkDelivered(t, d)
@@ -456,10 +466,18 @@ func nothingSent(t *testing.T, server *fakeServer) {
 
 func TestSMTPRefusesToGoOnUnencryptedWhenTLSIsRequired(t *testing.T) {
 	t.Parallel()
-	server := newFakeServer(t, func(s *fakeServer) { s.mechanisms = "PLAIN" }) // no STARTTLS on offer
-	err := server.sender(func(s *mail.SMTP) { s.RequireTLS = true }).Send(context.Background(), message)
+	// A server that is not on this machine and offers no STARTTLS: nothing
+	// goes, without any setting asking for it.
+	server := newFakeServer(t, func(s *fakeServer) { s.addr, s.mechanisms = "127.0.0.2", "PLAIN" })
+	err := server.sender(nil).Send(context.Background(), message)
 	if err == nil || !strings.Contains(err.Error(), "STARTTLS") {
 		t.Fatalf("err %v", err)
+	}
+	nothingSent(t, server)
+	// Without credentials either: the message itself holds the link.
+	err = server.sender(func(s *mail.SMTP) { s.User, s.Password = "", "" }).Send(context.Background(), message)
+	if err == nil || !strings.Contains(err.Error(), "STARTTLS") {
+		t.Fatalf("without credentials: err %v", err)
 	}
 	nothingSent(t, server)
 }
@@ -507,6 +525,35 @@ func TestSMTPSignInFailures(t *testing.T) {
 	nothingSent(t, server)
 }
 
+// The address is replaced however the text around it is written: bytes
+// that are not UTF-8 and letters whose lower case has another length do
+// not move it.
+func TestErrorsNeverShowTheRecipient(t *testing.T) {
+	t.Parallel()
+	const to = "aziza@example.uz"
+	for text, want := range map[string]string{
+		"550 \xff\xff\xff\xffaziza@example.uz":       "550 \xff\xff\xff\xff[recipient]",
+		"550 \xff\xff <aziza@example.uz>: unknown":   "550 \xff\xff <[recipient]>: unknown",
+		"550 İȺ AZIZA@Example.UZ, aziza@example.uz.": "550 İȺ [recipient], [recipient].",
+		"550 aziza@example.uzİaziza@example.uz":      "550 [recipient]İ[recipient]",
+		"550 azizaaziza@example.uz":                  "550 aziza[recipient]",
+		"550 no address here, İ \xff":                "550 no address here, İ \xff",
+		"":                                           "",
+	} {
+		got := mail.WithoutAddress(errors.New(text), to)
+		if got.Error() != want {
+			t.Errorf("%q → %q, want %q", text, got.Error(), want)
+		}
+		if !errors.Is(got, got) || errors.Unwrap(got) == nil {
+			t.Errorf("%q: the cause is not kept", text)
+		}
+	}
+	// An address stored with capitals (an old account) is found in any case.
+	if got := mail.WithoutAddress(errors.New("550 aziza@example.uz, AZIZA@EXAMPLE.UZ"), "Aziza@Example.uz").Error(); got != "550 [recipient], [recipient]" {
+		t.Errorf("mixed-case address: %q", got)
+	}
+}
+
 // The LOGIN method gives the credentials only over TLS or to this machine,
 // and only to the server it was made for.
 func TestTheLoginMethodProtectsTheCredentials(t *testing.T) {
@@ -548,8 +595,13 @@ func TestSMTPServerRefusals(t *testing.T) {
 			t.Errorf("%s refused by the server: no error", name)
 			continue
 		}
-		if strings.Contains(strings.ToLower(err.Error()), message.To) || strings.Contains(err.Error(), "token=") || strings.Contains(err.Error(), "smtp pass-word") {
+		if text := err.Error(); strings.Contains(strings.ToLower(text), message.To) || strings.Contains(strings.ToUpper(text), strings.ToUpper(message.To)) ||
+			strings.Contains(text, "aziza") || strings.Contains(text, "AZIZA") || strings.Contains(text, "PANIC") ||
+			strings.Contains(text, "token=") || strings.Contains(text, "smtp pass-word") {
 			t.Errorf("%s: the error shows the recipient, the link or the password: %v", name, err)
+		}
+		if name == "recipient" && (strings.Count(err.Error(), "[recipient]") != 3 || !strings.Contains(err.Error(), "İ[recipient]\"")) {
+			t.Errorf("the address is not replaced exactly where it was: %q", err.Error())
 		}
 		if server.all()[0].accepted {
 			t.Errorf("%s: accepted", name)
@@ -619,10 +671,11 @@ func TestTheOutboxWritesOneFilePerMessageInTheNextJSFormat(t *testing.T) {
 		if err := outbox.Send(context.Background(), message); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(2 * time.Millisecond)
 	}
-	if info, err := os.Stat(dir); err != nil || info.Mode().Perm() != 0o700 {
-		t.Fatalf("directory: %v, mode %v", err, info.Mode().Perm())
+	if info, err := os.Stat(dir); err != nil {
+		t.Fatal(err)
+	} else if info.Mode().Perm() != 0o700 {
+		t.Fatalf("directory mode %v", info.Mode().Perm())
 	}
 	files, err := os.ReadDir(dir)
 	if err != nil || len(files) != 3 {
@@ -637,8 +690,10 @@ func TestTheOutboxWritesOneFilePerMessageInTheNextJSFormat(t *testing.T) {
 		stamp, _ := strconv.ParseInt(m[1], 10, 64)
 		stamps = append(stamps, stamp)
 		info, err := file.Info()
-		if err != nil || info.Mode().Perm() != 0o600 {
-			t.Errorf("%s: mode %v (%v)", file.Name(), info.Mode().Perm(), err)
+		if err != nil {
+			t.Fatal(err)
+		} else if info.Mode().Perm() != 0o600 {
+			t.Errorf("%s: mode %v", file.Name(), info.Mode().Perm())
 		}
 		raw, err := os.ReadFile(filepath.Join(dir, file.Name()))
 		if err != nil {
@@ -736,8 +791,8 @@ func TestTheConfiguredSender(t *testing.T) {
 	if files, _ := os.ReadDir(dir); len(files) != 1 {
 		t.Errorf("%d files in the configured outbox", len(files))
 	}
-	smtpSender, ok := mail.New(config.Mail{Transport: config.MailSMTP, Host: "smtp.example.uz", Port: 2525, Secure: true, RequireTLS: true, User: "u", Password: "p", From: from}).(*mail.SMTP)
-	if !ok || smtpSender.Host != "smtp.example.uz" || smtpSender.Port != 2525 || !smtpSender.Secure || !smtpSender.RequireTLS || smtpSender.User != "u" || smtpSender.Password != "p" || smtpSender.From != from {
+	smtpSender, ok := mail.New(config.Mail{Transport: config.MailSMTP, Host: "smtp.example.uz", Port: 2525, Secure: true, User: "u", Password: "p", From: from}).(*mail.SMTP)
+	if !ok || smtpSender.Host != "smtp.example.uz" || smtpSender.Port != 2525 || !smtpSender.Secure || smtpSender.User != "u" || smtpSender.Password != "p" || smtpSender.From != from {
 		t.Errorf("smtp sender %+v", smtpSender)
 	}
 }

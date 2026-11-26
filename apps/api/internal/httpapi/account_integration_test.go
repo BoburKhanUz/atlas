@@ -669,6 +669,12 @@ func TestAMalformedStoredListIsAServerError(t *testing.T) {
 			t.Errorf("stored %q: the log does not name the column", stored)
 		}
 	}
+	// A change of something else answers the same (its answer holds the
+	// lists too), and changes nothing.
+	a.is(a.do(patchProfile(m, map[string]any{"name": "Boshqa"})), http.StatusInternalServerError, "INTERNAL")
+	if n := query[int](a, `SELECT count(*) FROM "User" WHERE "id" = $1 AND "name" IS NULL`, id); n != 1 {
+		t.Error("a change that answered 500 was stored")
+	}
 	// A change of that list repairs it.
 	a.is(a.do(patchProfile(m, map[string]any{"preferences": map[string]any{"favoriteColors": []string{"red"}}})), http.StatusOK, "")
 	a.is(a.do(getProfile(m)), http.StatusOK, "")
@@ -876,7 +882,11 @@ func TestResetLimitsWithoutAClientAddress(t *testing.T) {
 		c.headers = map[string]string{"X-Forwarded-For": fmt.Sprintf("203.0.113.%d", i%250)} // not believed
 		a.is(a.do(c), http.StatusOK, "")
 	}
-	a.is(a.do(forgot("one-more@test.local")), http.StatusTooManyRequests, "RATE_LIMITED")
+	shared := a.do(forgot("one-more@test.local"))
+	a.is(shared, http.StatusTooManyRequests, "RATE_LIMITED")
+	if seconds, err := strconv.Atoi(shared.header.Get("Retry-After")); err != nil || seconds < 1 || seconds > 3600 {
+		t.Errorf("Retry-After %q", shared.header.Get("Retry-After"))
+	}
 
 	m := a.mobileRegister(nil)
 	token := a.resetToken(m.email)
@@ -1456,7 +1466,17 @@ func TestDeletingTheAccount(t *testing.T) {
 	if a.loginStatus(m.email, password) != http.StatusUnauthorized {
 		t.Error("the deleted account signs in")
 	}
-	a.is(a.do(deleteAccount(m)), http.StatusUnauthorized, "UNAUTHORIZED")
+	// Asking again with the same token (the app's "check" after a lost
+	// answer) is told that the account is gone, as the Next.js API told it:
+	// the app then clears that user's data from the device.
+	again := a.do(deleteAccount(m))
+	a.is(again, http.StatusNotFound, "NOT_FOUND")
+	if again.text("error") != "Foydalanuvchi topilmadi" {
+		t.Errorf("message %q", again.text("error"))
+	}
+	a.is(a.do(call{method: http.MethodDelete, path: "/api/v1/account", cookies: map[string]string{httpapi.AccessCookie: web.at}}), http.StatusNotFound, "NOT_FOUND")
+	// Only that route says so: the others refuse the token as any other.
+	a.is(a.do(getProfile(m)), http.StatusUnauthorized, "UNAUTHORIZED")
 	// The images are removed by a job, queued with the deletion.
 	if jobs := a.queued("account_purge_images"); !slices.Equal(jobs, []string{`{"userId": "` + id + `"}`}) {
 		t.Errorf("queued %v", jobs)
@@ -1503,6 +1523,17 @@ func TestAccountDeletionRefusals(t *testing.T) {
 	if !a.userExists(id) {
 		t.Fatal("deleted without a session")
 	}
+	// Signed out, not deleted: the token is refused as any other, and says
+	// nothing about the account.
+	signedOut := a.mobileRegister(nil)
+	a.is(a.do(call{path: "/api/v1/auth/logout", mobile: true, bearer: signedOut.accessToken}), http.StatusOK, "")
+	a.is(a.do(deleteAccount(signedOut)), http.StatusUnauthorized, "UNAUTHORIZED")
+	if !a.userExists(a.userID(signedOut.email)) {
+		t.Fatal("a signed-out token deleted the account")
+	}
+	// A token that is not ours, for an id that does not exist: 401, not 404.
+	forged := mobileSession{accessToken: auth.NewTokens([]byte("another-secret-another-secret-another")).Sign(auth.Claims{Sub: "cnosuchuser", Email: "x@test.local", SID: "s"}, time.Now(), time.Now().Add(time.Minute))}
+	a.is(a.do(deleteAccount(forged)), http.StatusUnauthorized, "UNAUTHORIZED")
 	// The account disappeared while the request was on its way.
 	a.vanish(id)
 	gone := a.do(deleteAccount(m))
