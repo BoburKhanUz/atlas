@@ -1,0 +1,132 @@
+{
+  "source": "apps/web/src/server/idempotency.ts (multipartRequestHash)",
+  "cases": [
+    {
+      "name": "plain",
+      "fileBase64": "aW1hZ2UgYnl0ZXM=",
+      "filename": "shirt.jpg",
+      "fields": {},
+      "hash": "957790dbf601c530d61c158dff693d242cd3da5a9fc8e13781d65d00c5f7c7c8"
+    },
+    {
+      "name": "empty file and name",
+      "fileBase64": "",
+      "filename": "",
+      "fields": {},
+      "hash": "c5e72a8460a674e47048bccad32ded334497c6a17168f7329f8fc592c3f18bdf"
+    },
+    {
+      "name": "binary bytes",
+      "fileBase64": "AP+JUE5HDQoaCg==",
+      "filename": "a.png",
+      "fields": {},
+      "hash": "bce1c450a3606dba4d3543f29a39f94793f41fd0a51faf1ef777fa3dda8e8512"
+    },
+    {
+      "name": "another byte",
+      "fileBase64": "AP+JUE5HDQoaCw==",
+      "filename": "a.png",
+      "fields": {},
+      "hash": "2384052913c82e88ebb09e19b5a728bb8b8547c4d5fddf55d414d72a301abe2b"
+    },
+    {
+      "name": "another name",
+      "fileBase64": "aW1hZ2UgYnl0ZXM=",
+      "filename": "shirt.jpeg",
+      "fields": {},
+      "hash": "77fd2221e4fc69f06f334fe917492383417bcf50a7e76bf1e93aa073b152132b"
+    },
+    {
+      "name": "the filename field",
+      "fileBase64": "aW1hZ2UgYnl0ZXM=",
+      "filename": "shirt.jpg",
+      "fields": {
+        "filename": "jeans.jpg"
+      },
+      "hash": "41ca88d1dc887c2e65c5d4bb7ea296907068caf35565d01f8ed513d75fc97f7e"
+    },
+    {
+      "name": "fields in another order are the same request",
+      "fileBase64": "eA==",
+      "filename": "a.jpg",
+      "fields": {
+        "b": "2",
+        "a": "1",
+        "filename": "f"
+      },
+      "hash": "938be300e9d6f9e41b31f4cc296fa7a92215c6ae6256c72877a4600022ce19e5"
+    },
+    {
+      "name": "fields sorted",
+      "fileBase64": "eA==",
+      "filename": "a.jpg",
+      "fields": {
+        "a": "1",
+        "b": "2",
+        "filename": "f"
+      },
+      "hash": "938be300e9d6f9e41b31f4cc296fa7a92215c6ae6256c72877a4600022ce19e5"
+    },
+    {
+      "name": "a field moved into the name is another request",
+      "fileBase64": "eA==",
+      "filename": "a.jpg\",\"b",
+      "fields": {},
+      "hash": "1486ad804a7c74eb9c8dba1d6b9b54ef44901be44169ec65363283d5e469e6fb"
+    },
+    {
+      "name": "quotes, backslash and controls in the name",
+      "fileBase64": "eA==",
+      "filename": "a\"b\\c\n\r\t\b\f\u0001\u001f.jpg",
+      "fields": {},
+      "hash": "d876df5751edea310fab517b76a416ccca0e3051848e0fdbcd679ee75a4aae6e"
+    },
+    {
+      "name": "markup characters stay as they are",
+      "fileBase64": "eA==",
+      "filename": "<a&b>.jpg",
+      "fields": {
+        "note": "</script>&'"
+      },
+      "hash": "e0b3f82b4080912d0e8afbf68d90ff72a2ca5dd1217a4e1b924ab41f70ded77e"
+    },
+    {
+      "name": "non-ASCII names",
+      "fileBase64": "eA==",
+      "filename": "ko‘ylak-қизил-👕.jpg",
+      "fields": {
+        "filename": "сумка"
+      },
+      "hash": "5d7b5e1a1a76615c223eaa1847c419575f772bbdc7b49a61b5a89585d0d0a717"
+    },
+    {
+      "name": "line and paragraph separators",
+      "fileBase64": "eA==",
+      "filename": "a b c.jpg",
+      "fields": {},
+      "hash": "2a034f5473b0d7c66384dd01da9c872905b91cfd2a70e35e38ca58c86efb4cdf"
+    },
+    {
+      "name": "field names sorted by UTF-16 units",
+      "fileBase64": "eA==",
+      "filename": "a.jpg",
+      "fields": {
+        "Ａ": "fullwidth",
+        "👕": "astral",
+        "z": "ascii",
+        "": "empty"
+      },
+      "hash": "34c4dbfd103db25e32805d2cbefacbfe67ced475530df41cb74294636a0fea31"
+    },
+    {
+      "name": "empty values",
+      "fileBase64": "eA==",
+      "filename": "a.jpg",
+      "fields": {
+        "filename": "",
+        "note": ""
+      },
+      "hash": "43c8172db8a4bf3bdc78322d3241a28387365cb7f6e75087540f2bcac0cb976f"
+    }
+  ]
+}

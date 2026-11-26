@@ -583,3 +583,27 @@ func TestdataFile(t testing.TB, rel string) []byte {
 	}
 	return b
 }
+
+// Idempotency is testdata/golden/idempotency.json: request hashes by the
+// Next.js multipartRequestHash (apps/web/scripts/golden-idempotency.ts).
+type Idempotency struct {
+	Source string `json:"source"`
+	Cases  []struct {
+		Name       string            `json:"name"`
+		FileBase64 string            `json:"fileBase64"`
+		Filename   string            `json:"filename"`
+		Fields     map[string]string `json:"fields"`
+		Hash       string            `json:"hash"`
+	} `json:"cases"`
+}
+
+// LoadIdempotency reads testdata/golden/idempotency.json; unknown fields fail.
+func LoadIdempotency(t testing.TB) Idempotency {
+	t.Helper()
+	var i Idempotency
+	load(t, "idempotency.json", &i)
+	if len(i.Cases) == 0 {
+		t.Fatal("idempotency.json: no cases")
+	}
+	return i
+}
