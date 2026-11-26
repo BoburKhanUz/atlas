@@ -63,9 +63,13 @@ INSERT INTO "PasswordResetToken" ("id", "userId", "tokenHash", "createdAt", "exp
 VALUES (sqlc.arg(id), sqlc.arg(user_id), sqlc.arg(token_hash), atlas_now(),
         atlas_now() + make_interval(secs => sqlc.arg(ttl_seconds)::double precision));
 
--- name: DeleteOtherResetTokens :exec
--- The user's earlier links, once a new one has left.
-DELETE FROM "PasswordResetToken" WHERE "userId" = sqlc.arg(user_id) AND "tokenHash" <> sqlc.arg(keep_token_hash);
+-- name: DeleteEarlierResetTokens :exec
+-- The user's links made before the given one (by time, then id), once that
+-- one has left. A link made after it stays: two jobs for one user at the
+-- same time must not end each other's link.
+DELETE FROM "PasswordResetToken" AS earlier USING "PasswordResetToken" AS sent
+ WHERE sent."tokenHash" = sqlc.arg(sent_token_hash) AND earlier."userId" = sent."userId"
+   AND (earlier."createdAt", earlier."id") < (sent."createdAt", sent."id");
 
 -- name: DeleteResetTokensOfUser :exec
 DELETE FROM "PasswordResetToken" WHERE "userId" = $1;

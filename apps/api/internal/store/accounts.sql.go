@@ -156,18 +156,17 @@ func (q *Queries) CreateUserProfile(ctx context.Context, arg CreateUserProfilePa
 	return err
 }
 
-const deleteOtherResetTokens = `-- name: DeleteOtherResetTokens :exec
-DELETE FROM "PasswordResetToken" WHERE "userId" = $1 AND "tokenHash" <> $2
+const deleteEarlierResetTokens = `-- name: DeleteEarlierResetTokens :exec
+DELETE FROM "PasswordResetToken" AS earlier USING "PasswordResetToken" AS sent
+ WHERE sent."tokenHash" = $1 AND earlier."userId" = sent."userId"
+   AND (earlier."createdAt", earlier."id") < (sent."createdAt", sent."id")
 `
 
-type DeleteOtherResetTokensParams struct {
-	UserID        string
-	KeepTokenHash string
-}
-
-// The user's earlier links, once a new one has left.
-func (q *Queries) DeleteOtherResetTokens(ctx context.Context, arg DeleteOtherResetTokensParams) error {
-	_, err := q.db.Exec(ctx, deleteOtherResetTokens, arg.UserID, arg.KeepTokenHash)
+// The user's links made before the given one (by time, then id), once that
+// one has left. A link made after it stays: two jobs for one user at the
+// same time must not end each other's link.
+func (q *Queries) DeleteEarlierResetTokens(ctx context.Context, sentTokenHash string) error {
+	_, err := q.db.Exec(ctx, deleteEarlierResetTokens, sentTokenHash)
 	return err
 }
 

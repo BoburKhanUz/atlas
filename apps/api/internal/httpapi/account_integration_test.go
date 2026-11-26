@@ -720,7 +720,7 @@ const linkOrigin = "https://lookly.example.uz"
 var resetLinkPattern = regexp.MustCompile(`https://lookly\.example\.uz/reset-password\?token=([A-Za-z0-9_-]{43})\b`)
 
 // mailer is the worker's side of a reset request, sending into box.
-func (a *api) mailer(box *outbox) *accounts.ResetMailer {
+func (a *api) mailer(box mail.Sender) *accounts.ResetMailer {
 	return accounts.NewResetMailer(a.pool, box, linkOrigin, slog.New(slog.NewJSONHandler(lockedWriter{a.logMu, a.log}, nil)))
 }
 
@@ -936,8 +936,10 @@ func TestTheWorkerMakesALinkAndMailsIt(t *testing.T) {
 		t.Error("the log holds the address or the token, or does not say that a link was sent")
 	}
 
-	// A second link ends the first; another user's link is left alone.
+	// A second link, made later, ends the first; another user's link is
+	// left alone.
 	otherToken := a.resetToken(other.email)
+	dbtest.SetClock(t, a.pool, now.Add(time.Second))
 	if err := mailer.Send(ctx, id, time.Now()); err != nil {
 		t.Fatal(err)
 	}
@@ -974,13 +976,112 @@ func TestTheWorkerMakesALinkAndMailsIt(t *testing.T) {
 	}
 }
 
+// during runs a function while a message is being sent (once).
+type during struct {
+	outbox
+	then func()
+}
+
+func (d *during) Send(ctx context.Context, m mail.Message) error {
+	if then := d.then; then != nil {
+		d.then = nil
+		then()
+	}
+	return d.outbox.Send(ctx, m)
+}
+
+// Two requests for one account worked at the same time (the worker runs
+// jobs in parallel): the link made last stays, whichever message leaves
+// first. Neither job may end the other's newer link.
+func TestTwoLinksMadeAtOnceLeaveTheNewerOne(t *testing.T) {
+	t.Parallel()
+	a := newAPI(t, apiOptions{})
+	m := a.mobileRegister(nil)
+	id := a.userID(m.email)
+	ctx := context.Background()
+
+	second := &outbox{}
+	first := &during{}
+	made := time.Now().UTC().Truncate(time.Millisecond)
+	dbtest.SetClock(t, a.pool, made)
+	// While the first job's message is on its way, the second job runs
+	// from start to end: it makes its link after the first, and sends.
+	first.then = func() {
+		dbtest.SetClock(t, a.pool, made.Add(time.Second))
+		if err := a.mailer(second).Send(ctx, id, time.Now()); err != nil {
+			t.Error(err)
+		}
+	}
+	if err := a.mailer(first).Send(ctx, id, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if len(first.messages) != 1 || len(second.messages) != 1 {
+		t.Fatalf("%d and %d messages", len(first.messages), len(second.messages))
+	}
+	older := resetLinkPattern.FindStringSubmatch(first.messages[0].Text)[1]
+	newer := resetLinkPattern.FindStringSubmatch(second.messages[0].Text)[1]
+	if a.resetTokens(id) != 1 {
+		t.Fatalf("%d links stand, want the newer one", a.resetTokens(id))
+	}
+	a.is(a.do(resetWith(older, newPassword)), http.StatusBadRequest, "RESET_TOKEN_INVALID")
+	a.is(a.do(resetWith(newer, newPassword)), http.StatusOK, "")
+
+	// The other order: the job with the newer link is still sending when
+	// the job with the older link finishes. The older job leaves the newer
+	// link alone; the newer job then ends the older link.
+	n := a.mobileRegister(nil)
+	nid := a.userID(n.email)
+	dbtest.SetClock(t, a.pool, made.Add(2*time.Second))
+	slow := &held{reached: make(chan struct{}), release: make(chan struct{})}
+	slowDone := make(chan error, 1)
+	quick := &during{}
+	quick.then = func() {
+		dbtest.SetClock(t, a.pool, made.Add(3*time.Second))
+		go func() { slowDone <- a.mailer(slow).Send(ctx, nid, time.Now()) }()
+		<-slow.reached // the newer link is made; its message is on its way
+	}
+	if err := a.mailer(quick).Send(ctx, nid, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if a.resetTokens(nid) != 2 {
+		t.Fatalf("%d links while the newer message is on its way, want both", a.resetTokens(nid))
+	}
+	close(slow.release)
+	if err := <-slowDone; err != nil {
+		t.Fatal(err)
+	}
+	older = resetLinkPattern.FindStringSubmatch(quick.messages[0].Text)[1]
+	newer = resetLinkPattern.FindStringSubmatch(slow.messages[0].Text)[1]
+	if a.resetTokens(nid) != 1 {
+		t.Fatalf("%d links stand, want the newer one", a.resetTokens(nid))
+	}
+	a.is(a.do(resetWith(older, newPassword)), http.StatusBadRequest, "RESET_TOKEN_INVALID")
+	a.is(a.do(resetWith(newer, newPassword)), http.StatusOK, "")
+}
+
+// held is an outbox whose Send says when it was reached and waits to be
+// released.
+type held struct {
+	outbox
+	reached, release chan struct{}
+}
+
+func (h *held) Send(ctx context.Context, m mail.Message) error {
+	close(h.reached)
+	<-h.release
+	return h.outbox.Send(ctx, m)
+}
+
 func TestAMessageThatDoesNotLeaveLeavesNoNewLink(t *testing.T) {
 	t.Parallel()
 	a := newAPI(t, apiOptions{})
 	m := a.mobileRegister(nil)
 	id := a.userID(m.email)
+	made := time.Now().UTC().Truncate(time.Millisecond)
+	dbtest.SetClock(t, a.pool, made)
 	earlier := a.resetToken(m.email)
 
+	dbtest.SetClock(t, a.pool, made.Add(time.Second))
 	box := &outbox{fail: errors.New("the mail server said no")}
 	err := a.mailer(box).Send(context.Background(), id, time.Now())
 	if err == nil || !strings.Contains(err.Error(), "the mail server said no") || strings.Contains(err.Error(), m.email) {

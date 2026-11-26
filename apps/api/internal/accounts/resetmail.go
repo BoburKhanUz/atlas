@@ -112,9 +112,11 @@ func (m *ResetMailer) Send(ctx context.Context, userID string, requestedAt time.
 		}
 		return fmt.Errorf("send the reset mail of user %s: %w", userID, err)
 	}
-	// A failure here is retried: the next attempt sends another link and
-	// ends the earlier ones, this one included.
-	if err := q.DeleteOtherResetTokens(ctx, store.DeleteOtherResetTokensParams{UserID: userID, KeepTokenHash: tokenHash}); err != nil {
+	// Only the links made before this one: another job for the same user
+	// may have made and sent a newer one meanwhile. A failure here is
+	// retried: the next attempt sends another link and ends the earlier
+	// ones, this one included.
+	if err := q.DeleteEarlierResetTokens(ctx, tokenHash); err != nil {
 		return fmt.Errorf("end the earlier reset links of user %s: %w", userID, err)
 	}
 	m.log.InfoContext(ctx, "password reset link sent", "userId", userID)
