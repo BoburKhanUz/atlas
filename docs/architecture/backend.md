@@ -109,7 +109,9 @@ The session variables are shared with the Next.js server and follow its rules, w
 differences: Go refuses a value out of range or malformed, where the Next.js server
 silently used the default or the nearest limit; and Go refuses `COOKIE_SECURE=0` in
 production. `serve`, `worker` and `migrate river` validate the whole configuration, so
-all three need the secrets; `health` reads only `LOOKLY_HTTP_ADDR`. In production
+all three need the secrets, `STORAGE_LOCAL_DIR` and valid mail settings (a one-off
+`migrate river` runs with the service's own environment); `health` reads only
+`LOOKLY_HTTP_ADDR`. In production
 without `TRUST_PROXY=1` the server logs a warning at start: client addresses are then
 unknown, so sign-in is limited per account only and registration shares one limit.
 
