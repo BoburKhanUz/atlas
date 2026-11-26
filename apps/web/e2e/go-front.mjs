@@ -30,6 +30,13 @@ const GO_ROUTES = new Set([
   'POST /api/v1/auth/logout',
   'POST /api/v1/auth/refresh',
   'GET /api/v1/auth/me',
+  'POST /api/v1/auth/password/forgot',
+  'POST /api/v1/auth/password/reset',
+  'GET /api/v1/legal',
+  'POST /api/v1/legal/consent',
+  'GET /api/v1/profile',
+  'PATCH /api/v1/profile',
+  'DELETE /api/v1/account',
 ])
 
 const server = http.createServer((req, res) => {

@@ -13,7 +13,7 @@ on the same PostgreSQL database. Read `docs/adr/` first; the decisions there are
 The Go module and binary are named `lookly`; existing wire names (`atlas_at`,
 `X-Atlas-Client`, `ATLAS_*` variables the deployment already uses) stay as they are.
 
-Built so far (B0) and planned:
+Built so far (B0–B3) and planned:
 
 ```
 apps/api/
@@ -32,8 +32,12 @@ apps/api/
     maintenance/         scheduled cleanup (sessions, reset links, idempotency, weather)
     jobs/                River client, workers, periodic jobs (schema "river")
     dbtest/              test helper: throwaway databases, catalog snapshot, test clock
-    auth/ session/       login, register, refresh rotation, families, consent gate
-    wardrobe/ media/     items, uploads, image variants, signed URLs, storage drivers
+    auth/ session/       tokens and password hashing; the session protocol (families, rotation)
+    accounts/ legal/     registration, sign-in, password reset, account deletion; legal texts, consent
+    profile/ catalog/    profile and preferences; the fixed vocabularies (styles, colours, fits, ...)
+    ratelimit/ mail/     PostgreSQL-backed limits; SMTP and outbox senders
+    storage/             storage drivers (B3: local owner purge; B4: uploads, reads, R2)
+    wardrobe/ media/     items, uploads, image variants, signed URLs
     outfits/ engine/     outfit engine (pure), generate, saved outfits, feedback
     stylist/ ai/         conversations, provider adapters, prompts, validation, quotas
     weather/ color/      Open-Meteo client and cache, colour profile analysis

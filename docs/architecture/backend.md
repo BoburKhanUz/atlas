@@ -34,8 +34,9 @@ client ─► Wrap (middleware) ─► routed (404 for unknown routes) ─► ge
   from the contract with oapi-codegen (ADR 0008). Only implemented operations are
   generated; `TestEveryContractOperationIsGeneratedOrListedAsNotYetImplemented` lists
   the rest. `scripts/generate.sh --check` fails CI when the generated file is stale.
-- **Handlers** (`internal/httpapi/server.go`): one method per operation. Each calls one
-  service method and encodes the answer. No SQL and no business rules.
+- **Handlers** (`internal/httpapi/server.go`, `server_account.go`): one method per
+  operation. Each calls one service method and encodes the answer. No SQL and no
+  business rules.
 - **Errors** (`internal/apierr`): the 31 contract codes with their status and Uzbek
   message in one table. Services return `*apierr.Error`; anything else becomes 500
   `INTERNAL`, logged with its cause and the request id, and never sent to the client.
@@ -93,6 +94,16 @@ before listening. Values that hold credentials are never printed.
 | `REFRESH_TOKEN_TTL_DAYS` | `30` | whole number, 1 – 365 |
 | `COOKIE_SECURE` | on in production and staging, off in development and test | `0` or `1`; `0` is refused in production |
 | `TRUST_PROXY` | `0` | `0` or `1`; `1` only behind the reverse proxy that sets the forwarding headers |
+| `PUBLIC_BASE_URL` | none | the site's public origin (scheme and host, no path, no default port); `https` in production and staging; required there when mail is sent (the links in e-mails) |
+| `MAIL_TRANSPORT` | `disabled` in production and staging, `outbox` in development and test | `smtp`, `outbox` or `disabled`; `outbox` is refused in production and staging |
+| `MAIL_FROM` | none (required for `smtp`); `Lookly <no-reply@localhost>` for `outbox` | an address or `Name <address>`, one line, at most 200 characters |
+| `SMTP_HOST` | none (required for `smtp`) | host name without white space |
+| `SMTP_PORT` | `587` | 1–65535 |
+| `SMTP_SECURE` | on for port 465, off otherwise | `1`/`true` (TLS from the first byte) or `0`/`false` (STARTTLS, required unless the host is `localhost`, `127.0.0.1` or `::1`) |
+| `SMTP_USER`, `SMTP_PASSWORD` | none | both or neither; the password is used as given and never printed |
+| `MAIL_OUTBOX_DIR` | `./storage/mail-outbox` | for `outbox`: where messages are written as files |
+| `STORAGE_DRIVER` | `local` | `local` only until the R2 driver (B4) |
+| `STORAGE_LOCAL_DIR` | none (required) | absolute path of the directory the images are in (the one the Next.js server writes to); `lookly worker` also requires that it exists |
 
 The session variables are shared with the Next.js server and follow its rules, with two
 differences: Go refuses a value out of range or malformed, where the Next.js server
@@ -102,7 +113,14 @@ all three need the secrets; `health` reads only `LOOKLY_HTTP_ADDR`. In productio
 without `TRUST_PROXY=1` the server logs a warning at start: client addresses are then
 unknown, so sign-in is limited per account only and registration shares one limit.
 
-Later stages add their settings (media secret, AI, mail) to the same check.
+The mail variables are the Next.js server's (`apps/web/src/server/mail-config.ts`), with
+these differences: the outbox is refused in production and staging without exception
+(`MAIL_ALLOW_OUTBOX_IN_PRODUCTION` is not read), `MAIL_FROM` must also parse as an RFC
+5322 address, `PUBLIC_BASE_URL` must be `https` in production and staging and is
+required for SMTP in staging too, and `STORAGE_LOCAL_DIR` has no default (a wrong guess
+would purge nothing without anyone noticing).
+
+Later stages add their settings (media secret, AI) to the same check.
 
 The PostgreSQL driver (pgx) also reads `PG*` variables (`PGPASSWORD`, `PGSSLMODE`, …),
 `~/.pgpass` and the service file for anything the URL leaves out. The URL is required to
@@ -178,6 +196,90 @@ and the rate limiter.
   tokens and their expiries in the body and no cookies. Times are written as JavaScript
   writes them (milliseconds, `Z`). A web refresh that ends the session for good clears
   the cookies; `SESSION_RACE` and `SESSION_BUSY` (with `Retry-After: 1`) keep them.
+
+## Account operations (B3)
+
+Behaviour and decisions: `docs/plan/B3.md`. Request bodies are judged as the Next.js
+schemas judge them (`testdata/golden/account-validation.json`).
+
+- **Legal texts** (`GET /legal`, public): an embedded JSON copy of the texts the web app
+  owns until the cutover (`internal/legal/documents.json`, written by
+  `apps/web/scripts/legal-bundle.ts`). A test in each app fails when the copy is stale
+  or is not the version consent is taken for.
+- **Consent** (`POST /legal/consent`, served although the consent is out of date): one
+  row per user and version; the user's row is locked while the check and the insert run.
+  The consent check of the gate reads the 20 newest consents of a user.
+- **Profile** (`internal/profile`): the read returns the stored rows and the preferences
+  with their lists as lists; the change applies name, profile fields and preferences in
+  one transaction (`null` clears a field, an absent member keeps it; a section that is
+  present moves its row's `updatedAt` and creates the row for an account that has none).
+  Style and colour lists stay JSON text until B7; stored text that is not a JSON list of
+  strings is a 500 with the cause logged, never an empty list.
+- **Password reset** (`internal/accounts/reset.go`, `resetmail.go`):
+  - the request looks the address up and queues one job either way, carrying the user's
+    id or nothing: the same answer after the same work, and no address in the queue.
+    Limits: 3 per hour per mailbox, 10 per hour per client address (or one shared bucket
+    of 200 when the address is unknown). Without a mail transport it answers 503
+    `PASSWORD_RESET_UNAVAILABLE`;
+  - the job stores the hash of a new 256-bit token (valid 60 minutes), sends the
+    message, and then ends the user's earlier links. A message that does not leave
+    leaves no new link; the job is tried 4 times, and a request older than 30 minutes is
+    dropped;
+  - the reset is one session-protocol transaction: the user's session families are
+    locked first, then the user's row, then the token's; the new hash is set, the user's
+    links are deleted and every live family is revoked (`password_reset`). 20 per hour
+    per client address (shared: 300). A password over 72 bytes is refused.
+- **Account deletion** (`internal/accounts/delete.go`, served although the consent is out
+  of date): one session-protocol transaction that locks the user's session families,
+  queues the job that removes the images, and deletes the user's row; the schema's
+  cascades remove everything the user owns (a test walks the foreign keys). Every token
+  of the account stops working with the commit. The job exists if and only if the
+  deletion commits.
+- **Locks**: what changes all of a user's sessions takes the families' locks before the
+  user's row, as a refresh takes its family first (`docs/architecture/sessions.md`).
+  What changes an account locks the user's row `FOR NO KEY UPDATE`: such changes go one
+  at a time, and a session being created for the user is not held up.
+
+## Mail
+
+`internal/mail` sends one message to one recipient, as text and HTML
+(multipart/alternative, quoted-printable, UTF-8 headers in RFC 2047 form). Standard
+library only.
+
+- **SMTP**: TLS from the first byte (`SMTP_SECURE`) or STARTTLS, which is required for
+  every server that is not on this machine; TLS 1.2 or newer with the certificate
+  verified. Sign-in by `PLAIN`, or `LOGIN` when the server offers only that; credentials
+  go only over TLS or to this machine, and a server that offers no sign-in gets no
+  message when credentials are configured. 10 s to connect, 30 s for the delivery.
+- **Outbox** (development and tests): one JSON file per message, in the format the
+  Next.js server writes (`from`, `to`, `subject`, `text`, `html`, `createdAt`; file mode
+  0600, directory 0700). The e2e specs read the links from there.
+- The recipient must be one bare ASCII address and the subject one line. Errors never
+  show the message, and the recipient's address is replaced in them (a server's refusal
+  often quotes it): errors are logged and kept with the job.
+- Not verified against a real provider: the tests use a fake SMTP server. The first real
+  send is a staging step with the owner (provider account, SPF and DKIM for the sender's
+  domain).
+
+## Background jobs
+
+`internal/jobs` (River, schema `river`). `lookly serve` only puts jobs into the queue
+(`jobs.Queue`); `lookly worker` runs them.
+
+| Job | Queued by | Does | Attempts |
+|---|---|---|---|
+| `maintenance_cleanup` | the worker, hourly and at start | removes expired rows (B1) | 3 |
+| `password_reset_mail` | a reset request | makes a link and e-mails it; carries a user id or nothing | 4 |
+| `account_purge_images` | an account deletion, in its transaction | removes `users/<id>` from the storage directory | River's default (25, over about three weeks) |
+
+Job rows hold user ids, never addresses or tokens. River keeps finished jobs for a day.
+
+## Storage
+
+`internal/storage` has the local driver's part that account deletion needs:
+`DeleteOwner` removes `users/<id>` under `STORAGE_LOCAL_DIR` (ids of the users' form
+only; a link in place of the directory is removed, not followed). Uploads, reads and the
+R2 driver arrive with B4 behind the same shape.
 
 ## Tokens, passwords and session encryption
 
@@ -269,7 +371,10 @@ memory.
   failure or requests cut off, 2 usage or configuration error.
 - `lookly worker` runs the background jobs (River) with the same configuration; on a
   signal it stops River within the grace period and cancels jobs still running after
-  it.
+  it. It refuses to start without River's tables and without the storage directory.
+- `lookly serve` queues jobs (password reset, account deletion) and so needs River's
+  tables too. It starts without them, as it starts without the database; until they
+  exist those two operations answer 500 and the log says to run `lookly migrate river`.
 - `lookly migrate river` creates River's schema and tables (idempotent). Against a
   shared or production database only with the owner's approval of the deploy.
 - `lookly health` requests the local `/api/health` and exits 0 only on 200. The image is
@@ -288,6 +393,18 @@ memory.
   own schema.
 - `lookly worker` has no health check of its own: if River loses the database, it logs
   errors but keeps running. Monitor its logs (or add a probe) when it is deployed.
+- Deploy order: `lookly migrate river` before `serve` and `worker`. The worker needs the
+  storage volume mounted at `STORAGE_LOCAL_DIR` (read-write), the mail settings and
+  `PUBLIC_BASE_URL`; the server needs the same mail settings (it answers 503 on a reset
+  request when mail is disabled).
+- Account deletion relies on the schema's cascades. Several of the foreign keys they
+  follow have no index yet (`WardrobeImage.wardrobeItemId`, `OutfitItem.*`,
+  `AiConversation.userId`: porting.md), so deleting an account with much data scans those
+  tables, inside the session transaction's 10 s statement limit. Add the indexes in the
+  first improvement migration, before real data grows.
+- Mail: choose the provider, create its account and set SPF and DKIM for the sender's
+  domain (owner). Send the first message on staging with the owner's approval; nothing
+  here was verified against a real provider. The privacy policy names the provider.
 
 - Docker stops a container after 10 s by default; `LOOKLY_SHUTDOWN_GRACE` is 20 s. The
   service's compose entry needs `stop_grace_period` of at least the grace plus 5 s
@@ -369,11 +486,14 @@ reads and writes data but changes no schema there.
   - builds the binary.
 
   The `docker` job builds the image.
-- **E2E in Go mode** (CI job `e2e`, second run): the browser specs `auth`, `session` and
-  `session-recovery` run again with the operations Go already serves answered by Go.
+- **E2E in Go mode** (CI job `e2e`, second run): the browser specs `auth`, `session`,
+  `session-recovery`, `password-reset`, `reconsent` and `navigation-responsive` run again
+  with the operations Go already serves answered by Go.
   `apps/web/e2e/go-front.mjs`, a test-only proxy, stands in front of a Next.js server
   and a Go server on one database and the same secrets, and sends those operations to
-  Go and everything else to Next.js. In this arrangement every session is started by Go
+  Go and everything else to Next.js. `apps/web/e2e/go-worker.mjs` runs
+  `lookly migrate river` and the Go worker, which writes the reset mails to the same
+  outbox directory the specs read. In this arrangement every session is started by Go
   (sign-in is Go's); Next.js reads them and rotates them on page loads. Each answer is
   marked with the server that gave it, and `go-mode.spec.ts` checks the routing, so a
   misrouted run cannot pass. It also checks the other direction step by step: Next.js
@@ -384,5 +504,6 @@ reads and writes data but changes no schema there.
   ```bash
   cd apps/api && go build -o /tmp/lookly-e2e ./cmd/lookly
   cd ../web && E2E_GO=1 E2E_GO_BINARY=/tmp/lookly-e2e e2e/run-local.sh \
-    auth.spec.ts session.spec.ts session-recovery.spec.ts go-mode.spec.ts
+    auth.spec.ts session.spec.ts session-recovery.spec.ts go-mode.spec.ts \
+    password-reset.spec.ts reconsent.spec.ts navigation-responsive.spec.ts
   ```

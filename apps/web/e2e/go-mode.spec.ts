@@ -3,27 +3,49 @@ import { CONSENT, uniqueUser } from './helpers'
 
 /**
  * Go mode only (E2E_GO=1; playwright.config.ts leaves this file out of the
- * default run): the front proxy sends the auth operations to the Go server
- * and everything else to Next.js. This spec proves the routing, so the other
- * specs really ran against Go, and that the two servers work on each
+ * default run): the front proxy sends the operations the Go server serves
+ * (auth, legal texts and consent, profile, password reset, account deletion)
+ * to Go and everything else to Next.js. This spec proves the routing, so the
+ * other specs really ran against Go, and that the two servers work on each
  * other's sessions in both directions.
  */
 test.describe('Go mode routing', () => {
-  test('the auth operations are served by Go, the rest by Next.js, on one session', async ({ request }) => {
+  test('the operations Go serves are served by Go, the rest by Next.js, on one session', async ({ request }) => {
     const user = uniqueUser('go')
     const register = await request.post('/api/v1/auth/register', { data: { ...user, ...CONSENT } })
     expect(register.status()).toBe(201)
     expect(register.headers()['x-e2e-backend']).toBe('go')
 
     // The cookies Go set authenticate a Next.js route …
-    const profile = await request.get('/api/v1/profile')
-    expect(profile.status()).toBe(200)
-    expect(profile.headers()['x-e2e-backend']).toBe('next')
+    const wardrobe = await request.get('/api/v1/wardrobe/items')
+    expect(wardrobe.status()).toBe(200)
+    expect(wardrobe.headers()['x-e2e-backend']).toBe('next')
     // … and Go's own.
     const me = await request.get('/api/v1/auth/me')
     expect(me.status()).toBe(200)
     expect(me.headers()['x-e2e-backend']).toBe('go')
     expect((await me.json()).user.email).toBe(user.email)
+
+    // The account operations of stage B3.
+    const legal = await request.get('/api/v1/legal')
+    expect(legal.status()).toBe(200)
+    expect(legal.headers()['x-e2e-backend']).toBe('go')
+    const consent = await request.post('/api/v1/legal/consent', { data: CONSENT })
+    expect(consent.status()).toBe(200)
+    expect(consent.headers()['x-e2e-backend']).toBe('go')
+    const changed = await request.patch('/api/v1/profile', { data: { name: 'Go Mode', preferences: { preferredStyles: ['casual'] } } })
+    expect(changed.status()).toBe(200)
+    expect(changed.headers()['x-e2e-backend']).toBe('go')
+    const profile = await request.get('/api/v1/profile')
+    expect(profile.status()).toBe(200)
+    expect(profile.headers()['x-e2e-backend']).toBe('go')
+    expect((await profile.json()).preferences.preferredStyles).toEqual(['casual'])
+    const forgot = await request.post('/api/v1/auth/password/forgot', { data: { email: user.email } })
+    expect(forgot.status()).toBe(200)
+    expect(forgot.headers()['x-e2e-backend']).toBe('go')
+    const reset = await request.post('/api/v1/auth/password/reset', { data: { token: 'not-a-token', password: user.password } })
+    expect(reset.status()).toBe(400)
+    expect(reset.headers()['x-e2e-backend']).toBe('go')
 
     for (const path of ['/api/v1/auth/refresh', '/api/v1/auth/logout']) {
       const res = await request.post(path)
@@ -37,6 +59,12 @@ test.describe('Go mode routing', () => {
     expect(login.status()).toBe(200)
     expect(login.headers()['x-e2e-backend']).toBe('go')
     expect((await request.get('/api/health')).headers()['x-e2e-backend']).toBe('next')
+
+    // Go deletes the account: its session is refused at once.
+    const deleted = await request.delete('/api/v1/account')
+    expect(deleted.status()).toBe(200)
+    expect(deleted.headers()['x-e2e-backend']).toBe('go')
+    expect((await request.get('/api/v1/auth/me')).status()).toBe(401)
   })
 
   test('Go rotates and replays a session that Next.js rotated', async ({ page, baseURL }) => {
@@ -74,8 +102,8 @@ test.describe('Go mode routing', () => {
     await page.goto('/wardrobe')
     await expect(page).toHaveURL(/\/wardrobe$/)
     expect(await cookie('atlas_rt')).not.toBe(rt2)
-    const profile = await page.request.get('/api/v1/profile')
-    expect(profile.status()).toBe(200)
-    expect(profile.headers()['x-e2e-backend']).toBe('next')
+    const wardrobe = await page.request.get('/api/v1/wardrobe/items')
+    expect(wardrobe.status()).toBe(200)
+    expect(wardrobe.headers()['x-e2e-backend']).toBe('next')
   })
 })

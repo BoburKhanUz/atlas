@@ -101,14 +101,16 @@ jobs:
           export STORAGE_LOCAL_DIR="$RUNNER_TEMP/atlas-e2e-storage"
           mkdir -p "$STORAGE_LOCAL_DIR"
           bun run test:e2e
-      # Go mode (docs/plan/B2.md): the same browser specs with the operations
-      # the Go backend already serves answered by Go, behind a test-only proxy
-      # (e2e/go-front.mjs), on the same database and secrets as Next.js. The
-      # runner's Go switches itself to the toolchain pinned in go.mod.
+      # Go mode (docs/plan/B2.md, B3.md): the same browser specs with the
+      # operations the Go backend already serves answered by Go, behind a
+      # test-only proxy (e2e/go-front.mjs), on the same database and secrets
+      # as Next.js; the Go worker (e2e/go-worker.mjs) sends the queued mail
+      # to the outbox directory. The runner's Go switches itself to the
+      # toolchain pinned in go.mod.
       - name: Build the Go server
         working-directory: apps/api
         run: CGO_ENABLED=0 go build -trimpath -o "$RUNNER_TEMP/lookly" ./cmd/lookly
-      - name: Run the session e2e specs in Go mode
+      - name: Run the session and account e2e specs in Go mode
         run: |
           JWT_SECRET="$(openssl rand -hex 32)"
           MEDIA_SIGNING_SECRET="$(openssl rand -hex 32)"
@@ -120,7 +122,7 @@ jobs:
           export STORAGE_LOCAL_DIR="$RUNNER_TEMP/atlas-e2e-storage-go"
           mkdir -p "$STORAGE_LOCAL_DIR"
           export E2E_GO=1 E2E_GO_BINARY="$RUNNER_TEMP/lookly"
-          npx playwright test auth.spec.ts session.spec.ts session-recovery.spec.ts go-mode.spec.ts
+          npx playwright test auth.spec.ts session.spec.ts session-recovery.spec.ts go-mode.spec.ts password-reset.spec.ts reconsent.spec.ts navigation-responsive.spec.ts
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

@@ -42,6 +42,15 @@ read before any lock wait); find the session by token hash; lock the family
 refreshes, replays and revocations of one family are serialised and cannot
 deadlock each other.
 
+**The user's row comes after the families.** A refresh creates a session row,
+whose foreign key takes a share of the user's row while the refresh holds its
+family. So a transaction that changes all of a user's sessions must take the
+families (in id order) before it locks the user's row, or the two can
+deadlock. The Go backend does (password reset and account deletion:
+`session.LockUserFamilies`, then the row `FOR NO KEY UPDATE` or its
+deletion). The Next.js password reset locks the user's row first; a deadlock
+there is detected by PostgreSQL and answered `SESSION_BUSY`.
+
 | Condition (under the family lock) | Result |
 |---|---|
 | token unknown | 401 `INVALID_TOKEN` |

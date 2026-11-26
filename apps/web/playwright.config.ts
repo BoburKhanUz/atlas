@@ -20,7 +20,10 @@ import path from 'node:path'
  * becomes three processes on the same database and secrets: Next.js, the Go
  * server, and e2e/go-front.mjs in front of them on the instance's port. The
  * proxy sends the operations Go already serves to Go and everything else to
- * Next.js. A test arrangement only; see docs/plan/B2.md.
+ * Next.js. One Go worker (e2e/go-worker.mjs) serves both instances: it sends
+ * the mail the Go server queues (to the same outbox directory) and removes
+ * the images of deleted accounts (from the same storage directory). A test
+ * arrangement only; see docs/plan/B2.md and B3.md.
  */
 const PORT = Number(process.env.E2E_PORT ?? 3100)
 const SESSION_PORT = PORT + 1
@@ -103,6 +106,21 @@ const server = (port: number, extra: Record<string, string> = {}): WebServer => 
   stderr: 'pipe',
 })
 
+/** What the Go server and the Go worker share with Next.js: database, secrets, storage and mail outbox. */
+const goEnv = {
+  LOOKLY_ENV: 'test',
+  LOOKLY_LOG_LEVEL: 'warn',
+  DATABASE_URL: DATABASE_URL!,
+  JWT_SECRET,
+  MEDIA_SIGNING_SECRET,
+  SESSION_ENC_KEY,
+  STORAGE_LOCAL_DIR,
+  // E-mail is never sent from an e2e run: files only, whatever SMTP_* the shell holds.
+  MAIL_TRANSPORT: 'outbox',
+  MAIL_OUTBOX_DIR,
+  COOKIE_SECURE: '0', // plain http
+}
+
 /** One instance in Go mode: Next.js on port + 10, Go on port + 20, the proxy on port. */
 const goInstance = (port: number, extra: Record<string, string> = {}): WebServer[] => [
   server(port + 10, extra),
@@ -111,17 +129,7 @@ const goInstance = (port: number, extra: Record<string, string> = {}): WebServer
     url: `http://127.0.0.1:${port + 20}/api/health`,
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
-    env: {
-      LOOKLY_ENV: 'test',
-      LOOKLY_HTTP_ADDR: `127.0.0.1:${port + 20}`,
-      LOOKLY_LOG_LEVEL: 'warn',
-      DATABASE_URL: DATABASE_URL!,
-      JWT_SECRET,
-      MEDIA_SIGNING_SECRET,
-      SESSION_ENC_KEY,
-      COOKIE_SECURE: '0', // plain http
-      ...extra,
-    },
+    env: { ...goEnv, LOOKLY_HTTP_ADDR: `127.0.0.1:${port + 20}`, ...extra },
     stdout: 'ignore',
     stderr: 'pipe',
   },
@@ -135,6 +143,17 @@ const goInstance = (port: number, extra: Record<string, string> = {}): WebServer
     stderr: 'pipe',
   },
 ]
+
+/** The Go worker of a Go-mode run: one for both instances (they share the database). */
+const goWorker = (port: number): WebServer => ({
+  command: 'node e2e/go-worker.mjs',
+  url: `http://127.0.0.1:${port}/`,
+  reuseExistingServer: !process.env.CI,
+  timeout: 60_000,
+  env: { ...goEnv, GO_BINARY: GO_BINARY!, WORKER_PORT: String(port) },
+  stdout: 'ignore',
+  stderr: 'pipe',
+})
 
 export default defineConfig({
   testDir: './e2e',
@@ -165,6 +184,6 @@ export default defineConfig({
     },
   ],
   webServer: GO_MODE
-    ? [...goInstance(PORT), ...goInstance(SESSION_PORT, { ACCESS_TOKEN_TTL_SECONDS: '10' })]
+    ? [...goInstance(PORT), ...goInstance(SESSION_PORT, { ACCESS_TOKEN_TTL_SECONDS: '10' }), goWorker(PORT + 30)]
     : [server(PORT), server(SESSION_PORT, { ACCESS_TOKEN_TTL_SECONDS: '10' })],
 })

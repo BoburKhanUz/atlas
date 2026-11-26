@@ -14,6 +14,7 @@ export LOOKLY_ENV=development
 export DATABASE_URL=postgresql://user@localhost:5432/lookly
 export JWT_SECRET="$(openssl rand -base64 48)"        # the same values as the Next.js server,
 export SESSION_ENC_KEY="$(openssl rand -base64 32)"   # when both run on one database
+export STORAGE_LOCAL_DIR=/absolute/path/to/apps/web/storage/uploads   # where the images are
 go run ./cmd/lookly serve
 curl -s localhost:8080/api/health
 ```
@@ -24,6 +25,10 @@ Background jobs (needs River's tables once per database), with the same environm
 go run ./cmd/lookly migrate river
 go run ./cmd/lookly worker
 ```
+
+The server queues jobs too (password reset mail, removal of a deleted account's
+images), so run `migrate river` before using those. In development, mail is written to
+files (`MAIL_OUTBOX_DIR`, default `./storage/mail-outbox`); nothing is sent.
 
 Configuration variables and their rules: `docs/architecture/backend.md#configuration`.
 Database, migrations, queries and jobs: `docs/architecture/backend.md#database`.
@@ -55,6 +60,13 @@ To add cases, extend the script and run it again, in `apps/web`:
 
 ```bash
 bun scripts/golden-auth.ts ../api/testdata/golden/auth.json
+```
+
+The legal texts the server embeds (`internal/legal/documents.json`) are a copy of the
+web app's, written the same way; a test in each app fails when it is stale:
+
+```bash
+bun scripts/legal-bundle.ts ../api/internal/legal/documents.json
 ```
 
 A Go test that fails on a recorded case is a difference to investigate, not a reason to

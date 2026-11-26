@@ -71,6 +71,9 @@ Re-read the source before porting a part; this file is a map, not the specificat
 | Weather: failure → undocumented 500; missing fields cached as 0; "next 6 hours" is hours 00–05; generate bypasses the cache | Typed error code; reject incomplete data; real next-6-hours window; one cached path |
 | Unguarded parse of JSON stored as text | `jsonb` columns and typed decoding |
 | No scheduled cleanup | River periodic jobs |
+| Password reset locks the user's row before the session families: can deadlock with a refresh in flight (answered `SESSION_BUSY`) | Families first, then the user's row `FOR NO KEY UPDATE` (`docs/architecture/sessions.md`) |
+| A new reset link deletes the earlier ones before its mail is sent: a failed send leaves the user with no working link | Earlier links end once the new message has left |
+| Account deletion removes the images best-effort after the rows; a crash in between leaves them | A purge job queued in the deletion's transaction, retried |
 | bcrypt cost 10, silent 72-byte truncation | Cost 12, re-hash on login; reject > 72 bytes when setting or changing a password (not at login) |
 
 ## Web coupling to remove at cutover
