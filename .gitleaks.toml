@@ -4,7 +4,10 @@
 useDefault = true
 
 [allowlist]
-description = "Golden vectors: tokens and keys recorded from the TypeScript backend with fixed test secrets that are used nowhere else (apps/web/scripts/golden-auth.ts). Nothing else is exempt."
+description = "Golden vectors: tokens and keys recorded from the TypeScript backend with fixed test secrets that are used nowhere else (apps/web/scripts/golden-auth.ts). And one literal: the password the Go tests set in a password reset, which the generic rule takes for a key; it protects nothing. Nothing else is exempt."
 paths = [
   '''^apps/api/testdata/golden/[^/]+\.json$''',
+]
+regexes = [
+  '''^yangi-parol-5678$''',
 ]
