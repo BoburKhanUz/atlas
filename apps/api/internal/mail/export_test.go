@@ -18,3 +18,6 @@ func LoginAuth(user, password, host string) smtp.Auth {
 func WithoutAddress(err error, address string) error {
 	return withoutAddress{err: err, address: address}
 }
+
+// IsLocal is whether the sender treats host as this machine.
+var IsLocal = isLocal

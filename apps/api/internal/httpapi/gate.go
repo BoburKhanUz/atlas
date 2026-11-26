@@ -25,7 +25,9 @@ type Identity struct {
 //
 //  1. the cross-site request guard (CrossSiteWrite): 403 FORBIDDEN;
 //  2. for a route that is not public: the access token (Credential) must be
-//     ours and unexpired, and its session must still stand: 401 UNAUTHORIZED;
+//     ours and unexpired, and its session must still stand: 401 UNAUTHORIZED
+//     (on the account deletion, 404 NOT_FOUND when the session is gone with
+//     its account: goneIsNotFound);
 //  3. unless the route is exempt: the user's consent to the legal texts must
 //     be current: 403 CONSENT_REQUIRED;
 //  4. for a route with a body rule: the body is judged, and the generated

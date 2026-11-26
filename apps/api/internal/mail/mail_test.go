@@ -474,6 +474,18 @@ func TestSMTPRefusesToGoOnUnencryptedWhenTLSIsRequired(t *testing.T) {
 		t.Fatalf("err %v", err)
 	}
 	nothingSent(t, server)
+	// Names that look like this machine and are not: an exact name is local,
+	// nothing else (a mistake here may only make the sender stricter).
+	for _, host := range []string{"localhost.example.uz", "LOCALHOST", "localhost.", "::ffff:127.0.0.1", "127.0.0.2", "0:0:0:0:0:0:0:1"} {
+		if mail.IsLocal(host) {
+			t.Errorf("%q counts as this machine", host)
+		}
+	}
+	for _, host := range []string{"localhost", "127.0.0.1", "::1"} {
+		if !mail.IsLocal(host) {
+			t.Errorf("%q does not count as this machine", host)
+		}
+	}
 	// Without credentials either: the message itself holds the link.
 	err = server.sender(func(s *mail.SMTP) { s.User, s.Password = "", "" }).Send(context.Background(), message)
 	if err == nil || !strings.Contains(err.Error(), "STARTTLS") {
@@ -544,7 +556,7 @@ func TestErrorsNeverShowTheRecipient(t *testing.T) {
 		if got.Error() != want {
 			t.Errorf("%q → %q, want %q", text, got.Error(), want)
 		}
-		if !errors.Is(got, got) || errors.Unwrap(got) == nil {
+		if cause := errors.Unwrap(got); cause == nil || cause.Error() != text {
 			t.Errorf("%q: the cause is not kept", text)
 		}
 	}
