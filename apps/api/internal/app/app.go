@@ -129,15 +129,41 @@ func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger, images storage
 	}), nil
 }
 
+// storageCheckTimeout bounds the question to the bucket at start.
+const storageCheckTimeout = 10 * time.Second
+
 // openStorage opens the image storage; nil and the exit code when it
-// cannot be used.
-func openStorage(cfg config.Config, stderr io.Writer) (storage.Store, int) {
-	images, err := storage.NewLocal(cfg.StorageLocalDir)
+// cannot be used. A directory that is not there and a bucket that refuses
+// the request (its name, the credentials) are settings to fix: the command
+// does not start. A bucket that cannot be reached right now may come back:
+// that is logged, and the command starts.
+func openStorage(ctx context.Context, cfg config.Config, log *slog.Logger, stderr io.Writer) (storage.Store, int) {
+	if cfg.StorageDriver != config.StorageR2 {
+		images, err := storage.NewLocal(cfg.StorageLocalDir)
+		if err != nil {
+			fmt.Fprintf(stderr, "STORAGE_LOCAL_DIR: %v\n", err)
+			return nil, exitUsage
+		}
+		return images, 0
+	}
+	bucket, err := storage.NewR2(storage.R2Config{
+		Endpoint: cfg.R2.Endpoint, Bucket: cfg.R2.Bucket, Region: cfg.R2.Region,
+		AccessKeyID: cfg.R2.AccessKeyID, SecretAccessKey: cfg.R2.SecretAccessKey,
+	})
 	if err != nil {
-		fmt.Fprintf(stderr, "STORAGE_LOCAL_DIR: %v\n", err)
+		fmt.Fprintf(stderr, "R2: %v\n", err)
 		return nil, exitUsage
 	}
-	return images, 0
+	checkCtx, cancel := context.WithTimeout(ctx, storageCheckTimeout)
+	defer cancel()
+	switch permanent, err := bucket.Check(checkCtx); {
+	case err != nil && permanent:
+		fmt.Fprintf(stderr, "R2 (R2_ENDPOINT, R2_BUCKET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY): %v\n", err)
+		return nil, exitUsage
+	case err != nil:
+		log.Error("the image bucket does not answer; starting all the same", "err", err.Error())
+	}
+	return bucket, 0
 }
 
 func serve(ctx context.Context, getenv func(string) (string, bool), stdout, stderr io.Writer) int {
@@ -154,7 +180,7 @@ func serve(ctx context.Context, getenv func(string) (string, bool), stdout, stde
 	}
 	// The images are served from here: a storage directory that is not
 	// there would answer every image link with 404.
-	images, code := openStorage(cfg, stderr)
+	images, code := openStorage(ctx, cfg, log, stderr)
 	if images == nil {
 		return code
 	}
@@ -267,7 +293,7 @@ func worker(ctx context.Context, getenv func(string) (string, bool), stdout, std
 	}
 	// The images of deleted accounts are removed here: a storage directory
 	// that is not there would make that a silent no-op.
-	images, code := openStorage(cfg, stderr)
+	images, code := openStorage(ctx, cfg, log, stderr)
 	if images == nil {
 		return code
 	}

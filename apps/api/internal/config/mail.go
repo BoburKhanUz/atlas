@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	netmail "net/mail"
 	"net/url"
 	"path/filepath"
@@ -58,6 +59,15 @@ func (m Mail) String() string {
 
 // GoString keeps the password out of %#v.
 func (m Mail) GoString() string { return m.String() }
+
+// LogValue keeps the password out of logs.
+func (m Mail) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.String("transport", string(m.Transport)), slog.String("from", m.From.Address), slog.String("host", m.Host),
+		slog.Int("port", m.Port), slog.Bool("secure", m.Secure), slog.String("credentials", setOrNot(m.Password)),
+		slog.String("outboxDir", m.OutboxDir),
+	)
+}
 
 func setOrNot(v string) string {
 	if v == "" {

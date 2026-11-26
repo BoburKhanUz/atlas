@@ -18,7 +18,6 @@ import (
 	"log/slog"
 	"net"
 	"net/url"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -68,10 +67,14 @@ type Config struct {
 	// image links); "" when not configured.
 	PublicBaseURL string
 	Mail          Mail
+	// StorageDriver is where the images are kept: StorageLocal or StorageR2.
+	StorageDriver string
 	// StorageLocalDir is where the local storage driver keeps images: the
 	// directory the Next.js server writes to until the cutover. It has no
 	// default here: a wrong guess would purge nothing without anyone noticing.
 	StorageLocalDir string
+	// R2 is the bucket of the R2 driver.
+	R2 R2
 }
 
 // VisionMock is the development mock of garment analysis.
@@ -318,18 +321,7 @@ func Load(getenv func(string) (string, bool)) (Config, error) {
 		}
 	}
 
-	// The R2 driver arrives with stage B4; until then anything but the
-	// local driver stops the server rather than being ignored.
-	if v, ok := value("STORAGE_DRIVER"); ok && strings.ToLower(v) != "local" {
-		fail("STORAGE_DRIVER", "must be local (or unset)")
-	}
-	if v, ok := value("STORAGE_LOCAL_DIR"); !ok {
-		fail("STORAGE_LOCAL_DIR", "is not set (the directory the images are stored in)")
-	} else if !filepath.IsAbs(v) {
-		fail("STORAGE_LOCAL_DIR", "must be an absolute path")
-	} else {
-		c.StorageLocalDir = filepath.Clean(v)
-	}
+	c.StorageDriver, c.StorageLocalDir, c.R2 = loadStorage(c.Env, value, getenv, fail)
 
 	if len(errs) > 0 {
 		return Config{}, fmt.Errorf("invalid configuration:\n%w", errors.Join(errs...))
@@ -458,7 +450,11 @@ func (c Config) LogValue() slog.Value {
 		slog.Bool("smtpSecure", c.Mail.Secure),
 		slog.String("smtpCredentials", setOrNot(c.Mail.Password)),
 		slog.String("mailOutboxDir", c.Mail.OutboxDir),
+		slog.String("storageDriver", c.StorageDriver),
 		slog.String("storageLocalDir", c.StorageLocalDir),
+		slog.String("r2Endpoint", c.R2.Endpoint),
+		slog.String("r2Bucket", c.R2.Bucket),
+		slog.String("r2Credentials", setOrNot(c.R2.SecretAccessKey)),
 		slog.String("visionProvider", c.VisionProvider),
 	)
 }
@@ -468,10 +464,10 @@ func (c Config) String() string {
 	return fmt.Sprintf("Config{Env:%s HTTPAddr:%s DatabaseURL:[set] DBMaxConns:%d LogLevel:%s ShutdownGrace:%s "+
 		"JWTSecret:[set] SessionEncKey:[set] DecryptOnlyKeys:%d AccessTokenTTL:%s RefreshTokenTTL:%s CookieSecure:%t TrustProxy:%t "+
 		"MediaSigningSecret:[set] MediaURLTTL:%s "+
-		"PublicBaseURL:%s %s StorageLocalDir:%s VisionProvider:%s}",
+		"PublicBaseURL:%s %s StorageDriver:%s StorageLocalDir:%s %s VisionProvider:%s}",
 		c.Env, c.HTTPAddr, c.DBMaxConns, c.LogLevel, c.ShutdownGrace,
 		len(c.SessionDecryptKeys), c.AccessTokenTTL, c.RefreshTokenTTL, c.CookieSecure, c.TrustProxy, c.MediaURLTTL,
-		c.PublicBaseURL, c.Mail, c.StorageLocalDir, c.VisionProvider)
+		c.PublicBaseURL, c.Mail, c.StorageDriver, c.StorageLocalDir, c.R2, c.VisionProvider)
 }
 
 // GoString keeps the secrets out of %#v.

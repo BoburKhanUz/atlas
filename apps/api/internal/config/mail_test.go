@@ -215,7 +215,8 @@ func TestPrintingTheConfigNeverShowsTheMailPassword(t *testing.T) {
 		t.Fatal(err)
 	}
 	var b strings.Builder
-	slog.New(slog.NewJSONHandler(&b, nil)).Info("config", "config", c)
+	// The whole configuration, and the mail settings logged on their own.
+	slog.New(slog.NewJSONHandler(&b, nil)).Info("config", "config", c, "mail", c.Mail)
 	for _, s := range []string{fmt.Sprint(c), fmt.Sprintf("%+v", c), fmt.Sprintf("%#v", c), fmt.Sprintf("%+v", c.Mail), fmt.Sprintf("%#v", c.Mail), b.String()} {
 		if strings.Contains(s, "s3cret") {
 			t.Errorf("printed config shows the mail password: %s", s)

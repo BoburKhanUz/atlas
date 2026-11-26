@@ -6,20 +6,26 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/http/cookiejar"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"lookly/internal/app"
+	"lookly/internal/config/configtest"
 	"lookly/internal/legal"
+	"lookly/internal/media"
 )
 
 // The served binary, wired as in production: configuration → services →
@@ -29,7 +35,14 @@ import (
 // caller of its API that keeps cookies, and the server's log.
 func startServer(t *testing.T, pool *pgxpool.Pool, extra map[string]string) (call func(method, path, body string) (int, map[string]any), stdout *syncBuffer) {
 	t.Helper()
-	addr := freeAddr(t)
+	call, stdout, _ = startServerAt(t, pool, extra)
+	return call, stdout
+}
+
+// startServerAt is startServer that also says where the server listens.
+func startServerAt(t *testing.T, pool *pgxpool.Pool, extra map[string]string) (call func(method, path, body string) (int, map[string]any), stdout *syncBuffer, addr string) {
+	t.Helper()
+	addr = freeAddr(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	stdout = &syncBuffer{}
 	done := make(chan int, 1)
@@ -85,7 +98,7 @@ func startServer(t *testing.T, pool *pgxpool.Pool, extra map[string]string) (cal
 			t.Logf("%s %s answered %d; the server's log:\n%s", method, path, res.StatusCode, stdout.String())
 		}
 		return res.StatusCode, decoded
-	}, stdout
+	}, stdout, addr
 }
 
 func registrationOf(email string) string {
@@ -308,5 +321,100 @@ func TestServerAndWorkerRefuseToStartWithoutTheStorageDirectory(t *testing.T) {
 		if code != 2 || !strings.Contains(stderr.String(), "STORAGE_LOCAL_DIR") {
 			t.Errorf("%s: exit %d, stderr %q", command, code, stderr.String())
 		}
+	}
+}
+
+// r2Env points the storage at a bucket of the given service.
+func r2Env(endpoint string) map[string]string {
+	return map[string]string{
+		"STORAGE_DRIVER": "r2", "R2_ENDPOINT": endpoint, "R2_BUCKET": "lookly-test",
+		"R2_ACCESS_KEY_ID": "test-access-key-id", "R2_SECRET_ACCESS_KEY": "test-secret-access-key-never-printed",
+	}
+}
+
+// A bucket that refuses the request (a wrong key, a wrong name) is a
+// setting to fix: neither the server nor the worker starts, and what they
+// say names the settings, never the secret.
+func TestServerAndWorkerRefuseToStartWhenTheBucketRefusesThem(t *testing.T) {
+	t.Parallel()
+	pool := schemaDB(t)
+	migrateRiver(t, pool)
+	for status, code := range map[int]string{http.StatusForbidden: "SignatureDoesNotMatch", http.StatusNotFound: "NoSuchBucket"} {
+		var asked atomic.Int32
+		bucket := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			asked.Add(1)
+			w.WriteHeader(status)
+			fmt.Fprintf(w, "<Error><Code>%s</Code></Error>", code)
+		}))
+		for _, command := range []string{"serve", "worker"} {
+			var stdout, stderr bytes.Buffer
+			exit := app.Run(context.Background(), []string{command}, appEnv(pool, r2Env(bucket.URL)), &stdout, &stderr)
+			said := stdout.String() + stderr.String()
+			if exit != 2 || !strings.Contains(stderr.String(), "R2_BUCKET") || !strings.Contains(stderr.String(), code) {
+				t.Errorf("%s with %s: exit %d, stderr %q", command, code, exit, stderr.String())
+			}
+			if strings.Contains(said, "never-printed") || strings.Contains(said, "Signature=") {
+				t.Errorf("%s with %s shows the credentials: %s", command, code, said)
+			}
+		}
+		if asked.Load() != 2 {
+			t.Errorf("%s: the bucket was asked %d times", code, asked.Load())
+		}
+		bucket.Close()
+	}
+}
+
+// A bucket that does not answer right now may come back: the server starts
+// and says so.
+func TestServerStartsWhenTheBucketDoesNotAnswer(t *testing.T) {
+	t.Parallel()
+	pool := schemaDB(t)
+	migrateRiver(t, pool)
+	down := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer down.Close()
+	call, stdout := startServer(t, pool, r2Env(down.URL))
+	if status, _ := call(http.MethodGet, "/api/health", ""); status != http.StatusOK {
+		t.Fatalf("health %d", status)
+	}
+	if log := stdout.String(); !strings.Contains(log, "the image bucket does not answer") || !strings.Contains(log, "status 503") || strings.Contains(log, "never-printed") {
+		t.Errorf("log: %s", log)
+	}
+	if !strings.Contains(stdout.String(), `"storageDriver":"r2"`) {
+		t.Errorf("the start line does not say where the images are: %s", stdout.String())
+	}
+}
+
+// With a bucket that answers, the server serves its images from it.
+func TestServerServesImagesFromTheBucket(t *testing.T) {
+	t.Parallel()
+	pool := schemaDB(t)
+	migrateRiver(t, pool)
+	const key = "users/u_one/0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d_display.webp"
+	bucket := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/lookly-test" && r.URL.Query().Get("list-type") == "2":
+			fmt.Fprint(w, "<ListBucketResult><IsTruncated>false</IsTruncated></ListBucketResult>")
+		case r.URL.Path == "/lookly-test/"+key && r.Header.Get("Authorization") != "":
+			fmt.Fprint(w, "image bytes from the bucket")
+		default:
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, "<Error><Code>NoSuchKey</Code></Error>")
+		}
+	}))
+	defer bucket.Close()
+	vars := r2Env(bucket.URL)
+	vars["MEDIA_SIGNING_SECRET"] = configtest.MediaSigningSecret
+	_, _, addr := startServerAt(t, pool, vars)
+	link, _ := media.NewSigner([]byte(configtest.MediaSigningSecret), time.Hour, "").Sign(key, time.Now())
+	res, err := http.Get("http://" + addr + link)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	body, _ := io.ReadAll(res.Body)
+	if res.StatusCode != http.StatusOK || string(body) != "image bytes from the bucket" || res.Header.Get("Content-Type") != "image/webp" {
+		t.Fatalf("%d %q %s", res.StatusCode, body, res.Header.Get("Content-Type"))
 	}
 }

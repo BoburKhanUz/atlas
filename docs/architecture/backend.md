@@ -103,8 +103,12 @@ before listening. Values that hold credentials are never printed.
 | `SMTP_USER`, `SMTP_PASSWORD` | none | both or neither; the password is used as given and never printed |
 | `MAIL_OUTBOX_DIR` | `./storage/mail-outbox` | for `outbox`: where messages are written as files |
 | `AI_VISION_PROVIDER` | `mock` in development and test; none (required) in production and staging | `mock` only until the real providers (B6); in production and staging the mock also needs `AI_ALLOW_MOCK_IN_PRODUCTION=1` |
-| `STORAGE_DRIVER` | `local` | `local` only until the R2 driver (B4) |
-| `STORAGE_LOCAL_DIR` | none (required) | absolute path of the directory the images are in (the one the Next.js server writes to); `lookly serve` and `lookly worker` also require that it exists |
+| `STORAGE_DRIVER` | `local` | `local` or `r2`; never guessed: an `R2_*` setting without it stops the server |
+| `STORAGE_LOCAL_DIR` | none (required for `local`) | absolute path of the directory the images are in (the one the Next.js server writes to); `lookly serve` and `lookly worker` also require that it exists |
+| `R2_ENDPOINT` | none (required for `r2`) | the account's S3 endpoint, an origin: `https://<account id>.r2.cloudflarestorage.com`; plain http only for a test server on the same machine, never in production or staging |
+| `R2_BUCKET` | none (required for `r2`) | 3–63 lower-case letters, digits and hyphens |
+| `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | none (required for `r2`) | an R2 API token's S3 credentials; the secret is used as given (no white space around it) and never printed |
+| `R2_REGION` | `auto` | the region requests are signed for |
 
 The session variables are shared with the Next.js server and follow its rules, with two
 differences: Go refuses a value out of range or malformed, where the Next.js server
@@ -129,7 +133,7 @@ for a malformed one and had no limits), a secret with white space at its ends, a
 same secret for `JWT_SECRET` and `MEDIA_SIGNING_SECRET` (whoever learns one would hold
 both).
 
-Later stages add their settings (AI, the R2 driver) to the same check.
+Later stages add their settings (AI) to the same check.
 
 The PostgreSQL driver (pgx) also reads `PG*` variables (`PGPASSWORD`, `PGSSLMODE`, …),
 `~/.pgpass` and the service file for anything the URL leaves out. The URL is required to
@@ -295,7 +299,14 @@ from it. A file is written under a temporary name and renamed into place, so a r
 never sees half of one; files are `0644` in `0755` directories because until the
 cutover both servers, in their own containers, share the volume. `DeleteOwner` removes
 `users/<id>` (ids of the users' form only; a link in place of the directory is removed,
-not followed). The R2 driver arrives later in B4 behind the same interface.
+not followed).
+
+The `r2` driver keeps the same keys in a Cloudflare R2 bucket through the S3 API, with
+a small client of our own (ADR 0010; `internal/storage/r2.go`, `sigv4.go`): one signed
+request per object, no redirects followed, no retries, failures reported by status and
+error code only. At start, `serve` and `worker` ask the bucket one question
+(`R2.Check`): a refusal of the request stops them, no answer is logged. It has not run
+against a real S3-compatible service yet (ADR 0010).
 
 ## Wardrobe
 
