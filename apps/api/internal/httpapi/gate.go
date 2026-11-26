@@ -80,16 +80,18 @@ type routeRule struct {
 
 // routes are the rules of the routes served, keyed by the router's pattern.
 var routes = map[string]routeRule{
-	"GET /api/health":            {access: public},
-	"POST /api/v1/auth/register": {access: public, body: RegisterBody},
-	"POST /api/v1/auth/login":    {access: public, body: LoginBody},
-	"POST /api/v1/auth/refresh":  {access: public, body: RefreshBody, mobileBodyOnly: true},
-	"POST /api/v1/auth/logout":   {access: sessionOptional, body: LogoutBody, mobileBodyOnly: true},
-	"GET /api/v1/auth/me":        {consentExempt: true},
-	"GET /api/v1/legal":          {access: public},
-	"POST /api/v1/legal/consent": {consentExempt: true, body: LegalConsentBody},
-	"GET /api/v1/profile":        {},
-	"PATCH /api/v1/profile":      {body: ProfilePatchBody},
+	"GET /api/health":                   {access: public},
+	"POST /api/v1/auth/register":        {access: public, body: RegisterBody},
+	"POST /api/v1/auth/login":           {access: public, body: LoginBody},
+	"POST /api/v1/auth/refresh":         {access: public, body: RefreshBody, mobileBodyOnly: true},
+	"POST /api/v1/auth/logout":          {access: sessionOptional, body: LogoutBody, mobileBodyOnly: true},
+	"GET /api/v1/auth/me":               {consentExempt: true},
+	"POST /api/v1/auth/password/forgot": {access: public, body: PasswordForgotBody},
+	"POST /api/v1/auth/password/reset":  {access: public, body: PasswordResetBody},
+	"GET /api/v1/legal":                 {access: public},
+	"POST /api/v1/legal/consent":        {consentExempt: true, body: LegalConsentBody},
+	"GET /api/v1/profile":               {},
+	"PATCH /api/v1/profile":             {body: ProfilePatchBody},
 }
 
 type identityKey struct{}

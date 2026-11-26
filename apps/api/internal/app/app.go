@@ -30,6 +30,7 @@ import (
 	"lookly/internal/httpapi"
 	"lookly/internal/jobs"
 	"lookly/internal/legal"
+	"lookly/internal/mail"
 	"lookly/internal/maintenance"
 	"lookly/internal/profile"
 	"lookly/internal/ratelimit"
@@ -80,7 +81,11 @@ func Run(ctx context.Context, args []string, getenv func(string) (string, bool),
 
 // api builds the HTTP API over the database: the domain services, the gate
 // every request passes, and the router generated from the contract.
-func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger) http.Handler {
+func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger) (http.Handler, error) {
+	queue, err := jobs.NewQueue(pool, log)
+	if err != nil {
+		return nil, fmt.Errorf("job queue: %w", err)
+	}
 	tokens := auth.NewTokens(cfg.JWTSecret)
 	sessions := session.New(pool, session.Config{
 		Tokens:     tokens,
@@ -90,7 +95,10 @@ func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger) http.Handler {
 		Log:        log,
 	})
 	consent := legal.NewService(pool)
-	users := accounts.New(pool, sessions, ratelimit.New(pool, cfg.JWTSecret), consent, auth.Bcrypt{}, log)
+	users := accounts.New(accounts.Config{
+		Pool: pool, Sessions: sessions, Limiter: ratelimit.New(pool, cfg.JWTSecret), Consent: consent, Hasher: auth.Bcrypt{}, Log: log,
+		Queue: queue, MailEnabled: cfg.Mail.Enabled(),
+	})
 	server := httpapi.NewServer(httpapi.Services{
 		Health:       health.New(pool, version, healthPingTimeout),
 		Accounts:     users,
@@ -102,7 +110,7 @@ func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger) http.Handler {
 	})
 	return httpapi.New(server, log, &httpapi.Gate{
 		Tokens: tokens, Sessions: sessions, Consent: consent, TrustProxy: cfg.TrustProxy, HTTPSOnly: cfg.CookieSecure,
-	})
+	}), nil
 }
 
 func serve(ctx context.Context, getenv func(string) (string, bool), stdout, stderr io.Writer) int {
@@ -117,7 +125,11 @@ func serve(ctx context.Context, getenv func(string) (string, bool), stdout, stde
 		// headers. But behind the reverse proxy this setting is a mistake.
 		log.Warn("TRUST_PROXY is not 1: client addresses are unknown, so sign-in is limited per account only and registration shares one limit")
 	}
-	handler := api(cfg, pool, log)
+	handler, err := api(cfg, pool, log)
+	if err != nil {
+		log.Error("server setup", "err", err.Error())
+		return exitFailure
+	}
 
 	listener, err := net.Listen("tcp", cfg.HTTPAddr)
 	if err != nil {
@@ -220,7 +232,10 @@ func worker(ctx context.Context, getenv func(string) (string, bool), stdout, std
 		fmt.Fprintln(stderr, err)
 		return exitFailure
 	}
-	client, err := jobs.NewClient(pool, log, maintenance.New(pool))
+	client, err := jobs.NewClient(pool, log, jobs.Workers{
+		Cleanup:     maintenance.New(pool),
+		ResetMailer: accounts.NewResetMailer(pool, mail.New(cfg.Mail), cfg.LinkOrigin(), log),
+	})
 	if err != nil {
 		log.Error("worker setup", "err", database.Describe(err))
 		return exitFailure

@@ -80,6 +80,30 @@ func (q *Queries) CreateLegalConsent(ctx context.Context, arg CreateLegalConsent
 	return err
 }
 
+const createResetToken = `-- name: CreateResetToken :exec
+INSERT INTO "PasswordResetToken" ("id", "userId", "tokenHash", "createdAt", "expiresAt")
+VALUES ($1, $2, $3, atlas_now(),
+        atlas_now() + make_interval(secs => $4::double precision))
+`
+
+type CreateResetTokenParams struct {
+	ID         string
+	UserID     string
+	TokenHash  string
+	TtlSeconds float64
+}
+
+// A link that works from now (the database clock) for ttl_seconds.
+func (q *Queries) CreateResetToken(ctx context.Context, arg CreateResetTokenParams) error {
+	_, err := q.db.Exec(ctx, createResetToken,
+		arg.ID,
+		arg.UserID,
+		arg.TokenHash,
+		arg.TtlSeconds,
+	)
+	return err
+}
+
 const createUser = `-- name: CreateUser :exec
 INSERT INTO "User" ("id", "email", "name", "passwordHash", "createdAt", "updatedAt")
 VALUES ($1, $2, $3, $4, atlas_now(), atlas_now())
@@ -132,12 +156,59 @@ func (q *Queries) CreateUserProfile(ctx context.Context, arg CreateUserProfilePa
 	return err
 }
 
+const deleteOtherResetTokens = `-- name: DeleteOtherResetTokens :exec
+DELETE FROM "PasswordResetToken" WHERE "userId" = $1 AND "tokenHash" <> $2
+`
+
+type DeleteOtherResetTokensParams struct {
+	UserID        string
+	KeepTokenHash string
+}
+
+// The user's earlier links, once a new one has left.
+func (q *Queries) DeleteOtherResetTokens(ctx context.Context, arg DeleteOtherResetTokensParams) error {
+	_, err := q.db.Exec(ctx, deleteOtherResetTokens, arg.UserID, arg.KeepTokenHash)
+	return err
+}
+
+const deleteResetToken = `-- name: DeleteResetToken :exec
+DELETE FROM "PasswordResetToken" WHERE "tokenHash" = $1
+`
+
+func (q *Queries) DeleteResetToken(ctx context.Context, tokenhash string) error {
+	_, err := q.db.Exec(ctx, deleteResetToken, tokenhash)
+	return err
+}
+
+const deleteResetTokensOfUser = `-- name: DeleteResetTokensOfUser :exec
+DELETE FROM "PasswordResetToken" WHERE "userId" = $1
+`
+
+func (q *Queries) DeleteResetTokensOfUser(ctx context.Context, userid string) error {
+	_, err := q.db.Exec(ctx, deleteResetTokensOfUser, userid)
+	return err
+}
+
+const lockResetToken = `-- name: LockResetToken :one
+SELECT "expiresAt" FROM "PasswordResetToken" WHERE "tokenHash" = $1 FOR UPDATE
+`
+
+func (q *Queries) LockResetToken(ctx context.Context, tokenhash string) (time.Time, error) {
+	row := q.db.QueryRow(ctx, lockResetToken, tokenhash)
+	var expiresAt time.Time
+	err := row.Scan(&expiresAt)
+	return expiresAt, err
+}
+
 const lockUser = `-- name: LockUser :one
-SELECT "id" FROM "User" WHERE "id" = $1 FOR UPDATE
+SELECT "id" FROM "User" WHERE "id" = $1 FOR NO KEY UPDATE
 `
 
 // The user's row, locked until the transaction ends: what changes an
-// account one request at a time (consent, password reset, deletion).
+// account goes one request at a time (consent, profile, password reset),
+// and not while the account is being deleted. NO KEY: a session being
+// created for the user meanwhile (its foreign key) is not held up, so a
+// refresh in flight cannot deadlock with a password reset.
 func (q *Queries) LockUser(ctx context.Context, id string) (string, error) {
 	row := q.db.QueryRow(ctx, lockUser, id)
 	var id_2 string
@@ -165,6 +236,34 @@ func (q *Queries) ReplacePasswordHash(ctx context.Context, arg ReplacePasswordHa
 		return 0, err
 	}
 	return result.RowsAffected(), nil
+}
+
+const resetTokenUser = `-- name: ResetTokenUser :one
+
+SELECT "userId" FROM "PasswordResetToken" WHERE "tokenHash" = $1
+`
+
+// Password reset links (password reset by e-mail). Only the hash of a
+// link's token is stored.
+func (q *Queries) ResetTokenUser(ctx context.Context, tokenhash string) (string, error) {
+	row := q.db.QueryRow(ctx, resetTokenUser, tokenhash)
+	var userId string
+	err := row.Scan(&userId)
+	return userId, err
+}
+
+const setPasswordHash = `-- name: SetPasswordHash :exec
+UPDATE "User" SET "passwordHash" = $1, "updatedAt" = atlas_now() WHERE "id" = $2
+`
+
+type SetPasswordHashParams struct {
+	PasswordHash string
+	ID           string
+}
+
+func (q *Queries) SetPasswordHash(ctx context.Context, arg SetPasswordHashParams) error {
+	_, err := q.db.Exec(ctx, setPasswordHash, arg.PasswordHash, arg.ID)
+	return err
 }
 
 const userByEmail = `-- name: UserByEmail :one

@@ -242,7 +242,7 @@ func (s *fakeServer) serve(conn net.Conn) {
 		case "RCPT":
 			record(line)
 			if s.rejectRcpt {
-				reply("550 no such mailbox")
+				reply("550 5.1.1 " + rest[3:] + ": no such mailbox " + strings.ToUpper(rest[3:]))
 				continue
 			}
 			s.mu.Lock()
@@ -548,7 +548,7 @@ func TestSMTPServerRefusals(t *testing.T) {
 			t.Errorf("%s refused by the server: no error", name)
 			continue
 		}
-		if strings.Contains(err.Error(), message.To) || strings.Contains(err.Error(), "token=") || strings.Contains(err.Error(), "smtp pass-word") {
+		if strings.Contains(strings.ToLower(err.Error()), message.To) || strings.Contains(err.Error(), "token=") || strings.Contains(err.Error(), "smtp pass-word") {
 			t.Errorf("%s: the error shows the recipient, the link or the password: %v", name, err)
 		}
 		if server.all()[0].accepted {
@@ -585,7 +585,7 @@ func TestOnlyOnePlainRecipientAndOneLineSubject(t *testing.T) {
 	}
 	for _, to := range []string{
 		"", "aziza", "aziza@example.uz\r\nBcc: evil@example.org", "aziza@example.uz, evil@example.org",
-		"Aziza <aziza@example.uz>", "<aziza@example.uz>", " aziza@example.uz", "aziza@example.uz\n",
+		"Aziza <aziza@example.uz>", "<aziza@example.uz>", " aziza@example.uz", "aziza@example.uz\n", "ўзбек@example.uz",
 	} {
 		m := message
 		m.To = to

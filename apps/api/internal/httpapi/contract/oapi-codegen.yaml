@@ -34,3 +34,5 @@ output-options:
     - acceptLegalDocuments
     - getProfile
     - updateProfile
+    - requestPasswordReset
+    - resetPassword

@@ -42,5 +42,36 @@ SELECT EXISTS (SELECT 1 FROM "LegalConsent" WHERE "userId" = sqlc.arg(user_id) A
 
 -- name: LockUser :one
 -- The user's row, locked until the transaction ends: what changes an
--- account one request at a time (consent, password reset, deletion).
-SELECT "id" FROM "User" WHERE "id" = $1 FOR UPDATE;
+-- account goes one request at a time (consent, profile, password reset),
+-- and not while the account is being deleted. NO KEY: a session being
+-- created for the user meanwhile (its foreign key) is not held up, so a
+-- refresh in flight cannot deadlock with a password reset.
+SELECT "id" FROM "User" WHERE "id" = $1 FOR NO KEY UPDATE;
+
+-- Password reset links (password reset by e-mail). Only the hash of a
+-- link's token is stored.
+
+-- name: ResetTokenUser :one
+SELECT "userId" FROM "PasswordResetToken" WHERE "tokenHash" = $1;
+
+-- name: LockResetToken :one
+SELECT "expiresAt" FROM "PasswordResetToken" WHERE "tokenHash" = $1 FOR UPDATE;
+
+-- name: CreateResetToken :exec
+-- A link that works from now (the database clock) for ttl_seconds.
+INSERT INTO "PasswordResetToken" ("id", "userId", "tokenHash", "createdAt", "expiresAt")
+VALUES (sqlc.arg(id), sqlc.arg(user_id), sqlc.arg(token_hash), atlas_now(),
+        atlas_now() + make_interval(secs => sqlc.arg(ttl_seconds)::double precision));
+
+-- name: DeleteOtherResetTokens :exec
+-- The user's earlier links, once a new one has left.
+DELETE FROM "PasswordResetToken" WHERE "userId" = sqlc.arg(user_id) AND "tokenHash" <> sqlc.arg(keep_token_hash);
+
+-- name: DeleteResetTokensOfUser :exec
+DELETE FROM "PasswordResetToken" WHERE "userId" = $1;
+
+-- name: DeleteResetToken :exec
+DELETE FROM "PasswordResetToken" WHERE "tokenHash" = $1;
+
+-- name: SetPasswordHash :exec
+UPDATE "User" SET "passwordHash" = sqlc.arg(password_hash), "updatedAt" = atlas_now() WHERE "id" = sqlc.arg(id);

@@ -58,14 +58,38 @@ type Hasher interface {
 	Decoys() (current, legacy string, err error)
 }
 
+// Queue takes the account operations' background work (the job queue).
+type Queue interface {
+	// ResetMail queues the making and sending of a password reset link for
+	// the user; userID is "" when the address has no account (the job then
+	// does nothing: the request costs the same either way).
+	ResetMail(ctx context.Context, userID string) error
+}
+
+// Config is what the account service is built from.
+type Config struct {
+	Pool     *pgxpool.Pool
+	Sessions *session.Service
+	Limiter  *ratelimit.Limiter
+	Consent  *legal.Service
+	Hasher   Hasher
+	Log      *slog.Logger
+	Queue    Queue
+	// MailEnabled: e-mail can be sent. Without it a password reset cannot
+	// be asked for.
+	MailEnabled bool
+}
+
 // Service is the account use cases.
 type Service struct {
-	pool     *pgxpool.Pool
-	sessions *session.Service
-	limiter  *ratelimit.Limiter
-	consent  *legal.Service
-	hasher   Hasher
-	log      *slog.Logger
+	pool        *pgxpool.Pool
+	sessions    *session.Service
+	limiter     *ratelimit.Limiter
+	consent     *legal.Service
+	hasher      Hasher
+	log         *slog.Logger
+	queue       Queue
+	mailEnabled bool
 
 	decoyOnce                 sync.Once
 	decoyCurrent, decoyLegacy string
@@ -74,8 +98,11 @@ type Service struct {
 // New returns a Service. It starts hashing the decoy passwords in the
 // background, so that the server does not wait for them to start and the
 // first sign-in rarely does.
-func New(pool *pgxpool.Pool, sessions *session.Service, limiter *ratelimit.Limiter, consent *legal.Service, hasher Hasher, log *slog.Logger) *Service {
-	s := &Service{pool: pool, sessions: sessions, limiter: limiter, consent: consent, hasher: hasher, log: log}
+func New(c Config) *Service {
+	s := &Service{
+		pool: c.Pool, sessions: c.Sessions, limiter: c.Limiter, consent: c.Consent, hasher: c.Hasher, log: c.Log,
+		queue: c.Queue, mailEnabled: c.MailEnabled,
+	}
 	go s.decoys() // short and bounded: two hashes, then it ends
 	return s
 }

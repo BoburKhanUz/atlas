@@ -254,3 +254,37 @@ func LoadAccountValidation(t testing.TB) AccountValidation {
 	}
 	return a
 }
+
+// PasswordReset is testdata/golden/password-reset.json
+// (apps/web/scripts/golden-password-reset.ts): the reset links and e-mails
+// the Next.js server makes.
+type PasswordReset struct {
+	GeneratedBy  string `json:"generatedBy"`
+	SourceCommit string `json:"sourceCommit"`
+	Note         string `json:"note"`
+	TTLMinutes   int    `json:"ttlMinutes"`
+	Links        []struct {
+		PublicBaseURL *string `json:"publicBaseUrl"`
+		Token         string  `json:"token"`
+		Link          string  `json:"link"`
+	} `json:"links"`
+	Messages []struct {
+		To      string `json:"to"`
+		Link    string `json:"link"`
+		Subject string `json:"subject"`
+		Text    string `json:"text"`
+		HTML    string `json:"html"`
+	} `json:"messages"`
+}
+
+// LoadPasswordReset reads testdata/golden/password-reset.json; unknown
+// fields fail.
+func LoadPasswordReset(t testing.TB) PasswordReset {
+	t.Helper()
+	var p PasswordReset
+	load(t, "password-reset.json", &p)
+	if len(p.Links) == 0 || len(p.Messages) == 0 || p.TTLMinutes == 0 {
+		t.Fatal("password-reset.json: a section is empty")
+	}
+	return p
+}

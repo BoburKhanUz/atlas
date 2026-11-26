@@ -270,3 +270,21 @@ type profilePatchResponse struct{ body profilePatchBody }
 func (r profilePatchResponse) VisitUpdateProfileResponse(w http.ResponseWriter) error {
 	return writeJSON(w, http.StatusOK, r.body)
 }
+
+// RequestPasswordReset answers ok whether or not the address has an
+// account; the link is made and sent by the worker.
+func (s *Server) RequestPasswordReset(ctx context.Context, request contract.RequestPasswordResetRequestObject) (contract.RequestPasswordResetResponseObject, error) {
+	if err := s.s.Accounts.RequestPasswordReset(ctx, request.Body.Email, s.client(requestFrom(ctx), nil)); err != nil {
+		return nil, err
+	}
+	return contract.RequestPasswordReset200JSONResponse{Ok: true}, nil
+}
+
+// ResetPassword sets the new password with the e-mailed token and signs
+// every device out; the user signs in again.
+func (s *Server) ResetPassword(ctx context.Context, request contract.ResetPasswordRequestObject) (contract.ResetPasswordResponseObject, error) {
+	if err := s.s.Accounts.ResetPassword(ctx, request.Body.Token, request.Body.Password, s.client(requestFrom(ctx), nil)); err != nil {
+		return nil, err
+	}
+	return contract.ResetPassword200JSONResponse{Ok: true}, nil
+}

@@ -37,6 +37,7 @@ import (
 	"lookly/internal/golden"
 	"lookly/internal/health"
 	"lookly/internal/httpapi"
+	"lookly/internal/jobs"
 	"lookly/internal/legal"
 	"lookly/internal/profile"
 	"lookly/internal/ratelimit"
@@ -115,6 +116,10 @@ type apiOptions struct {
 	cookieSecure bool
 	hasher       accounts.Hasher
 	lockTimeout  time.Duration
+	// mailDisabled: no mail transport is configured.
+	mailDisabled bool
+	// queue replaces the job queue (River on the test's database).
+	queue accounts.Queue
 }
 
 // api is the server on its own database.
@@ -165,7 +170,21 @@ func newAPI(t *testing.T, o apiOptions) *api {
 	if o.hasher != nil {
 		hasher = o.hasher
 	}
-	users := accounts.New(pool, a.sessions, ratelimit.New(pool, []byte("http-test-secret-http-test-secret-http")), consent, hasher, log)
+	var queue accounts.Queue = o.queue
+	if queue == nil {
+		if _, err := jobs.Migrate(ctx, pool); err != nil {
+			t.Fatal(err)
+		}
+		q, err := jobs.NewQueue(pool, log)
+		if err != nil {
+			t.Fatal(err)
+		}
+		queue = q
+	}
+	users := accounts.New(accounts.Config{
+		Pool: pool, Sessions: a.sessions, Limiter: ratelimit.New(pool, []byte("http-test-secret-http-test-secret-http")),
+		Consent: consent, Hasher: hasher, Log: log, Queue: queue, MailEnabled: !o.mailDisabled,
+	})
 	server := httpapi.NewServer(httpapi.Services{
 		Health: health.New(pool, "test", time.Second), Accounts: users, Sessions: a.sessions, Legal: consent, Profile: profile.New(pool),
 		CookieSecure: o.cookieSecure, TrustProxy: o.trustProxy,
@@ -211,6 +230,9 @@ var knownContractGaps = map[string]bool{
 	"POST /api/v1/auth/refresh 403":  true,
 	"POST /api/v1/auth/login 503":    true,
 	"POST /api/v1/auth/register 503": true,
+	// B3: the same guard on the two public writes of the password reset.
+	"POST /api/v1/auth/password/forgot 403": true,
+	"POST /api/v1/auth/password/reset 403":  true,
 }
 
 func (a *api) do(c call) answer {

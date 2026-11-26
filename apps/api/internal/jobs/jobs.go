@@ -17,6 +17,7 @@ import (
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
 	"github.com/riverqueue/river/rivermigrate"
 
+	"lookly/internal/accounts"
 	"lookly/internal/database"
 	"lookly/internal/maintenance"
 )
@@ -95,10 +96,19 @@ func (w *cleanupWorker) Work(ctx context.Context, job *river.Job[CleanupArgs]) e
 // Timeout bounds one run (River cancels it after this).
 func (w *cleanupWorker) Timeout(*river.Job[CleanupArgs]) time.Duration { return 2 * time.Minute }
 
+// Workers are the services the jobs call.
+type Workers struct {
+	Cleanup     *maintenance.Service
+	ResetMailer *accounts.ResetMailer
+}
+
 // NewClient returns the River client with every worker and periodic job.
-func NewClient(pool *pgxpool.Pool, log *slog.Logger, cleanup *maintenance.Service) (*river.Client[pgx.Tx], error) {
+func NewClient(pool *pgxpool.Pool, log *slog.Logger, w Workers) (*river.Client[pgx.Tx], error) {
 	workers := river.NewWorkers()
-	if err := river.AddWorkerSafely(workers, &cleanupWorker{svc: cleanup, log: log}); err != nil {
+	if err := river.AddWorkerSafely(workers, &cleanupWorker{svc: w.Cleanup, log: log}); err != nil {
+		return nil, err
+	}
+	if err := river.AddWorkerSafely(workers, &resetMailWorker{mailer: w.ResetMailer}); err != nil {
 		return nil, err
 	}
 	return river.NewClient(riverpgxv5.New(pool), &river.Config{

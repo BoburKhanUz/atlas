@@ -492,6 +492,18 @@ func (s *Service) transaction(ctx context.Context, fn func(tx pgx.Tx, t time.Tim
 	})
 }
 
+// LockUserFamilies locks every session family of a user, in id order,
+// inside the caller's InTransaction. A transaction that changes all of a
+// user's sessions (a password reset, the account's deletion) takes these
+// locks before it locks the user's row: a refresh takes its family's lock
+// first too, so the two cannot deadlock.
+func LockUserFamilies(ctx context.Context, tx pgx.Tx, userID string) error {
+	if _, err := store.New(tx).LockSessionFamiliesOfUser(ctx, userID); err != nil {
+		return fmt.Errorf("lock the user's session families: %w", err)
+	}
+	return nil
+}
+
 // RevokeUserFamilies revokes every live family of a user (a password
 // reset), inside the caller's InTransaction. The families are locked in id
 // order, so two such calls for one user never deadlock. It returns how many

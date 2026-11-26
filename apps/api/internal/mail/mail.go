@@ -58,10 +58,11 @@ func New(c config.Mail) Sender {
 
 // recipient checks that to is one bare address, and nothing else (no name,
 // no second address, no line break: the parsed address must be the whole
-// value), and returns it.
+// value), in ASCII (the addresses accounts have; others would need an SMTP
+// extension this client does not speak), and returns it.
 func recipient(to string) (string, error) {
 	parsed, err := netmail.ParseAddress(to)
-	if err != nil || parsed.Name != "" || parsed.Address != to {
+	if err != nil || parsed.Name != "" || parsed.Address != to || strings.ContainsFunc(to, func(r rune) bool { return r > 126 }) {
 		return "", errors.New("mail: the recipient is not one address")
 	}
 	return parsed.Address, nil

@@ -60,6 +60,12 @@ UPDATE "Session" SET "revokedAt" = sqlc.arg(at)::timestamp WHERE "familyId" = sq
 -- name: ClearSuccessorCiphertextsOfFamily :exec
 UPDATE "Session" SET "successorTokenEnc" = NULL WHERE "familyId" = $1 AND "successorTokenEnc" IS NOT NULL;
 
+-- name: LockSessionFamiliesOfUser :many
+-- Every family of the user, live or not, in id order: what changes all of a
+-- user's sessions (a password reset, the account's deletion) takes these
+-- locks first, as a refresh takes its family's lock first.
+SELECT "id" FROM "SessionFamily" WHERE "userId" = $1 ORDER BY "id" FOR UPDATE;
+
 -- name: LockLiveSessionFamiliesOfUser :many
 -- In id order, so two revocations of one user's families never deadlock.
 SELECT "id" FROM "SessionFamily" WHERE "userId" = $1 AND "revokedAt" IS NULL ORDER BY "id" FOR UPDATE;

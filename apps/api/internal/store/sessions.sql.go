@@ -185,6 +185,33 @@ func (q *Queries) LockSession(ctx context.Context, id string) (LockSessionRow, e
 	return i, err
 }
 
+const lockSessionFamiliesOfUser = `-- name: LockSessionFamiliesOfUser :many
+SELECT "id" FROM "SessionFamily" WHERE "userId" = $1 ORDER BY "id" FOR UPDATE
+`
+
+// Every family of the user, live or not, in id order: what changes all of a
+// user's sessions (a password reset, the account's deletion) takes these
+// locks first, as a refresh takes its family's lock first.
+func (q *Queries) LockSessionFamiliesOfUser(ctx context.Context, userid string) ([]string, error) {
+	rows, err := q.db.Query(ctx, lockSessionFamiliesOfUser, userid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const lockSessionFamily = `-- name: LockSessionFamily :one
 SELECT "id", "userId", "clientType", "absoluteExpiresAt", "revokedAt"
   FROM "SessionFamily" WHERE "id" = $1 FOR UPDATE

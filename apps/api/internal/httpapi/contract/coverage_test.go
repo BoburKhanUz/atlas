@@ -18,7 +18,7 @@ var notYetImplemented = []string{
 	"deleteColorProfile", "deleteOutfit", "deleteWardrobeItem", "generateOutfits",
 	"getColorProfile", "getConversation", "getCurrentWeather", "getMedia", "getOpenApiDocument", "getOutfit", "getWardrobeItem",
 	"listConversations", "listOutfits", "listWardrobeItems", "reportClientErrors",
-	"requestPasswordReset", "resetPassword", "saveOutfit", "sendOutfitFeedback",
+	"saveOutfit", "sendOutfitFeedback",
 	"stylistChat", "updateOutfit", "updateWardrobeItem",
 }
 

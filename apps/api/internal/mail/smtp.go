@@ -39,12 +39,45 @@ type SMTP struct {
 }
 
 // Send delivers one message, within ctx and at most smtpSendTimeout. An
-// error says what failed, never the message.
+// error says what failed and never names the recipient or shows the
+// message: a server's refusal often quotes the address, and errors end up
+// in logs and in the job queue.
 func (s *SMTP) Send(ctx context.Context, m Message) error {
 	to, err := recipient(m.To)
 	if err != nil {
 		return err
 	}
+	if err := s.deliver(ctx, to, m); err != nil {
+		return withoutAddress{err: err, address: to}
+	}
+	return nil
+}
+
+// withoutAddress is an error whose text has the recipient's address
+// replaced.
+type withoutAddress struct {
+	err     error
+	address string
+}
+
+func (e withoutAddress) Error() string {
+	// Addresses are ASCII here (recipient), so lower-casing keeps positions.
+	text, address := e.err.Error(), strings.ToLower(e.address)
+	var out strings.Builder
+	for {
+		i := strings.Index(strings.ToLower(text), address)
+		if i < 0 {
+			out.WriteString(text)
+			return out.String()
+		}
+		out.WriteString(text[:i] + "[recipient]")
+		text = text[i+len(address):]
+	}
+}
+
+func (e withoutAddress) Unwrap() error { return e.err }
+
+func (s *SMTP) deliver(ctx context.Context, to string, m Message) error {
 	data, err := compose(s.From, to, m, time.Now())
 	if err != nil {
 		return err
