@@ -65,7 +65,14 @@ type Variants struct {
 	Master        []byte
 	Display       []byte // WebP, at most DisplayMaxSide on its longer side
 	Thumbnail     []byte // WebP, at most ThumbMaxSide on its longer side
+	// Sample is the picture's middle square at SampleSide×SampleSide, as
+	// rows of R, G, B bytes (transparency dropped): what the development
+	// mock of garment analysis reads colours from.
+	Sample []byte
 }
+
+// SampleSide is the side of Variants.Sample, in pixels.
+const SampleSide = 32
 
 // Processor processes pictures, at most n at a time: a decoded picture can
 // take hundreds of megabytes.
@@ -180,6 +187,7 @@ func render(data []byte, hd header) (v Variants, err error) {
 	return Variants{
 		Width: w, Height: h, Ext: format.Ext, MIMEType: format.MIME,
 		Master: master, Display: displayBytes, Thumbnail: thumbBytes,
+		Sample: sample(display),
 	}, nil
 }
 

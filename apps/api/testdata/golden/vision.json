@@ -1,0 +1,1888 @@
+{
+  "source": "apps/web/src/lib/ai/mock-vision.ts (analyzeClothing)",
+  "hintPicture": "vision/e2e-white-shirt.png",
+  "detections": [
+    {
+      "file": "vision/solid-white.png",
+      "about": "solid white",
+      "filename": "solid-white.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "white"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "spring",
+          "summer"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.94,
+          "pattern": 0.78,
+          "material": 0.34,
+          "style": 0.38,
+          "season": 0.36,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/solid-black.png",
+      "about": "solid black",
+      "filename": "solid-black.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "black"
+        ],
+        "pattern": "solid",
+        "material": "wool",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "autumn",
+          "winter"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.94,
+          "pattern": 0.78,
+          "material": 0.22,
+          "style": 0.38,
+          "season": 0.41,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/solid-beige.png",
+      "about": "solid beige",
+      "filename": "solid-beige.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "beige"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "spring",
+          "summer"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.94,
+          "pattern": 0.78,
+          "material": 0.31,
+          "style": 0.38,
+          "season": 0.36,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/solid-gray.png",
+      "about": "solid gray",
+      "filename": "solid-gray.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "gray"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "spring",
+          "autumn"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.78,
+          "material": 0.21,
+          "style": 0.38,
+          "season": 0.24,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/solid-navy.png",
+      "about": "solid navy",
+      "filename": "solid-navy.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "navy"
+        ],
+        "pattern": "solid",
+        "material": "wool",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "autumn",
+          "winter"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.78,
+          "material": 0.22,
+          "style": 0.38,
+          "season": 0.41,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/solid-blue.png",
+      "about": "solid blue",
+      "filename": "solid-blue.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "blue"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "smart_casual",
+        "season": [
+          "spring",
+          "autumn"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.78,
+          "material": 0.21,
+          "style": 0.22,
+          "season": 0.24,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.28,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/solid-light_blue.png",
+      "about": "solid light_blue",
+      "filename": "solid-light_blue.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "light_blue"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "smart_casual",
+        "season": [
+          "spring",
+          "autumn"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.78,
+          "material": 0.21,
+          "style": 0.22,
+          "season": 0.24,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.28,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/solid-green.png",
+      "about": "solid green",
+      "filename": "solid-green.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "green"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "smart_casual",
+        "season": [
+          "spring",
+          "autumn"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.78,
+          "material": 0.21,
+          "style": 0.22,
+          "season": 0.24,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.28,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/solid-olive.png",
+      "about": "solid olive",
+      "filename": "solid-olive.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "olive"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "smart_casual",
+        "season": [
+          "spring",
+          "autumn"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.78,
+          "material": 0.21,
+          "style": 0.22,
+          "season": 0.24,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.28,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/solid-khaki.png",
+      "about": "solid khaki",
+      "filename": "solid-khaki.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "khaki"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "spring",
+          "autumn"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.78,
+          "material": 0.21,
+          "style": 0.38,
+          "season": 0.24,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/solid-brown.png",
+      "about": "solid brown",
+      "filename": "solid-brown.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "brown"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "smart_casual",
+        "season": [
+          "spring",
+          "autumn"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.78,
+          "material": 0.21,
+          "style": 0.22,
+          "season": 0.24,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.28,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/solid-tan.png",
+      "about": "solid tan",
+      "filename": "solid-tan.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "tan"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "spring",
+          "autumn"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.78,
+          "material": 0.21,
+          "style": 0.38,
+          "season": 0.24,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/solid-red.png",
+      "about": "solid red",
+      "filename": "solid-red.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "red"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "casual",
+        "season": [
+          "spring",
+          "autumn"
+        ],
+        "gender": "unisex",
+        "formality": "casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.78,
+          "material": 0.21,
+          "style": 0.27,
+          "season": 0.24,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.31,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/solid-burgundy.png",
+      "about": "solid burgundy",
+      "filename": "solid-burgundy.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "burgundy"
+        ],
+        "pattern": "solid",
+        "material": "wool",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "smart_casual",
+        "season": [
+          "autumn",
+          "winter"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.78,
+          "material": 0.22,
+          "style": 0.22,
+          "season": 0.41,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.28,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/solid-pink.png",
+      "about": "solid pink",
+      "filename": "solid-pink.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "pink"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "casual",
+        "season": [
+          "spring",
+          "autumn"
+        ],
+        "gender": "unisex",
+        "formality": "casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.78,
+          "material": 0.21,
+          "style": 0.27,
+          "season": 0.24,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.31,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/solid-orange.png",
+      "about": "solid orange",
+      "filename": "solid-orange.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "orange"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "casual",
+        "season": [
+          "spring",
+          "autumn"
+        ],
+        "gender": "unisex",
+        "formality": "casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.78,
+          "material": 0.21,
+          "style": 0.27,
+          "season": 0.24,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.31,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/solid-yellow.png",
+      "about": "solid yellow",
+      "filename": "solid-yellow.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "yellow"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "casual",
+        "season": [
+          "spring",
+          "autumn"
+        ],
+        "gender": "unisex",
+        "formality": "casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.78,
+          "material": 0.21,
+          "style": 0.27,
+          "season": 0.24,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.31,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/solid-purple.png",
+      "about": "solid purple",
+      "filename": "solid-purple.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "purple"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "casual",
+        "season": [
+          "spring",
+          "autumn"
+        ],
+        "gender": "unisex",
+        "formality": "casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.78,
+          "material": 0.21,
+          "style": 0.27,
+          "season": 0.24,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.31,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/solid-teal.png",
+      "about": "solid teal",
+      "filename": "solid-teal.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "teal"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "smart_casual",
+        "season": [
+          "spring",
+          "autumn"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.78,
+          "material": 0.21,
+          "style": 0.22,
+          "season": 0.24,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.28,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/solid-cream.png",
+      "about": "solid cream",
+      "filename": "solid-cream.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "cream"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "spring",
+          "summer"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.94,
+          "pattern": 0.78,
+          "material": 0.34,
+          "style": 0.38,
+          "season": 0.36,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/solid-ivory.png",
+      "about": "solid ivory",
+      "filename": "solid-ivory.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "ivory"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "spring",
+          "summer"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.94,
+          "pattern": 0.78,
+          "material": 0.34,
+          "style": 0.38,
+          "season": 0.36,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/solid-rust.png",
+      "about": "solid rust",
+      "filename": "solid-rust.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "rust"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "smart_casual",
+        "season": [
+          "spring",
+          "autumn"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.78,
+          "material": 0.21,
+          "style": 0.22,
+          "season": 0.24,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.28,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/solid-mustard.png",
+      "about": "solid mustard",
+      "filename": "solid-mustard.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "mustard"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "smart_casual",
+        "season": [
+          "spring",
+          "autumn"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.78,
+          "material": 0.21,
+          "style": 0.22,
+          "season": 0.24,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.28,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/e2e-white-shirt.png",
+      "about": "e2e: white shirt",
+      "filename": "e2e-white-shirt.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "ivory"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "spring",
+          "summer"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.42,
+          "subcategory": 0.15,
+          "color": 0.94,
+          "pattern": 0.78,
+          "material": 0.34,
+          "style": 0.38,
+          "season": 0.36,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/e2e-blue-jeans.png",
+      "about": "e2e: blue jeans",
+      "filename": "e2e-blue-jeans.png",
+      "detection": {
+        "category": "pants",
+        "subcategory": "jeans",
+        "colors": [
+          "navy"
+        ],
+        "pattern": "solid",
+        "material": "wool",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "autumn",
+          "winter"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.42,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.78,
+          "material": 0.22,
+          "style": 0.38,
+          "season": 0.41,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/e2e-navy-tee.png",
+      "about": "e2e: navy tee",
+      "filename": "e2e-navy-tee.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "navy"
+        ],
+        "pattern": "solid",
+        "material": "wool",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "autumn",
+          "winter"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.42,
+          "subcategory": 0.15,
+          "color": 0.94,
+          "pattern": 0.78,
+          "material": 0.22,
+          "style": 0.38,
+          "season": 0.41,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/gray-20.jpg",
+      "about": "solid gray 20, JPEG",
+      "filename": "gray-20.jpg",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "black"
+        ],
+        "pattern": "solid",
+        "material": "wool",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "autumn",
+          "winter"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.94,
+          "pattern": 0.78,
+          "material": 0.22,
+          "style": 0.38,
+          "season": 0.41,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/gray-65.jpg",
+      "about": "solid gray 65, JPEG",
+      "filename": "gray-65.jpg",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "navy"
+        ],
+        "pattern": "solid",
+        "material": "wool",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "autumn",
+          "winter"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.78,
+          "material": 0.22,
+          "style": 0.38,
+          "season": 0.41,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/gray-140.jpg",
+      "about": "solid gray 140, JPEG",
+      "filename": "gray-140.jpg",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "gray"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "spring",
+          "autumn"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.78,
+          "material": 0.21,
+          "style": 0.38,
+          "season": 0.24,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/gray-225.jpg",
+      "about": "solid gray 225, JPEG",
+      "filename": "gray-225.jpg",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "cream"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "spring",
+          "summer"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.94,
+          "pattern": 0.78,
+          "material": 0.34,
+          "style": 0.38,
+          "season": 0.36,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/white-60-navy-40.png",
+      "about": "60 % white, 40 % navy",
+      "filename": "white-60-navy-40.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "ivory",
+          "navy"
+        ],
+        "pattern": "striped",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "spring",
+          "autumn"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.22,
+          "material": 0.34,
+          "style": 0.38,
+          "season": 0.24,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/red-70-black-30.png",
+      "about": "70 % red, 30 % black",
+      "filename": "red-70-black-30.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "red",
+          "black"
+        ],
+        "pattern": "striped",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "casual",
+        "season": [
+          "spring",
+          "autumn"
+        ],
+        "gender": "unisex",
+        "formality": "casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.22,
+          "material": 0.21,
+          "style": 0.27,
+          "season": 0.24,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.31,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/navy-91-red-9.png",
+      "about": "9 % red: under the threshold",
+      "filename": "navy-91-red-9.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "navy"
+        ],
+        "pattern": "color_block",
+        "material": "wool",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "autumn",
+          "winter"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.94,
+          "pattern": 0.34,
+          "material": 0.22,
+          "style": 0.38,
+          "season": 0.41,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/white-25-navy-75.png",
+      "about": "white at the left, 25 %",
+      "filename": "white-25-navy-75.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "navy",
+          "ivory"
+        ],
+        "pattern": "striped",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "spring",
+          "autumn"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.22,
+          "material": 0.34,
+          "style": 0.38,
+          "season": 0.24,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/black-80-white-20.png",
+      "about": "80 % black, 20 % white",
+      "filename": "black-80-white-20.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "black",
+          "ivory"
+        ],
+        "pattern": "striped",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "autumn",
+          "winter"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.22,
+          "material": 0.34,
+          "style": 0.38,
+          "season": 0.29,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/between-navy-and-teal.png",
+      "about": "a colour equally near two catalog colours",
+      "filename": "between-navy-and-teal.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "navy"
+        ],
+        "pattern": "solid",
+        "material": "wool",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "autumn",
+          "winter"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.78,
+          "material": 0.22,
+          "style": 0.38,
+          "season": 0.41,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/navy-75-white-25.png",
+      "about": "25 % white: over the threshold",
+      "filename": "navy-75-white-25.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "navy",
+          "ivory"
+        ],
+        "pattern": "striped",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "spring",
+          "autumn"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.22,
+          "material": 0.34,
+          "style": 0.38,
+          "season": 0.24,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/three-colours.png",
+      "about": "50/30/20: the two largest",
+      "filename": "three-colours.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "ivory",
+          "red"
+        ],
+        "pattern": "striped",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "casual",
+        "season": [
+          "spring",
+          "autumn"
+        ],
+        "gender": "unisex",
+        "formality": "casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.22,
+          "material": 0.34,
+          "style": 0.27,
+          "season": 0.24,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.31,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/two-grays.png",
+      "about": "two shades of gray, 60/40: colour block",
+      "filename": "two-grays.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "gray",
+          "beige"
+        ],
+        "pattern": "color_block",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "spring",
+          "autumn"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.34,
+          "material": 0.21,
+          "style": 0.38,
+          "season": 0.24,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/wide-red-edge.png",
+      "about": "768×256, red only outside the middle square",
+      "filename": "wide-red-edge.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "ivory"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "spring",
+          "summer"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.94,
+          "pattern": 0.78,
+          "material": 0.34,
+          "style": 0.38,
+          "season": 0.36,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/tall-red-top.png",
+      "about": "256×768, red only above the middle square",
+      "filename": "tall-red-top.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "ivory"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "spring",
+          "summer"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.94,
+          "pattern": 0.78,
+          "material": 0.34,
+          "style": 0.38,
+          "season": 0.36,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/transparent-over-red.png",
+      "about": "opaque red with an alpha channel",
+      "filename": "transparent-over-red.png",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "red"
+        ],
+        "pattern": "solid",
+        "material": "cotton",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "casual",
+        "season": [
+          "spring",
+          "autumn"
+        ],
+        "gender": "unisex",
+        "formality": "casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.86,
+          "pattern": 0.78,
+          "material": 0.21,
+          "style": 0.27,
+          "season": 0.24,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.31,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    },
+    {
+      "file": "vision/lossless-navy.webp",
+      "about": "WebP",
+      "filename": "lossless-navy.webp",
+      "detection": {
+        "category": "shirt",
+        "subcategory": "tshirt",
+        "colors": [
+          "navy"
+        ],
+        "pattern": "solid",
+        "material": "wool",
+        "sleeveLength": "long",
+        "fit": "regular",
+        "style": "minimal",
+        "season": [
+          "autumn",
+          "winter"
+        ],
+        "gender": "unisex",
+        "formality": "smart_casual",
+        "confidence": {
+          "category": 0.18,
+          "subcategory": 0.15,
+          "color": 0.94,
+          "pattern": 0.78,
+          "material": 0.22,
+          "style": 0.38,
+          "season": 0.41,
+          "sleeveLength": 0.12,
+          "fit": 0.13,
+          "formality": 0.29,
+          "gender": 0.18
+        },
+        "mock": true
+      }
+    }
+  ],
+  "hints": [
+    {
+      "filename": "white-shirt.png",
+      "category": "shirt",
+      "subcategory": "tshirt",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "Futbolka.JPG",
+      "category": "shirt",
+      "subcategory": "tshirt",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "koylak.png",
+      "category": "shirt",
+      "subcategory": "tshirt",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "koylak-ayol.png",
+      "category": "shirt",
+      "subcategory": "tshirt",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "polo.webp",
+      "category": "shirt",
+      "subcategory": "tshirt",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "tee.jpg",
+      "category": "shirt",
+      "subcategory": "tshirt",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "blouse.png",
+      "category": "shirt",
+      "subcategory": "tshirt",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "jacket.jpg",
+      "category": "outerwear",
+      "subcategory": "jacket",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "KURTKA.jpg",
+      "category": "outerwear",
+      "subcategory": "jacket",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "palto.png",
+      "category": "outerwear",
+      "subcategory": "jacket",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "blazer.png",
+      "category": "outerwear",
+      "subcategory": "jacket",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "ustki.png",
+      "category": "outerwear",
+      "subcategory": "jacket",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "windbreaker.jpg",
+      "category": "outerwear",
+      "subcategory": "jacket",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "raincoat.png",
+      "category": "outerwear",
+      "subcategory": "jacket",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "blue-jeans.png",
+      "category": "pants",
+      "subcategory": "jeans",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "shim.jpg",
+      "category": "pants",
+      "subcategory": "jeans",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "chinos.png",
+      "category": "pants",
+      "subcategory": "jeans",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "trousers.png",
+      "category": "pants",
+      "subcategory": "jeans",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "shorts.png",
+      "category": "pants",
+      "subcategory": "jeans",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "pants.png",
+      "category": "pants",
+      "subcategory": "jeans",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "dress.png",
+      "category": "dress",
+      "subcategory": "casual_dress",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "libos.png",
+      "category": "dress",
+      "subcategory": "casual_dress",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "white-sneaker.png",
+      "category": "shoes",
+      "subcategory": "sneakers",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "boots.jpg",
+      "category": "shoes",
+      "subcategory": "sneakers",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "loafer.png",
+      "category": "shoes",
+      "subcategory": "sneakers",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "shoe.png",
+      "category": "shoes",
+      "subcategory": "sneakers",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "oyqi.png",
+      "category": "shoes",
+      "subcategory": "sneakers",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "sumka.jpg",
+      "category": "bag",
+      "subcategory": "tote",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "tote.png",
+      "category": "bag",
+      "subcategory": "tote",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "backpack.png",
+      "category": "bag",
+      "subcategory": "tote",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "clutch.png",
+      "category": "bag",
+      "subcategory": "tote",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "bag.png",
+      "category": "bag",
+      "subcategory": "tote",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "belt.png",
+      "category": "accessory",
+      "subcategory": "belt",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "scarf.png",
+      "category": "accessory",
+      "subcategory": "belt",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "hat.png",
+      "category": "accessory",
+      "subcategory": "belt",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "watch.png",
+      "category": "accessory",
+      "subcategory": "belt",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "sunglasses.png",
+      "category": "accessory",
+      "subcategory": "belt",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "accessory.png",
+      "category": "accessory",
+      "subcategory": "belt",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "sunset.jpg",
+      "category": "accessory",
+      "subcategory": "belt",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "IMG_1234.jpg",
+      "category": "shirt",
+      "subcategory": "tshirt",
+      "categoryConfidence": 0.18
+    },
+    {
+      "filename": "",
+      "category": "shirt",
+      "subcategory": "tshirt",
+      "categoryConfidence": 0.18
+    },
+    {
+      "filename": "photo",
+      "category": "shirt",
+      "subcategory": "tshirt",
+      "categoryConfidence": 0.18
+    },
+    {
+      "filename": "ŞHIRT.png",
+      "category": "shirt",
+      "subcategory": "tshirt",
+      "categoryConfidence": 0.18
+    },
+    {
+      "filename": "tshirt-and-jeans.png",
+      "category": "shirt",
+      "subcategory": "tshirt",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "jeans-shirt.png",
+      "category": "shirt",
+      "subcategory": "tshirt",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "that.png",
+      "category": "accessory",
+      "subcategory": "belt",
+      "categoryConfidence": 0.42
+    },
+    {
+      "filename": "chat.png",
+      "category": "accessory",
+      "subcategory": "belt",
+      "categoryConfidence": 0.42
+    }
+  ]
+}

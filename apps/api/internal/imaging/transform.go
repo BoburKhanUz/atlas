@@ -69,3 +69,20 @@ func fitInside(src image.Image, n int) image.Image {
 	xdraw.CatmullRom.Scale(out, out.Bounds(), src, b, xdraw.Src, nil)
 	return out
 }
+
+// sample scales the picture's middle square to SampleSide×SampleSide and
+// returns its pixels as R, G, B bytes, row by row. Transparency is dropped,
+// not blended: a pixel counts as the colour stored for it.
+func sample(src image.Image) []byte {
+	b := src.Bounds()
+	side := min(b.Dx(), b.Dy())
+	x0, y0 := b.Min.X+(b.Dx()-side)/2, b.Min.Y+(b.Dy()-side)/2
+	square := image.Rect(x0, y0, x0+side, y0+side)
+	out := image.NewNRGBA(image.Rect(0, 0, SampleSide, SampleSide))
+	xdraw.CatmullRom.Scale(out, out.Bounds(), src, square, xdraw.Src, nil)
+	rgb := make([]byte, 0, SampleSide*SampleSide*3)
+	for i := 0; i < len(out.Pix); i += 4 {
+		rgb = append(rgb, out.Pix[i], out.Pix[i+1], out.Pix[i+2])
+	}
+	return rgb
+}

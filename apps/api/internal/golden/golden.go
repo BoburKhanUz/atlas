@@ -523,3 +523,63 @@ func LoadWardrobe(t testing.TB) Wardrobe {
 	}
 	return w
 }
+
+// VisionDetection is a detection as the Next.js mock returns it.
+type VisionDetection struct {
+	Category     string             `json:"category"`
+	Subcategory  *string            `json:"subcategory"`
+	Colors       []string           `json:"colors"`
+	Pattern      *string            `json:"pattern"`
+	Material     *string            `json:"material"`
+	SleeveLength *string            `json:"sleeveLength"`
+	Fit          *string            `json:"fit"`
+	Style        *string            `json:"style"`
+	Season       []string           `json:"season"`
+	Gender       *string            `json:"gender"`
+	Formality    *string            `json:"formality"`
+	Confidence   map[string]float64 `json:"confidence"`
+	Mock         bool               `json:"mock"`
+}
+
+// Vision is testdata/golden/vision.json: what the Next.js development mock
+// of garment analysis makes of the pictures in testdata/vision/ and of file
+// names (apps/web/scripts/golden-vision.ts).
+type Vision struct {
+	Source string `json:"source"`
+	// HintPicture is the picture every file-name case was analysed with.
+	HintPicture string `json:"hintPicture"`
+	Detections  []struct {
+		File      string          `json:"file"` // under testdata/
+		About     string          `json:"about"`
+		Filename  string          `json:"filename"`
+		Detection VisionDetection `json:"detection"`
+	} `json:"detections"`
+	Hints []struct {
+		Filename           string  `json:"filename"`
+		Category           string  `json:"category"`
+		Subcategory        *string `json:"subcategory"`
+		CategoryConfidence float64 `json:"categoryConfidence"`
+	} `json:"hints"`
+}
+
+// LoadVision reads testdata/golden/vision.json; unknown fields fail.
+func LoadVision(t testing.TB) Vision {
+	t.Helper()
+	var v Vision
+	load(t, "vision.json", &v)
+	if len(v.Detections) == 0 || len(v.Hints) == 0 {
+		t.Fatal("vision.json: a section is empty")
+	}
+	return v
+}
+
+// TestdataFile reads a file under testdata/.
+func TestdataFile(t testing.TB, rel string) []byte {
+	t.Helper()
+	_, file, _, _ := runtime.Caller(0)
+	b, err := os.ReadFile(filepath.Join(filepath.Dir(file), "../../testdata", filepath.FromSlash(rel)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return b
+}
