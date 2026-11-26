@@ -193,6 +193,315 @@ func (e OkResponseOk) Valid() bool {
 	}
 }
 
+// Defines values for ProfilePatchRequestPreferencesDislikedColors.
+const (
+	ProfilePatchRequestPreferencesDislikedColorsBeige     ProfilePatchRequestPreferencesDislikedColors = "beige"
+	ProfilePatchRequestPreferencesDislikedColorsBlack     ProfilePatchRequestPreferencesDislikedColors = "black"
+	ProfilePatchRequestPreferencesDislikedColorsBlue      ProfilePatchRequestPreferencesDislikedColors = "blue"
+	ProfilePatchRequestPreferencesDislikedColorsBrown     ProfilePatchRequestPreferencesDislikedColors = "brown"
+	ProfilePatchRequestPreferencesDislikedColorsBurgundy  ProfilePatchRequestPreferencesDislikedColors = "burgundy"
+	ProfilePatchRequestPreferencesDislikedColorsCream     ProfilePatchRequestPreferencesDislikedColors = "cream"
+	ProfilePatchRequestPreferencesDislikedColorsGray      ProfilePatchRequestPreferencesDislikedColors = "gray"
+	ProfilePatchRequestPreferencesDislikedColorsGreen     ProfilePatchRequestPreferencesDislikedColors = "green"
+	ProfilePatchRequestPreferencesDislikedColorsIvory     ProfilePatchRequestPreferencesDislikedColors = "ivory"
+	ProfilePatchRequestPreferencesDislikedColorsKhaki     ProfilePatchRequestPreferencesDislikedColors = "khaki"
+	ProfilePatchRequestPreferencesDislikedColorsLightBlue ProfilePatchRequestPreferencesDislikedColors = "light_blue"
+	ProfilePatchRequestPreferencesDislikedColorsMustard   ProfilePatchRequestPreferencesDislikedColors = "mustard"
+	ProfilePatchRequestPreferencesDislikedColorsNavy      ProfilePatchRequestPreferencesDislikedColors = "navy"
+	ProfilePatchRequestPreferencesDislikedColorsOlive     ProfilePatchRequestPreferencesDislikedColors = "olive"
+	ProfilePatchRequestPreferencesDislikedColorsOrange    ProfilePatchRequestPreferencesDislikedColors = "orange"
+	ProfilePatchRequestPreferencesDislikedColorsPink      ProfilePatchRequestPreferencesDislikedColors = "pink"
+	ProfilePatchRequestPreferencesDislikedColorsPurple    ProfilePatchRequestPreferencesDislikedColors = "purple"
+	ProfilePatchRequestPreferencesDislikedColorsRed       ProfilePatchRequestPreferencesDislikedColors = "red"
+	ProfilePatchRequestPreferencesDislikedColorsRust      ProfilePatchRequestPreferencesDislikedColors = "rust"
+	ProfilePatchRequestPreferencesDislikedColorsTan       ProfilePatchRequestPreferencesDislikedColors = "tan"
+	ProfilePatchRequestPreferencesDislikedColorsTeal      ProfilePatchRequestPreferencesDislikedColors = "teal"
+	ProfilePatchRequestPreferencesDislikedColorsWhite     ProfilePatchRequestPreferencesDislikedColors = "white"
+	ProfilePatchRequestPreferencesDislikedColorsYellow    ProfilePatchRequestPreferencesDislikedColors = "yellow"
+)
+
+// Valid indicates whether the value is a known member of the ProfilePatchRequestPreferencesDislikedColors enum.
+func (e ProfilePatchRequestPreferencesDislikedColors) Valid() bool {
+	switch e {
+	case ProfilePatchRequestPreferencesDislikedColorsBeige:
+		return true
+	case ProfilePatchRequestPreferencesDislikedColorsBlack:
+		return true
+	case ProfilePatchRequestPreferencesDislikedColorsBlue:
+		return true
+	case ProfilePatchRequestPreferencesDislikedColorsBrown:
+		return true
+	case ProfilePatchRequestPreferencesDislikedColorsBurgundy:
+		return true
+	case ProfilePatchRequestPreferencesDislikedColorsCream:
+		return true
+	case ProfilePatchRequestPreferencesDislikedColorsGray:
+		return true
+	case ProfilePatchRequestPreferencesDislikedColorsGreen:
+		return true
+	case ProfilePatchRequestPreferencesDislikedColorsIvory:
+		return true
+	case ProfilePatchRequestPreferencesDislikedColorsKhaki:
+		return true
+	case ProfilePatchRequestPreferencesDislikedColorsLightBlue:
+		return true
+	case ProfilePatchRequestPreferencesDislikedColorsMustard:
+		return true
+	case ProfilePatchRequestPreferencesDislikedColorsNavy:
+		return true
+	case ProfilePatchRequestPreferencesDislikedColorsOlive:
+		return true
+	case ProfilePatchRequestPreferencesDislikedColorsOrange:
+		return true
+	case ProfilePatchRequestPreferencesDislikedColorsPink:
+		return true
+	case ProfilePatchRequestPreferencesDislikedColorsPurple:
+		return true
+	case ProfilePatchRequestPreferencesDislikedColorsRed:
+		return true
+	case ProfilePatchRequestPreferencesDislikedColorsRust:
+		return true
+	case ProfilePatchRequestPreferencesDislikedColorsTan:
+		return true
+	case ProfilePatchRequestPreferencesDislikedColorsTeal:
+		return true
+	case ProfilePatchRequestPreferencesDislikedColorsWhite:
+		return true
+	case ProfilePatchRequestPreferencesDislikedColorsYellow:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ProfilePatchRequestPreferencesDislikedStyles.
+const (
+	ProfilePatchRequestPreferencesDislikedStylesBohemian    ProfilePatchRequestPreferencesDislikedStyles = "bohemian"
+	ProfilePatchRequestPreferencesDislikedStylesCasual      ProfilePatchRequestPreferencesDislikedStyles = "casual"
+	ProfilePatchRequestPreferencesDislikedStylesClassic     ProfilePatchRequestPreferencesDislikedStyles = "classic"
+	ProfilePatchRequestPreferencesDislikedStylesFormal      ProfilePatchRequestPreferencesDislikedStyles = "formal"
+	ProfilePatchRequestPreferencesDislikedStylesMinimal     ProfilePatchRequestPreferencesDislikedStyles = "minimal"
+	ProfilePatchRequestPreferencesDislikedStylesPreppy      ProfilePatchRequestPreferencesDislikedStyles = "preppy"
+	ProfilePatchRequestPreferencesDislikedStylesSmartCasual ProfilePatchRequestPreferencesDislikedStyles = "smart_casual"
+	ProfilePatchRequestPreferencesDislikedStylesSporty      ProfilePatchRequestPreferencesDislikedStyles = "sporty"
+	ProfilePatchRequestPreferencesDislikedStylesStreetwear  ProfilePatchRequestPreferencesDislikedStyles = "streetwear"
+)
+
+// Valid indicates whether the value is a known member of the ProfilePatchRequestPreferencesDislikedStyles enum.
+func (e ProfilePatchRequestPreferencesDislikedStyles) Valid() bool {
+	switch e {
+	case ProfilePatchRequestPreferencesDislikedStylesBohemian:
+		return true
+	case ProfilePatchRequestPreferencesDislikedStylesCasual:
+		return true
+	case ProfilePatchRequestPreferencesDislikedStylesClassic:
+		return true
+	case ProfilePatchRequestPreferencesDislikedStylesFormal:
+		return true
+	case ProfilePatchRequestPreferencesDislikedStylesMinimal:
+		return true
+	case ProfilePatchRequestPreferencesDislikedStylesPreppy:
+		return true
+	case ProfilePatchRequestPreferencesDislikedStylesSmartCasual:
+		return true
+	case ProfilePatchRequestPreferencesDislikedStylesSporty:
+		return true
+	case ProfilePatchRequestPreferencesDislikedStylesStreetwear:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ProfilePatchRequestPreferencesFavoriteColors.
+const (
+	ProfilePatchRequestPreferencesFavoriteColorsBeige     ProfilePatchRequestPreferencesFavoriteColors = "beige"
+	ProfilePatchRequestPreferencesFavoriteColorsBlack     ProfilePatchRequestPreferencesFavoriteColors = "black"
+	ProfilePatchRequestPreferencesFavoriteColorsBlue      ProfilePatchRequestPreferencesFavoriteColors = "blue"
+	ProfilePatchRequestPreferencesFavoriteColorsBrown     ProfilePatchRequestPreferencesFavoriteColors = "brown"
+	ProfilePatchRequestPreferencesFavoriteColorsBurgundy  ProfilePatchRequestPreferencesFavoriteColors = "burgundy"
+	ProfilePatchRequestPreferencesFavoriteColorsCream     ProfilePatchRequestPreferencesFavoriteColors = "cream"
+	ProfilePatchRequestPreferencesFavoriteColorsGray      ProfilePatchRequestPreferencesFavoriteColors = "gray"
+	ProfilePatchRequestPreferencesFavoriteColorsGreen     ProfilePatchRequestPreferencesFavoriteColors = "green"
+	ProfilePatchRequestPreferencesFavoriteColorsIvory     ProfilePatchRequestPreferencesFavoriteColors = "ivory"
+	ProfilePatchRequestPreferencesFavoriteColorsKhaki     ProfilePatchRequestPreferencesFavoriteColors = "khaki"
+	ProfilePatchRequestPreferencesFavoriteColorsLightBlue ProfilePatchRequestPreferencesFavoriteColors = "light_blue"
+	ProfilePatchRequestPreferencesFavoriteColorsMustard   ProfilePatchRequestPreferencesFavoriteColors = "mustard"
+	ProfilePatchRequestPreferencesFavoriteColorsNavy      ProfilePatchRequestPreferencesFavoriteColors = "navy"
+	ProfilePatchRequestPreferencesFavoriteColorsOlive     ProfilePatchRequestPreferencesFavoriteColors = "olive"
+	ProfilePatchRequestPreferencesFavoriteColorsOrange    ProfilePatchRequestPreferencesFavoriteColors = "orange"
+	ProfilePatchRequestPreferencesFavoriteColorsPink      ProfilePatchRequestPreferencesFavoriteColors = "pink"
+	ProfilePatchRequestPreferencesFavoriteColorsPurple    ProfilePatchRequestPreferencesFavoriteColors = "purple"
+	ProfilePatchRequestPreferencesFavoriteColorsRed       ProfilePatchRequestPreferencesFavoriteColors = "red"
+	ProfilePatchRequestPreferencesFavoriteColorsRust      ProfilePatchRequestPreferencesFavoriteColors = "rust"
+	ProfilePatchRequestPreferencesFavoriteColorsTan       ProfilePatchRequestPreferencesFavoriteColors = "tan"
+	ProfilePatchRequestPreferencesFavoriteColorsTeal      ProfilePatchRequestPreferencesFavoriteColors = "teal"
+	ProfilePatchRequestPreferencesFavoriteColorsWhite     ProfilePatchRequestPreferencesFavoriteColors = "white"
+	ProfilePatchRequestPreferencesFavoriteColorsYellow    ProfilePatchRequestPreferencesFavoriteColors = "yellow"
+)
+
+// Valid indicates whether the value is a known member of the ProfilePatchRequestPreferencesFavoriteColors enum.
+func (e ProfilePatchRequestPreferencesFavoriteColors) Valid() bool {
+	switch e {
+	case ProfilePatchRequestPreferencesFavoriteColorsBeige:
+		return true
+	case ProfilePatchRequestPreferencesFavoriteColorsBlack:
+		return true
+	case ProfilePatchRequestPreferencesFavoriteColorsBlue:
+		return true
+	case ProfilePatchRequestPreferencesFavoriteColorsBrown:
+		return true
+	case ProfilePatchRequestPreferencesFavoriteColorsBurgundy:
+		return true
+	case ProfilePatchRequestPreferencesFavoriteColorsCream:
+		return true
+	case ProfilePatchRequestPreferencesFavoriteColorsGray:
+		return true
+	case ProfilePatchRequestPreferencesFavoriteColorsGreen:
+		return true
+	case ProfilePatchRequestPreferencesFavoriteColorsIvory:
+		return true
+	case ProfilePatchRequestPreferencesFavoriteColorsKhaki:
+		return true
+	case ProfilePatchRequestPreferencesFavoriteColorsLightBlue:
+		return true
+	case ProfilePatchRequestPreferencesFavoriteColorsMustard:
+		return true
+	case ProfilePatchRequestPreferencesFavoriteColorsNavy:
+		return true
+	case ProfilePatchRequestPreferencesFavoriteColorsOlive:
+		return true
+	case ProfilePatchRequestPreferencesFavoriteColorsOrange:
+		return true
+	case ProfilePatchRequestPreferencesFavoriteColorsPink:
+		return true
+	case ProfilePatchRequestPreferencesFavoriteColorsPurple:
+		return true
+	case ProfilePatchRequestPreferencesFavoriteColorsRed:
+		return true
+	case ProfilePatchRequestPreferencesFavoriteColorsRust:
+		return true
+	case ProfilePatchRequestPreferencesFavoriteColorsTan:
+		return true
+	case ProfilePatchRequestPreferencesFavoriteColorsTeal:
+		return true
+	case ProfilePatchRequestPreferencesFavoriteColorsWhite:
+		return true
+	case ProfilePatchRequestPreferencesFavoriteColorsYellow:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ProfilePatchRequestPreferencesLanguage.
+const (
+	En ProfilePatchRequestPreferencesLanguage = "en"
+	Ru ProfilePatchRequestPreferencesLanguage = "ru"
+	Uz ProfilePatchRequestPreferencesLanguage = "uz"
+)
+
+// Valid indicates whether the value is a known member of the ProfilePatchRequestPreferencesLanguage enum.
+func (e ProfilePatchRequestPreferencesLanguage) Valid() bool {
+	switch e {
+	case En:
+		return true
+	case Ru:
+		return true
+	case Uz:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ProfilePatchRequestPreferencesPreferredStyles.
+const (
+	ProfilePatchRequestPreferencesPreferredStylesBohemian    ProfilePatchRequestPreferencesPreferredStyles = "bohemian"
+	ProfilePatchRequestPreferencesPreferredStylesCasual      ProfilePatchRequestPreferencesPreferredStyles = "casual"
+	ProfilePatchRequestPreferencesPreferredStylesClassic     ProfilePatchRequestPreferencesPreferredStyles = "classic"
+	ProfilePatchRequestPreferencesPreferredStylesFormal      ProfilePatchRequestPreferencesPreferredStyles = "formal"
+	ProfilePatchRequestPreferencesPreferredStylesMinimal     ProfilePatchRequestPreferencesPreferredStyles = "minimal"
+	ProfilePatchRequestPreferencesPreferredStylesPreppy      ProfilePatchRequestPreferencesPreferredStyles = "preppy"
+	ProfilePatchRequestPreferencesPreferredStylesSmartCasual ProfilePatchRequestPreferencesPreferredStyles = "smart_casual"
+	ProfilePatchRequestPreferencesPreferredStylesSporty      ProfilePatchRequestPreferencesPreferredStyles = "sporty"
+	ProfilePatchRequestPreferencesPreferredStylesStreetwear  ProfilePatchRequestPreferencesPreferredStyles = "streetwear"
+)
+
+// Valid indicates whether the value is a known member of the ProfilePatchRequestPreferencesPreferredStyles enum.
+func (e ProfilePatchRequestPreferencesPreferredStyles) Valid() bool {
+	switch e {
+	case ProfilePatchRequestPreferencesPreferredStylesBohemian:
+		return true
+	case ProfilePatchRequestPreferencesPreferredStylesCasual:
+		return true
+	case ProfilePatchRequestPreferencesPreferredStylesClassic:
+		return true
+	case ProfilePatchRequestPreferencesPreferredStylesFormal:
+		return true
+	case ProfilePatchRequestPreferencesPreferredStylesMinimal:
+		return true
+	case ProfilePatchRequestPreferencesPreferredStylesPreppy:
+		return true
+	case ProfilePatchRequestPreferencesPreferredStylesSmartCasual:
+		return true
+	case ProfilePatchRequestPreferencesPreferredStylesSporty:
+		return true
+	case ProfilePatchRequestPreferencesPreferredStylesStreetwear:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ProfilePatchRequestProfileGender.
+const (
+	Female ProfilePatchRequestProfileGender = "female"
+	Male   ProfilePatchRequestProfileGender = "male"
+	Other  ProfilePatchRequestProfileGender = "other"
+	Unisex ProfilePatchRequestProfileGender = "unisex"
+)
+
+// Valid indicates whether the value is a known member of the ProfilePatchRequestProfileGender enum.
+func (e ProfilePatchRequestProfileGender) Valid() bool {
+	switch e {
+	case Female:
+		return true
+	case Male:
+		return true
+	case Other:
+		return true
+	case Unisex:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ProfilePatchRequestProfilePreferredFit.
+const (
+	Oversized ProfilePatchRequestProfilePreferredFit = "oversized"
+	Regular   ProfilePatchRequestProfilePreferredFit = "regular"
+	Relaxed   ProfilePatchRequestProfilePreferredFit = "relaxed"
+	Slim      ProfilePatchRequestProfilePreferredFit = "slim"
+)
+
+// Valid indicates whether the value is a known member of the ProfilePatchRequestProfilePreferredFit enum.
+func (e ProfilePatchRequestProfilePreferredFit) Valid() bool {
+	switch e {
+	case Oversized:
+		return true
+	case Regular:
+		return true
+	case Relaxed:
+		return true
+	case Slim:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for LoginParamsXAtlasClient.
 const (
 	LoginParamsXAtlasClientMobile LoginParamsXAtlasClient = "mobile"
@@ -383,6 +692,104 @@ type OkResponse struct {
 // OkResponseOk defines model for OkResponse.Ok.
 type OkResponseOk bool
 
+// PreferencesRow UserPreferences row (list fields as JSON strings)
+type PreferencesRow struct {
+	Id       string `json:"id"`
+	Language string `json:"language"`
+	UserId   string `json:"userId"`
+}
+
+// ProfilePatchRequest defines model for ProfilePatchRequest.
+type ProfilePatchRequest struct {
+	Name        *string `json:"name,omitempty"`
+	Preferences *struct {
+		DislikedColors  *[]ProfilePatchRequestPreferencesDislikedColors  `json:"dislikedColors,omitempty"`
+		DislikedStyles  *[]ProfilePatchRequestPreferencesDislikedStyles  `json:"dislikedStyles,omitempty"`
+		FavoriteColors  *[]ProfilePatchRequestPreferencesFavoriteColors  `json:"favoriteColors,omitempty"`
+		Language        *ProfilePatchRequestPreferencesLanguage          `json:"language,omitempty"`
+		PreferredStyles *[]ProfilePatchRequestPreferencesPreferredStyles `json:"preferredStyles,omitempty"`
+	} `json:"preferences,omitempty"`
+	Profile *struct {
+		AgeRange      nullable.Nullable[string]                                 `json:"ageRange,omitempty"`
+		BodyShape     nullable.Nullable[string]                                 `json:"bodyShape,omitempty"`
+		ClothingSize  nullable.Nullable[string]                                 `json:"clothingSize,omitempty"`
+		EyeColor      nullable.Nullable[string]                                 `json:"eyeColor,omitempty"`
+		Gender        nullable.Nullable[ProfilePatchRequestProfileGender]       `json:"gender,omitempty"`
+		HairColor     nullable.Nullable[string]                                 `json:"hairColor,omitempty"`
+		Height        nullable.Nullable[float64]                                `json:"height,omitempty"`
+		PreferredFit  nullable.Nullable[ProfilePatchRequestProfilePreferredFit] `json:"preferredFit,omitempty"`
+		SkinTone      nullable.Nullable[string]                                 `json:"skinTone,omitempty"`
+		SkinUndertone nullable.Nullable[string]                                 `json:"skinUndertone,omitempty"`
+		TypicalBudget nullable.Nullable[int]                                    `json:"typicalBudget,omitempty"`
+		Weight        nullable.Nullable[float64]                                `json:"weight,omitempty"`
+	} `json:"profile,omitempty"`
+}
+
+// ProfilePatchRequestPreferencesDislikedColors defines model for ProfilePatchRequest.Preferences.DislikedColors.
+type ProfilePatchRequestPreferencesDislikedColors string
+
+// ProfilePatchRequestPreferencesDislikedStyles defines model for ProfilePatchRequest.Preferences.DislikedStyles.
+type ProfilePatchRequestPreferencesDislikedStyles string
+
+// ProfilePatchRequestPreferencesFavoriteColors defines model for ProfilePatchRequest.Preferences.FavoriteColors.
+type ProfilePatchRequestPreferencesFavoriteColors string
+
+// ProfilePatchRequestPreferencesLanguage defines model for ProfilePatchRequest.Preferences.Language.
+type ProfilePatchRequestPreferencesLanguage string
+
+// ProfilePatchRequestPreferencesPreferredStyles defines model for ProfilePatchRequest.Preferences.PreferredStyles.
+type ProfilePatchRequestPreferencesPreferredStyles string
+
+// ProfilePatchRequestProfileGender defines model for ProfilePatchRequest.Profile.Gender.
+type ProfilePatchRequestProfileGender string
+
+// ProfilePatchRequestProfilePreferredFit defines model for ProfilePatchRequest.Profile.PreferredFit.
+type ProfilePatchRequestProfilePreferredFit string
+
+// ProfilePatchResponse defines model for ProfilePatchResponse.
+type ProfilePatchResponse struct {
+	User struct {
+		Email       string                            `json:"email"`
+		Id          string                            `json:"id"`
+		Name        nullable.Nullable[string]         `json:"name"`
+		Preferences nullable.Nullable[PreferencesRow] `json:"preferences"`
+		Profile     nullable.Nullable[ProfileRow]     `json:"profile"`
+	} `json:"user"`
+}
+
+// ProfilePreferences defines model for ProfilePreferences.
+type ProfilePreferences struct {
+	DislikedColors  []string `json:"dislikedColors"`
+	DislikedStyles  []string `json:"dislikedStyles"`
+	FavoriteColors  []string `json:"favoriteColors"`
+	Language        string   `json:"language"`
+	PreferredStyles []string `json:"preferredStyles"`
+}
+
+// ProfileResponse defines model for ProfileResponse.
+type ProfileResponse struct {
+	Preferences nullable.Nullable[ProfilePreferences] `json:"preferences"`
+	Profile     nullable.Nullable[ProfileRow]         `json:"profile"`
+	User        ProfileUser                           `json:"user"`
+}
+
+// ProfileRow UserProfile row
+type ProfileRow struct {
+	Id     string `json:"id"`
+	UserId string `json:"userId"`
+}
+
+// ProfileUser defines model for ProfileUser.
+type ProfileUser struct {
+	// CreatedAt ISO 8601, UTC
+	CreatedAt   time.Time                         `json:"createdAt"`
+	Email       string                            `json:"email"`
+	Id          string                            `json:"id"`
+	Name        nullable.Nullable[string]         `json:"name"`
+	Preferences nullable.Nullable[PreferencesRow] `json:"preferences"`
+	Profile     nullable.Nullable[ProfileRow]     `json:"profile"`
+}
+
 // RegisterRequest defines model for RegisterRequest.
 type RegisterRequest struct {
 	// AcceptedLegalVersion The `version` from GET /api/v1/legal that the user accepted; it must be the current one.
@@ -460,6 +867,9 @@ type RegisterJSONRequestBody = RegisterRequest
 
 // AcceptLegalDocumentsJSONRequestBody defines body for AcceptLegalDocuments for application/json ContentType.
 type AcceptLegalDocumentsJSONRequestBody = LegalConsentRequest
+
+// UpdateProfileJSONRequestBody defines body for UpdateProfile for application/json ContentType.
+type UpdateProfileJSONRequestBody = ProfilePatchRequest
 
 // AsMobileAuthResponse returns the union data inside the AuthResponse as a MobileAuthResponse
 func (t AuthResponse) AsMobileAuthResponse() (MobileAuthResponse, error) {
@@ -549,6 +959,12 @@ type ServerInterface interface {
 	// AcceptLegalDocuments Accept the current legal texts after they changed (ends CONSENT_REQUIRED)
 	// (POST /api/v1/legal/consent)
 	AcceptLegalDocuments(w http.ResponseWriter, r *http.Request)
+	// GetProfile Profile and style preferences
+	// (GET /api/v1/profile)
+	GetProfile(w http.ResponseWriter, r *http.Request)
+	// UpdateProfile Update name, profile fields or preferences
+	// (PATCH /api/v1/profile)
+	UpdateProfile(w http.ResponseWriter, r *http.Request)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -780,6 +1196,34 @@ func (siw *ServerInterfaceWrapper) AcceptLegalDocuments(w http.ResponseWriter, r
 	handler.ServeHTTP(w, r)
 }
 
+// GetProfile operation middleware
+func (siw *ServerInterfaceWrapper) GetProfile(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetProfile(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateProfile operation middleware
+func (siw *ServerInterfaceWrapper) UpdateProfile(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateProfile(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -908,6 +1352,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/auth/register", wrapper.Register)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/legal", wrapper.GetLegalDocuments)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/legal/consent", wrapper.AcceptLegalDocuments)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/profile", wrapper.GetProfile)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/v1/profile", wrapper.UpdateProfile)
 
 	return m
 }
@@ -1593,6 +2039,175 @@ func (response AcceptLegalDocuments500JSONResponse) VisitAcceptLegalDocumentsRes
 	return err
 }
 
+type GetProfileRequestObject struct {
+}
+
+type GetProfileResponseObject interface {
+	VisitGetProfileResponse(w http.ResponseWriter) error
+}
+
+type GetProfile200JSONResponse ProfileResponse
+
+func (response GetProfile200JSONResponse) VisitGetProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetProfile401JSONResponse ErrorResponse
+
+func (response GetProfile401JSONResponse) VisitGetProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetProfile403JSONResponse ErrorResponse
+
+func (response GetProfile403JSONResponse) VisitGetProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetProfile404JSONResponse ErrorResponse
+
+func (response GetProfile404JSONResponse) VisitGetProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetProfile500JSONResponse ErrorResponse
+
+func (response GetProfile500JSONResponse) VisitGetProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateProfileRequestObject struct {
+	Body *UpdateProfileJSONRequestBody
+}
+
+type UpdateProfileResponseObject interface {
+	VisitUpdateProfileResponse(w http.ResponseWriter) error
+}
+
+type UpdateProfile200JSONResponse ProfilePatchResponse
+
+func (response UpdateProfile200JSONResponse) VisitUpdateProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateProfile400JSONResponse ErrorResponse
+
+func (response UpdateProfile400JSONResponse) VisitUpdateProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateProfile401JSONResponse ErrorResponse
+
+func (response UpdateProfile401JSONResponse) VisitUpdateProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateProfile403JSONResponse ErrorResponse
+
+func (response UpdateProfile403JSONResponse) VisitUpdateProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateProfile413JSONResponse ErrorResponse
+
+func (response UpdateProfile413JSONResponse) VisitUpdateProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateProfile500JSONResponse ErrorResponse
+
+func (response UpdateProfile500JSONResponse) VisitUpdateProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// GetHealth Liveness and database check
@@ -1619,6 +2234,12 @@ type StrictServerInterface interface {
 	// AcceptLegalDocuments Accept the current legal texts after they changed (ends CONSENT_REQUIRED)
 	// (POST /api/v1/legal/consent)
 	AcceptLegalDocuments(ctx context.Context, request AcceptLegalDocumentsRequestObject) (AcceptLegalDocumentsResponseObject, error)
+	// GetProfile Profile and style preferences
+	// (GET /api/v1/profile)
+	GetProfile(ctx context.Context, request GetProfileRequestObject) (GetProfileResponseObject, error)
+	// UpdateProfile Update name, profile fields or preferences
+	// (PATCH /api/v1/profile)
+	UpdateProfile(ctx context.Context, request UpdateProfileRequestObject) (UpdateProfileResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -1894,6 +2515,61 @@ func (sh *strictHandler) AcceptLegalDocuments(w http.ResponseWriter, r *http.Req
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(AcceptLegalDocumentsResponseObject); ok {
 		if err := validResponse.VisitAcceptLegalDocumentsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetProfile operation middleware
+func (sh *strictHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
+	var request GetProfileRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetProfile(ctx, request.(GetProfileRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetProfile")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetProfileResponseObject); ok {
+		if err := validResponse.VisitGetProfileResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateProfile operation middleware
+func (sh *strictHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
+	var request UpdateProfileRequestObject
+
+	var body UpdateProfileJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateProfile(ctx, request.(UpdateProfileRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateProfile")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateProfileResponseObject); ok {
+		if err := validResponse.VisitUpdateProfileResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

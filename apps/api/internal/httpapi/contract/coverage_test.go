@@ -16,10 +16,10 @@ import (
 var notYetImplemented = []string{
 	"analyzeColorProfile", "createWardrobeItem", "deleteAccount",
 	"deleteColorProfile", "deleteOutfit", "deleteWardrobeItem", "generateOutfits",
-	"getColorProfile", "getConversation", "getCurrentWeather", "getMedia", "getOpenApiDocument", "getOutfit", "getProfile", "getWardrobeItem",
+	"getColorProfile", "getConversation", "getCurrentWeather", "getMedia", "getOpenApiDocument", "getOutfit", "getWardrobeItem",
 	"listConversations", "listOutfits", "listWardrobeItems", "reportClientErrors",
 	"requestPasswordReset", "resetPassword", "saveOutfit", "sendOutfitFeedback",
-	"stylistChat", "updateOutfit", "updateProfile", "updateWardrobeItem",
+	"stylistChat", "updateOutfit", "updateWardrobeItem",
 }
 
 func contractOperations(t *testing.T) []string {

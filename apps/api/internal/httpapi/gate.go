@@ -88,6 +88,8 @@ var routes = map[string]routeRule{
 	"GET /api/v1/auth/me":        {consentExempt: true},
 	"GET /api/v1/legal":          {access: public},
 	"POST /api/v1/legal/consent": {consentExempt: true, body: LegalConsentBody},
+	"GET /api/v1/profile":        {},
+	"PATCH /api/v1/profile":      {body: ProfilePatchBody},
 }
 
 type identityKey struct{}

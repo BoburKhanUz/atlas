@@ -18,6 +18,11 @@ output-options:
       formats:
         email:
           type: string
+    # A JSON number is a double, as the Next.js API reads it (the generator's
+    # default is a float32, which would round what clients send).
+    number:
+      default:
+        type: float64
   include-operation-ids:
     - getHealth
     - register
@@ -27,3 +32,5 @@ output-options:
     - refreshSession
     - getLegalDocuments
     - acceptLegalDocuments
+    - getProfile
+    - updateProfile

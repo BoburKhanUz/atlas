@@ -307,7 +307,7 @@ func storable(name *string) *string {
 	if name == nil {
 		return nil
 	}
-	cleaned := strings.ReplaceAll(*name, "\x00", "")
+	cleaned := platform.StripNUL(*name)
 	if cleaned == "" {
 		return nil
 	}

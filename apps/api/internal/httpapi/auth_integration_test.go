@@ -38,6 +38,7 @@ import (
 	"lookly/internal/health"
 	"lookly/internal/httpapi"
 	"lookly/internal/legal"
+	"lookly/internal/profile"
 	"lookly/internal/ratelimit"
 	"lookly/internal/session"
 	"lookly/migrations"
@@ -166,7 +167,7 @@ func newAPI(t *testing.T, o apiOptions) *api {
 	}
 	users := accounts.New(pool, a.sessions, ratelimit.New(pool, []byte("http-test-secret-http-test-secret-http")), consent, hasher, log)
 	server := httpapi.NewServer(httpapi.Services{
-		Health: health.New(pool, "test", time.Second), Accounts: users, Sessions: a.sessions, Legal: consent,
+		Health: health.New(pool, "test", time.Second), Accounts: users, Sessions: a.sessions, Legal: consent, Profile: profile.New(pool),
 		CookieSecure: o.cookieSecure, TrustProxy: o.trustProxy,
 	})
 	a.gate = &httpapi.Gate{Tokens: a.tokens, Sessions: a.sessions, Consent: consent, TrustProxy: o.trustProxy, HTTPSOnly: o.cookieSecure}

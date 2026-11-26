@@ -13,6 +13,7 @@ import (
 	"lookly/internal/health"
 	"lookly/internal/httpapi/contract"
 	"lookly/internal/legal"
+	"lookly/internal/profile"
 	"lookly/internal/session"
 )
 
@@ -23,6 +24,7 @@ type Services struct {
 	Accounts *accounts.Service
 	Sessions *session.Service
 	Legal    *legal.Service
+	Profile  *profile.Service
 	// CookieSecure: auth cookies carry the Secure attribute (COOKIE_SECURE).
 	CookieSecure bool
 	// TrustProxy: the client's address is read from the reverse proxy's

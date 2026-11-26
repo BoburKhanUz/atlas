@@ -31,6 +31,7 @@ import (
 	"lookly/internal/jobs"
 	"lookly/internal/legal"
 	"lookly/internal/maintenance"
+	"lookly/internal/profile"
 	"lookly/internal/ratelimit"
 	"lookly/internal/session"
 )
@@ -95,6 +96,7 @@ func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger) http.Handler {
 		Accounts:     users,
 		Sessions:     sessions,
 		Legal:        consent,
+		Profile:      profile.New(pool),
 		CookieSecure: cfg.CookieSecure,
 		TrustProxy:   cfg.TrustProxy,
 	})
