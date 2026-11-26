@@ -249,7 +249,7 @@ func TestEveryProblemIsReportedAtOnce(t *testing.T) {
 	if err == nil {
 		t.Fatal("accepted")
 	}
-	for _, v := range []string{"LOOKLY_ENV", "DATABASE_URL", "LOOKLY_LOG_LEVEL", "JWT_SECRET", "SESSION_ENC_KEY"} {
+	for _, v := range []string{"LOOKLY_ENV", "DATABASE_URL", "LOOKLY_LOG_LEVEL", "JWT_SECRET", "SESSION_ENC_KEY", "STORAGE_LOCAL_DIR"} {
 		if !strings.Contains(err.Error(), v) {
 			t.Errorf("missing %s in %q", v, err)
 		}

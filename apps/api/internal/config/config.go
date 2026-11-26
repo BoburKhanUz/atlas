@@ -18,6 +18,7 @@ import (
 	"log/slog"
 	"net"
 	"net/url"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -52,6 +53,15 @@ type Config struct {
 	RefreshTokenTTL    time.Duration
 	CookieSecure       bool // auth cookies carry the Secure attribute
 	TrustProxy         bool // the client address comes from the reverse proxy's headers
+
+	// PublicBaseURL is the site's public origin (links in e-mails); "" when
+	// not configured.
+	PublicBaseURL string
+	Mail          Mail
+	// StorageLocalDir is where the local storage driver keeps images: the
+	// directory the Next.js server writes to until the cutover. It has no
+	// default here: a wrong guess would purge nothing without anyone noticing.
+	StorageLocalDir string
 }
 
 const (
@@ -261,6 +271,28 @@ func Load(getenv func(string) (string, bool)) (Config, error) {
 		}
 	}
 
+	if v, ok := value("PUBLIC_BASE_URL"); ok {
+		origin, err := parsePublicBaseURL(v, c.Env)
+		if err != nil {
+			fail("PUBLIC_BASE_URL", "%v", err)
+		}
+		c.PublicBaseURL = origin
+	}
+	c.Mail = loadMail(c.Env, c.PublicBaseURL, value, getenv, fail)
+
+	// The R2 driver arrives with stage B4; until then anything but the
+	// local driver stops the server rather than being ignored.
+	if v, ok := value("STORAGE_DRIVER"); ok && strings.ToLower(v) != "local" {
+		fail("STORAGE_DRIVER", "must be local (or unset)")
+	}
+	if v, ok := value("STORAGE_LOCAL_DIR"); !ok {
+		fail("STORAGE_LOCAL_DIR", "is not set (the directory the images are stored in)")
+	} else if !filepath.IsAbs(v) {
+		fail("STORAGE_LOCAL_DIR", "must be an absolute path")
+	} else {
+		c.StorageLocalDir = filepath.Clean(v)
+	}
+
 	if len(errs) > 0 {
 		return Config{}, fmt.Errorf("invalid configuration:\n%w", errors.Join(errs...))
 	}
@@ -358,15 +390,26 @@ func (c Config) LogValue() slog.Value {
 		slog.Duration("refreshTokenTTL", c.RefreshTokenTTL),
 		slog.Bool("cookieSecure", c.CookieSecure),
 		slog.Bool("trustProxy", c.TrustProxy),
+		slog.String("publicBaseURL", c.PublicBaseURL),
+		slog.String("mailTransport", string(c.Mail.Transport)),
+		slog.String("mailFrom", c.Mail.From.Address),
+		slog.String("smtpHost", c.Mail.Host),
+		slog.Int("smtpPort", c.Mail.Port),
+		slog.Bool("smtpSecure", c.Mail.Secure),
+		slog.String("smtpCredentials", setOrNot(c.Mail.Password)),
+		slog.String("mailOutboxDir", c.Mail.OutboxDir),
+		slog.String("storageLocalDir", c.StorageLocalDir),
 	)
 }
 
 // String keeps the secrets out of fmt output.
 func (c Config) String() string {
 	return fmt.Sprintf("Config{Env:%s HTTPAddr:%s DatabaseURL:[set] DBMaxConns:%d LogLevel:%s ShutdownGrace:%s "+
-		"JWTSecret:[set] SessionEncKey:[set] DecryptOnlyKeys:%d AccessTokenTTL:%s RefreshTokenTTL:%s CookieSecure:%t TrustProxy:%t}",
+		"JWTSecret:[set] SessionEncKey:[set] DecryptOnlyKeys:%d AccessTokenTTL:%s RefreshTokenTTL:%s CookieSecure:%t TrustProxy:%t "+
+		"PublicBaseURL:%s %s StorageLocalDir:%s}",
 		c.Env, c.HTTPAddr, c.DBMaxConns, c.LogLevel, c.ShutdownGrace,
-		len(c.SessionDecryptKeys), c.AccessTokenTTL, c.RefreshTokenTTL, c.CookieSecure, c.TrustProxy)
+		len(c.SessionDecryptKeys), c.AccessTokenTTL, c.RefreshTokenTTL, c.CookieSecure, c.TrustProxy,
+		c.PublicBaseURL, c.Mail, c.StorageLocalDir)
 }
 
 // GoString keeps the secrets out of %#v.

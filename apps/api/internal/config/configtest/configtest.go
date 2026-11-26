@@ -23,6 +23,8 @@ func Env(changes map[string]string) map[string]string {
 		"DATABASE_URL":    "postgresql://lookly@localhost:5432/lookly",
 		"JWT_SECRET":      JWTSecret,
 		"SESSION_ENC_KEY": SessionEncKey,
+		// Only its form is checked here; tests that touch files give their own.
+		"STORAGE_LOCAL_DIR": "/var/lib/lookly-test/uploads",
 	}
 	for k, v := range changes {
 		if v == "<unset>" {
