@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"cmp"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -92,14 +93,22 @@ func canonicalPath(u *url.URL) string {
 // canonicalQuery is the query's parameters sorted by name (then value),
 // each percent-encoded.
 func canonicalQuery(query url.Values) string {
-	var pairs []string
+	type pair struct{ name, value string }
+	var pairs []pair
 	for name, values := range query {
 		for _, v := range values {
-			pairs = append(pairs, awsEscape(name)+"="+awsEscape(v))
+			pairs = append(pairs, pair{awsEscape(name), awsEscape(v)})
 		}
 	}
-	slices.Sort(pairs)
-	return strings.Join(pairs, "&")
+	// By the encoded name, then by the encoded value.
+	slices.SortFunc(pairs, func(a, b pair) int {
+		return cmp.Or(strings.Compare(a.name, b.name), strings.Compare(a.value, b.value))
+	})
+	joined := make([]string, len(pairs))
+	for i, p := range pairs {
+		joined[i] = p.name + "=" + p.value
+	}
+	return strings.Join(joined, "&")
 }
 
 // awsEscape percent-encodes every byte but the unreserved characters of

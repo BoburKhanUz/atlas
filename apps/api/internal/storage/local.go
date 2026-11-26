@@ -93,13 +93,35 @@ func (l *Local) Put(ctx context.Context, key string, data []byte) error {
 		_ = tmp.Close()
 		return fmt.Errorf("storage: write %s: %w", key, err)
 	}
+	// On the disk before it gets its name: after a power cut the name is
+	// the whole file or is not there, as for a reader.
+	if err := tmp.Sync(); err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("storage: write %s: %w", key, err)
+	}
 	if err := tmp.Close(); err != nil {
 		return fmt.Errorf("storage: write %s: %w", key, err)
 	}
 	if err := os.Rename(tmp.Name(), path); err != nil {
 		return fmt.Errorf("storage: write %s: %w", key, err)
 	}
+	if err := syncDir(dir); err != nil {
+		return fmt.Errorf("storage: write %s: %w", key, err)
+	}
 	return nil
+}
+
+// syncDir puts a directory's entries on the disk (a new name in it).
+func syncDir(dir string) error {
+	d, err := os.Open(dir)
+	if err != nil {
+		return err
+	}
+	if err := d.Sync(); err != nil {
+		_ = d.Close()
+		return err
+	}
+	return d.Close()
 }
 
 // Get reads an object.

@@ -75,6 +75,10 @@ type Config struct {
 	StorageLocalDir string
 	// R2 is the bucket of the R2 driver.
 	R2 R2
+	// SweepMaxRemovals is how many orphaned image files one storage sweep
+	// removes at most; a sweep that finds more removes nothing. Zero: the
+	// sweep's own limit.
+	SweepMaxRemovals int
 }
 
 // VisionMock is the development mock of garment analysis.
@@ -322,6 +326,14 @@ func Load(getenv func(string) (string, bool)) (Config, error) {
 	}
 
 	c.StorageDriver, c.StorageLocalDir, c.R2 = loadStorage(c.Env, value, getenv, fail)
+	if v, ok := value("STORAGE_SWEEP_MAX_REMOVALS"); ok {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < 1 || n > maxSweepRemovals {
+			fail("STORAGE_SWEEP_MAX_REMOVALS", "must be a whole number from 1 to %d", maxSweepRemovals)
+		} else {
+			c.SweepMaxRemovals = n
+		}
+	}
 
 	if len(errs) > 0 {
 		return Config{}, fmt.Errorf("invalid configuration:\n%w", errors.Join(errs...))
@@ -455,6 +467,7 @@ func (c Config) LogValue() slog.Value {
 		slog.String("r2Endpoint", c.R2.Endpoint),
 		slog.String("r2Bucket", c.R2.Bucket),
 		slog.String("r2Credentials", setOrNot(c.R2.SecretAccessKey)),
+		slog.Int("sweepMaxRemovals", c.SweepMaxRemovals),
 		slog.String("visionProvider", c.VisionProvider),
 	)
 }
@@ -464,10 +477,10 @@ func (c Config) String() string {
 	return fmt.Sprintf("Config{Env:%s HTTPAddr:%s DatabaseURL:[set] DBMaxConns:%d LogLevel:%s ShutdownGrace:%s "+
 		"JWTSecret:[set] SessionEncKey:[set] DecryptOnlyKeys:%d AccessTokenTTL:%s RefreshTokenTTL:%s CookieSecure:%t TrustProxy:%t "+
 		"MediaSigningSecret:[set] MediaURLTTL:%s "+
-		"PublicBaseURL:%s %s StorageDriver:%s StorageLocalDir:%s %s VisionProvider:%s}",
+		"PublicBaseURL:%s %s StorageDriver:%s StorageLocalDir:%s %s SweepMaxRemovals:%d VisionProvider:%s}",
 		c.Env, c.HTTPAddr, c.DBMaxConns, c.LogLevel, c.ShutdownGrace,
 		len(c.SessionDecryptKeys), c.AccessTokenTTL, c.RefreshTokenTTL, c.CookieSecure, c.TrustProxy, c.MediaURLTTL,
-		c.PublicBaseURL, c.Mail, c.StorageDriver, c.StorageLocalDir, c.R2, c.VisionProvider)
+		c.PublicBaseURL, c.Mail, c.StorageDriver, c.StorageLocalDir, c.R2, c.SweepMaxRemovals, c.VisionProvider)
 }
 
 // GoString keeps the secrets out of %#v.

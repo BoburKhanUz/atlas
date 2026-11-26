@@ -64,6 +64,15 @@ add('alpha.png', await sharp({ create: { width: 300, height: 300, channels: 4, b
 add('alpha.webp', await sharp({ create: { width: 300, height: 300, channels: 4, background: { ...BLUE, alpha: 0.5 } } }).webp().toBuffer(), 'WebP with alpha')
 add('gray.png', await sharp({ create: { width: 300, height: 300, channels: 3, background: { r: 128, g: 128, b: 128 } } }).toColourspace('b-w').png().toBuffer(), 'grey PNG')
 add('deep.png', await sharp({ create: { width: 300, height: 300, channels: 3, background: GREEN } }).toColourspace('rgb16').png().toBuffer(), '16-bit PNG')
+// Differences from sharp that the Go test names (ADR 0009): a 16-bit picture
+// that is turned is written with 8 bits per channel, and an animated WebP is
+// refused (sharp takes its first frame).
+add('deep-turned.png', await sharp({ create: { width: 300, height: 400, channels: 3, background: GREEN } }).toColourspace('rgb16').png().withMetadata({ orientation: 6 }).toBuffer(), '16-bit PNG with EXIF orientation 6')
+add(
+  'animated.webp',
+  await sharp(Buffer.concat([Buffer.alloc(300 * 300 * 3, 200), Buffer.alloc(300 * 300 * 3, 40)]), { raw: { width: 300, height: 600, channels: 3, pageHeight: 300 } }).webp({ loop: 0, delay: [100, 100] }).toBuffer(),
+  'animated WebP, two frames',
+)
 add('gps.jpg', await (await marked()).jpeg().withMetadata({ exif: { IFD0: { Copyright: 'secret-owner', ImageDescription: 'home of the user' }, IFD3: { GPSLatitudeRef: 'N', GPSLatitude: '41/1 18/1 0/1' } } }).toBuffer(), 'JPEG with EXIF text and GPS')
 add('tiny.png', await sharp({ create: { width: 255, height: 400, channels: 3, background: RED } }).png().toBuffer(), 'shortest side 255')
 add('min.png', await sharp({ create: { width: 256, height: 256, channels: 3, background: RED } }).png().toBuffer(), 'shortest side 256')
@@ -84,6 +93,9 @@ const generated = [
   { width: 8001, height: 300 },
   { width: 6400, height: 6250 }, // 40 000 000 pixels
   { width: 6400, height: 6251 }, // one row more
+  // The thumbnail's size comes from the picture's own, not from the display variant's.
+  { width: 2000, height: 402 },
+  { width: 1002, height: 2000 },
 ]
 
 function outcomeOf(err: unknown) {

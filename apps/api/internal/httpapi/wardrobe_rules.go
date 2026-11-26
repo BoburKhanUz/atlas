@@ -161,10 +161,7 @@ func jsNumber(s string) float64 {
 		}
 		return math.Inf(1)
 	}
-	f, err := strconv.ParseFloat(s, 64)
-	if err != nil { // out of range: ParseFloat gives ±Inf with the error
-		return f
-	}
+	f, _ := strconv.ParseFloat(s, 64) // out of range: ±Inf, with an error
 	return f
 }
 

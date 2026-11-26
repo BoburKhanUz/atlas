@@ -33,8 +33,10 @@ type fakeS3 struct {
 	modified map[string]time.Time
 	requests []string // "METHOD path?query", as received
 	pageSize int      // the most a listing returns at once (0: what is asked)
-	// fail answers every request with this status, when set.
+	// fail answers every request with this status, when set; bare, with
+	// this status and nothing else (a proxy before the service).
 	fail int
+	bare int
 }
 
 func newFakeS3(t *testing.T) (*fakeS3, *httptest.Server) {
@@ -58,6 +60,10 @@ func (f *fakeS3) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	f.requests = append(f.requests, r.Method+" "+r.URL.RequestURI())
 	if f.fail != 0 {
 		s3Error(w, f.fail, "InternalError")
+		return
+	}
+	if f.bare != 0 {
+		w.WriteHeader(f.bare)
 		return
 	}
 
@@ -398,6 +404,11 @@ func TestR2FailuresAreReportedWithoutSecrets(t *testing.T) {
 	// A bucket that is not there is not "no such object".
 	wrongBucket := newTestR2(t, server.URL, func(c *R2Config) { c.Bucket = "another-bucket" })
 	check("a missing bucket, write", wrongBucket.Put(ctx, r2Key, []byte("x")), "NoSuchBucket")
+	_, err = wrongBucket.Get(ctx, r2Key)
+	check("a missing bucket, read", err, "NoSuchBucket")
+	// Nor is deleting from it a deletion done: the rows that name the
+	// files would go while the files stay wherever they are.
+	check("a missing bucket, delete", wrongBucket.Delete(ctx, r2Key), "NoSuchBucket")
 	if len(f.keys()) != 0 {
 		t.Errorf("something was stored: %v", f.keys())
 	}
@@ -410,6 +421,18 @@ func TestR2FailuresAreReportedWithoutSecrets(t *testing.T) {
 	_, err = r.Get(ctx, r2Key)
 	check("the service down, read", err, "status 503")
 	check("the service down, delete", r.Delete(ctx, r2Key, r2Thumb), "delete "+r2Thumb)
+
+	// "Not found" without the service's own word for it is taken for the
+	// object's absence.
+	f.mu.Lock()
+	f.fail, f.bare = 0, http.StatusNotFound
+	f.mu.Unlock()
+	if _, err := r.Get(ctx, r2Key); !errors.Is(err, ErrNotFound) {
+		t.Errorf("a bare 404, read: %v", err)
+	}
+	if err := r.Delete(ctx, r2Key); err != nil {
+		t.Errorf("a bare 404, delete: %v", err)
+	}
 
 	// Nothing listening: the cause, without the address.
 	server.Close()

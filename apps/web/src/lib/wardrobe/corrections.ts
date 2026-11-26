@@ -2,7 +2,7 @@
  * The correction rules of PATCH /api/v1/wardrobe/items/[id]: which fields a
  * correction changes, how each change is logged, and whether the
  * subcategory fits the category the item ends up with. Pure, so that the Go
- * port is checked against this code (scripts/golden-wardrobe-corrections.ts).
+ * port is checked against this code (scripts/golden-wardrobe.ts).
  */
 
 import type { WardrobeItem } from '@prisma/client'

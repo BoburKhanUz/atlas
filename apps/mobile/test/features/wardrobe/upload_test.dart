@@ -349,6 +349,8 @@ void main() {
       await s.c.upload();
       expect((s.state.phase, s.state.reject), (AddPhase.rejected, RejectReason.aiQuota));
       expect(WardrobeMessages.reject(RejectReason.aiQuota), contains('yarim tunda'));
+      // The server decides the limit (and may change it): the text names no number.
+      expect(WardrobeMessages.reject(RejectReason.aiQuota), isNot(matches(RegExp(r'\d'))));
       expect(s.uploads, hasLength(1));
     });
 

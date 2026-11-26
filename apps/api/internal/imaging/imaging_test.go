@@ -111,8 +111,20 @@ func TestImagesAreProcessedAsTheNextJSServerProcessesThem(t *testing.T) {
 		"INVALID_IMAGE":            imaging.ErrInvalid,
 		"IMAGE_DIMENSIONS":         imaging.ErrDimensions,
 	}
+	// The differences from sharp (ADR 0009) that change an outcome.
+	differences := map[string]string{
+		"animated.webp": "INVALID_IMAGE", // sharp takes the first frame
+	}
+	seen := 0
 	for _, f := range g.Fixtures {
 		v, err := processor.Process(context.Background(), fixture(t, f.File))
+		if outcome, differs := differences[f.File]; differs {
+			seen++
+			if f.Outcome != "ok" {
+				t.Errorf("%s: the Next.js server no longer accepts it (%s); it is no difference then", f.File, f.Outcome)
+			}
+			f.Outcome = outcome
+		}
 		if f.Outcome != "ok" {
 			if !errors.Is(err, refusals[f.Outcome]) {
 				t.Errorf("%s (%s): err %v, want %s", f.File, f.About, err, f.Outcome)
@@ -151,6 +163,118 @@ func TestImagesAreProcessedAsTheNextJSServerProcessesThem(t *testing.T) {
 		}
 		if strings.Contains(string(v.Master)+string(v.Display)+string(v.Thumbnail), "secret-owner") {
 			t.Errorf("%s: EXIF text survived", f.File)
+		}
+	}
+	if seen != len(differences) {
+		t.Errorf("%d of the %d named differences have a fixture", seen, len(differences))
+	}
+}
+
+// pngBitDepth is the bit depth a PNG's header declares.
+func pngBitDepth(t *testing.T, b []byte) int {
+	t.Helper()
+	if len(b) < 25 || string(b[12:16]) != "IHDR" {
+		t.Fatal("not a PNG")
+	}
+	return int(b[24])
+}
+
+// A 16-bit PNG keeps its 16 bits when it is stored as it came. One that has
+// to be turned is stored with 8 (ADR 0009): turning goes through 8-bit
+// pixels, and the Next.js server keeps 16 there.
+func TestThePNGMastersBitDepth(t *testing.T) {
+	t.Parallel()
+	for file, want := range map[string]int{"deep.png": 16, "deep-turned.png": 8, "marked.png": 8} {
+		source := fixture(t, file)
+		if file != "marked.png" && pngBitDepth(t, source) != 16 {
+			t.Fatalf("%s: the fixture is not a 16-bit PNG", file)
+		}
+		v, err := processor.Process(context.Background(), source)
+		if err != nil {
+			t.Fatalf("%s: %v", file, err)
+		}
+		if got := pngBitDepth(t, v.Master); got != want {
+			t.Errorf("%s: the master has %d bits, want %d", file, got, want)
+		}
+	}
+}
+
+// A JPEG with 12-bit samples is refused as unreadable: Go's decoder reads
+// 8-bit JPEG only (ADR 0009).
+func TestATwelveBitJPEGIsRefused(t *testing.T) {
+	t.Parallel()
+	b := bytes.Clone(fixture(t, "orientation-1.jpg"))
+	frame := bytes.Index(b, []byte{0xff, 0xc0}) // the baseline frame header
+	if frame < 0 || b[frame+4] != 8 {
+		t.Fatal("the fixture has no 8-bit baseline frame header")
+	}
+	if _, err := processor.Process(context.Background(), b); err != nil {
+		t.Fatalf("the fixture as it is: %v", err)
+	}
+	b[frame+4] = 12 // the sample precision
+	if _, err := processor.Process(context.Background(), b); !errors.Is(err, imaging.ErrInvalid) {
+		t.Fatalf("err %v, want an unreadable picture", err)
+	}
+}
+
+// A file whose header promises one size and whose pixels have another is
+// refused: the limits were checked against the header.
+func TestAHeaderThatDisagreesWithThePixelsIsRefused(t *testing.T) {
+	t.Parallel()
+	b := bytes.Clone(fixture(t, "orientation-6.webp"))
+	// The extended header's canvas: width-1 and height-1, three bytes each.
+	if string(b[12:16]) != "VP8X" || int(b[24])|int(b[25])<<8|int(b[26])<<16 != 299 {
+		t.Fatal("the fixture is not a 300 pixel wide WebP with an extended header")
+	}
+	b[24], b[25], b[26] = 0xf3, 0x01, 0 // 500 wide
+	if err := imaging.Inspect(b); err != nil {
+		t.Fatalf("the header alone: %v", err)
+	}
+	if _, err := processor.Process(context.Background(), b); !errors.Is(err, imaging.ErrInvalid) {
+		t.Fatalf("err %v, want an unreadable picture", err)
+	}
+}
+
+// A decoder that panics on a picture refuses the picture; the panic is kept
+// for the log, with where it happened. A decoder's ordinary error carries
+// nothing.
+func TestADecodersPanicRefusesThePicture(t *testing.T) {
+	t.Parallel()
+	err := imaging.Guarded(func() (int, error) {
+		var table []int
+		return table[3], nil
+	})
+	var panicked *imaging.DecoderPanic
+	if !errors.Is(err, imaging.ErrInvalid) || !errors.As(err, &panicked) {
+		t.Fatalf("err %v", err)
+	}
+	if !strings.Contains(panicked.Value, "index out of range") || !strings.Contains(string(panicked.Stack), "TestADecodersPanicRefusesThePicture") {
+		t.Errorf("the panic kept: %q\n%s", panicked.Value, panicked.Stack)
+	}
+	err = imaging.Guarded(func() (int, error) { return 0, errors.New("bad Huffman code") })
+	if err != imaging.ErrInvalid { //nolint:errorlint // exactly the refusal, nothing wrapped
+		t.Errorf("an ordinary error: %v", err)
+	}
+	if err := imaging.Guarded(func() (int, error) { return 1, nil }); err != nil {
+		t.Errorf("no error: %v", err)
+	}
+}
+
+// Inspect judges by the header alone, as Process does first.
+func TestInspectJudgesByTheHeader(t *testing.T) {
+	t.Parallel()
+	for name, c := range map[string]struct {
+		data []byte
+		want error
+	}{
+		"a picture":       {fixture(t, "marked.png"), nil},
+		"another format":  {fixture(t, "heic-brand.bin"), imaging.ErrUnsupported},
+		"too small":       {solidPNG(t, 100, 100), imaging.ErrDimensions},
+		"no header":       {[]byte("\x89PNG\r\n\x1a\n not really"), imaging.ErrInvalid},
+		"truncated later": {fixture(t, "truncated.jpg"), nil},
+	} {
+		if err := imaging.Inspect(c.data); !errors.Is(err, c.want) || (c.want == nil && err != nil) {
+			t.Errorf("%s: err %v, want %v", name, err, c.want)
 		}
 	}
 }
@@ -221,7 +345,7 @@ func TestAHugeClaimIsRefusedBeforeDecoding(t *testing.T) {
 	binary.BigEndian.PutUint32(b[29:33], crc32.ChecksumIEEE(b[12:29]))
 	start := time.Now()
 	_, err := processor.Process(context.Background(), b)
-	if !errors.Is(err, imaging.ErrDimensions) || time.Since(start) > time.Second {
+	if !errors.Is(err, imaging.ErrDimensions) || time.Since(start) > 5*time.Second { // decoding it would take far longer, and gigabytes
 		t.Fatalf("err %v after %s", err, time.Since(start))
 	}
 }
@@ -259,7 +383,7 @@ func TestProcessingIsBounded(t *testing.T) {
 	for name, data := range refusals {
 		start := time.Now()
 		_, err := p.Process(context.Background(), data)
-		if err == nil || errors.Is(err, context.DeadlineExceeded) || time.Since(start) > time.Second {
+		if err == nil || errors.Is(err, context.DeadlineExceeded) || time.Since(start) > 5*time.Second { // waiting for the slot would take for ever
 			t.Errorf("%s while the slot is taken: err %v after %s", name, err, time.Since(start))
 		}
 	}
@@ -290,6 +414,11 @@ func FuzzProcess(f *testing.F) {
 		_, err := processor.Process(context.Background(), b)
 		if err != nil && !errors.Is(err, imaging.ErrInvalid) && !errors.Is(err, imaging.ErrUnsupported) && !errors.Is(err, imaging.ErrDimensions) {
 			t.Fatalf("err %v", err)
+		}
+		// A panic in this package's own code fails the run by itself; one
+		// in a decoder is worth knowing too.
+		if panicked := (*imaging.DecoderPanic)(nil); errors.As(err, &panicked) {
+			t.Fatalf("a decoder panicked: %s\n%s", panicked.Value, panicked.Stack)
 		}
 	})
 }

@@ -133,9 +133,18 @@ func TestExplicitValues(t *testing.T) {
 		"LOOKLY_SHUTDOWN_GRACE": "45s",
 		"DATABASE_URL":          "postgres://u@localhost/lookly",
 		"MEDIA_URL_TTL_SECONDS": " 600 ",
+
+		"STORAGE_SWEEP_MAX_REMOVALS": "5000",
 	})))
 	if err != nil {
 		t.Fatal(err)
+	}
+	if c.SweepMaxRemovals != 5000 || !strings.Contains(c.String(), "SweepMaxRemovals:5000") {
+		t.Errorf("sweep limit %d: %s", c.SweepMaxRemovals, c)
+	}
+	// Unset, the sweep keeps its own limit.
+	if plain, err := config.Load(env(with(nil))); err != nil || plain.SweepMaxRemovals != 0 {
+		t.Errorf("sweep limit unset: %d, %v", plain.SweepMaxRemovals, err)
 	}
 	if c.VisionProvider != config.VisionMock {
 		t.Errorf("vision provider %q", c.VisionProvider)
@@ -237,6 +246,9 @@ func TestRefusals(t *testing.T) {
 		{"media link lifetime fractional", map[string]string{"MEDIA_URL_TTL_SECONDS": "3600.5"}, "MEDIA_URL_TTL_SECONDS"},
 		{"media link lifetime too short", map[string]string{"MEDIA_URL_TTL_SECONDS": "59"}, "MEDIA_URL_TTL_SECONDS"},
 		{"media link lifetime too long", map[string]string{"MEDIA_URL_TTL_SECONDS": "86401"}, "MEDIA_URL_TTL_SECONDS"},
+		{"sweep limit zero", map[string]string{"STORAGE_SWEEP_MAX_REMOVALS": "0"}, "STORAGE_SWEEP_MAX_REMOVALS"},
+		{"sweep limit not a number", map[string]string{"STORAGE_SWEEP_MAX_REMOVALS": "all"}, "STORAGE_SWEEP_MAX_REMOVALS"},
+		{"sweep limit beyond reason", map[string]string{"STORAGE_SWEEP_MAX_REMOVALS": "1000001"}, "STORAGE_SWEEP_MAX_REMOVALS"},
 		{"signing secret with a trailing space", map[string]string{"JWT_SECRET": strings.Repeat("x", 40) + " "}, "JWT_SECRET"},
 		{"signing secret with a leading newline", map[string]string{"JWT_SECRET": "\n" + strings.Repeat("x", 40)}, "JWT_SECRET"},
 		{"session key missing", map[string]string{"SESSION_ENC_KEY": "<unset>"}, "SESSION_ENC_KEY"},

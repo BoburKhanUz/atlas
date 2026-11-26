@@ -14,6 +14,7 @@ import (
 	"image/jpeg"
 	"image/png"
 	"math"
+	"runtime/debug"
 
 	"github.com/gen2brain/webp"
 	xwebp "golang.org/x/image/webp"
@@ -109,7 +110,8 @@ func (p *Processor) Process(ctx context.Context, data []byte) (Variants, error) 
 	return render(data, h)
 }
 
-// Hold takes a slot until the returned function is called (tests).
+// Hold takes a slot until the returned function is called: for tests of
+// what waits behind a busy processor.
 func (p *Processor) Hold() func() {
 	p.slots <- struct{}{}
 	return func() { <-p.slots }
@@ -123,28 +125,63 @@ type header struct {
 	w, h        int // upright
 }
 
-// The decoders are the standard library's, but a picture is untrusted:
-// should one of them fail in an unforeseen way, the upload is refused, the
-// server goes on.
-func refuseOnPanic(err *error) {
-	if r := recover(); r != nil {
-		*err = fmt.Errorf("%w (decoder panic)", ErrInvalid)
+// DecoderPanic is a decoder that failed in an unforeseen way on a picture.
+// The decoders are the standard library's and x/image's, but a picture is
+// untrusted: the upload is refused as unreadable (errors.Is ErrInvalid) and
+// the server goes on. It is its own type so that the caller can log it: a
+// panic is never the expected way to refuse a file. Only the decoders are
+// guarded; a panic in this package's own code is a bug and is not caught
+// here.
+type DecoderPanic struct {
+	Value string // what was recovered
+	Stack []byte
+}
+
+func (e *DecoderPanic) Error() string { return "imaging: a decoder panicked: " + e.Value }
+
+// Is makes a DecoderPanic one of the unreadable pictures.
+func (e *DecoderPanic) Is(target error) bool { return target == ErrInvalid }
+
+// guarded runs a decoder, turning a panic into a DecoderPanic.
+func guarded[T any](decoder func() (T, error)) (v T, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = &DecoderPanic{Value: fmt.Sprint(r), Stack: debug.Stack()}
+		}
+	}()
+	return decoder()
+}
+
+// unreadable is the refusal for a decoder's error: the panic as it is, any
+// other error as ErrInvalid.
+func unreadable(err error) error {
+	var panicked *DecoderPanic
+	if errors.As(err, &panicked) {
+		return panicked
 	}
+	return ErrInvalid
+}
+
+// Inspect judges a picture by its header alone, as Process does before
+// anything else: the format, the dimensions, the pixel count. It is cheap
+// whatever the picture claims to be.
+func Inspect(data []byte) error {
+	_, err := inspect(data)
+	return err
 }
 
 // inspect reads the format, the dimensions and the orientation, and applies
 // the limits: cheap, whatever the picture claims.
-func inspect(data []byte) (h header, err error) {
-	defer refuseOnPanic(&err)
+func inspect(data []byte) (header, error) {
 	format, err := sniff(data)
 	if err != nil {
 		return header{}, err
 	}
-	cfg, err := decodeConfig(format, data)
+	cfg, err := guarded(func() (image.Config, error) { return decodeConfig(format, data) })
 	if err != nil {
-		return header{}, ErrInvalid
+		return header{}, unreadable(err)
 	}
-	h = header{format: format, cfg: cfg, orientation: orientationOf(format, data), w: cfg.Width, h: cfg.Height}
+	h := header{format: format, cfg: cfg, orientation: orientationOf(format, data), w: cfg.Width, h: cfg.Height}
 	if h.orientation >= 5 {
 		h.w, h.h = h.h, h.w
 	}
@@ -155,12 +192,11 @@ func inspect(data []byte) (h header, err error) {
 }
 
 // render decodes a picture inspect accepted and writes its variants.
-func render(data []byte, hd header) (v Variants, err error) {
-	defer refuseOnPanic(&err)
+func render(data []byte, hd header) (Variants, error) {
 	format, cfg, orientation, w, h := hd.format, hd.cfg, hd.orientation, hd.w, hd.h
-	src, err := decode(format, data)
+	src, err := guarded(func() (image.Image, error) { return decode(format, data) })
 	if err != nil {
-		return Variants{}, ErrInvalid
+		return Variants{}, unreadable(err)
 	}
 	if src.Bounds().Dx() != cfg.Width || src.Bounds().Dy() != cfg.Height {
 		return Variants{}, ErrInvalid // the header and the pixels disagree
@@ -176,10 +212,11 @@ func render(data []byte, hd header) (v Variants, err error) {
 	if err != nil {
 		return Variants{}, fmt.Errorf("imaging: encode the display variant: %w", err)
 	}
-	thumb := fitInside(display, ThumbMaxSide)
-	if !display.Bounds().Eq(upright.Bounds()) && thumb.Bounds().Eq(display.Bounds()) {
-		thumb = fitInside(upright, ThumbMaxSide)
-	}
+	// The thumbnail has the size the picture itself gives (as the Next.js
+	// server sizes it), and is made from the display variant, which is
+	// already small.
+	thumbWidth, thumbHeight := fitSize(w, h, ThumbMaxSide)
+	thumb := scaleTo(display, thumbWidth, thumbHeight)
 	thumbBytes, err := encodeWebP(thumb, thumbWebPQuality)
 	if err != nil {
 		return Variants{}, fmt.Errorf("imaging: encode the thumbnail: %w", err)

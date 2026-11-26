@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"lookly/internal/idempotency"
@@ -119,8 +120,13 @@ func DailyUploadHit(userID string, now time.Time) ratelimit.Hit {
 }
 
 // Create checks, stores and analyses an uploaded picture and creates its
-// item. Nothing is left behind by a failure: no row, no file, no claim on
-// the idempotency key, and the attempt is not counted against the day.
+// item, in this order: the claim on the idempotency key; the picture's
+// header (format, dimensions); the wardrobe's size; the day's count; the
+// processing; the files; the rows. Nothing is left behind by a failure: no
+// row, no file, no claim on the key. The attempt is given back to the day
+// too, with one exception: a picture whose header passed and whose pixels
+// did not decode stays counted, because it took a processing slot (else a
+// stream of such files would keep the slots busy at no cost).
 //
 // The refusals: imaging.ErrUnsupported, imaging.ErrInvalid and
 // imaging.ErrDimensions for the picture; ErrWardrobeFull and
@@ -134,6 +140,12 @@ func (u *Uploads) Create(ctx context.Context, up Upload) (Created, error) {
 			Hash: idempotency.MultipartHash(up.File, up.FileName, up.Fields),
 		})
 		if err != nil {
+			// The key's row names its user: an account deleted since the
+			// gate let the request in cannot hold one.
+			var pg *pgconn.PgError
+			if errors.As(err, &pg) && pg.Code == foreignKeyViolation {
+				return Created{}, ErrNoUser
+			}
 			return Created{}, err
 		}
 		if replay != nil {
@@ -144,11 +156,16 @@ func (u *Uploads) Create(ctx context.Context, up Upload) (Created, error) {
 
 	created, undo, err := u.create(ctx, up, claim)
 	if err != nil {
+		if panicked := (*imaging.DecoderPanic)(nil); errors.As(err, &panicked) {
+			// The picture is refused as unreadable; that a decoder fell
+			// over it is ours to know.
+			u.log.Error("wardrobe: a decoder panicked on an uploaded picture", "userId", up.UserID, "panic", panicked.Value, "stack", string(panicked.Stack))
+		}
 		// What the attempt took is given back whatever became of the
 		// request (the client may have left).
 		cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), removeTimeout)
 		defer cancel()
-		undo(cleanup)
+		undo(cleanup, err)
 		if claim != nil {
 			if releaseErr := u.keys.Release(cleanup, *claim); releaseErr != nil {
 				u.log.Warn("wardrobe: an idempotency key of a failed upload not released; it expires by itself", "userId", up.UserID, "err", releaseErr.Error())
@@ -190,16 +207,34 @@ func detectionOf(item Item, provider *string) vision.Detection {
 	}
 }
 
+// foreignKeyViolation is PostgreSQL's error code for a row that names a row
+// which is not there.
+const foreignKeyViolation = "23503"
+
+// createTimeout bounds the transaction that creates the item's rows. It
+// runs to its end whatever becomes of the request: once the files are
+// stored, a request that ends while the commit is on its way must not leave
+// the caller guessing whether the item exists.
+const createTimeout = 10 * time.Second
+
 // create does the work of an upload that holds its claim. On failure, undo
-// gives back what was taken so far (the day's count, the stored files).
-func (u *Uploads) create(ctx context.Context, up Upload, claim *idempotency.Claim) (created Created, undo func(context.Context), err error) {
-	var undos []func(context.Context)
-	undo = func(ctx context.Context) {
+// gives back what was taken so far (the day's count, the stored files),
+// given the failure.
+func (u *Uploads) create(ctx context.Context, up Upload, claim *idempotency.Claim) (created Created, undo func(ctx context.Context, cause error), err error) {
+	var undos []func(context.Context, error)
+	undo = func(ctx context.Context, cause error) {
 		for i := len(undos) - 1; i >= 0; i-- {
-			undos[i](ctx)
+			undos[i](ctx, cause)
 		}
 	}
 	q := store.New(u.pool)
+
+	// What the picture's header says is judged first: a file that is no
+	// picture we take is refused whatever the limits say, without being
+	// counted and without waiting for a processing slot.
+	if err := imaging.Inspect(up.File); err != nil {
+		return Created{}, undo, err
+	}
 
 	// A full wardrobe is refused before any work; the count that decides
 	// is taken again under the user's lock, with the item's creation.
@@ -225,7 +260,10 @@ func (u *Uploads) create(ctx context.Context, up Upload, claim *idempotency.Clai
 		midnight := local.Truncate(24 * time.Hour).Add(24 * time.Hour)
 		return Created{}, undo, &DailyLimitError{RetryAfter: max(midnight.Sub(local), time.Second)}
 	}
-	undos = append(undos, func(ctx context.Context) {
+	undos = append(undos, func(ctx context.Context, cause error) {
+		if errors.Is(cause, imaging.ErrInvalid) {
+			return // it took a processing slot: counted
+		}
 		if err := u.limiter.Refund(ctx, today); err != nil {
 			u.log.Warn("wardrobe: a failed upload stays counted against the day", "userId", up.UserID, "err", err.Error())
 		}
@@ -241,7 +279,7 @@ func (u *Uploads) create(ctx context.Context, up Upload, claim *idempotency.Clai
 		return Created{}, undo, err
 	}
 	master, display, thumbnail := base+"."+variants.Ext, base+"_display.webp", base+"_thumb.webp"
-	undos = append(undos, func(ctx context.Context) {
+	undos = append(undos, func(ctx context.Context, _ error) {
 		if err := u.images.Delete(ctx, master, display, thumbnail); err != nil {
 			u.log.Warn("wardrobe: files of a failed upload not removed; the sweep removes them", "userId", up.UserID, "err", err.Error())
 		}
@@ -264,6 +302,8 @@ func (u *Uploads) create(ctx context.Context, up Upload, claim *idempotency.Clai
 	}
 
 	var item Item
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), createTimeout)
+	defer cancel()
 	err = pgx.BeginTxFunc(ctx, u.pool, pgx.TxOptions{IsoLevel: pgx.ReadCommitted}, func(tx pgx.Tx) error {
 		q := store.New(tx)
 		// The user's uploads go one at a time from here on, so the count

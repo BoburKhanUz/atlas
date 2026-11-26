@@ -46,7 +46,8 @@ type Services struct {
 // nothing itself (the gate and the generated code do), calls one service
 // method and encodes the answer.
 type Server struct {
-	s Services
+	s       Services
+	uploads inFlight
 }
 
 var _ contract.StrictServerInterface = (*Server)(nil)

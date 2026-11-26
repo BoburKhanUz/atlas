@@ -19,6 +19,9 @@ const (
 	StorageR2 = "r2"
 )
 
+// maxSweepRemovals is the most STORAGE_SWEEP_MAX_REMOVALS may say.
+const maxSweepRemovals = 1_000_000
+
 // R2 is the bucket the images are kept in when STORAGE_DRIVER is r2.
 type R2 struct {
 	// Endpoint is the account's S3 endpoint, an origin:

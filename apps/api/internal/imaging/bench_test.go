@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"image"
-	"image/color"
 	"image/jpeg"
 	"math/rand/v2"
 	"testing"
@@ -25,7 +24,6 @@ func photo(b testing.TB, w, h int) []byte {
 	if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 85}); err != nil {
 		b.Fatal(err)
 	}
-	_ = color.White
 	return buf.Bytes()
 }
 

@@ -456,3 +456,57 @@ func TestARequestsContextEndsAfterTheRequestTimeout(t *testing.T) {
 		t.Errorf("status %d", w.Code)
 	}
 }
+
+// A route with more time than the others has it on the connection too: the
+// server's own read and write time limits, set for the usual request, do
+// not cut a slow upload short.
+func TestALongerTimeLimitMovesTheConnectionsDeadlines(t *testing.T) {
+	t.Parallel()
+	echo := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			httpapi.WriteError(w, r, apierr.New(apierr.BadRequest))
+			return
+		}
+		_, _ = fmt.Fprintf(w, "%d bytes", len(body))
+	})
+	// slow sends a body in two halves, longer apart than the server reads
+	// and writes for.
+	slow := func(timeout time.Duration) (string, error) {
+		l := &logs{}
+		srv := httptest.NewUnstartedServer(httpapi.WrapWithTimeout(echo, slog.New(slog.NewJSONHandler(l, nil)), timeout))
+		srv.Config.ReadTimeout, srv.Config.WriteTimeout = 300*time.Millisecond, 300*time.Millisecond
+		srv.Start()
+		defer srv.Close()
+		reader, writer := io.Pipe()
+		go func() {
+			_, _ = writer.Write([]byte("first half, "))
+			time.Sleep(900 * time.Millisecond)
+			_, _ = writer.Write([]byte("second half"))
+			_ = writer.Close()
+		}()
+		r, err := http.NewRequest(http.MethodPost, srv.URL+"/api/v1/wardrobe/items", reader)
+		if err != nil {
+			t.Fatal(err)
+		}
+		r.ContentLength = int64(len("first half, second half"))
+		res, err := srv.Client().Do(r)
+		if err != nil {
+			return "", err
+		}
+		body, err := io.ReadAll(res.Body)
+		_ = res.Body.Close()
+		srv.Close() // the server is done with its log
+		if strings.Contains(l.String(), "could not be set") {
+			t.Errorf("logged: %s", l.String())
+		}
+		return fmt.Sprintf("%d %s", res.StatusCode, body), err
+	}
+	if got, err := slow(httpapi.RequestTimeout + time.Minute); err != nil || got != "200 23 bytes" {
+		t.Errorf("with more time: %q, %v", got, err)
+	}
+	// The usual request is held to the server's limits.
+	if got, err := slow(httpapi.RequestTimeout); err == nil && strings.HasPrefix(got, "200") {
+		t.Errorf("with the usual time: %q", got)
+	}
+}

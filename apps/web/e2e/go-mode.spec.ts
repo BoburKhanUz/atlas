@@ -69,8 +69,9 @@ test.describe('Go mode routing', () => {
     expect(corrected.status()).toBe(200)
     expect(corrected.headers()['x-e2e-backend']).toBe('go')
     expect((await corrected.json()).corrections).toHaveLength(1)
-    // A link Go signed opens on Go; one Next.js signs for the same item (in
-    // an outfit) opens there too: one secret, one link format.
+    // A link Go signed opens on Go, and no longer with another signature.
+    // (That both servers sign and verify alike is proved by the golden
+    // vectors of apps/api/testdata/golden/media.json, not here.)
     const image = await request.get(item.primaryImage.url)
     expect(image.status()).toBe(200)
     expect(image.headers()['x-e2e-backend']).toBe('go')

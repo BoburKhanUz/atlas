@@ -98,6 +98,11 @@ func TestCanonicalPathAndQuery(t *testing.T) {
 	if got, want := canonicalQuery(query), "continuation-token=a%2Bb%2Fc%3D%20d&empty=&list-type=2&max-keys=1000&prefix=users%2Fu_one%2F"; got != want {
 		t.Errorf("query %q, want %q", got, want)
 	}
+	// By name, then by value: not by the pairs as text ("a-b=" sorts before
+	// "a=" there).
+	if got, want := canonicalQuery(url.Values{"a": {"2", "1"}, "a-b": {"1"}, "A": {"x"}, "a b": {"0"}}), "A=x&a=1&a=2&a%20b=0&a-b=1"; got != want {
+		t.Errorf("query %q, want %q", got, want)
+	}
 	if got := canonicalQuery(nil); got != "" {
 		t.Errorf("no query: %q", got)
 	}

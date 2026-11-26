@@ -117,8 +117,8 @@ type sweepWorker struct {
 }
 
 // Work runs one sweep. A sweep that refuses to remove anything (an empty
-// database before a full storage) is an error on every attempt: someone
-// must look.
+// database before a full storage, or more orphans than a run may remove) is
+// an error on every attempt: someone must look.
 func (w *sweepWorker) Work(ctx context.Context, job *river.Job[SweepArgs]) error {
 	report, err := w.sweeper.Sweep(ctx)
 	if err != nil {

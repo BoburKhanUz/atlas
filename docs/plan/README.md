@@ -22,7 +22,7 @@ Every stage ends with the stage gate in `.claude/skills/lookly-workflow/SKILL.md
 | B1 | Data layer: sqlc queries, migration tool, River tables, scheduled cleanup jobs (spec `B1.md`; started at `f7a9826`, **done** 2026-11-25: review and security gate in `B1.md`) | See ADR 0007; Go schema equals the Prisma schema (checked in CI) |
 | B2 | Auth and sessions (spec `B2.md`; started at `aa42fbf`, **done** 2026-11-26: review and security gate in `B2.md`) | 9 session vectors and the session e2e specs pass against Go |
 | B3 | Profile, consent, password reset, mail, account deletion (spec `B3.md`; started at `7f169e8`, **done** 2026-11-26: review and security gate in `B3.md`) | Their e2e specs pass against Go |
-| B4 | Wardrobe and media, R2 driver, upload limits and quotas (spec `B4.md`; started at `2b1ed74`, in progress; limits 100 uploads a day and 1000 items: owner decision 2026-11-26) | Wardrobe e2e specs pass; refusal paths tested |
+| B4 | Wardrobe and media, R2 driver, upload limits (spec `B4.md`; started at `2b1ed74`, in progress; limits 100 uploads a day and 1000 items: owner decision 2026-11-26) | Wardrobe e2e specs pass; refusal paths tested |
 | B5 | Weather, outfit engine, outfits | Engine golden vectors 100% equal; outfit e2e specs pass |
 | B6 | AI: providers, vision, stylist, jobs, monitoring, `eval` command | AI e2e specs pass with mock providers; offline evaluation tests pass against Go |
 | B7 | Cutover: web calls Go, Prisma retired, old API removed | All Playwright specs green against Go; phone checked on staging |

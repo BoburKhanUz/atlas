@@ -120,6 +120,10 @@ const queries: QueryCase[] = [
   q('limit abc', { limit: 'abc' }),
   q('limit Infinity', { limit: 'Infinity' }),
   q('limit 9e999', { limit: '9e999' }),
+  // Around and beyond the integers a JavaScript number holds exactly.
+  ...['9007199254740991', '9007199254740992', '9007199254740993', '-9007199254740991', '-9007199254740993', '1e20', '-1e20', '18446744073709551616'].map((limit) =>
+    q(`limit ${limit}`, { limit }),
+  ),
   // How JavaScript's Number() reads a string (the validator coerces with it).
   ...['+5', '-0', '.5e1', '5.', '50e-1', '1e-2', '1_0', '0b101', '0o17', '0X1f', '-0x10', '0x', '0b2', ' 0x10 ', '\u00a020\u2003', '\t7\n', '+Infinity', '-Infinity', 'infinity', 'NaN', '1e', '--5', '5 5', '٣', '   ', '\ufeff20', '0x-10', '0x+1f'].map((limit) =>
     q(`limit ${JSON.stringify(limit)}`, { limit }),

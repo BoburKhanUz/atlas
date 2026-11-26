@@ -60,8 +60,13 @@ func toNRGBA(src image.Image) *image.NRGBA {
 
 // fitInside scales the picture down to fit a square of side n (never up).
 func fitInside(src image.Image, n int) image.Image {
+	w, h := fitSize(src.Bounds().Dx(), src.Bounds().Dy(), n)
+	return scaleTo(src, w, h)
+}
+
+// scaleTo returns the picture at the given size (itself when it has it).
+func scaleTo(src image.Image, w, h int) image.Image {
 	b := src.Bounds()
-	w, h := fitSize(b.Dx(), b.Dy(), n)
 	if w == b.Dx() && h == b.Dy() {
 		return src
 	}

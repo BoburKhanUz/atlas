@@ -170,7 +170,6 @@ func (s *Service) Delete(ctx context.Context, userID, id string) error {
 		if err != nil {
 			return err
 		}
-		keys = keys[:0] // the function can run again
 		for _, img := range images {
 			keys = append(keys, img.StorageKey)
 			for _, variant := range []*string{img.DisplayKey, img.ThumbnailKey} {

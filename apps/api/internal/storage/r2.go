@@ -141,9 +141,12 @@ func (r *R2) do(ctx context.Context, method, key string, query url.Values, body 
 	return data, nil
 }
 
+// notFound: the service says the object is not there. A bucket that is not
+// there (NoSuchBucket) is a failure, not an absent object: a read must not
+// answer "no such picture", a deletion must not count as done.
 func notFound(err error) bool {
 	var e *serviceError
-	return errors.As(err, &e) && e.Status == http.StatusNotFound
+	return errors.As(err, &e) && e.Status == http.StatusNotFound && (e.Code == "NoSuchKey" || e.Code == "")
 }
 
 // Put writes the object whole: a reader gets the old object or the new

@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -33,6 +34,8 @@ type sweepWorld struct {
 	log    *bytes.Buffer
 	now    time.Time
 	items  int
+	// max is the sweep's limit of removals (0: the default).
+	max int
 }
 
 func newSweepWorld(t *testing.T) *sweepWorld {
@@ -90,7 +93,7 @@ func (w *sweepWorld) image(user, master, display, thumbnail string) {
 
 func (w *sweepWorld) sweep() (wardrobe.SweepReport, error) {
 	w.t.Helper()
-	sweeper := wardrobe.NewSweeper(w.pool, w.images, slog.New(slog.NewJSONHandler(w.log, nil)), func() time.Time { return w.now })
+	sweeper := wardrobe.NewSweeper(w.pool, w.images, slog.New(slog.NewJSONHandler(w.log, nil)), func() time.Time { return w.now }, w.max)
 	return sweeper.Sweep(context.Background())
 }
 
@@ -238,32 +241,88 @@ func TestSweepRefusesToEmptyTheStorageForAnEmptyDatabase(t *testing.T) {
 	}
 }
 
-// One run removes a bounded number of files; the rest waits for the next.
-func TestSweepRemovesABoundedNumberPerRun(t *testing.T) {
+// More orphans than a run may remove are not what a crashed upload or a
+// failed removal leaves: the database may be another one, or an older copy
+// of this one. Nothing is removed, and the run fails, until somebody has
+// looked and raised the limit.
+func TestSweepRemovesNothingWhenThereAreTooManyOrphans(t *testing.T) {
 	t.Parallel()
 	w := newSweepWorld(t)
 	w.image("u_keep", key("u_keep", 1, ".jpg"), "", "")
 	w.file(key("u_keep", 1, ".jpg"), 2*time.Hour)
-	// More owners than one batch asks about, more orphans than one run removes.
-	const owners, perOwner = 60, 20
-	total := owners * perOwner
-	for o := range owners {
-		for n := range perOwner {
-			w.file(key(fmt.Sprintf("u_%03d", o), n, ".jpg"), 2*time.Hour)
-		}
+	// More owners than one batch asks about; one orphan more than the limit.
+	const owners = 60
+	total := wardrobe.SweepMaxRemovals + 1
+	for n := range total {
+		w.file(key(fmt.Sprintf("u_%03d", n%owners), n, ".jpg"), 2*time.Hour)
 	}
 	report, err := w.sweep()
-	if err != nil {
+	if !errors.Is(err, wardrobe.ErrSweepTooMany) || !strings.Contains(err.Error(), "1001") || !strings.Contains(err.Error(), "STORAGE_SWEEP_MAX_REMOVALS") {
+		t.Fatalf("err %v", err)
+	}
+	if report.Removed != 0 || report.NotRemoved != total || report.Referenced != 1 || len(w.stored()) != total+1 {
+		t.Fatalf("report %+v, %d stored", report, len(w.stored()))
+	}
+	// At the limit itself the orphans go.
+	if err := os.Remove(filepath.Join(w.root, filepath.FromSlash(key("u_000", 0, ".jpg")))); err != nil {
 		t.Fatal(err)
 	}
-	if report.Removed != wardrobe.SweepMaxRemovals || report.NotRemoved != total-wardrobe.SweepMaxRemovals || report.Referenced != 1 || len(w.stored()) != total+1-wardrobe.SweepMaxRemovals {
-		t.Fatalf("first run: %+v, %d stored", report, len(w.stored()))
-	}
 	report, err = w.sweep()
-	if err != nil || report.Removed != total-wardrobe.SweepMaxRemovals || report.NotRemoved != 0 {
-		t.Fatalf("second run: %+v, %v", report, err)
+	if err != nil || report.Removed != wardrobe.SweepMaxRemovals || report.NotRemoved != 0 {
+		t.Fatalf("at the limit: %+v, %v", report, err)
 	}
 	if got := w.stored(); !slices.Equal(got, []string{key("u_keep", 1, ".jpg")}) {
+		t.Fatalf("stored %v", got)
+	}
+
+	// The limit is the operator's to raise for a run.
+	raised := newSweepWorld(t)
+	raised.image("u_keep", key("u_keep", 1, ".jpg"), "", "")
+	for n := range 5 {
+		raised.file(key("u_one", n, ".jpg"), 2*time.Hour)
+	}
+	raised.max = 4
+	if report, err := raised.sweep(); !errors.Is(err, wardrobe.ErrSweepTooMany) || report.Removed != 0 || len(raised.stored()) != 5 {
+		t.Fatalf("over a limit of 4: %+v, %v", report, err)
+	}
+	raised.max = 5
+	if report, err := raised.sweep(); err != nil || report.Removed != 5 || len(raised.stored()) != 0 {
+		t.Fatalf("with a limit of 5: %+v, %v", report, err)
+	}
+}
+
+// namedMeanwhile is a store during whose first removal a file gets its
+// image row (an upload that committed late, a restored row).
+type namedMeanwhile struct {
+	storage.Store
+	once *sync.Once
+	name func()
+}
+
+func (s namedMeanwhile) Delete(ctx context.Context, keys ...string) error {
+	s.once.Do(s.name)
+	return s.Store.Delete(ctx, keys...)
+}
+
+// Whether a file is named is asked again just before it is removed, not
+// only when the storage was gone through.
+func TestSweepAsksAgainBeforeRemoving(t *testing.T) {
+	t.Parallel()
+	w := newSweepWorld(t)
+	w.image("u_keep", key("u_keep", 1, ".jpg"), "", "")
+	// More owners than are asked about at once: the last one's file is
+	// asked about after the first removals.
+	const owners = 60
+	for n := range owners {
+		w.file(key(fmt.Sprintf("u_%03d", n), n, ".jpg"), 2*time.Hour)
+	}
+	late := key(fmt.Sprintf("u_%03d", owners-1), owners-1, ".jpg")
+	w.images = namedMeanwhile{w.images, &sync.Once{}, func() { w.image(fmt.Sprintf("u_%03d", owners-1), late, "", "") }}
+	report, err := w.sweep()
+	if err != nil || report.Removed != owners-1 || report.Referenced != 1 || report.NotRemoved != 0 {
+		t.Fatalf("report %+v, err %v", report, err)
+	}
+	if got := w.stored(); !slices.Equal(got, []string{late}) {
 		t.Fatalf("stored %v", got)
 	}
 }

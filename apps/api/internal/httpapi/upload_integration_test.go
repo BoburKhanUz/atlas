@@ -42,6 +42,8 @@ type formPart struct {
 	filename *string // nil: a text field
 	typ      string  // the part's Content-Type ("" for none)
 	data     []byte
+	// disposition, when set, is the part's Content-Disposition as it is.
+	disposition string
 }
 
 func filePart(filename, typ string, data []byte) formPart {
@@ -62,6 +64,9 @@ func form(t *testing.T, parts ...formPart) (string, string) {
 		disposition := fmt.Sprintf(`form-data; name=%q`, p.name)
 		if p.filename != nil {
 			disposition += fmt.Sprintf(`; filename=%q`, *p.filename)
+		}
+		if p.disposition != "" {
+			disposition = p.disposition
 		}
 		h.Set("Content-Disposition", disposition)
 		if p.typ != "" {
@@ -310,17 +315,20 @@ func TestUploadFileNamesAndDeclaredTypes(t *testing.T) {
 		parts    []formPart
 		category string
 	}{
-		"the file's name":             {[]formPart{filePart("blue-jeans.png", "image/png", data)}, "pants"},
-		"the filename field":          {[]formPart{filePart("blue-jeans.png", "image/png", data), textPart("filename", "kurtka.jpg")}, "outerwear"},
-		"the field before the file":   {[]formPart{textPart("filename", "sumka"), filePart("blue-jeans.png", "image/png", data)}, "bag"},
-		"an empty filename field":     {[]formPart{filePart("dress.png", "image/png", data), textPart("filename", "")}, "dress"},
-		"the last of repeated fields": {[]formPart{filePart("x.png", "image/png", data), textPart("filename", "hat"), textPart("filename", "boots")}, "shoes"},
-		"no hint":                     {[]formPart{filePart("IMG_0001.png", "image/png", data)}, "shirt"},
-		"declared in upper case":      {[]formPart{filePart("shoe.png", "IMAGE/PNG", data)}, "shoes"},
-		"declared as another image":   {[]formPart{filePart("shoe.png", "image/jpg", data)}, "shoes"},
-		"declared as WebP":            {[]formPart{filePart("shoe.png", " image/webp ", data)}, "shoes"},
-		"only the first file counts":  {[]formPart{filePart("watch.png", "image/png", data), filePart("dress.png", "image/png", []byte("not a picture"))}, "accessory"},
-		"files under other names":     {[]formPart{{name: "other", filename: ptr("dress.png"), typ: "image/png", data: []byte("x")}, filePart("polo.png", "image/png", data)}, "shirt"},
+		"the file's name":              {[]formPart{filePart("blue-jeans.png", "image/png", data)}, "pants"},
+		"the filename field":           {[]formPart{filePart("blue-jeans.png", "image/png", data), textPart("filename", "kurtka.jpg")}, "outerwear"},
+		"the field before the file":    {[]formPart{textPart("filename", "sumka"), filePart("blue-jeans.png", "image/png", data)}, "bag"},
+		"an empty filename field":      {[]formPart{filePart("dress.png", "image/png", data), textPart("filename", "")}, "dress"},
+		"the first of repeated fields": {[]formPart{filePart("x.png", "image/png", data), textPart("filename", "boots"), textPart("filename", "dress")}, "shoes"},
+		"a first filename that is a file": {[]formPart{
+			{name: "filename", filename: ptr("dress.png"), typ: "image/png", data: []byte("x")}, filePart("boots.png", "image/png", data), textPart("filename", "sumka"),
+		}, "shoes"},
+		"no hint":                    {[]formPart{filePart("IMG_0001.png", "image/png", data)}, "shirt"},
+		"declared in upper case":     {[]formPart{filePart("shoe.png", "IMAGE/PNG", data)}, "shoes"},
+		"declared as another image":  {[]formPart{filePart("shoe.png", "image/jpg", data)}, "shoes"},
+		"declared as WebP":           {[]formPart{filePart("shoe.png", " image/webp ", data)}, "shoes"},
+		"only the first file counts": {[]formPart{filePart("watch.png", "image/png", data), filePart("dress.png", "image/png", []byte("not a picture"))}, "accessory"},
+		"files under other names":    {[]formPart{{name: "other", filename: ptr("dress.png"), typ: "image/png", data: []byte("x")}, filePart("polo.png", "image/png", data)}, "shirt"},
 	} {
 		got := w.do(uploadCall(t, w.m, "", c.parts...))
 		w.is(got, http.StatusCreated, "")
@@ -364,8 +372,10 @@ func TestUploadKeepsEachFormatAndTurnsThePictureUpright(t *testing.T) {
 	}
 }
 
-// Every refusal leaves nothing behind: no item, no file, no key, and the
-// attempt is not counted against the day.
+// Every refusal leaves nothing behind: no item, no file, no key. The attempt
+// is not counted against the day either, but for a picture whose header
+// passed and whose pixels could not be read: that one took a processing
+// slot.
 func TestUploadRefusalsStoreNothing(t *testing.T) {
 	t.Parallel()
 	w := newUploadWorld(t, apiOptions{})
@@ -381,6 +391,9 @@ func TestUploadRefusalsStoreNothing(t *testing.T) {
 		status  int
 		code    string
 		message string // "" when the code's own
+		// counted: the attempt stays counted against the day (it took a
+		// processing slot).
+		counted bool
 	}
 	with := func(c call, change func(*call)) call {
 		c.headers = map[string]string{"Content-Type": c.headers["Content-Type"], "Idempotency-Key": c.headers["Idempotency-Key"]}
@@ -392,38 +405,44 @@ func TestUploadRefusalsStoreNothing(t *testing.T) {
 	}
 	valid := uploadCall(t, w.m, key, filePart("shirt.png", "image/png", good))
 	cases := []refusal{
-		{"a malformed key", with(valid, func(c *call) { c.headers["Idempotency-Key"] = "short" }), 400, "VALIDATION_ERROR", "Idempotency-Key: 8–128 ta belgi (A-Z, a-z, 0-9, _ yoki -)"},
+		{"a malformed key", with(valid, func(c *call) { c.headers["Idempotency-Key"] = "short" }), 400, "VALIDATION_ERROR", "Idempotency-Key: 8–128 ta belgi (A-Z, a-z, 0-9, _ yoki -)", false},
 		{"a malformed key before the form's type", with(valid, func(c *call) {
 			c.headers["Idempotency-Key"] = "has space in it"
 			c.headers["Content-Type"] = "application/json"
-		}), 400, "VALIDATION_ERROR", ""},
-		{"no declared length", with(valid, func(c *call) { c.body = io.NopCloser(strings.NewReader(c.body.(string))) }), 413, "PAYLOAD_TOO_LARGE", "So‘rov hajmi ko‘rsatilmagan"},
-		{"a request over 10 MB", with(valid, func(c *call) { c.body = overBody }), 413, "PAYLOAD_TOO_LARGE", "So‘rov hajmi juda katta"},
-		{"the length before the type", with(valid, func(c *call) { c.body = overBody; c.headers["Content-Type"] = "text/plain" }), 413, "PAYLOAD_TOO_LARGE", ""},
-		{"not a form", with(valid, func(c *call) { c.headers["Content-Type"] = "application/json"; c.body = `{}` }), 415, "UNSUPPORTED_MEDIA_TYPE", "multipart/form-data kutilgan"},
-		{"no type at all", with(valid, func(c *call) { delete(c.headers, "Content-Type") }), 415, "UNSUPPORTED_MEDIA_TYPE", "multipart/form-data kutilgan"},
-		{"a form without a boundary", with(valid, func(c *call) { c.headers["Content-Type"] = "multipart/form-data" }), 400, "BAD_REQUEST", "Yaroqsiz forma ma’lumotlari"},
-		{"a form that breaks off", with(valid, func(c *call) { c.body = c.body.(string)[:200] }), 400, "BAD_REQUEST", "Yaroqsiz forma ma’lumotlari"},
-		{"a body that is no form", with(valid, func(c *call) { c.body = "hello" }), 400, "BAD_REQUEST", "Yaroqsiz forma ma’lumotlari"},
-		{"no file", uploadCall(t, w.m, key, textPart("filename", "shirt.png")), 400, "BAD_REQUEST", "Rasm fayli topilmadi"},
-		{"an empty form", uploadCall(t, w.m, key), 400, "BAD_REQUEST", "Rasm fayli topilmadi"},
-		{"the file as text", uploadCall(t, w.m, key, textPart("file", string(good))), 400, "BAD_REQUEST", "Rasm fayli topilmadi"},
-		{"text named file before the file", uploadCall(t, w.m, key, textPart("file", "x"), filePart("shirt.png", "image/png", good)), 400, "BAD_REQUEST", "Rasm fayli topilmadi"},
-		{"a file under another name", uploadCall(t, w.m, key, formPart{name: "image", filename: ptr("shirt.png"), typ: "image/png", data: good}), 400, "BAD_REQUEST", "Rasm fayli topilmadi"},
-		{"declared as text", uploadCall(t, w.m, key, filePart("shirt.png", "text/plain", good)), 415, "UNSUPPORTED_IMAGE_FORMAT", ""},
-		{"declared as nothing", uploadCall(t, w.m, key, filePart("shirt.png", "", good)), 415, "UNSUPPORTED_IMAGE_FORMAT", ""},
-		{"declared as HEIC", uploadCall(t, w.m, key, filePart("shirt.heic", "image/heic", good)), 415, "UNSUPPORTED_IMAGE_FORMAT", ""},
-		{"declared with a parameter", uploadCall(t, w.m, key, filePart("shirt.png", "image/png; charset=binary", good)), 415, "UNSUPPORTED_IMAGE_FORMAT", ""},
-		{"the declared type before the size", uploadCall(t, w.m, key, filePart("shirt.png", "text/plain", huge)), 415, "UNSUPPORTED_IMAGE_FORMAT", ""},
-		{"a picture over 8 MB", uploadCall(t, w.m, key, filePart("shirt.png", "image/png", huge)), 413, "PAYLOAD_TOO_LARGE", "Rasm hajmi 8 MB dan oshmasligi kerak"},
-		{"8 MB that are no picture", uploadCall(t, w.m, key, filePart("shirt.png", "image/png", atLimit)), 422, "INVALID_IMAGE", ""},
-		{"HEIC bytes declared as JPEG", uploadCall(t, w.m, key, filePart("shirt.jpg", "image/jpeg", picture(t, "images/heic-brand.bin"))), 415, "UNSUPPORTED_IMAGE_FORMAT", ""},
-		{"a GIF declared as PNG", uploadCall(t, w.m, key, filePart("shirt.png", "image/png", picture(t, "images/picture.gif"))), 415, "UNSUPPORTED_IMAGE_FORMAT", ""},
-		{"bytes that are no picture", uploadCall(t, w.m, key, filePart("shirt.png", "image/png", picture(t, "images/garbage.bin"))), 422, "INVALID_IMAGE", ""},
-		{"a picture cut short", uploadCall(t, w.m, key, filePart("shirt.jpg", "image/jpeg", picture(t, "images/truncated.jpg"))), 422, "INVALID_IMAGE", ""},
-		{"an empty file", uploadCall(t, w.m, key, filePart("shirt.png", "image/png", nil)), 422, "INVALID_IMAGE", ""},
-		{"a picture too small", uploadCall(t, w.m, key, filePart("shirt.png", "image/png", picture(t, "images/tiny.png"))), 422, "IMAGE_DIMENSIONS", ""},
+		}), 400, "VALIDATION_ERROR", "", false},
+		{"no declared length", with(valid, func(c *call) { c.body = io.NopCloser(strings.NewReader(c.body.(string))) }), 413, "PAYLOAD_TOO_LARGE", "So‘rov hajmi ko‘rsatilmagan", false},
+		{"a request over 10 MB", with(valid, func(c *call) { c.body = overBody }), 413, "PAYLOAD_TOO_LARGE", "So‘rov hajmi juda katta", false},
+		{"the length before the type", with(valid, func(c *call) { c.body = overBody; c.headers["Content-Type"] = "text/plain" }), 413, "PAYLOAD_TOO_LARGE", "", false},
+		{"not a form", with(valid, func(c *call) { c.headers["Content-Type"] = "application/json"; c.body = `{}` }), 415, "UNSUPPORTED_MEDIA_TYPE", "multipart/form-data kutilgan", false},
+		{"no type at all", with(valid, func(c *call) { delete(c.headers, "Content-Type") }), 415, "UNSUPPORTED_MEDIA_TYPE", "multipart/form-data kutilgan", false},
+		{"a form without a boundary", with(valid, func(c *call) { c.headers["Content-Type"] = "multipart/form-data" }), 400, "BAD_REQUEST", "Yaroqsiz forma ma’lumotlari", false},
+		{"a type that only starts as a form's", with(valid, func(c *call) {
+			c.headers["Content-Type"] = strings.Replace(c.headers["Content-Type"], "multipart/form-data", "multipart/form-data-like", 1)
+		}), 400, "BAD_REQUEST", "Yaroqsiz forma ma’lumotlari", false},
+		{"a part without a name", uploadCall(t, w.m, key, filePart("shirt.png", "image/png", good), formPart{disposition: "form-data", data: []byte("x")}), 400, "BAD_REQUEST", "Yaroqsiz forma ma’lumotlari", false},
+		{"a part that is no form data", uploadCall(t, w.m, key, formPart{disposition: `attachment; name="file"; filename="shirt.png"`, typ: "image/png", data: good}), 400, "BAD_REQUEST", "Yaroqsiz forma ma’lumotlari", false},
+		{"a form that breaks off", with(valid, func(c *call) { c.body = c.body.(string)[:200] }), 400, "BAD_REQUEST", "Yaroqsiz forma ma’lumotlari", false},
+		{"a body that is no form", with(valid, func(c *call) { c.body = "hello" }), 400, "BAD_REQUEST", "Yaroqsiz forma ma’lumotlari", false},
+		{"no file", uploadCall(t, w.m, key, textPart("filename", "shirt.png")), 400, "BAD_REQUEST", "Rasm fayli topilmadi", false},
+		{"an empty form", uploadCall(t, w.m, key), 400, "BAD_REQUEST", "Rasm fayli topilmadi", false},
+		{"the file as text", uploadCall(t, w.m, key, textPart("file", string(good))), 400, "BAD_REQUEST", "Rasm fayli topilmadi", false},
+		{"text named file before the file", uploadCall(t, w.m, key, textPart("file", "x"), filePart("shirt.png", "image/png", good)), 400, "BAD_REQUEST", "Rasm fayli topilmadi", false},
+		{"a file under another name", uploadCall(t, w.m, key, formPart{name: "image", filename: ptr("shirt.png"), typ: "image/png", data: good}), 400, "BAD_REQUEST", "Rasm fayli topilmadi", false},
+		{"declared as text", uploadCall(t, w.m, key, filePart("shirt.png", "text/plain", good)), 415, "UNSUPPORTED_IMAGE_FORMAT", "", false},
+		{"declared as nothing", uploadCall(t, w.m, key, filePart("shirt.png", "", good)), 415, "UNSUPPORTED_IMAGE_FORMAT", "", false},
+		{"declared as HEIC", uploadCall(t, w.m, key, filePart("shirt.heic", "image/heic", good)), 415, "UNSUPPORTED_IMAGE_FORMAT", "", false},
+		{"declared with a parameter", uploadCall(t, w.m, key, filePart("shirt.png", "image/png; charset=binary", good)), 415, "UNSUPPORTED_IMAGE_FORMAT", "", false},
+		{"the declared type before the size", uploadCall(t, w.m, key, filePart("shirt.png", "text/plain", huge)), 415, "UNSUPPORTED_IMAGE_FORMAT", "", false},
+		{"a picture over 8 MB", uploadCall(t, w.m, key, filePart("shirt.png", "image/png", huge)), 413, "PAYLOAD_TOO_LARGE", "Rasm hajmi 8 MB dan oshmasligi kerak", false},
+		{"8 MB that are no picture", uploadCall(t, w.m, key, filePart("shirt.png", "image/png", atLimit)), 422, "INVALID_IMAGE", "", false},
+		{"HEIC bytes declared as JPEG", uploadCall(t, w.m, key, filePart("shirt.jpg", "image/jpeg", picture(t, "images/heic-brand.bin"))), 415, "UNSUPPORTED_IMAGE_FORMAT", "", false},
+		{"a GIF declared as PNG", uploadCall(t, w.m, key, filePart("shirt.png", "image/png", picture(t, "images/picture.gif"))), 415, "UNSUPPORTED_IMAGE_FORMAT", "", false},
+		{"bytes that are no picture", uploadCall(t, w.m, key, filePart("shirt.png", "image/png", picture(t, "images/garbage.bin"))), 422, "INVALID_IMAGE", "", false},
+		{"a picture cut short", uploadCall(t, w.m, key, filePart("shirt.jpg", "image/jpeg", picture(t, "images/truncated.jpg"))), 422, "INVALID_IMAGE", "", true},
+		{"an empty file", uploadCall(t, w.m, key, filePart("shirt.png", "image/png", nil)), 422, "INVALID_IMAGE", "", false},
+		{"a picture too small", uploadCall(t, w.m, key, filePart("shirt.png", "image/png", picture(t, "images/tiny.png"))), 422, "IMAGE_DIMENSIONS", "", false},
 	}
+	left := wardrobe.DailyUploads
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			got := w.do(c.call)
@@ -434,7 +453,10 @@ func TestUploadRefusalsStoreNothing(t *testing.T) {
 			if got.header.Get("Retry-After") != "" {
 				t.Errorf("Retry-After %q", got.header.Get("Retry-After"))
 			}
-			w.nothingLeft(c.name, 0, 0, 0, wardrobe.DailyUploads)
+			if c.counted {
+				left--
+			}
+			w.nothingLeft(c.name, 0, 0, 0, left)
 		})
 	}
 
@@ -450,7 +472,7 @@ func TestUploadRefusalsStoreNothing(t *testing.T) {
 	w.exec(`UPDATE "LegalConsent" SET "version" = $2 WHERE "userId" = $1`, w.user, outdatedVersion)
 	w.is(w.do(worst), http.StatusForbidden, "CONSENT_REQUIRED")
 	w.is(w.do(valid), http.StatusForbidden, "CONSENT_REQUIRED")
-	w.nothingLeft("without consent", 0, 0, 0, wardrobe.DailyUploads)
+	w.nothingLeft("without consent", 0, 0, 0, left)
 
 	// After all that, the key is free and the picture uploads.
 	w.exec(`DELETE FROM "LegalConsent" WHERE "userId" = $1`, w.user)
@@ -627,6 +649,14 @@ func TestUploadDailyLimit(t *testing.T) {
 	if w.items() != 2 || len(w.files()) != 6 || w.keys() != 1 {
 		t.Errorf("after the refusal: %d items, %d files, %d keys", w.items(), len(w.files()), w.keys())
 	}
+	// What the picture is comes before the limit: at the limit, a file we
+	// do not take is told so, not to come back tomorrow.
+	for file, code := range map[string]apierr.Code{"images/heic-brand.bin": "UNSUPPORTED_IMAGE_FORMAT", "images/tiny.png": "IMAGE_DIMENSIONS", "images/garbage.bin": "INVALID_IMAGE"} {
+		got := w.do(uploadCall(t, w.m, "", filePart("shirt.png", "image/png", picture(t, file))))
+		if got.status == http.StatusTooManyRequests || got.text("code") != string(code) {
+			t.Errorf("%s at the limit: %s", file, got.raw)
+		}
+	}
 	// A replay is not an upload: it is answered at the limit too.
 	replay := upload(w.m, key)
 	w.is(replay, http.StatusCreated, "")
@@ -663,7 +693,7 @@ func TestUploadIntoAFullWardrobe(t *testing.T) {
 
 	full := upload("upload-key-0001")
 	w.is(full, http.StatusBadRequest, "VALIDATION_ERROR")
-	if full.text("error") != "Shkafingizda 1000 ta buyum bor. Yangisini qo‘shish uchun avval keraksizlarini o‘chiring." || full.header.Get("Retry-After") != "" {
+	if full.text("error") != "Garderobingizda 1000 ta kiyim bor. Yangisini qo‘shish uchun avval keraksizlarini o‘chiring." || full.header.Get("Retry-After") != "" {
 		t.Errorf("refusal %s", full.raw)
 	}
 	w.nothingLeft("a full wardrobe", wardrobe.MaxItems, 3, 0, wardrobe.DailyUploads-1)
@@ -686,21 +716,35 @@ func TestConcurrentUploadsDoNotOverfillAWardrobe(t *testing.T) {
 	good := picture(t, whiteShirt)
 	w.exec(`INSERT INTO "WardrobeItem" ("id","userId","category","updatedAt")
 		SELECT 'cfull' || n, $1, 'shirt', now() FROM generate_series(1, $2::int) n`, w.user, wardrobe.MaxItems-1)
+	// More at a time than the API lets one user send: the use case itself.
+	uploads := wardrobe.NewUploads(wardrobe.UploadsConfig{
+		Pool: w.pool, Images: w.images, Processor: w.processor, Limiter: w.limiter, Keys: idempotency.New(w.pool), Log: slog.New(slog.DiscardHandler),
+	})
 	const n = 5
 	var wg sync.WaitGroup
-	statuses := make([]int, n)
+	outcomes := make([]string, n)
 	for i := range n {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			statuses[i] = w.do(uploadCall(t, w.m, "", filePart("shirt.png", "image/png", good))).status
+			_, err := uploads.Create(context.Background(), wardrobe.Upload{UserID: w.user, File: good, FileName: "shirt.png", HintName: "shirt.png", Fields: map[string]string{}})
+			switch {
+			case err == nil:
+				outcomes[i] = "created"
+			case errors.Is(err, wardrobe.ErrWardrobeFull):
+				outcomes[i] = "full"
+			default:
+				outcomes[i] = err.Error()
+			}
 		}()
 	}
 	wg.Wait()
-	slices.Sort(statuses)
-	if !slices.Equal(statuses, []int{201, 400, 400, 400, 400}) {
-		t.Errorf("statuses %v", statuses)
+	slices.Sort(outcomes)
+	if !slices.Equal(outcomes, []string{"created", "full", "full", "full", "full"}) {
+		t.Errorf("outcomes %v", outcomes)
 	}
+	// Through the API the full wardrobe is a refusal, not a failure.
+	w.is(w.do(uploadCall(t, w.m, "", filePart("shirt.png", "image/png", good))), http.StatusBadRequest, "VALIDATION_ERROR")
 	// One item more, its three files only, and one upload counted.
 	w.nothingLeft("after the race", wardrobe.MaxItems, 3, 0, wardrobe.DailyUploads-1)
 }
@@ -826,4 +870,288 @@ func TestUploadRunsWithItsOwnTimeLimit(t *testing.T) {
 	if store.left <= httpapi.RequestTimeout || store.left > httpapi.UploadTimeout {
 		t.Fatalf("%s left while storing", store.left)
 	}
+}
+
+// The request's identity is the Next.js API's: the picture, its name, and
+// the text fields but those named "file", of a repeated one the last; names
+// with the three escapes a browser writes, read back.
+func TestUploadIdentityIsTheNextJSAPIs(t *testing.T) {
+	t.Parallel()
+	w := newUploadWorld(t, apiOptions{})
+	good := picture(t, whiteShirt)
+	hashOf := func(key string) string {
+		return query[string](w.api, `SELECT "requestHash" FROM "IdempotencyKey" WHERE "userId" = $1 AND "key" = $2`, w.user, key)
+	}
+	for name, c := range map[string]struct {
+		parts    []formPart
+		filename string
+		fields   map[string]string
+	}{
+		"text named file after the picture": {
+			[]formPart{filePart("a.png", "image/png", good), textPart("file", "ignored"), textPart("note", "x")}, "a.png", map[string]string{"note": "x"},
+		},
+		"a repeated field": {
+			[]formPart{textPart("filename", "hat"), filePart("a.png", "image/png", good), textPart("filename", "boots")}, "a.png", map[string]string{"filename": "boots"},
+		},
+		"files under other names": {
+			[]formPart{{name: "other", filename: ptr("b.png"), typ: "image/png", data: []byte("x")}, filePart("a.png", "image/png", good)}, "a.png", map[string]string{},
+		},
+		"escapes in the names": {
+			[]formPart{filePart("a%22b%0A%0d%41.png", "image/png", good), textPart("no%22te%0a%0D%2522", "x%22")}, "a\"b\n\r%41.png", map[string]string{"no\"te\n\r%2522": "x%22"},
+		},
+		"text that is not UTF-8": {
+			[]formPart{filePart("a.png", "image/png", good), textPart("note", "a\xffb")}, "a.png", map[string]string{"note": "a\ufffdb"},
+		},
+	} {
+		key := "identity-" + strconv.Itoa(len(name))
+		w.is(w.do(uploadCall(t, w.m, key, c.parts...)), http.StatusCreated, "")
+		if got, want := hashOf(key), idempotency.MultipartHash(good, c.filename, c.fields); got != want {
+			t.Errorf("%s: the request's hash is not the one of %q %v", name, c.filename, c.fields)
+		}
+	}
+}
+
+// A key whose request was completed without a resource answers that the
+// item is gone, as the Next.js API answers.
+func TestUploadReplayWithoutAResource(t *testing.T) {
+	t.Parallel()
+	w := newUploadWorld(t, apiOptions{})
+	good := picture(t, whiteShirt)
+	const key = "upload-key-0001"
+	w.exec(`INSERT INTO "IdempotencyKey" ("id","userId","route","key","requestHash","status","responseStatus","createdAt","expiresAt")
+		VALUES ('ik1', $1, $2, $3, $4, 'completed', 201, $5, $6)`, w.user, wardrobe.UploadRoute, key,
+		idempotency.MultipartHash(good, "shirt.png", map[string]string{}), w.t0.Add(-time.Minute), w.t0.Add(24*time.Hour-time.Minute))
+	gone := w.do(uploadCall(t, w.m, key, filePart("shirt.png", "image/png", good)))
+	w.is(gone, http.StatusNotFound, "NOT_FOUND")
+	if gone.text("error") != "Bu so‘rov bilan yaratilgan buyum o‘chirilgan" {
+		t.Errorf("message %q", gone.text("error"))
+	}
+	w.nothingLeft("the replay", 0, 0, 1, wardrobe.DailyUploads)
+}
+
+// duringPut is a store that does something once, before its first write.
+type duringPut struct {
+	storage.Store
+	once sync.Once
+	do   func()
+}
+
+func (s *duringPut) Put(ctx context.Context, key string, data []byte) error {
+	s.once.Do(s.do)
+	return s.Store.Put(ctx, key, data)
+}
+
+// A request whose claim on the key is taken over while it runs (it was
+// taken for crashed) creates nothing and tells its client to ask again: the
+// other request answers.
+func TestUploadWhoseClaimIsTakenOverCreatesNothing(t *testing.T) {
+	t.Parallel()
+	local, err := storage.NewLocal(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	store := &duringPut{Store: local}
+	w := newUploadWorld(t, apiOptions{images: store})
+	const key = "upload-key-0001"
+	// The other request claims the key again: the claim's time moves.
+	store.do = func() {
+		w.exec(`UPDATE "IdempotencyKey" SET "createdAt" = "createdAt" + interval '1 second' WHERE "userId" = $1 AND "key" = $2`, w.user, key)
+	}
+	got := w.do(uploadCall(t, w.m, key, filePart("shirt.png", "image/png", picture(t, whiteShirt))))
+	w.is(got, http.StatusConflict, "IDEMPOTENCY_IN_PROGRESS")
+	if got.header.Get("Retry-After") != "5" {
+		t.Errorf("Retry-After %q", got.header.Get("Retry-After"))
+	}
+	// No item and no file; the key stays with the request that took it; the
+	// attempt is not counted.
+	w.nothingLeft("the claim lost", 0, 0, 1, wardrobe.DailyUploads)
+	if status := query[string](w.api, `SELECT "status" FROM "IdempotencyKey" WHERE "userId" = $1 AND "key" = $2`, w.user, key); status != "in_progress" {
+		t.Errorf("the key is %s", status)
+	}
+}
+
+// An account deleted while its upload runs: nothing is created, no file
+// stays, and the client is told it is signed out.
+func TestUploadOfAnAccountDeletedMeanwhile(t *testing.T) {
+	t.Parallel()
+	local, err := storage.NewLocal(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	store := &duringPut{Store: local}
+	w := newUploadWorld(t, apiOptions{images: store})
+	store.do = func() { w.exec(`DELETE FROM "User" WHERE "id" = $1`, w.user) }
+	got := w.do(uploadCall(t, w.m, "upload-key-0001", filePart("shirt.png", "image/png", picture(t, whiteShirt))))
+	w.is(got, http.StatusUnauthorized, "UNAUTHORIZED")
+	if files := w.files(); len(files) != 0 || w.items() != 0 {
+		t.Errorf("left behind: %v, %d items", files, w.items())
+	}
+	if strings.Contains(w.logs(), "internal error") {
+		t.Errorf("logged as a failure of the server: %s", w.logs())
+	}
+
+	// The same when the account is gone before the key is claimed (the gate
+	// let the request in a moment earlier).
+	uploads := wardrobe.NewUploads(wardrobe.UploadsConfig{
+		Pool: w.pool, Images: w.images, Processor: w.processor, Limiter: w.limiter, Keys: idempotency.New(w.pool), Log: slog.New(slog.DiscardHandler),
+	})
+	for _, key := range []string{"", "upload-key-0002"} {
+		_, err := uploads.Create(context.Background(), wardrobe.Upload{
+			UserID: w.user, File: picture(t, whiteShirt), FileName: "shirt.png", HintName: "shirt.png", Fields: map[string]string{}, IdempotencyKey: key,
+		})
+		if !errors.Is(err, wardrobe.ErrNoUser) {
+			t.Errorf("key %q: err %v", key, err)
+		}
+	}
+	if files := w.files(); len(files) != 0 {
+		t.Errorf("left behind: %v", files)
+	}
+}
+
+// cancelDuringPut ends the request while its last file is stored.
+type cancelDuringPut struct {
+	storage.Store
+	mu     sync.Mutex
+	puts   int
+	cancel context.CancelFunc
+}
+
+func (s *cancelDuringPut) Put(ctx context.Context, key string, data []byte) error {
+	err := s.Store.Put(ctx, key, data)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.puts++; s.puts == 3 {
+		s.cancel()
+	}
+	return err
+}
+
+// Once the files are stored, the item is created whatever becomes of the
+// request: a client that left learns of the item from its retry, not of a
+// failure that may or may not have happened.
+func TestUploadThatEndsWhileItsItemIsCreated(t *testing.T) {
+	t.Parallel()
+	local, err := storage.NewLocal(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	store := &cancelDuringPut{Store: local}
+	w := newUploadWorld(t, apiOptions{images: store})
+	uploads := wardrobe.NewUploads(wardrobe.UploadsConfig{
+		Pool: w.pool, Images: store, Processor: w.processor, Limiter: w.limiter, Keys: idempotency.New(w.pool), Log: slog.New(slog.DiscardHandler),
+	})
+	ctx, cancel := context.WithCancel(context.Background())
+	store.cancel = cancel
+	const key = "upload-key-0001"
+	up := wardrobe.Upload{UserID: w.user, File: picture(t, whiteShirt), FileName: "shirt.png", HintName: "shirt.png", Fields: map[string]string{}, IdempotencyKey: key}
+	created, err := uploads.Create(ctx, up)
+	if err != nil || ctx.Err() == nil {
+		t.Fatalf("err %v, the request's context: %v", err, ctx.Err())
+	}
+	w.nothingLeft("created", 1, 3, 1, wardrobe.DailyUploads-1)
+	replay := w.do(uploadCall(t, w.m, key, filePart("shirt.png", "image/png", picture(t, whiteShirt))))
+	w.is(replay, http.StatusCreated, "")
+	if replay.header.Get("Idempotent-Replayed") != "true" || replay.text("item", "id") != created.Item.ID {
+		t.Errorf("the retry: %s", replay.raw)
+	}
+}
+
+// readCounter counts the bytes read of a body.
+type readCounter struct {
+	io.Reader
+	mu   sync.Mutex
+	read int
+}
+
+func (r *readCounter) Read(p []byte) (int, error) {
+	n, err := r.Reader.Read(p)
+	r.mu.Lock()
+	r.read += n
+	r.mu.Unlock()
+	return n, err
+}
+
+// A user's third upload at a time is turned away before its body is read:
+// an upload holds its picture in memory until it is answered.
+func TestUploadsOfAUserAtATimeAreBounded(t *testing.T) {
+	t.Parallel()
+	if httpapi.MaxUploadsPerUser != 2 || httpapi.MaxUploadsInFlight != 16 {
+		t.Fatalf("%d a user, %d in all", httpapi.MaxUploadsPerUser, httpapi.MaxUploadsInFlight)
+	}
+	processor := imaging.NewProcessor(1)
+	w := newUploadWorld(t, apiOptions{processor: processor})
+	good := picture(t, whiteShirt)
+	release := processor.Hold()
+	// Everything the limiter has counted in this database so far.
+	counted := func() int { return query[int](w.api, `SELECT COALESCE(sum("count"), 0)::int FROM "RateLimitBucket"`) }
+	before := counted()
+	var wg sync.WaitGroup
+	statuses := make([]int, httpapi.MaxUploadsPerUser)
+	for i := range statuses {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			statuses[i] = w.do(uploadCall(t, w.m, "", filePart("shirt.png", "image/png", good))).status
+		}()
+	}
+	released := false
+	finish := func() {
+		if !released {
+			released = true
+			release()
+			wg.Wait()
+		}
+	}
+	defer finish()
+	// Both wait for the processor: each is counted against the day by then.
+	deadline := time.Now().Add(20 * time.Second)
+	for counted() < before+len(statuses) {
+		if time.Now().After(deadline) {
+			t.Fatal("the uploads did not start")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	body, contentType := form(t, filePart("shirt.png", "image/png", good))
+	counter := &readCounter{Reader: strings.NewReader(body)}
+	r := httptest.NewRequest(http.MethodPost, "http://app.example.uz"+itemsPath, counter)
+	r.ContentLength = int64(len(body))
+	r.Header.Set("Content-Type", contentType)
+	r.Header.Set("X-Atlas-Client", "mobile")
+	r.Header.Set("Authorization", "Bearer "+w.m.accessToken)
+	answered := make(chan *httptest.ResponseRecorder, 1)
+	go func() {
+		rec := httptest.NewRecorder()
+		w.handler.ServeHTTP(rec, r)
+		answered <- rec
+	}()
+	select {
+	case rec := <-answered:
+		if rec.Code != http.StatusServiceUnavailable || rec.Header().Get("Retry-After") != "15" ||
+			!strings.Contains(rec.Body.String(), `"AI_UNAVAILABLE"`) || !strings.Contains(rec.Body.String(), "Server hozir band. Birozdan so‘ng qayta urinib ko‘ring.") {
+			t.Errorf("the third upload: %d %s", rec.Code, rec.Body.String())
+		}
+		if counter.read != 0 {
+			t.Errorf("%d bytes of its body were read", counter.read)
+		}
+	case <-time.After(20 * time.Second):
+		t.Fatal("the third upload was let in")
+	}
+	// Another user is not held back by this one (theirs waits for the
+	// processor as the two do).
+	other := w.mobileRegister(nil)
+	wg.Add(1)
+	otherStatus := 0
+	go func() {
+		defer wg.Done()
+		otherStatus = w.do(uploadCall(t, other, "", filePart("shirt.png", "image/png", good))).status
+	}()
+
+	finish()
+	if !slices.Equal(statuses, []int{201, 201}) || otherStatus != http.StatusCreated {
+		t.Errorf("the uploads in flight: %v, the other user's %d", statuses, otherStatus)
+	}
+	// The places are free again.
+	w.is(w.do(uploadCall(t, w.m, "", filePart("shirt.png", "image/png", good))), http.StatusCreated, "")
+	w.nothingLeft("in the end", 3, 9+3, 0, wardrobe.DailyUploads-3) // and the other user's three files
 }

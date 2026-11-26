@@ -1,6 +1,6 @@
 {
  "generatedBy": "apps/web/scripts/golden-wardrobe-validation.ts",
- "sourceCommit": "955a1e8470b33d939b05dc3f16ccd185696d12e6",
+ "sourceCommit": "ba6be7a6b42e1ab4d4c53d9ae8364fe877fe8386",
  "note": "patch: raw bodies through parseJson. query: the parameters the route passes (an empty one is absent) through validate. id: the path id. idempotencyKey: the header (null: absent; the Headers API trims a value).",
  "patch": [
   {
@@ -1911,6 +1911,158 @@
     {
      "path": "limit",
      "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "limit 9007199254740991",
+   "query": {
+    "limit": "9007199254740991"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=200",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Juda katta: kutilgan number <=200"
+    }
+   ]
+  },
+  {
+   "name": "limit 9007199254740992",
+   "query": {
+    "limit": "9007199254740992"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan int <=9007199254740991",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Juda katta: kutilgan int <=9007199254740991"
+    },
+    {
+     "path": "limit",
+     "message": "Juda katta: kutilgan number <=200"
+    }
+   ]
+  },
+  {
+   "name": "limit 9007199254740993",
+   "query": {
+    "limit": "9007199254740993"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan int <=9007199254740991",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Juda katta: kutilgan int <=9007199254740991"
+    },
+    {
+     "path": "limit",
+     "message": "Juda katta: kutilgan number <=200"
+    }
+   ]
+  },
+  {
+   "name": "limit -9007199254740991",
+   "query": {
+    "limit": "-9007199254740991"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=1",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Juda kichik: kutilgan number >=1"
+    }
+   ]
+  },
+  {
+   "name": "limit -9007199254740993",
+   "query": {
+    "limit": "-9007199254740993"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan int >=-9007199254740991",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Juda kichik: kutilgan int >=-9007199254740991"
+    },
+    {
+     "path": "limit",
+     "message": "Juda kichik: kutilgan number >=1"
+    }
+   ]
+  },
+  {
+   "name": "limit 1e20",
+   "query": {
+    "limit": "1e20"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan int <=9007199254740991",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Juda katta: kutilgan int <=9007199254740991"
+    },
+    {
+     "path": "limit",
+     "message": "Juda katta: kutilgan number <=200"
+    }
+   ]
+  },
+  {
+   "name": "limit -1e20",
+   "query": {
+    "limit": "-1e20"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan int >=-9007199254740991",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Juda kichik: kutilgan int >=-9007199254740991"
+    },
+    {
+     "path": "limit",
+     "message": "Juda kichik: kutilgan number >=1"
+    }
+   ]
+  },
+  {
+   "name": "limit 18446744073709551616",
+   "query": {
+    "limit": "18446744073709551616"
+   },
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan int <=9007199254740991",
+   "details": [
+    {
+     "path": "limit",
+     "message": "Juda katta: kutilgan int <=9007199254740991"
+    },
+    {
+     "path": "limit",
+     "message": "Juda katta: kutilgan number <=200"
     }
    ]
   },

@@ -147,8 +147,11 @@ func wrap(next http.Handler, log *slog.Logger, budgetFor func(*http.Request) bud
 			// set for the usual request, move with it. A writer that has
 			// no deadlines (tests) is left as it is.
 			rc := http.NewResponseController(w)
-			_ = rc.SetReadDeadline(started.Add(b.timeout))
-			_ = rc.SetWriteDeadline(started.Add(b.timeout + deadlineGrace))
+			for _, err := range []error{rc.SetReadDeadline(started.Add(b.timeout)), rc.SetWriteDeadline(started.Add(b.timeout + deadlineGrace))} {
+				if err != nil && !errors.Is(err, http.ErrNotSupported) {
+					log.Warn("a request's longer time limit could not be set on its connection", "requestId", info.id, "err", err.Error())
+				}
+			}
 		}
 		ctx, cancel := context.WithTimeout(context.WithValue(r.Context(), infoKey{}, info), b.timeout)
 		defer cancel()

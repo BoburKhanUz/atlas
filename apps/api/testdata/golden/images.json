@@ -1,6 +1,6 @@
 {
  "generatedBy": "apps/web/scripts/golden-images.ts",
- "sourceCommit": "8ebdfddc4dd2687a17150f9057d70495aeb97d87",
+ "sourceCommit": "ba6be7a6b42e1ab4d4c53d9ae8364fe877fe8386",
  "note": "fixtures: files in testdata/images, through LocalStorageProvider.saveImage. large: solid red PNGs of the given size, made by each test. redCorner: the corner of the display variant the red quarter (top-left in the unturned picture) is in.",
  "fixtures": [
   {
@@ -578,6 +578,73 @@
    }
   },
   {
+   "file": "deep-turned.png",
+   "about": "16-bit PNG with EXIF orientation 6",
+   "outcome": "ok",
+   "width": 400,
+   "height": 300,
+   "mimeType": "image/png",
+   "master": {
+    "ext": "png",
+    "format": "png",
+    "width": 400,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "display": {
+    "format": "webp",
+    "width": 400,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 400,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "redCorner": ""
+  },
+  {
+   "file": "animated.webp",
+   "about": "animated WebP, two frames",
+   "outcome": "ok",
+   "width": 300,
+   "height": 300,
+   "mimeType": "image/webp",
+   "master": {
+    "ext": "webp",
+    "format": "webp",
+    "width": 300,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "display": {
+    "format": "webp",
+    "width": 300,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 300,
+    "height": 300,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   }
+  },
+  {
    "file": "gps.jpg",
    "about": "JPEG with EXIF text and GPS",
    "outcome": "ok",
@@ -747,6 +814,48 @@
    "width": 6400,
    "height": 6251,
    "outcome": "INVALID_IMAGE"
+  },
+  {
+   "width": 2000,
+   "height": 402,
+   "outcome": "ok",
+   "display": {
+    "format": "webp",
+    "width": 1600,
+    "height": 322,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 400,
+    "height": 80,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   }
+  },
+  {
+   "width": 1002,
+   "height": 2000,
+   "outcome": "ok",
+   "display": {
+    "format": "webp",
+    "width": 802,
+    "height": 1600,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   },
+   "thumbnail": {
+    "format": "webp",
+    "width": 200,
+    "height": 400,
+    "exif": false,
+    "icc": false,
+    "xmp": false
+   }
   }
  ]
 }

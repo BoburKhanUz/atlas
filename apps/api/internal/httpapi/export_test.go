@@ -76,3 +76,16 @@ func RouteBudget(pattern string) (bodyLimit int64, timeout time.Duration) {
 	b := budgetOf(pattern)
 	return b.body, b.timeout
 }
+
+// InFlight counts uploads in flight as the server counts them.
+type InFlight struct{ f inFlight }
+
+// Enter takes a place for an upload of the user's.
+func (i *InFlight) Enter(userID string) (leave func(), ok bool) { return i.f.enter(userID) }
+
+// Users is how many users have an upload in flight.
+func (i *InFlight) Users() int {
+	i.f.mu.Lock()
+	defer i.f.mu.Unlock()
+	return len(i.f.perUser)
+}
