@@ -23,7 +23,7 @@ const FRONT_PORT = port('FRONT_PORT')
 const NEXT_PORT = port('NEXT_PORT')
 const GO_PORT = port('GO_PORT')
 
-/** The operations the Go server serves (apps/api/internal/httpapi/contract/oapi-codegen.yaml). */
+/** The operations the Go server serves (apps/api/internal/httpapi/contract/oapi-codegen.yaml, and the media route). */
 const GO_ROUTES = new Set([
   'POST /api/v1/auth/register',
   'POST /api/v1/auth/login',
@@ -37,11 +37,21 @@ const GO_ROUTES = new Set([
   'GET /api/v1/profile',
   'PATCH /api/v1/profile',
   'DELETE /api/v1/account',
+  'GET /api/v1/wardrobe/items',
+  'POST /api/v1/wardrobe/items',
 ])
+
+/** The operations with a parameter in the path: one item of the wardrobe, and every image. */
+const GO_PATTERNS = [
+  { methods: ['GET', 'PATCH', 'DELETE'], path: /^\/api\/v1\/wardrobe\/items\/[^/]+$/ },
+  { methods: ['GET', 'HEAD'], path: /^\/api\/v1\/media\/.+/ },
+]
+
+const servedByGo = (method, path) => GO_ROUTES.has(`${method} ${path}`) || GO_PATTERNS.some((p) => p.methods.includes(method) && p.path.test(path))
 
 const server = http.createServer((req, res) => {
   const path = (req.url ?? '/').split('?')[0]
-  const backend = GO_ROUTES.has(`${req.method} ${path}`) ? 'go' : 'next'
+  const backend = servedByGo(req.method, path) ? 'go' : 'next'
   // The request is passed on as it came, Host included: both servers compare
   // it with the Origin header (the cross-site request guard).
   const upstream = http.request(

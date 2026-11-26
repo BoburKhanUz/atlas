@@ -48,8 +48,8 @@ distributed (its download site answered so on 2026-11-26).
   by a failed deletion are removed by the sweep.
 - **Not yet verified against a real S3-compatible service.** The stand-in is ours; a
   difference between it and R2 would show only against R2. Before the driver is used
-  for users' images it is run against a real bucket (a staging bucket of the owner's
-  Cloudflare account), which is recorded in the stage's file.
+  for users' images it is run against a real bucket: a staging bucket of the owner's
+  Cloudflare account (owner decision, 2026-11-26), recorded in the stage's file.
 - Should the needs grow (large objects, presigned links), this decision is replaced by
   a client library behind the same `storage.Store` interface.
 

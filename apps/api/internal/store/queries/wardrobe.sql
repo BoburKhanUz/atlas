@@ -80,3 +80,16 @@ INSERT INTO "WardrobeImage" ("id", "wardrobeItemId", "storageKey", "displayKey",
                              "mimeType", "bytes", "sha256", "createdAt")
 VALUES (sqlc.arg(id), sqlc.arg(item_id), sqlc.arg(storage_key), sqlc.arg(display_key), sqlc.arg(thumbnail_key), true,
         sqlc.arg(width), sqlc.arg(height), sqlc.arg(mime_type), sqlc.arg(bytes), sqlc.arg(sha256), atlas_now());
+
+-- name: ImageKeysOfUsers :many
+-- Every storage key the image rows of these users' items name (the sweep
+-- keeps those files). By the indexes on the items' owner and the images'
+-- item, not by reading the whole table.
+SELECT img."storageKey", img."displayKey", img."thumbnailKey"
+  FROM "WardrobeItem" item
+  JOIN "WardrobeImage" img ON img."wardrobeItemId" = item."id"
+ WHERE item."userId" = ANY(sqlc.arg(user_ids)::text[]);
+
+-- name: AnyWardrobeImage :one
+-- Whether the database holds any image row at all.
+SELECT EXISTS (SELECT 1 FROM "WardrobeImage");

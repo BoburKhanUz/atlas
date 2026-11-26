@@ -20,6 +20,7 @@ import (
 	"lookly/internal/accounts"
 	"lookly/internal/database"
 	"lookly/internal/maintenance"
+	"lookly/internal/wardrobe"
 )
 
 // Schema holds River's tables.
@@ -27,6 +28,13 @@ const Schema = "river"
 
 // CleanupInterval is how often the cleanup runs (and once at every start).
 const CleanupInterval = time.Hour
+
+// SweepInterval is how often the storage sweep runs (and once at every
+// start); sweepMaxAttempts bounds River's attempts at one run.
+const (
+	SweepInterval    = time.Hour
+	sweepMaxAttempts = 3
+)
 
 // cleanupMaxAttempts bounds River's attempts at one cleanup (its default is
 // 25, spread over weeks): a run that keeps failing is left to the next hour.
@@ -96,11 +104,40 @@ func (w *cleanupWorker) Work(ctx context.Context, job *river.Job[CleanupArgs]) e
 // Timeout bounds one run (River cancels it after this).
 func (w *cleanupWorker) Timeout(*river.Job[CleanupArgs]) time.Duration { return 2 * time.Minute }
 
+// SweepArgs is the hourly sweep of stored image files nothing references.
+type SweepArgs struct{}
+
+// Kind names the job in River's tables.
+func (SweepArgs) Kind() string { return "storage_sweep" }
+
+type sweepWorker struct {
+	river.WorkerDefaults[SweepArgs]
+	sweeper *wardrobe.Sweeper
+	log     *slog.Logger
+}
+
+// Work runs one sweep. A sweep that refuses to remove anything (an empty
+// database before a full storage) is an error on every attempt: someone
+// must look.
+func (w *sweepWorker) Work(ctx context.Context, job *river.Job[SweepArgs]) error {
+	report, err := w.sweeper.Sweep(ctx)
+	if err != nil {
+		w.log.Error("storage sweep failed", "jobId", job.ID, "found", report, "err", err.Error())
+		return err
+	}
+	w.log.Info("storage sweep done", "jobId", job.ID, "found", report)
+	return nil
+}
+
+// Timeout bounds one run (River cancels it after this).
+func (w *sweepWorker) Timeout(*river.Job[SweepArgs]) time.Duration { return 10 * time.Minute }
+
 // Workers are the services the jobs call.
 type Workers struct {
 	Cleanup     *maintenance.Service
 	ResetMailer *accounts.ResetMailer
 	Storage     OwnerPurger
+	Sweeper     *wardrobe.Sweeper
 }
 
 // NewClient returns the River client with every worker and periodic job.
@@ -113,6 +150,9 @@ func NewClient(pool *pgxpool.Pool, log *slog.Logger, w Workers) (*river.Client[p
 		return nil, err
 	}
 	if err := river.AddWorkerSafely(workers, &purgeImagesWorker{storage: w.Storage, log: log}); err != nil {
+		return nil, err
+	}
+	if err := river.AddWorkerSafely(workers, &sweepWorker{sweeper: w.Sweeper, log: log}); err != nil {
 		return nil, err
 	}
 	return river.NewClient(riverpgxv5.New(pool), &river.Config{
@@ -130,6 +170,15 @@ func NewClient(pool *pgxpool.Pool, log *slog.Logger, w Workers) (*river.Client[p
 					// and skip each other's session rows; the second finds
 					// nothing to do.
 					return CleanupArgs{}, &river.InsertOpts{MaxAttempts: cleanupMaxAttempts}
+				},
+				&river.PeriodicJobOpts{RunOnStart: true},
+			),
+			river.NewPeriodicJob(
+				river.PeriodicInterval(SweepInterval),
+				func() (river.JobArgs, *river.InsertOpts) {
+					// Not unique, as the cleanup: two sweeps at once find the
+					// same orphans, and removing a file twice is no error.
+					return SweepArgs{}, &river.InsertOpts{MaxAttempts: sweepMaxAttempts}
 				},
 				&river.PeriodicJobOpts{RunOnStart: true},
 			),

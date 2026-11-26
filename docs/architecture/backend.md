@@ -61,7 +61,14 @@ client ─► Wrap (middleware) ─► routed (404 for unknown routes) ─► ga
 - **Time limit**: every request's context ends after 30 s (`RequestTimeout`), which
   cancels its database calls and its wait for a pooled connection, so a stalled database
   cannot hold requests until their clients give up. The session transaction and the
-  rate limiter have their own, shorter lock and statement timeouts inside it.
+  rate limiter have their own, shorter lock and statement timeouts inside it. The
+  upload has 90 s and a 10 MB body (the gate's `timeout` and `bodyLimit`); the
+  server's own read and write deadlines move with it.
+- **Security headers**: every answer carries `X-Content-Type-Options: nosniff`,
+  `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin` and
+  `Content-Security-Policy: frame-ancestors 'none'`, as the Next.js server sends them
+  (`apps/web/next.config.ts`). A media path gets no policy from the middleware: an
+  image sets `default-src 'none'`. `Strict-Transport-Security` is the reverse proxy's.
 - **Request id**: a single client `X-Request-Id` matching `[A-Za-z0-9-]{8,64}` is kept,
   otherwise (missing, malformed or sent more than once, as the Next.js API) a random UUID
   is used. It is in the response header, the envelope and every request's log lines.
@@ -286,6 +293,7 @@ library only.
 | `maintenance_cleanup` | the worker, hourly and at start | removes expired rows (B1) | 3 |
 | `password_reset_mail` | a reset request | makes a link and e-mails it; carries a user id or nothing | 4 |
 | `account_purge_images` | an account deletion, in its transaction | removes `users/<id>` from the storage directory | River's default (25, over about three weeks) |
+| `storage_sweep` | the worker, hourly and at start | removes stored image files no image row names and older than an hour (`wardrobe.Sweeper`); at most 1000 a run; refuses when the database holds no image row at all; names we never make are logged, never removed | 3 |
 
 Job rows hold user ids, never addresses or tokens. River keeps finished jobs for a day.
 
@@ -503,7 +511,7 @@ reads and writes data but changes no schema there.
 
 - **Migrations** (`apps/api/migrations`, goose v3, embedded in the binary):
   - `00001_baseline.sql` equals the Prisma schema up to
-    `20261125000000_rate_limit_bucket`, including the two `SystemMarker` rows.
+    `20261126000000_wardrobe_child_indexes`, including the two `SystemMarker` rows.
   - `scripts/make-baseline.sh` produces it from the Prisma migrations; it is never
     hand-edited and has Up only.
   - Until B7 the migrations run in test databases only. A Prisma migration added before

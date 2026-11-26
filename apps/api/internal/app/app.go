@@ -301,6 +301,7 @@ func worker(ctx context.Context, getenv func(string) (string, bool), stdout, std
 		Cleanup:     maintenance.New(pool),
 		ResetMailer: accounts.NewResetMailer(pool, mail.New(cfg.Mail), cfg.LinkOrigin(), log),
 		Storage:     images,
+		Sweeper:     wardrobe.NewSweeper(pool, images, log, nil),
 	})
 	if err != nil {
 		log.Error("worker setup", "err", database.Describe(err))

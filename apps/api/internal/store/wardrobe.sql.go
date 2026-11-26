@@ -10,6 +10,18 @@ import (
 	"time"
 )
 
+const anyWardrobeImage = `-- name: AnyWardrobeImage :one
+SELECT EXISTS (SELECT 1 FROM "WardrobeImage")
+`
+
+// Whether the database holds any image row at all.
+func (q *Queries) AnyWardrobeImage(ctx context.Context) (bool, error) {
+	row := q.db.QueryRow(ctx, anyWardrobeImage)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const countWardrobeItemsOfUser = `-- name: CountWardrobeItemsOfUser :one
 SELECT count(*) FROM "WardrobeItem" WHERE "userId" = $1
 `
@@ -29,6 +41,42 @@ DELETE FROM "WardrobeItem" WHERE "id" = $1
 func (q *Queries) DeleteWardrobeItem(ctx context.Context, id string) error {
 	_, err := q.db.Exec(ctx, deleteWardrobeItem, id)
 	return err
+}
+
+const imageKeysOfUsers = `-- name: ImageKeysOfUsers :many
+SELECT img."storageKey", img."displayKey", img."thumbnailKey"
+  FROM "WardrobeItem" item
+  JOIN "WardrobeImage" img ON img."wardrobeItemId" = item."id"
+ WHERE item."userId" = ANY($1::text[])
+`
+
+type ImageKeysOfUsersRow struct {
+	StorageKey   string
+	DisplayKey   *string
+	ThumbnailKey *string
+}
+
+// Every storage key the image rows of these users' items name (the sweep
+// keeps those files). By the indexes on the items' owner and the images'
+// item, not by reading the whole table.
+func (q *Queries) ImageKeysOfUsers(ctx context.Context, userIds []string) ([]ImageKeysOfUsersRow, error) {
+	rows, err := q.db.Query(ctx, imageKeysOfUsers, userIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ImageKeysOfUsersRow
+	for rows.Next() {
+		var i ImageKeysOfUsersRow
+		if err := rows.Scan(&i.StorageKey, &i.DisplayKey, &i.ThumbnailKey); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const insertWardrobeImage = `-- name: InsertWardrobeImage :exec
