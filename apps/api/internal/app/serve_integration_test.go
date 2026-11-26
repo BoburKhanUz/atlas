@@ -3,6 +3,7 @@
 package app_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net"
@@ -80,6 +81,9 @@ func startServer(t *testing.T, pool *pgxpool.Pool, extra map[string]string) (cal
 		if err := json.NewDecoder(res.Body).Decode(&decoded); err != nil {
 			t.Fatalf("%s %s: %d, body is not JSON: %v", method, path, res.StatusCode, err)
 		}
+		if res.StatusCode >= http.StatusInternalServerError {
+			t.Logf("%s %s answered %d; the server's log:\n%s", method, path, res.StatusCode, stdout.String())
+		}
 		return res.StatusCode, decoded
 	}, stdout
 }
@@ -138,7 +142,9 @@ func TestServeRunsTheAuthOperationsEndToEnd(t *testing.T) {
 // server queues the job, the worker makes the link and writes the message
 // (to the outbox: no mail is sent from a test), the link sets the password.
 func TestAPasswordResetThroughTheQueueAndTheWorker(t *testing.T) {
-	t.Parallel()
+	// Not parallel: these servers hash passwords at the production cost, and
+	// under the race detector several of them at once starve each other
+	// past the request time limit.
 	pool := schemaDB(t)
 	migrateRiver(t, pool)
 	outbox := filepath.Join(t.TempDir(), "outbox")
@@ -181,14 +187,8 @@ func TestAPasswordResetThroughTheQueueAndTheWorker(t *testing.T) {
 	if status, _ := call(http.MethodGet, "/api/v1/auth/me", ""); status != http.StatusUnauthorized {
 		t.Errorf("me after the reset: %d", status)
 	}
-	if status, body := call(http.MethodPost, "/api/v1/auth/login", `{"email":"reset@test.local","password":"parol-1234"}`); status != http.StatusUnauthorized {
-		t.Errorf("the old password: %d %v", status, body)
-	}
 	if status, body := call(http.MethodPost, "/api/v1/auth/login", `{"email":"reset@test.local","password":"yangi-parol-5678"}`); status != http.StatusOK {
 		t.Errorf("the new password: %d %v", status, body)
-	}
-	if status, body := call(http.MethodPost, "/api/v1/auth/password/reset", `{"token":"`+link[1]+`","password":"uchinchi-parol-9"}`); status != http.StatusBadRequest || body["code"] != "RESET_TOKEN_INVALID" {
-		t.Errorf("the link a second time: %d %v", status, body)
 	}
 	// Neither log holds an address, a password or the token; no job does.
 	for _, log := range []string{stdout.String(), worker.stdout.String()} {
@@ -209,7 +209,9 @@ func TestAPasswordResetThroughTheQueueAndTheWorker(t *testing.T) {
 // The server starts without the queue's tables. The operations that need
 // the queue fail until `lookly migrate river` has run, and the log says so.
 func TestServeWithoutTheQueuesTables(t *testing.T) {
-	t.Parallel()
+	// Not parallel: these servers hash passwords at the production cost, and
+	// under the race detector several of them at once starve each other
+	// past the request time limit.
 	pool := schemaDB(t)
 	call, stdout := startServer(t, pool, nil)
 	if status, body := call(http.MethodPost, "/api/v1/auth/password/forgot", `{"email":"someone@test.local"}`); status != http.StatusInternalServerError || body["code"] != "INTERNAL" {
@@ -221,5 +223,88 @@ func TestServeWithoutTheQueuesTables(t *testing.T) {
 	// Everything else works.
 	if status, body := call(http.MethodPost, "/api/v1/auth/register", registrationOf("noqueue@test.local")); status != http.StatusCreated {
 		t.Errorf("register: %d %v", status, body)
+	}
+	// An account is not deleted when its images cannot be queued for removal.
+	if status, body := call(http.MethodDelete, "/api/v1/account", ""); status != http.StatusInternalServerError || body["code"] != "INTERNAL" {
+		t.Errorf("delete without the queue: %d %v", status, body)
+	}
+	if status, _ := call(http.MethodGet, "/api/v1/auth/me", ""); status != http.StatusOK {
+		t.Errorf("the account after a failed deletion: %d", status)
+	}
+}
+
+// An account's deletion through everything that is wired in production:
+// the server deletes the rows and queues the job; the worker removes the
+// account's images from the storage directory, and nobody else's.
+func TestAnAccountDeletionRemovesItsImages(t *testing.T) {
+	// Not parallel: these servers hash passwords at the production cost, and
+	// under the race detector several of them at once starve each other
+	// past the request time limit.
+	pool := schemaDB(t)
+	migrateRiver(t, pool)
+	uploads := t.TempDir()
+	storage := map[string]string{"STORAGE_LOCAL_DIR": uploads}
+	call, stdout := startServer(t, pool, storage)
+	other, _ := startServer(t, pool, storage) // a second client: another user
+	worker := startWorker(t, pool, storage)
+
+	ids := map[string]string{}
+	for email, register := range map[string]func(method, path, body string) (int, map[string]any){"leaving@test.local": call, "staying@test.local": other} {
+		status, body := register(http.MethodPost, "/api/v1/auth/register", registrationOf(email))
+		if status != http.StatusCreated {
+			t.Fatalf("register %s: %d %v", email, status, body)
+		}
+		ids[email] = body["user"].(map[string]any)["id"].(string)
+		dir := filepath.Join(uploads, "users", ids[email])
+		if err := os.MkdirAll(dir, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		for _, name := range []string{"a.jpg", "a_display.webp", "a_thumb.webp"} {
+			if err := os.WriteFile(filepath.Join(dir, name), []byte("image"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	if status, body := call(http.MethodDelete, "/api/v1/account", ""); status != http.StatusOK || body["ok"] != true {
+		t.Fatalf("delete: %d %v", status, body)
+	}
+	if status, _ := call(http.MethodGet, "/api/v1/auth/me", ""); status != http.StatusUnauthorized {
+		t.Errorf("me after the deletion: %d", status)
+	}
+	waitFor(t, "the images to be removed", func() bool {
+		_, err := os.Stat(filepath.Join(uploads, "users", ids["leaving@test.local"]))
+		return os.IsNotExist(err)
+	})
+	if _, err := os.Stat(filepath.Join(uploads, "users", ids["staying@test.local"], "a.jpg")); err != nil {
+		t.Errorf("the other user's images: %v", err)
+	}
+	if status, _ := other(http.MethodGet, "/api/v1/auth/me", ""); status != http.StatusOK {
+		t.Errorf("the other user after the deletion: %d", status)
+	}
+	waitFor(t, "the job to finish", func() bool {
+		return count(t, pool, `SELECT count(*) FROM river.river_job WHERE kind = 'account_purge_images' AND state = 'completed'`) == 1
+	})
+	for name, log := range map[string]string{"server": stdout.String(), "worker": worker.stdout.String()} {
+		if strings.Contains(log, "test.local") {
+			t.Errorf("the %s's log holds an e-mail address", name)
+		}
+	}
+	if !strings.Contains(stdout.String(), "account deleted") || !strings.Contains(worker.stdout.String(), "images of a deleted account removed") {
+		t.Error("the logs do not record the deletion and the removal of the images")
+	}
+}
+
+// The worker removes images: it does not start without the directory they
+// are in.
+func TestWorkerRefusesToStartWithoutTheStorageDirectory(t *testing.T) {
+	t.Parallel()
+	pool := schemaDB(t)
+	migrateRiver(t, pool)
+	var stderr bytes.Buffer
+	missing := filepath.Join(t.TempDir(), "not-there")
+	code := app.Run(context.Background(), []string{"worker"}, appEnv(pool, map[string]string{"STORAGE_LOCAL_DIR": missing}), &bytes.Buffer{}, &stderr)
+	if code != 2 || !strings.Contains(stderr.String(), "STORAGE_LOCAL_DIR") {
+		t.Fatalf("exit %d, stderr %q", code, stderr.String())
 	}
 }

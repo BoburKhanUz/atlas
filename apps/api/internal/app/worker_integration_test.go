@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -33,6 +34,9 @@ func appEnv(pool *pgxpool.Pool, extra map[string]string) func(string) (string, b
 	vars := configtest.Env(map[string]string{
 		"DATABASE_URL":          dbtest.URL(pool),
 		"LOOKLY_SHUTDOWN_GRACE": "5s",
+		// A directory that exists (the worker checks); tests that store
+		// files give their own.
+		"STORAGE_LOCAL_DIR": os.TempDir(),
 	})
 	for k, v := range extra {
 		vars[k] = v

@@ -64,6 +64,9 @@ type Queue interface {
 	// the user; userID is "" when the address has no account (the job then
 	// does nothing: the request costs the same either way).
 	ResetMail(ctx context.Context, userID string) error
+	// PurgeImagesTx queues, inside tx, the removal of everything stored for
+	// the user: the job exists if and only if tx commits.
+	PurgeImagesTx(ctx context.Context, tx pgx.Tx, userID string) error
 }
 
 // Config is what the account service is built from.
@@ -274,10 +277,20 @@ func (s *Service) Login(ctx context.Context, in LoginInput, c Client) (session.U
 	user := session.User{ID: row.ID, Email: row.Email, Name: row.Name}
 	issued, err := s.sessions.Start(ctx, user, session.StartOptions{ClientType: c.Type, UserAgent: c.UserAgent, DeviceName: c.DeviceName})
 	if err != nil {
+		// The account was deleted after its password was checked: the new
+		// session has no user to belong to. There is no such account.
+		var pg *pgconn.PgError
+		if errors.As(err, &pg) && pg.Code == foreignKeyViolation {
+			return session.User{}, session.Issued{}, apierr.With(apierr.Unauthorized, MsgInvalidCredentials)
+		}
 		return session.User{}, session.Issued{}, err
 	}
 	return user, issued, nil
 }
+
+// foreignKeyViolation is PostgreSQL's code for a row that references a row
+// that does not exist.
+const foreignKeyViolation = "23503"
 
 // strengthen replaces a hash weaker than the current cost by a new hash of
 // the password just verified. It never fails the sign-in: the old hash

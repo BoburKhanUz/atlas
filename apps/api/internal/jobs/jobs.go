@@ -100,6 +100,7 @@ func (w *cleanupWorker) Timeout(*river.Job[CleanupArgs]) time.Duration { return 
 type Workers struct {
 	Cleanup     *maintenance.Service
 	ResetMailer *accounts.ResetMailer
+	Storage     OwnerPurger
 }
 
 // NewClient returns the River client with every worker and periodic job.
@@ -109,6 +110,9 @@ func NewClient(pool *pgxpool.Pool, log *slog.Logger, w Workers) (*river.Client[p
 		return nil, err
 	}
 	if err := river.AddWorkerSafely(workers, &resetMailWorker{mailer: w.ResetMailer}); err != nil {
+		return nil, err
+	}
+	if err := river.AddWorkerSafely(workers, &purgeImagesWorker{storage: w.Storage, log: log}); err != nil {
 		return nil, err
 	}
 	return river.NewClient(riverpgxv5.New(pool), &river.Config{

@@ -35,6 +35,7 @@ import (
 	"lookly/internal/profile"
 	"lookly/internal/ratelimit"
 	"lookly/internal/session"
+	"lookly/internal/storage"
 )
 
 // version is stamped at build time: -ldflags "-X lookly/internal/app.version=<v>".
@@ -232,9 +233,17 @@ func worker(ctx context.Context, getenv func(string) (string, bool), stdout, std
 		fmt.Fprintln(stderr, err)
 		return exitFailure
 	}
+	// The images of deleted accounts are removed here: a storage directory
+	// that is not there would make that a silent no-op.
+	images, err := storage.NewLocal(cfg.StorageLocalDir)
+	if err != nil {
+		fmt.Fprintf(stderr, "STORAGE_LOCAL_DIR: %v\n", err)
+		return exitUsage
+	}
 	client, err := jobs.NewClient(pool, log, jobs.Workers{
 		Cleanup:     maintenance.New(pool),
 		ResetMailer: accounts.NewResetMailer(pool, mail.New(cfg.Mail), cfg.LinkOrigin(), log),
+		Storage:     images,
 	})
 	if err != nil {
 		log.Error("worker setup", "err", database.Describe(err))

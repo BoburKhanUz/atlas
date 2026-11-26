@@ -189,6 +189,20 @@ func (q *Queries) DeleteResetTokensOfUser(ctx context.Context, userid string) er
 	return err
 }
 
+const deleteUser = `-- name: DeleteUser :execrows
+DELETE FROM "User" WHERE "id" = $1
+`
+
+// The schema completes it: every row the user owns goes with it (ON DELETE
+// CASCADE; a test walks the foreign keys).
+func (q *Queries) DeleteUser(ctx context.Context, id string) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteUser, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const lockResetToken = `-- name: LockResetToken :one
 SELECT "expiresAt" FROM "PasswordResetToken" WHERE "tokenHash" = $1 FOR UPDATE
 `

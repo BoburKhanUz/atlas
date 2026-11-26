@@ -44,9 +44,9 @@ func TestTheGateTableAgreesWithTheContract(t *testing.T) {
 		}
 	}
 	// The routes that stay open to a user whose consent is out of date: to
-	// see who they are (and that consent is required) and to accept the
-	// texts. B3.6 adds deleting the account.
-	exempt := []string{"GET /api/v1/auth/me", "POST /api/v1/legal/consent"}
+	// see who they are (and that consent is required), to accept the texts,
+	// and to delete the account instead.
+	exempt := []string{"GET /api/v1/auth/me", "POST /api/v1/legal/consent", "DELETE /api/v1/account"}
 
 	rules := httpapi.RouteRules()
 	for pattern, rule := range rules {

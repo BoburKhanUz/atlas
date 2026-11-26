@@ -288,3 +288,17 @@ func (s *Server) ResetPassword(ctx context.Context, request contract.ResetPasswo
 	}
 	return contract.ResetPassword200JSONResponse{Ok: true}, nil
 }
+
+// DeleteAccount deletes the signed-in user's account and all its data;
+// the images are removed by a job queued with the deletion. Served although
+// the consent is out of date: a user who does not accept can leave.
+func (s *Server) DeleteAccount(ctx context.Context, _ contract.DeleteAccountRequestObject) (contract.DeleteAccountResponseObject, error) {
+	id, ok := identityFrom(ctx)
+	if !ok {
+		return nil, apierr.New(apierr.Unauthorized)
+	}
+	if err := s.s.Accounts.DeleteAccount(ctx, id.UserID); err != nil {
+		return nil, err
+	}
+	return contract.DeleteAccount200JSONResponse{Ok: true}, nil
+}

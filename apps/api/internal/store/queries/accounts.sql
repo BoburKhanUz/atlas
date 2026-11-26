@@ -75,3 +75,8 @@ DELETE FROM "PasswordResetToken" WHERE "tokenHash" = $1;
 
 -- name: SetPasswordHash :exec
 UPDATE "User" SET "passwordHash" = sqlc.arg(password_hash), "updatedAt" = atlas_now() WHERE "id" = sqlc.arg(id);
+
+-- name: DeleteUser :execrows
+-- The schema completes it: every row the user owns goes with it (ON DELETE
+-- CASCADE; a test walks the foreign keys).
+DELETE FROM "User" WHERE "id" = $1;

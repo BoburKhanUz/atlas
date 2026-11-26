@@ -1305,3 +1305,291 @@ func TestAResetLinkDiesWithItsAccount(t *testing.T) {
 	a.exec(`DELETE FROM "User" WHERE "email" = $1`, m.email)
 	a.is(a.do(resetWith(token, newPassword)), http.StatusBadRequest, "RESET_TOKEN_INVALID")
 }
+
+// ─── Account deletion ────────────────────────────────────────────────────
+
+func deleteAccount(m mobileSession) call {
+	return call{method: http.MethodDelete, path: "/api/v1/account", mobile: true, bearer: m.accessToken}
+}
+
+func (a *api) userExists(id string) bool {
+	a.t.Helper()
+	return query[int](a, `SELECT count(*) FROM "User" WHERE "id" = $1`, id) == 1
+}
+
+// ownedRows counts the rows of the tables a registration, a sign-in and a
+// reset request fill for a user.
+func (a *api) ownedRows(id string) int {
+	a.t.Helper()
+	return query[int](a, `SELECT (SELECT count(*) FROM "UserProfile" WHERE "userId" = $1) + (SELECT count(*) FROM "UserPreferences" WHERE "userId" = $1)
+		+ (SELECT count(*) FROM "LegalConsent" WHERE "userId" = $1) + (SELECT count(*) FROM "Session" WHERE "userId" = $1)
+		+ (SELECT count(*) FROM "SessionFamily" WHERE "userId" = $1) + (SELECT count(*) FROM "PasswordResetToken" WHERE "userId" = $1)`, id)
+}
+
+func TestDeletingTheAccount(t *testing.T) {
+	t.Parallel()
+	a := newAPI(t, apiOptions{})
+	m := a.mobileRegister(nil)
+	web := a.webLoginAs(m.email)
+	other := a.mobileRegister(nil)
+	id, otherID := a.userID(m.email), a.userID(other.email)
+	a.resetToken(m.email)
+	a.resetToken(other.email)
+	if a.ownedRows(id) != 8 || a.ownedRows(otherID) != 6 {
+		t.Fatalf("before: %d and %d rows", a.ownedRows(id), a.ownedRows(otherID))
+	}
+
+	got := a.do(deleteAccount(m))
+	a.is(got, http.StatusOK, "")
+	if got.body["ok"] != true {
+		t.Errorf("answer %s", got.raw)
+	}
+	// Gone, with everything it owned.
+	if a.userExists(id) || a.ownedRows(id) != 0 {
+		t.Errorf("after: the user exists %v, %d rows left", a.userExists(id), a.ownedRows(id))
+	}
+	// Every session stops at once: access tokens, refresh tokens, sign-in.
+	a.is(a.me(call{bearer: m.accessToken}), http.StatusUnauthorized, "UNAUTHORIZED")
+	a.is(a.me(call{cookies: map[string]string{httpapi.AccessCookie: web.at}}), http.StatusUnauthorized, "UNAUTHORIZED")
+	a.is(a.refreshMobile(m.refreshToken), http.StatusUnauthorized, "INVALID_TOKEN")
+	if a.loginStatus(m.email, password) != http.StatusUnauthorized {
+		t.Error("the deleted account signs in")
+	}
+	a.is(a.do(deleteAccount(m)), http.StatusUnauthorized, "UNAUTHORIZED")
+	// The images are removed by a job, queued with the deletion.
+	if jobs := a.queued("account_purge_images"); !slices.Equal(jobs, []string{`{"userId": "` + id + `"}`}) {
+		t.Errorf("queued %v", jobs)
+	}
+	// Nobody else is touched.
+	if !a.userExists(otherID) || a.ownedRows(otherID) != 6 {
+		t.Errorf("the other user: exists %v, %d rows", a.userExists(otherID), a.ownedRows(otherID))
+	}
+	a.is(a.me(call{bearer: other.accessToken}), http.StatusOK, "")
+	// The log says which account, by id; the address is free again.
+	if logs := a.logs(); !strings.Contains(logs, "account deleted") || !strings.Contains(logs, id) || strings.Contains(logs, m.email) {
+		t.Error("the log does not record the deletion by user id, or holds the address")
+	}
+	a.is(a.do(call{path: "/api/v1/auth/register", body: registration(m.email)}), http.StatusCreated, "")
+}
+
+func TestDeletingTheAccountFromAWebSession(t *testing.T) {
+	t.Parallel()
+	a := newAPI(t, apiOptions{})
+	s := a.webLogin()
+	id := a.userID(s.email)
+	cookies := map[string]string{httpapi.AccessCookie: s.at, httpapi.RefreshCookie: s.rt}
+	// Another site cannot delete the account through the user's browser.
+	a.is(a.do(call{method: http.MethodDelete, path: "/api/v1/account", cookies: cookies, headers: map[string]string{"Origin": "https://evil.example"}}), http.StatusForbidden, "FORBIDDEN")
+	if !a.userExists(id) {
+		t.Fatal("a cross-site request deleted the account")
+	}
+	// A user who does not accept changed legal texts can still leave.
+	a.exec(`UPDATE "LegalConsent" SET "version" = $2 WHERE "userId" = $1`, id, outdatedVersion)
+	a.is(a.do(call{method: http.MethodGet, path: "/api/v1/profile", cookies: cookies}), http.StatusForbidden, "CONSENT_REQUIRED")
+	a.is(a.do(call{method: http.MethodDelete, path: "/api/v1/account", cookies: cookies, headers: map[string]string{"Origin": "http://app.example.uz"}}), http.StatusOK, "")
+	if a.userExists(id) {
+		t.Error("the account is still there")
+	}
+}
+
+func TestAccountDeletionRefusals(t *testing.T) {
+	t.Parallel()
+	a := newAPI(t, apiOptions{})
+	m := a.mobileRegister(nil)
+	id := a.userID(m.email)
+	a.is(a.do(call{method: http.MethodDelete, path: "/api/v1/account", mobile: true}), http.StatusUnauthorized, "UNAUTHORIZED")
+	a.is(a.do(call{method: http.MethodDelete, path: "/api/v1/account", mobile: true, bearer: "not-a-token"}), http.StatusUnauthorized, "UNAUTHORIZED")
+	if !a.userExists(id) {
+		t.Fatal("deleted without a session")
+	}
+	// The account disappeared while the request was on its way.
+	a.vanish(id)
+	gone := a.do(deleteAccount(m))
+	a.is(gone, http.StatusNotFound, "NOT_FOUND")
+	if gone.text("error") != "Foydalanuvchi topilmadi" {
+		t.Errorf("message %q", gone.text("error"))
+	}
+	if n := len(a.queued("account_purge_images")); n != 0 {
+		t.Errorf("%d purge jobs queued for refused deletions", n)
+	}
+}
+
+// The deletion and its purge job are one transaction: neither without the
+// other.
+func TestTheDeletionAndItsPurgeJobAreOneTransaction(t *testing.T) {
+	t.Parallel()
+	// The deletion fails: no job stays queued.
+	a := newAPI(t, apiOptions{})
+	m := a.mobileRegister(nil)
+	id := a.userID(m.email)
+	a.exec(`CREATE FUNCTION refuse_delete() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'users stay'; END $$`)
+	a.exec(`CREATE TRIGGER refuse BEFORE DELETE ON "User" FOR EACH ROW EXECUTE FUNCTION refuse_delete()`)
+	a.is(a.do(deleteAccount(m)), http.StatusInternalServerError, "INTERNAL")
+	if !a.userExists(id) || a.ownedRows(id) != 5 || len(a.queued("account_purge_images")) != 0 {
+		t.Errorf("after a failed deletion: exists %v, %d rows, %d jobs", a.userExists(id), a.ownedRows(id), len(a.queued("account_purge_images")))
+	}
+	a.is(a.me(call{bearer: m.accessToken}), http.StatusOK, "")
+
+	// The job cannot be queued: the account stays.
+	b := newAPI(t, apiOptions{queue: brokenQueue{}})
+	n := b.mobileRegister(nil)
+	b.is(b.do(deleteAccount(n)), http.StatusInternalServerError, "INTERNAL")
+	if !b.userExists(b.userID(n.email)) {
+		t.Error("the account was deleted although its images could not be queued for removal")
+	}
+	b.is(b.me(call{bearer: n.accessToken}), http.StatusOK, "")
+	if !strings.Contains(b.logs(), "the queue is closed") {
+		t.Error("the cause is not in the log")
+	}
+}
+
+// brokenQueue takes no jobs.
+type brokenQueue struct{}
+
+func (brokenQueue) ResetMail(context.Context, string) error { return errors.New("the queue is closed") }
+func (brokenQueue) PurgeImagesTx(context.Context, pgx.Tx, string) error {
+	return errors.New("the queue is closed")
+}
+
+func TestADeletionWhileTheSessionsAreLockedAnswersBusy(t *testing.T) {
+	t.Parallel()
+	a := newAPI(t, apiOptions{lockTimeout: 300 * time.Millisecond})
+	m := a.mobileRegister(nil)
+	id := a.userID(m.email)
+	ctx := context.Background()
+	conn, err := pgx.Connect(ctx, dbtest.URL(a.pool))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close(ctx)
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tx.Exec(ctx, `SELECT 1 FROM "SessionFamily" WHERE "id" = $1 FOR UPDATE`, a.familyOf(m.refreshToken)); err != nil {
+		t.Fatal(err)
+	}
+	busy := a.do(deleteAccount(m))
+	a.is(busy, http.StatusServiceUnavailable, "SESSION_BUSY")
+	if busy.header.Get("Retry-After") != "1" || !a.userExists(id) || len(a.queued("account_purge_images")) != 0 {
+		t.Errorf("busy: Retry-After %q, exists %v, %d jobs", busy.header.Get("Retry-After"), a.userExists(id), len(a.queued("account_purge_images")))
+	}
+	if err := tx.Rollback(ctx); err != nil {
+		t.Fatal(err)
+	}
+	a.is(a.do(deleteAccount(m)), http.StatusOK, "")
+}
+
+// The lock order of docs/architecture/sessions.md: a deletion waits for the
+// user's session families before it touches the user's row, so a refresh in
+// flight (which holds its family and needs the user's row for its new
+// session) finishes first instead of deadlocking with it.
+func TestADeletionTakesTheFamiliesBeforeTheUsersRow(t *testing.T) {
+	t.Parallel()
+	a := newAPI(t, apiOptions{lockTimeout: 10 * time.Second})
+	m := a.mobileRegister(nil)
+	id := a.userID(m.email)
+	ctx := context.Background()
+	connect := func() *pgx.Conn {
+		conn, err := pgx.Connect(ctx, dbtest.URL(a.pool))
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { conn.Close(ctx) })
+		return conn
+	}
+	refresh, observer := connect(), connect()
+	held, err := refresh.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := held.Exec(ctx, `SELECT 1 FROM "SessionFamily" WHERE "id" = $1 FOR UPDATE`, a.familyOf(m.refreshToken)); err != nil {
+		t.Fatal(err)
+	}
+	done := make(chan int, 1)
+	go func() { done <- a.do(deleteAccount(m)).status }()
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		var waiting int
+		if err := observer.QueryRow(ctx, `SELECT count(*) FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock'`).Scan(&waiting); err != nil {
+			t.Fatal(err)
+		}
+		if waiting > 0 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("the deletion did not wait for the family's lock")
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	// The refresh's new session can reference the user: its row is free.
+	if _, err := held.Exec(ctx, `SELECT 1 FROM "User" WHERE "id" = $1 FOR KEY SHARE NOWAIT`, id); err != nil {
+		t.Errorf("the user's row is locked while the deletion waits for the families: %v", err)
+	}
+	if err := held.Commit(ctx); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case status := <-done:
+		if status != http.StatusOK || a.userExists(id) {
+			t.Errorf("the deletion answered %d once the family was free; the user exists %v", status, a.userExists(id))
+		}
+	case <-time.After(15 * time.Second):
+		t.Fatal("the deletion did not finish")
+	}
+}
+
+// A sign-in whose account is deleted between the password check and the
+// new session answers as for wrong credentials, not with a server error.
+func TestSigningInToAnAccountThatIsBeingDeleted(t *testing.T) {
+	t.Parallel()
+	a := newAPI(t, apiOptions{})
+	m := a.mobileRegister(nil)
+	// The moment a session is made for the user, the user is gone: the
+	// session's reference to it fails.
+	a.exec(`CREATE FUNCTION vanish_user() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN DELETE FROM "User" WHERE "id" = NEW."userId"; RETURN NEW; END $$`)
+	a.exec(`CREATE TRIGGER vanish BEFORE INSERT ON "SessionFamily" FOR EACH ROW EXECUTE FUNCTION vanish_user()`)
+	got := a.do(call{path: "/api/v1/auth/login", body: map[string]any{"email": m.email, "password": password}})
+	a.is(got, http.StatusUnauthorized, "UNAUTHORIZED")
+	if got.text("error") != accounts.MsgInvalidCredentials || len(got.cookies) != 0 {
+		t.Errorf("answer %s, cookies %v", got.raw, got.cookies)
+	}
+}
+
+// Everything that references a user, directly or through another table,
+// goes with the user: the deletion is one DELETE that the schema completes.
+func TestEveryTableThatReferencesAUserIsDeletedWithIt(t *testing.T) {
+	t.Parallel()
+	a := newAPI(t, apiOptions{})
+	rows, err := a.pool.Query(context.Background(), `
+		WITH RECURSIVE owned(tbl) AS (
+			SELECT '"User"'::regclass
+			UNION
+			SELECT c.conrelid::regclass FROM pg_constraint c JOIN owned o ON c.confrelid = o.tbl WHERE c.contype = 'f' AND c.confdeltype = 'c'
+		)
+		SELECT c.conrelid::regclass::text, c.conname, c.confdeltype::text
+		  FROM pg_constraint c JOIN owned o ON c.confrelid = o.tbl
+		 WHERE c.contype = 'f' ORDER BY 1, 2`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	type reference struct{ Table, Name, OnDelete string }
+	references, err := pgx.CollectRows(rows, pgx.RowToStructByPos[reference])
+	if err != nil {
+		t.Fatal(err)
+	}
+	tables := map[string]bool{}
+	for _, r := range references {
+		tables[r.Table] = true
+		// c: the row is deleted too; n: the reference is cleared (the row
+		// belongs to another owned row, which is deleted itself).
+		if r.OnDelete != "c" && r.OnDelete != "n" {
+			t.Errorf("%s (%s) would block or outlive the deletion of its user: ON DELETE %q", r.Table, r.Name, r.OnDelete)
+		}
+	}
+	for _, table := range []string{`"WardrobeItem"`, `"WardrobeImage"`, `"Outfit"`, `"AiConversation"`, `"AiMessage"`, `"ColorProfile"`, `"Session"`, `"LegalConsent"`, `"PasswordResetToken"`} {
+		if !tables[table] {
+			t.Errorf("%s is not among the tables deleted with a user: %v", table, tables)
+		}
+	}
+}

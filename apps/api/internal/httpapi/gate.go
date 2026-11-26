@@ -90,6 +90,7 @@ var routes = map[string]routeRule{
 	"POST /api/v1/auth/password/reset":  {access: public, body: PasswordResetBody},
 	"GET /api/v1/legal":                 {access: public},
 	"POST /api/v1/legal/consent":        {consentExempt: true, body: LegalConsentBody},
+	"DELETE /api/v1/account":            {consentExempt: true},
 	"GET /api/v1/profile":               {},
 	"PATCH /api/v1/profile":             {body: ProfilePatchBody},
 }

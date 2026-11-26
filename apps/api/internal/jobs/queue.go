@@ -49,6 +49,42 @@ func (w *resetMailWorker) Work(ctx context.Context, job *river.Job[ResetMailArgs
 // Timeout bounds one attempt (River cancels it after this).
 func (w *resetMailWorker) Timeout(*river.Job[ResetMailArgs]) time.Duration { return time.Minute }
 
+// PurgeImagesArgs is the job that removes everything stored for a user
+// whose account was deleted. It is queued in the deletion's transaction and
+// tried until it succeeds (River's default: 25 attempts over about three
+// weeks, then it is kept as discarded for the operator to see).
+type PurgeImagesArgs struct {
+	UserID string `json:"userId"`
+}
+
+// Kind names the job in River's tables.
+func (PurgeImagesArgs) Kind() string { return "account_purge_images" }
+
+// OwnerPurger removes everything stored for an owner (the storage driver).
+type OwnerPurger interface {
+	DeleteOwner(ctx context.Context, owner string) error
+}
+
+type purgeImagesWorker struct {
+	river.WorkerDefaults[PurgeImagesArgs]
+	storage OwnerPurger
+	log     *slog.Logger
+}
+
+// Work removes the user's images. Repeating it is harmless.
+func (w *purgeImagesWorker) Work(ctx context.Context, job *river.Job[PurgeImagesArgs]) error {
+	if err := w.storage.DeleteOwner(ctx, job.Args.UserID); err != nil {
+		return err
+	}
+	w.log.InfoContext(ctx, "images of a deleted account removed", "jobId", job.ID, "userId", job.Args.UserID)
+	return nil
+}
+
+// Timeout bounds one attempt (River cancels it after this).
+func (w *purgeImagesWorker) Timeout(*river.Job[PurgeImagesArgs]) time.Duration {
+	return 5 * time.Minute
+}
+
 // Queue puts jobs into the queue. The API server uses it: it works no jobs
 // itself (`lookly worker` does).
 type Queue struct {
@@ -69,6 +105,13 @@ func NewQueue(pool *pgxpool.Pool, log *slog.Logger) (*Queue, error) {
 // ("" for nobody).
 func (q *Queue) ResetMail(ctx context.Context, userID string) error {
 	_, err := q.client.Insert(ctx, ResetMailArgs{UserID: userID}, nil)
+	return explain(err)
+}
+
+// PurgeImagesTx queues, inside tx, the removal of everything stored for the
+// user: the job exists if and only if tx commits.
+func (q *Queue) PurgeImagesTx(ctx context.Context, tx pgx.Tx, userID string) error {
+	_, err := q.client.InsertTx(ctx, tx, PurgeImagesArgs{UserID: userID}, nil)
 	return explain(err)
 }
 

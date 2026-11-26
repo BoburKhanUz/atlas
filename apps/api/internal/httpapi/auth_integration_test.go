@@ -233,6 +233,9 @@ var knownContractGaps = map[string]bool{
 	// B3: the same guard on the two public writes of the password reset.
 	"POST /api/v1/auth/password/forgot 403": true,
 	"POST /api/v1/auth/password/reset 403":  true,
+	// B3: deleting an account while its sessions are locked too long is
+	// "busy, try again", which the contract does not list for it.
+	"DELETE /api/v1/account 503": true,
 }
 
 func (a *api) do(c call) answer {

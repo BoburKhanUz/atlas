@@ -97,7 +97,7 @@ func (m *ResetMailer) Send(ctx context.Context, userID string, requestedAt time.
 		ID: platform.NewID(), UserID: userID, TokenHash: tokenHash, TtlSeconds: ResetTokenTTL.Seconds(),
 	})
 	var pg *pgconn.PgError
-	if errors.As(err, &pg) && pg.Code == "23503" {
+	if errors.As(err, &pg) && pg.Code == foreignKeyViolation {
 		return nil // deleted between the two statements
 	} else if err != nil {
 		return fmt.Errorf("store the reset link of user %s: %w", userID, err)
