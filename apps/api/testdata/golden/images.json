@@ -1,6 +1,6 @@
 {
  "generatedBy": "apps/web/scripts/golden-images.ts",
- "sourceCommit": "2451f7beb5ae9f45f9a43a6e4a1889ba4adabc73",
+ "sourceCommit": "8ebdfddc4dd2687a17150f9057d70495aeb97d87",
  "note": "fixtures: files in testdata/images, through LocalStorageProvider.saveImage. large: solid red PNGs of the given size, made by each test. redCorner: the corner of the display variant the red quarter (top-left in the unturned picture) is in.",
  "fixtures": [
   {

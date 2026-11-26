@@ -17,7 +17,7 @@ import { execFileSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import sharp from 'sharp'
+import sharp, { type Sharp } from 'sharp'
 
 const outDir = process.argv[2]
 if (!outDir) throw new Error('usage: bun scripts/golden-images.ts <apps/api/testdata>')
@@ -40,7 +40,7 @@ const WHITE: RGB = { r: 245, g: 245, b: 245 }
  * is green on white, so that the corner the red ends up in shows how the
  * picture was turned.
  */
-async function marked(): Promise<sharp.Sharp> {
+async function marked(): Promise<Sharp> {
   const quarter = (c: RGB) => sharp({ create: { width: 150, height: 200, channels: 3, background: c } }).png().toBuffer()
   return sharp({ create: { width: 300, height: 400, channels: 3, background: WHITE } }).composite([
     { input: await quarter(RED), left: 0, top: 0 },
