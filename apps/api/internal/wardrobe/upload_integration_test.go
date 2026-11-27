@@ -129,7 +129,8 @@ func TestAnUploadWhoseCommitMayStillLandKeepsItsFiles(t *testing.T) {
 		t.Fatalf("err %v", err)
 	}
 	// The open transaction holds the key's row: the claim cannot be
-	// released, and the log says what becomes of it.
+	// released (the answer waits for that as long as the cleanup has, ten
+	// seconds), and the log says what becomes of the key.
 	if w.count(itemRows) != 0 || len(w.stored()) != 3 || w.count(countedToday) != 1 || w.count(anyKeys) != 1 || w.count(completedKeys) != 0 {
 		t.Fatalf("before the commit lands: %d items, files %v, %d counted, %d keys (%d completed)",
 			w.count(itemRows), w.stored(), w.count(countedToday), w.count(anyKeys), w.count(completedKeys))
@@ -139,7 +140,7 @@ func TestAnUploadWhoseCommitMayStillLandKeepsItsFiles(t *testing.T) {
 			t.Errorf("the log lacks %q: %s", want, w.log.String())
 		}
 	}
-	if !strings.Contains(w.log.String(), "not released; its commit completes it") {
+	if !strings.Contains(w.log.String(), "not released; a commit still on its way completes it") {
 		t.Errorf("what becomes of the key is not logged: %s", w.log.String())
 	}
 	if err := open.Commit(context.Background()); err != nil {

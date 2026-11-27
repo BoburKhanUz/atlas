@@ -150,9 +150,11 @@ func DailyUploadHit(userID string, now time.Time) ratelimit.Hit {
 // if it is there, the upload succeeded; if not, nothing is taken back, the
 // files and the count are kept for the sweep to judge (it asks the database
 // before it removes a file), and the error says so (ErrOutcomeUnknown). The
-// claim on the key is released if the database lets it go within two
-// seconds (the commit was lost: a retry runs at once); a commit still on
-// its way keeps it, and completes it when it lands.
+// claim on the key is released if the database lets its row go within the
+// cleanup's time (the commit was lost: a retry runs at once); a commit
+// still on its way then keeps it, and completes it when it lands (if that
+// commit is lost after all, the key stays "in progress" until it is taken
+// for crashed, five minutes after it was claimed).
 //
 // The refusals: imaging.ErrUnsupported, imaging.ErrInvalid and
 // imaging.ErrDimensions for the picture; ErrWardrobeFull and
@@ -192,20 +194,14 @@ func (u *Uploads) Create(ctx context.Context, up Upload) (Created, error) {
 		cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), removeTimeout)
 		defer cancel()
 		undo(cleanup, err)
+		// The claim is released whatever the failure. After an unknown
+		// outcome: a lost commit has let the key's row go, and the key is
+		// freed for the retry; a commit that landed has completed the key,
+		// which the release leaves alone; a commit still on its way holds
+		// the row, and the release gives up when the cleanup's time is up.
 		if claim != nil {
-			release := cleanup
-			if errors.Is(err, ErrOutcomeUnknown) {
-				// The commit may still be on its way, holding the key's
-				// row: the release waits for it only briefly. A commit that
-				// was lost has let the row go, and the key is freed for
-				// the retry; one that landed has completed the key, which
-				// the release leaves alone.
-				var cancel context.CancelFunc
-				release, cancel = context.WithTimeout(cleanup, releaseAfterUnknown)
-				defer cancel()
-			}
-			if releaseErr := u.keys.Release(release, *claim); releaseErr != nil {
-				u.log.Warn("wardrobe: an idempotency key of a failed upload not released; its commit completes it, or it is taken for crashed after five minutes",
+			if releaseErr := u.keys.Release(cleanup, *claim); releaseErr != nil {
+				u.log.Warn("wardrobe: an idempotency key of a failed upload not released; a commit still on its way completes it, else it is taken for crashed five minutes after its claim",
 					"userId", up.UserID, "err", releaseErr.Error())
 			}
 		}
@@ -248,10 +244,6 @@ func detectionOf(item Item, provider *string) vision.Detection {
 // foreignKeyViolation is PostgreSQL's error code for a row that names a row
 // which is not there.
 const foreignKeyViolation = "23503"
-
-// releaseAfterUnknown is how long the release of a key waits after an
-// unknown outcome (see Create).
-const releaseAfterUnknown = 2 * time.Second
 
 // createTimeout bounds the transaction that creates the item's rows. It
 // runs to its end whatever becomes of the request: once the files are
