@@ -195,6 +195,87 @@ func (e OkResponseOk) Valid() bool {
 	}
 }
 
+// Defines values for OutfitGenerateRequestOccasion.
+const (
+	OutfitGenerateRequestOccasionCasual  OutfitGenerateRequestOccasion = "casual"
+	OutfitGenerateRequestOccasionDate    OutfitGenerateRequestOccasion = "date"
+	OutfitGenerateRequestOccasionOther   OutfitGenerateRequestOccasion = "other"
+	OutfitGenerateRequestOccasionTravel  OutfitGenerateRequestOccasion = "travel"
+	OutfitGenerateRequestOccasionWedding OutfitGenerateRequestOccasion = "wedding"
+	OutfitGenerateRequestOccasionWork    OutfitGenerateRequestOccasion = "work"
+)
+
+// Valid indicates whether the value is a known member of the OutfitGenerateRequestOccasion enum.
+func (e OutfitGenerateRequestOccasion) Valid() bool {
+	switch e {
+	case OutfitGenerateRequestOccasionCasual:
+		return true
+	case OutfitGenerateRequestOccasionDate:
+		return true
+	case OutfitGenerateRequestOccasionOther:
+		return true
+	case OutfitGenerateRequestOccasionTravel:
+		return true
+	case OutfitGenerateRequestOccasionWedding:
+		return true
+	case OutfitGenerateRequestOccasionWork:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for OutfitGenerateResponseOutfitsContrastLevel.
+const (
+	High   OutfitGenerateResponseOutfitsContrastLevel = "high"
+	Low    OutfitGenerateResponseOutfitsContrastLevel = "low"
+	Medium OutfitGenerateResponseOutfitsContrastLevel = "medium"
+)
+
+// Valid indicates whether the value is a known member of the OutfitGenerateResponseOutfitsContrastLevel enum.
+func (e OutfitGenerateResponseOutfitsContrastLevel) Valid() bool {
+	switch e {
+	case High:
+		return true
+	case Low:
+		return true
+	case Medium:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for OutfitGenerateResponseOutfitsItemsLayeringRole.
+const (
+	OutfitGenerateResponseOutfitsItemsLayeringRoleAccessory OutfitGenerateResponseOutfitsItemsLayeringRole = "accessory"
+	OutfitGenerateResponseOutfitsItemsLayeringRoleBottom    OutfitGenerateResponseOutfitsItemsLayeringRole = "bottom"
+	OutfitGenerateResponseOutfitsItemsLayeringRoleDress     OutfitGenerateResponseOutfitsItemsLayeringRole = "dress"
+	OutfitGenerateResponseOutfitsItemsLayeringRoleFootwear  OutfitGenerateResponseOutfitsItemsLayeringRole = "footwear"
+	OutfitGenerateResponseOutfitsItemsLayeringRoleOuterwear OutfitGenerateResponseOutfitsItemsLayeringRole = "outerwear"
+	OutfitGenerateResponseOutfitsItemsLayeringRoleTop       OutfitGenerateResponseOutfitsItemsLayeringRole = "top"
+)
+
+// Valid indicates whether the value is a known member of the OutfitGenerateResponseOutfitsItemsLayeringRole enum.
+func (e OutfitGenerateResponseOutfitsItemsLayeringRole) Valid() bool {
+	switch e {
+	case OutfitGenerateResponseOutfitsItemsLayeringRoleAccessory:
+		return true
+	case OutfitGenerateResponseOutfitsItemsLayeringRoleBottom:
+		return true
+	case OutfitGenerateResponseOutfitsItemsLayeringRoleDress:
+		return true
+	case OutfitGenerateResponseOutfitsItemsLayeringRoleFootwear:
+		return true
+	case OutfitGenerateResponseOutfitsItemsLayeringRoleOuterwear:
+		return true
+	case OutfitGenerateResponseOutfitsItemsLayeringRoleTop:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ProfilePatchRequestPreferencesDislikedColors.
 const (
 	ProfilePatchRequestPreferencesDislikedColorsBeige     ProfilePatchRequestPreferencesDislikedColors = "beige"
@@ -1231,6 +1312,91 @@ type OkResponse struct {
 // OkResponseOk defines model for OkResponse.Ok.
 type OkResponseOk bool
 
+// OutfitGenerateRequest defines model for OutfitGenerateRequest.
+type OutfitGenerateRequest struct {
+	Lat      nullable.Nullable[float64]                       `json:"lat,omitempty"`
+	Lon      nullable.Nullable[float64]                       `json:"lon,omitempty"`
+	Occasion nullable.Nullable[OutfitGenerateRequestOccasion] `json:"occasion,omitempty"`
+
+	// Seed Omitted: the best outfits. Any number: a deterministic window of the top candidates (same seed, same result)
+	Seed    *float64 `json:"seed,omitempty"`
+	TopN    *int     `json:"topN,omitempty"`
+	Weather nullable.Nullable[struct {
+		Condition                string  `json:"condition"`
+		FeelsLike                float64 `json:"feelsLike"`
+		Humidity                 float64 `json:"humidity"`
+		PrecipitationProbability float64 `json:"precipitationProbability"`
+		Temperature              float64 `json:"temperature"`
+		UvIndex                  float64 `json:"uvIndex"`
+		WindSpeed                float64 `json:"windSpeed"`
+	}] `json:"weather,omitempty"`
+}
+
+// OutfitGenerateRequestOccasion defines model for OutfitGenerateRequest.Occasion.
+type OutfitGenerateRequestOccasion string
+
+// OutfitGenerateResponse defines model for OutfitGenerateResponse.
+type OutfitGenerateResponse struct {
+	// Fallback true when the optional AI ranking/explanation was not used (deterministic order and explanations)
+	Fallback bool `json:"fallback"`
+
+	// Message Why no outfits were generated
+	Message  *string                   `json:"message,omitempty"`
+	Occasion nullable.Nullable[string] `json:"occasion"`
+	Outfits  []struct {
+		ContrastLevel OutfitGenerateResponseOutfitsContrastLevel `json:"contrastLevel"`
+		Explanation   nullable.Nullable[string]                  `json:"explanation"`
+		Factors       struct {
+			Balance    float64 `json:"balance"`
+			Color      float64 `json:"color"`
+			Feedback   float64 `json:"feedback"`
+			Occasion   float64 `json:"occasion"`
+			Preference float64 `json:"preference"`
+			Season     float64 `json:"season"`
+			Style      float64 `json:"style"`
+			Weather    float64 `json:"weather"`
+		} `json:"factors"`
+		Items []struct {
+			Category     string                                         `json:"category"`
+			Colors       []string                                       `json:"colors"`
+			Id           string                                         `json:"id"`
+			ImageUrl     nullable.Nullable[string]                      `json:"imageUrl"`
+			LayeringRole OutfitGenerateResponseOutfitsItemsLayeringRole `json:"layeringRole"`
+			Material     nullable.Nullable[string]                      `json:"material"`
+
+			// Role Legacy role: top, bottom, shoes or accessory (dresses and outerwear are "top")
+			Role        string                    `json:"role"`
+			Season      []string                  `json:"season"`
+			Style       nullable.Nullable[string] `json:"style"`
+			Subcategory nullable.Nullable[string] `json:"subcategory"`
+		} `json:"items"`
+
+		// ReasonLabels User-facing reason labels (Uzbek), same order as reasons
+		ReasonLabels []string `json:"reasonLabels"`
+
+		// Reasons Internal reason codes (stable, for debugging); show reasonLabels to users
+		Reasons []string `json:"reasons"`
+		Score   float64  `json:"score"`
+		TempId  string   `json:"tempId"`
+	} `json:"outfits"`
+	WardrobeItemCount int `json:"wardrobeItemCount"`
+	WeatherUsed       nullable.Nullable[struct {
+		Condition                string  `json:"condition"`
+		FeelsLike                float64 `json:"feelsLike"`
+		Humidity                 float64 `json:"humidity"`
+		PrecipitationProbability float64 `json:"precipitationProbability"`
+		Temperature              float64 `json:"temperature"`
+		UvIndex                  float64 `json:"uvIndex"`
+		WindSpeed                float64 `json:"windSpeed"`
+	}] `json:"weatherUsed"`
+}
+
+// OutfitGenerateResponseOutfitsContrastLevel defines model for OutfitGenerateResponse.Outfits.ContrastLevel.
+type OutfitGenerateResponseOutfitsContrastLevel string
+
+// OutfitGenerateResponseOutfitsItemsLayeringRole defines model for OutfitGenerateResponse.Outfits.Items.LayeringRole.
+type OutfitGenerateResponseOutfitsItemsLayeringRole string
+
 // PasswordForgotRequest defines model for PasswordForgotRequest.
 type PasswordForgotRequest struct {
 	Email string `json:"email"`
@@ -1576,6 +1742,9 @@ type RegisterJSONRequestBody = RegisterRequest
 // AcceptLegalDocumentsJSONRequestBody defines body for AcceptLegalDocuments for application/json ContentType.
 type AcceptLegalDocumentsJSONRequestBody = LegalConsentRequest
 
+// GenerateOutfitsJSONRequestBody defines body for GenerateOutfits for application/json ContentType.
+type GenerateOutfitsJSONRequestBody = OutfitGenerateRequest
+
 // UpdateProfileJSONRequestBody defines body for UpdateProfile for application/json ContentType.
 type UpdateProfileJSONRequestBody = ProfilePatchRequest
 
@@ -1682,6 +1851,9 @@ type ServerInterface interface {
 	// AcceptLegalDocuments Accept the current legal texts after they changed (ends CONSENT_REQUIRED)
 	// (POST /api/v1/legal/consent)
 	AcceptLegalDocuments(w http.ResponseWriter, r *http.Request)
+	// GenerateOutfits Generate outfit suggestions from the wardrobe: a deterministic engine (hard filters, bounded candidates, scoring, stable order) plus optional AI reranking/explanation that never fails the request (fallback: true). The same wardrobe, context and seed always give the same result; omit seed for the best outfits, send a new seed for another deterministic option.
+	// (POST /api/v1/outfits/generate)
+	GenerateOutfits(w http.ResponseWriter, r *http.Request)
 	// GetProfile Profile and style preferences
 	// (GET /api/v1/profile)
 	GetProfile(w http.ResponseWriter, r *http.Request)
@@ -1970,6 +2142,20 @@ func (siw *ServerInterfaceWrapper) AcceptLegalDocuments(w http.ResponseWriter, r
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AcceptLegalDocuments(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GenerateOutfits operation middleware
+func (siw *ServerInterfaceWrapper) GenerateOutfits(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GenerateOutfits(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2362,6 +2548,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/auth/register", wrapper.Register)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/legal", wrapper.GetLegalDocuments)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/legal/consent", wrapper.AcceptLegalDocuments)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/outfits/generate", wrapper.GenerateOutfits)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/profile", wrapper.GetProfile)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/v1/profile", wrapper.UpdateProfile)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/wardrobe/items", wrapper.ListWardrobeItems)
@@ -3346,6 +3533,98 @@ func (response AcceptLegalDocuments500JSONResponse) VisitAcceptLegalDocumentsRes
 	return err
 }
 
+type GenerateOutfitsRequestObject struct {
+	Body *GenerateOutfitsJSONRequestBody
+}
+
+type GenerateOutfitsResponseObject interface {
+	VisitGenerateOutfitsResponse(w http.ResponseWriter) error
+}
+
+type GenerateOutfits200JSONResponse OutfitGenerateResponse
+
+func (response GenerateOutfits200JSONResponse) VisitGenerateOutfitsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GenerateOutfits400JSONResponse ErrorResponse
+
+func (response GenerateOutfits400JSONResponse) VisitGenerateOutfitsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GenerateOutfits401JSONResponse ErrorResponse
+
+func (response GenerateOutfits401JSONResponse) VisitGenerateOutfitsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GenerateOutfits403JSONResponse ErrorResponse
+
+func (response GenerateOutfits403JSONResponse) VisitGenerateOutfitsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GenerateOutfits413JSONResponse ErrorResponse
+
+func (response GenerateOutfits413JSONResponse) VisitGenerateOutfitsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GenerateOutfits500JSONResponse ErrorResponse
+
+func (response GenerateOutfits500JSONResponse) VisitGenerateOutfitsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetProfileRequestObject struct {
 }
 
@@ -4214,6 +4493,9 @@ type StrictServerInterface interface {
 	// AcceptLegalDocuments Accept the current legal texts after they changed (ends CONSENT_REQUIRED)
 	// (POST /api/v1/legal/consent)
 	AcceptLegalDocuments(ctx context.Context, request AcceptLegalDocumentsRequestObject) (AcceptLegalDocumentsResponseObject, error)
+	// GenerateOutfits Generate outfit suggestions from the wardrobe: a deterministic engine (hard filters, bounded candidates, scoring, stable order) plus optional AI reranking/explanation that never fails the request (fallback: true). The same wardrobe, context and seed always give the same result; omit seed for the best outfits, send a new seed for another deterministic option.
+	// (POST /api/v1/outfits/generate)
+	GenerateOutfits(ctx context.Context, request GenerateOutfitsRequestObject) (GenerateOutfitsResponseObject, error)
 	// GetProfile Profile and style preferences
 	// (GET /api/v1/profile)
 	GetProfile(ctx context.Context, request GetProfileRequestObject) (GetProfileResponseObject, error)
@@ -4599,6 +4881,37 @@ func (sh *strictHandler) AcceptLegalDocuments(w http.ResponseWriter, r *http.Req
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(AcceptLegalDocumentsResponseObject); ok {
 		if err := validResponse.VisitAcceptLegalDocumentsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GenerateOutfits operation middleware
+func (sh *strictHandler) GenerateOutfits(w http.ResponseWriter, r *http.Request) {
+	var request GenerateOutfitsRequestObject
+
+	var body GenerateOutfitsJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GenerateOutfits(ctx, request.(GenerateOutfitsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GenerateOutfits")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GenerateOutfitsResponseObject); ok {
+		if err := validResponse.VisitGenerateOutfitsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

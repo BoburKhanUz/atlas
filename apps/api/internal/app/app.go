@@ -35,6 +35,7 @@ import (
 	"lookly/internal/mail"
 	"lookly/internal/maintenance"
 	"lookly/internal/media"
+	"lookly/internal/outfits"
 	"lookly/internal/profile"
 	"lookly/internal/ratelimit"
 	"lookly/internal/session"
@@ -109,6 +110,7 @@ func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger, images storage
 		Pool: pool, Sessions: sessions, Limiter: limiter, Consent: consent, Hasher: auth.Bcrypt{}, Log: log,
 		Queue: queue, MailEnabled: cfg.Mail.Enabled(),
 	})
+	forecasts := weather.New(pool, weatherProvider(cfg), log)
 	server := httpapi.NewServer(httpapi.Services{
 		Health:   health.New(pool, version, healthPingTimeout),
 		Accounts: users,
@@ -116,7 +118,8 @@ func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger, images storage
 		Legal:    consent,
 		Profile:  profile.New(pool),
 		Wardrobe: wardrobe.New(pool, images, log),
-		Weather:  weather.New(pool, weatherProvider(cfg), log),
+		Weather:  forecasts,
+		Outfits:  outfits.New(pool, forecasts, log),
 		Uploads: wardrobe.NewUploads(wardrobe.UploadsConfig{
 			Pool: pool, Images: images, Processor: imaging.NewProcessor(picturesAtOnce), Limiter: limiter,
 			Keys: idempotency.New(pool), Log: log,

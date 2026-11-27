@@ -42,6 +42,7 @@ import (
 	"lookly/internal/jobs"
 	"lookly/internal/legal"
 	"lookly/internal/media"
+	"lookly/internal/outfits"
 	"lookly/internal/profile"
 	"lookly/internal/ratelimit"
 	"lookly/internal/session"
@@ -225,9 +226,10 @@ func newAPI(t *testing.T, o apiOptions) *api {
 	if o.weather != nil {
 		forecasts = o.weather
 	}
+	weatherService := weather.New(pool, forecasts, log)
 	server := httpapi.NewServer(httpapi.Services{
 		Health: health.New(pool, "test", time.Second), Accounts: users, Sessions: a.sessions, Legal: consent, Profile: profile.New(pool),
-		Weather:  weather.New(pool, forecasts, log),
+		Weather: weatherService, Outfits: outfits.New(pool, weatherService, log),
 		Wardrobe: wardrobe.New(pool, a.images, log), Media: a.media, Images: a.images, Now: o.now,
 		Uploads: wardrobe.NewUploads(wardrobe.UploadsConfig{
 			Pool: pool, Images: a.images, Processor: a.processor, Limiter: limiter, Keys: idempotency.New(pool), Log: log,

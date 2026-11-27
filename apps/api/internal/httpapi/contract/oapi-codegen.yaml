@@ -43,3 +43,4 @@ output-options:
     - deleteWardrobeItem
     - createWardrobeItem
     - getCurrentWeather
+    - generateOutfits

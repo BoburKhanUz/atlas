@@ -129,6 +129,7 @@ var routes = map[string]routeRule{
 	"PATCH /api/v1/wardrobe/items/{id}":  {itemID: true, body: WardrobePatchBody},
 	"DELETE /api/v1/wardrobe/items/{id}": {itemID: true},
 	"GET /api/v1/weather/current":        {query: WeatherQuery},
+	"POST /api/v1/outfits/generate":      {body: OutfitGenerateBody},
 }
 
 type identityKey struct{}

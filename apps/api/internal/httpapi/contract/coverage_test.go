@@ -15,7 +15,7 @@ import (
 // oapi-codegen.yaml together with their handlers; the list is empty at the
 // cutover (B7).
 var notYetImplemented = []string{
-	"analyzeColorProfile", "deleteColorProfile", "deleteOutfit", "generateOutfits",
+	"analyzeColorProfile", "deleteColorProfile", "deleteOutfit",
 	"getColorProfile", "getConversation", "getOpenApiDocument", "getOutfit",
 	"listConversations", "listOutfits", "reportClientErrors",
 	"saveOutfit", "sendOutfitFeedback",
