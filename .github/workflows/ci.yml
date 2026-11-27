@@ -101,7 +101,7 @@ jobs:
           export STORAGE_LOCAL_DIR="$RUNNER_TEMP/atlas-e2e-storage"
           mkdir -p "$STORAGE_LOCAL_DIR"
           bun run test:e2e
-      # Go mode (docs/plan/B2.md, B3.md, B4.md): the whole suite again, with
+      # Go mode (docs/plan/B2.md to B5.md): the whole suite again, with
       # the operations the Go backend already serves answered by Go, behind a
       # test-only proxy (e2e/go-front.mjs), on the same database and secrets
       # as Next.js; the Go worker (e2e/go-worker.mjs) sends the queued mail

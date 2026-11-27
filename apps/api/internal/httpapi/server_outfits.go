@@ -232,7 +232,9 @@ func (s *Server) SaveOutfit(ctx context.Context, request contract.SaveOutfitRequ
 	}
 	answer := savedOutfitBody{outfitRowBody: rowBody(saved.Row), Items: make([]outfitLinkBody, 0, len(saved.Items))}
 	for _, link := range saved.Items {
-		answer.Items = append(answer.Items, outfitLinkBody{ID: link.ID, Role: link.Role, WardrobeItemID: link.WardrobeItemID})
+		answer.Items = append(answer.Items, outfitLinkBody{
+			ID: link.ID, OutfitID: link.OutfitID, WardrobeItemID: link.WardrobeItemID, Role: link.Role, CreatedAt: isoMillis(link.CreatedAt),
+		})
 	}
 	return outfitResponse{http.StatusCreated, map[string]any{"outfit": answer}}, nil
 }
@@ -288,9 +290,11 @@ func (s *Server) GetOutfit(ctx context.Context, request contract.GetOutfitReques
 		return nil, outfitError(err)
 	}
 	now := s.now()
+	row := rowBody(outfit.Row)
 	detail := outfitDetailBody{
-		outfitRowBody: rowBody(outfit.Row), Reasons: outfit.Reasons, WeatherSnapshot: outfit.Weather,
-		Items: make([]outfitDetailItemBody, 0, len(outfit.Garments)),
+		ID: row.ID, UserID: row.UserID, Name: row.Name, Occasion: row.Occasion, WeatherSnapshot: outfit.Weather, Score: row.Score,
+		ReasonsJSON: row.ReasonsJSON, Explanation: row.Explanation, IsSaved: row.IsSaved, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
+		Reasons: outfit.Reasons, Items: make([]outfitDetailItemBody, 0, len(outfit.Garments)),
 	}
 	for _, g := range outfit.Garments {
 		item := outfitDetailItemBody{ID: g.ID, Role: g.Role, WardrobeItemID: g.WardrobeItemID}
@@ -352,33 +356,44 @@ func (s *Server) SendOutfitFeedback(ctx context.Context, request contract.SendOu
 		return nil, outfitError(err)
 	}
 	return outfitResponse{http.StatusCreated, map[string]any{"feedback": feedbackBody{
-		ID: given.ID, OutfitID: given.OutfitID, Feedback: given.Feedback, Note: given.Note, CreatedAt: isoMillis(given.CreatedAt),
+		ID: given.ID, UserID: given.UserID, OutfitID: given.OutfitID, Feedback: given.Feedback, Note: given.Note, CreatedAt: isoMillis(given.CreatedAt),
 	}}}, nil
 }
 
-// outfitRowBody is a stored outfit as the contract's OutfitRow.
+// outfitRowBody is a stored outfit as the Next.js routes answered it after
+// a write: the database row, member by member. The contract lists some of
+// these members (OutfitRow) and allows the rest; the web tests read
+// reasonsJson. Cutting the answer down to the contract is a contract change
+// for a later stage.
 type outfitRowBody struct {
-	ID          string  `json:"id"`
-	Name        *string `json:"name"`
-	Occasion    *string `json:"occasion"`
-	Score       *int32  `json:"score"`
-	Explanation *string `json:"explanation"`
-	IsSaved     bool    `json:"isSaved"`
-	CreatedAt   string  `json:"createdAt"`
-	UpdatedAt   string  `json:"updatedAt"`
+	ID              string  `json:"id"`
+	UserID          string  `json:"userId"`
+	Name            *string `json:"name"`
+	Occasion        *string `json:"occasion"`
+	WeatherSnapshot *string `json:"weatherSnapshot"` // the stored text
+	Score           *int32  `json:"score"`
+	ReasonsJSON     string  `json:"reasonsJson"`
+	Explanation     *string `json:"explanation"`
+	IsSaved         bool    `json:"isSaved"`
+	CreatedAt       string  `json:"createdAt"`
+	UpdatedAt       string  `json:"updatedAt"`
 }
 
 func rowBody(row outfits.Row) outfitRowBody {
 	return outfitRowBody{
-		ID: row.ID, Name: row.Name, Occasion: row.Occasion, Score: row.Score, Explanation: row.Explanation, IsSaved: row.IsSaved,
+		ID: row.ID, UserID: row.UserID, Name: row.Name, Occasion: row.Occasion, WeatherSnapshot: row.WeatherSnapshot, Score: row.Score,
+		ReasonsJSON: row.ReasonsJSON, Explanation: row.Explanation, IsSaved: row.IsSaved,
 		CreatedAt: isoMillis(row.CreatedAt), UpdatedAt: isoMillis(row.UpdatedAt),
 	}
 }
 
+// outfitLinkBody is an outfit's item row.
 type outfitLinkBody struct {
 	ID             string  `json:"id"`
-	Role           *string `json:"role"`
+	OutfitID       string  `json:"outfitId"`
 	WardrobeItemID string  `json:"wardrobeItemId"`
+	Role           *string `json:"role"`
+	CreatedAt      string  `json:"createdAt"`
 }
 
 type savedOutfitBody struct {
@@ -411,10 +426,21 @@ type outfitSummaryItemBody struct {
 	Image       *imageBody `json:"image"`
 }
 
+// outfitDetailBody is the outfit's row with the weather decoded, the
+// reasons decoded beside their stored text, and the items.
 type outfitDetailBody struct {
-	outfitRowBody
-	Reasons         []string               `json:"reasons"`
+	ID              string                 `json:"id"`
+	UserID          string                 `json:"userId"`
+	Name            *string                `json:"name"`
+	Occasion        *string                `json:"occasion"`
 	WeatherSnapshot json.RawMessage        `json:"weatherSnapshot"`
+	Score           *int32                 `json:"score"`
+	ReasonsJSON     string                 `json:"reasonsJson"`
+	Explanation     *string                `json:"explanation"`
+	IsSaved         bool                   `json:"isSaved"`
+	CreatedAt       string                 `json:"createdAt"`
+	UpdatedAt       string                 `json:"updatedAt"`
+	Reasons         []string               `json:"reasons"`
 	Items           []outfitDetailItemBody `json:"items"`
 }
 
@@ -436,8 +462,10 @@ type outfitGarmentBody struct {
 	Images      []imageBody `json:"images"`
 }
 
+// feedbackBody is the feedback's row.
 type feedbackBody struct {
 	ID        string  `json:"id"`
+	UserID    string  `json:"userId"`
 	OutfitID  string  `json:"outfitId"`
 	Feedback  string  `json:"feedback"`
 	Note      *string `json:"note"`

@@ -68,7 +68,7 @@ Re-read the source before porting a part; this file is a map, not the specificat
 | Unbounded wardrobe/message reads; lists cut at 50 without paging | Cursor pagination everywhere |
 | Register race returns 500 | Unique violation → 409 `CONFLICT` |
 | Non-transactional multi-writes (profile, feedback) | One transaction |
-| Weather: failure → undocumented 500; missing fields cached as 0; "next 6 hours" is hours 00–05; generate bypasses the cache | Typed error code; reject incomplete data; real next-6-hours window; one cached path |
+| Weather: failure → undocumented 500; missing fields cached as 0; "next 6 hours" is hours 00–05; generate bypasses the cache | Done in B5: incomplete data is rejected and not cached, the window is the real next six hours, one cached path. Still open: a typed error code (the failure is `INTERNAL`, which the contract now lists; a code of its own is a contract change) |
 | Unguarded parse of JSON stored as text | `jsonb` columns and typed decoding |
 | No scheduled cleanup | River periodic jobs |
 | Password reset locks the user's row before the session families: can deadlock with a refresh in flight (answered `SESSION_BUSY`) | Families first, then the user's row `FOR NO KEY UPDATE` (`docs/architecture/sessions.md`) |

@@ -103,10 +103,20 @@ func TestAnOutfitIsSavedAsItWasGiven(t *testing.T) {
 			t.Fatalf("item %d: %v", i, item)
 		}
 		p := pair.(map[string]any)
-		wantItems = append(wantItems, map[string]any{"id": item["id"], "role": p["role"], "wardrobeItemId": p["itemId"]})
+		// Each a millisecond after the one before: the order they are read in.
+		wantItems = append(wantItems, map[string]any{
+			"id": item["id"], "outfitId": id, "wardrobeItemId": p["itemId"], "role": p["role"],
+			"createdAt": fmt.Sprintf("2026-11-27T09:00:00.00%dZ", i),
+		})
 	}
+	const (
+		weatherText = `{"temperature":21.5,"feelsLike":20,"condition":"clear","precipitationProbability":5,"humidity":40,"windSpeed":9.25,"uvIndex":6}`
+		reasonsText = `["weather_fit","a < b & c"]`
+	)
+	// The row, member by member, as the Next.js route answered it.
 	want := map[string]any{"outfit": map[string]any{
-		"id": id, "name": "Dam olish", "occasion": "casual", "score": 87.0, "explanation": "Yengil va qulay.", "isSaved": true,
+		"id": id, "userId": user, "name": "Dam olish", "occasion": "casual", "weatherSnapshot": weatherText, "score": 87.0,
+		"reasonsJson": reasonsText, "explanation": "Yengil va qulay.", "isSaved": true,
 		"createdAt": "2026-11-27T09:00:00.000Z", "updatedAt": "2026-11-27T09:00:00.000Z", "items": wantItems,
 	}}
 	if !reflect.DeepEqual(got.body, want) {
@@ -116,8 +126,7 @@ func TestAnOutfitIsSavedAsItWasGiven(t *testing.T) {
 	row := a.rowJSON("Outfit", id)
 	for column, value := range map[string]any{
 		"userId": user, "name": "Dam olish", "occasion": "casual", "score": 87.0, "isSaved": true, "explanation": "Yengil va qulay.",
-		"weatherSnapshot": `{"temperature":21.5,"feelsLike":20,"condition":"clear","precipitationProbability":5,"humidity":40,"windSpeed":9.25,"uvIndex":6}`,
-		"reasonsJson":     `["weather_fit","a < b & c"]`,
+		"weatherSnapshot": weatherText, "reasonsJson": reasonsText,
 	} {
 		if row[column] != value {
 			t.Errorf("stored %s: %v, want %v", column, row[column], value)
@@ -350,10 +359,15 @@ func TestAnOutfitIsReadChangedAndDeletedByItsOwnerOnly(t *testing.T) {
 	}
 	// The ids of the outfit's items are those the save answered, not the garments'.
 	linkID := func(i int) string { return storedItems[i].(map[string]any)["id"].(string) }
+	const (
+		coldDayText = `{"temperature":3,"feelsLike":-1,"condition":"snow","precipitationProbability":70,"humidity":80,"windSpeed":20,"uvIndex":1}`
+		reasonsText = `["color_harmony","occasion_fit"]`
+	)
 	want := map[string]any{
-		"id": id, "name": nil, "occasion": "work", "score": 71.0, "explanation": "Ish uchun.", "isSaved": false,
+		"id": id, "userId": user, "name": nil, "occasion": "work", "score": 71.0, "explanation": "Ish uchun.", "isSaved": false,
 		"createdAt": "2026-11-27T09:00:00.000Z", "updatedAt": "2026-11-27T09:00:00.000Z",
-		"reasons": []any{"color_harmony", "occasion_fit"}, "weatherSnapshot": coldDay,
+		// The reasons decoded beside their stored text; the weather decoded.
+		"reasonsJson": reasonsText, "reasons": []any{"color_harmony", "occasion_fit"}, "weatherSnapshot": coldDay,
 		// In the order they were saved in, each with all its images in the order they were added.
 		"items": []any{
 			map[string]any{"id": linkID(0), "role": "bottom", "wardrobeItemId": "c-jeans", "item": map[string]any{
@@ -378,15 +392,16 @@ func TestAnOutfitIsReadChangedAndDeletedByItsOwnerOnly(t *testing.T) {
 		wanted, _ := json.Marshal(want)
 		t.Fatalf("the outfit:\n got %s\nwant %s", got.raw, wanted)
 	}
-	if strings.Contains(string(got.raw), "storageKey") || strings.Contains(string(got.raw), user) && !strings.Contains(string(got.raw), "/media/") {
-		t.Errorf("the answer holds what it should not: %s", got.raw)
+	if strings.Contains(string(got.raw), "storageKey") {
+		t.Errorf("the answer holds a storage key: %s", got.raw)
 	}
 
 	// Changes: each member alone, both, none.
 	dbtest.SetClock(t, a.pool, outfitT0.Add(5*time.Minute))
 	row := func(name any, saved bool, updated string) map[string]any {
 		return map[string]any{"outfit": map[string]any{
-			"id": id, "name": name, "occasion": "work", "score": 71.0, "explanation": "Ish uchun.", "isSaved": saved,
+			"id": id, "userId": user, "name": name, "occasion": "work", "weatherSnapshot": coldDayText, "score": 71.0,
+			"reasonsJson": reasonsText, "explanation": "Ish uchun.", "isSaved": saved,
 			"createdAt": "2026-11-27T09:00:00.000Z", "updatedAt": updated,
 		}}
 	}
@@ -494,7 +509,7 @@ func TestFeedbackIsRecordedAndSavesOrUnsaves(t *testing.T) {
 		a.is(got, http.StatusCreated, "")
 		feedback := got.body["feedback"].(map[string]any)
 		want := map[string]any{"feedback": map[string]any{
-			"id": feedback["id"], "outfitId": id, "feedback": step.body["feedback"], "note": step.note,
+			"id": feedback["id"], "userId": user, "outfitId": id, "feedback": step.body["feedback"], "note": step.note,
 			"createdAt": fmt.Sprintf("2026-11-27T09:%02d:00.000Z", i+1),
 		}}
 		if !cuidShape.MatchString(feedback["id"].(string)) || !reflect.DeepEqual(got.body, want) {

@@ -119,6 +119,8 @@ const goEnv = {
   MAIL_TRANSPORT: 'outbox',
   MAIL_OUTBOX_DIR,
   COOKIE_SECURE: '0', // plain http
+  // The demo weather: an e2e run asks no weather service.
+  WEATHER_PROVIDER: 'mock',
 }
 
 /** One instance in Go mode: Next.js on port + 10, Go on port + 20, the proxy on port. */

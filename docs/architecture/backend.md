@@ -367,6 +367,67 @@ an image is sent with its type by extension, `Cache-Control: private, max-age=36
 The access log records the route pattern, never the path or the query (which hold the
 key and the signature).
 
+## Weather
+
+`internal/weather` answers the weather of a place (`GET /api/v1/weather/current`, and
+outfit generation). A place leaves the server, and is known to the cache, only as its
+cell: both coordinates rounded to two decimals (about a kilometre), written as
+JavaScript's `toFixed(2)` writes them (`weather.CellOf`).
+
+- **Cache**: the `WeatherCache` table, one row a cell, 30 minutes, shared with the
+  Next.js API until the cutover (the same key and row format). A row that is not a
+  complete, sensible weather counts as no row and is replaced. Expired rows are removed
+  by the cleanup.
+- **Provider** (`WEATHER_PROVIDER`): Open-Meteo (`weather.OpenMeteo`: 5 s, no redirect
+  followed, at most 64 KiB read) or the mock. An answer is a weather only when every
+  member we use is there and within the range the API accepts in a client's weather
+  snapshot; anything else is an error and nothing is cached. The chance of rain is the
+  mean of the six hours from the hour of the answer, in the place's own time. The
+  labels are the Next.js provider's (`testdata/golden/weather.json`).
+- Requests for one cell at the same time share one question to the provider; it goes
+  on when the request that started it gives up, and its answer is cached.
+- A provider's failure is `INTERNAL` on the weather route (the contract lists nothing
+  else) and "no weather" for outfit generation. The place is in no log line and no
+  error: the address asked is cut out of the HTTP client's errors.
+
+## Outfits
+
+`internal/engine` is the outfit engine: a pure function (no database, clock or
+randomness) from a wardrobe, the weather, an occasion, the user's preferences, colour
+profile and recent feedback to scored outfits with their reasons. It is the TypeScript
+engine (`apps/web/src/lib/ai/outfit-engine.ts`, `outfit-engine-v2`) ported rule by
+rule: its tables are a JSON copy generated from the TypeScript modules
+(`internal/engine/tables.json`; a test in the web app fails when the copy is stale), and
+163 golden cases (`testdata/golden/engine.json`) must give the same outfits in the same
+order with every field equal, the unrounded scores to the bit. JavaScript's arithmetic
+is reproduced where it differs from Go's (`internal/engine/jsnum.go`,
+`platform.RoundHalfUp`).
+
+`internal/outfits` is the use cases; every query names the owner.
+
+- **Generate** (`POST /api/v1/outfits/generate`): one read-only transaction reads the
+  wardrobe, the preferences, the stored colour profile and the feedback of the last 30
+  days; the weather is the client's snapshot, else the weather of the place (through
+  the cache), else none; the engine; the deterministic explanation
+  (`engine.Explanation`). Nothing is stored. Until the AI ranking of stage B6 the
+  answer is always `fallback: true`. Stored lists that are not lists count as empty
+  here: one bad row does not stop the outfits.
+- **Save** (`POST /api/v1/outfits`) judges in the Next.js route's order: roles nobody
+  has, an item twice, items that are not the user's (`FORBIDDEN`), a role its item's
+  kind may not have, the composition (`engine.ValidateComposition`). The items are
+  locked against removal until the outfit is stored; each item's row is a millisecond
+  after the one before, which is the order they are read in.
+- **List** (the 50 newest, all or saved), **read**, **change** (`isSaved`, `name`),
+  **delete** (items and feedback go by cascade) and **feedback** (the feedback row and
+  the change of `isSaved` it implies, in one transaction). An outfit of another user is
+  `NOT_FOUND`.
+- **Answers** are the Next.js routes', member by member, including the members of the
+  database row that the contract allows but does not list (`userId`, `reasonsJson`, the
+  weather as stored text after a write): the web tests read them. Cutting them is a
+  contract change for a later stage.
+- The gate's rules judge the bodies, the list's `saved` and the path id by the Next.js
+  schemas' golden cases (`testdata/golden/outfit-validation.json`).
+
 ## Tokens, passwords and session encryption
 
 `internal/auth` and `internal/session` hold the pure parts of sign-in, ported from the
@@ -580,8 +641,7 @@ reads and writes data but changes no schema there.
   - builds the binary.
 
   The `docker` job builds the image.
-- **E2E in Go mode** (CI job `e2e`, second run): the browser specs `auth`, `session`,
-  `session-recovery`, `password-reset`, `reconsent` and `navigation-responsive` run again
+- **E2E in Go mode** (CI job `e2e`, second run): the whole browser suite runs again
   with the operations Go already serves answered by Go.
   `apps/web/e2e/go-front.mjs`, a test-only proxy, stands in front of a Next.js server
   and a Go server on one database and the same secrets, and sends those operations to
@@ -592,7 +652,11 @@ reads and writes data but changes no schema there.
   marked with the server that gave it, and `go-mode.spec.ts` checks the routing, so a
   misrouted run cannot pass. It also checks the other direction step by step: Next.js
   rotates a session, then Go serves a grace replay from the ciphertext Next.js stored
-  and rotates the row Next.js wrote, and Next.js goes on from Go's. This arrangement is never deployed: production switches
+  and rotates the row Next.js wrote, and Next.js goes on from Go's. For the weather and
+  the outfit routes it asks both servers the same things directly, on the same data, and
+  compares the answers member by member (they may differ in link signatures, in the ids
+  and times of rows each made, and in the image dimensions of the outfit list). This
+  arrangement is never deployed: production switches
   in one step (ADR 0002). Locally:
 
   ```bash

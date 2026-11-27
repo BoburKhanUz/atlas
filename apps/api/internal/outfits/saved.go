@@ -73,30 +73,36 @@ type SaveRequest struct {
 	IsSaved     bool
 }
 
-// Row is a stored outfit without its items.
+// Row is a stored outfit without its items, as the database row holds it.
 type Row struct {
-	ID          string
-	Name        *string
-	Occasion    *string
-	Score       *int32
-	Explanation *string
-	IsSaved     bool
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID       string
+	UserID   string
+	Name     *string
+	Occasion *string
+	// WeatherSnapshot and ReasonsJSON are the stored texts (JSON).
+	WeatherSnapshot *string
+	Score           *int32
+	ReasonsJSON     string
+	Explanation     *string
+	IsSaved         bool
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 func rowOf(o store.Outfit) Row {
 	return Row{
-		ID: o.ID, Name: o.Name, Occasion: o.Occasion, Score: o.Score, Explanation: o.Explanation, IsSaved: o.IsSaved,
-		CreatedAt: o.CreatedAt, UpdatedAt: o.UpdatedAt,
+		ID: o.ID, UserID: o.UserId, Name: o.Name, Occasion: o.Occasion, WeatherSnapshot: o.WeatherSnapshot, Score: o.Score,
+		ReasonsJSON: o.ReasonsJson, Explanation: o.Explanation, IsSaved: o.IsSaved, CreatedAt: o.CreatedAt, UpdatedAt: o.UpdatedAt,
 	}
 }
 
 // Link is an item's place in an outfit.
 type Link struct {
 	ID             string
+	OutfitID       string
 	WardrobeItemID string
 	Role           *string
+	CreatedAt      time.Time
 }
 
 // Saved is an outfit as it was stored.
@@ -220,7 +226,9 @@ func (s *Service) Save(ctx context.Context, userID string, request SaveRequest) 
 			if err != nil {
 				return fmt.Errorf("item %d: %w", i, err)
 			}
-			saved.Items = append(saved.Items, Link{ID: link.ID, WardrobeItemID: link.WardrobeItemId, Role: link.Role})
+			saved.Items = append(saved.Items, Link{
+				ID: link.ID, OutfitID: link.OutfitId, WardrobeItemID: link.WardrobeItemId, Role: link.Role, CreatedAt: link.CreatedAt,
+			})
 		}
 		return nil
 	})
@@ -328,7 +336,7 @@ func withGarments(ctx context.Context, q *store.Queries, userID string, rows []s
 		}
 		at := index[g.OutfitId]
 		outfits[at].Garments = append(outfits[at].Garments, Garment{
-			Link:     Link{ID: g.ID, WardrobeItemID: g.WardrobeItemId, Role: g.Role},
+			Link:     Link{ID: g.ID, OutfitID: g.OutfitId, WardrobeItemID: g.WardrobeItemId, Role: g.Role},
 			Category: g.Category, Subcategory: g.Subcategory, Colors: colors, Style: g.Style, Material: g.Material, Season: season,
 			Images: []wardrobe.Image{},
 		})
@@ -404,6 +412,7 @@ const (
 // GivenFeedback is a stored feedback.
 type GivenFeedback struct {
 	ID        string
+	UserID    string
 	OutfitID  string
 	Feedback  string
 	Note      *string
@@ -430,7 +439,7 @@ func (s *Service) GiveFeedback(ctx context.Context, userID, outfitID, kind strin
 		if err != nil {
 			return err
 		}
-		given = GivenFeedback{ID: row.ID, OutfitID: row.OutfitId, Feedback: row.Feedback, Note: row.Note, CreatedAt: row.CreatedAt}
+		given = GivenFeedback{ID: row.ID, UserID: row.UserId, OutfitID: row.OutfitId, Feedback: row.Feedback, Note: row.Note, CreatedAt: row.CreatedAt}
 		if (kind == feedbackSaved && !outfit.IsSaved) || (kind == feedbackRejected && outfit.IsSaved) {
 			return q.SetOutfitSaved(ctx, store.SetOutfitSavedParams{ID: outfitID, UserID: userID, IsSaved: kind == feedbackSaved})
 		}
