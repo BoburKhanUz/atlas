@@ -704,35 +704,71 @@ func TestARefusalOfOneUsersQuestionIsNotAnothers(t *testing.T) {
 	if asked := w.provider.questions(); len(asked) != 1 {
 		t.Fatalf("the provider was asked %d times", len(asked))
 	}
-
-	// A request that has gone meanwhile asks nothing of its own.
-	limiter.mu.Lock()
-	limiter.hold["u-spent"] = make(chan struct{})
-	limiter.mu.Unlock()
-	spentAgain := ask2(service, context.Background(), "u-spent", 50, 10)
-	<-waiting
-	<-limiter.holding
-	ctx, cancel := context.WithCancel(context.Background())
-	gone := ask2(service, ctx, "u-gone", 50, 10)
-	<-waiting
-	cancel()
-	if err := <-gone; !errors.Is(err, context.Canceled) {
-		t.Fatalf("the request that left: %v", err)
-	}
-	close(limiter.hold["u-spent"])
-	if err := <-spentAgain; !errors.As(err, &limited) {
-		t.Fatalf("the spent user: %v", err)
-	}
-	if counted := limiter.takers(); len(counted) != 3 || counted[2] != "u-spent" {
-		t.Fatalf("questions were counted for %v", counted)
-	}
 }
 
-func ask2(service *weather.Service, ctx context.Context, user string, lat, lon float64) chan error {
-	done := make(chan error, 1)
-	go func() {
-		_, err := service.Current(ctx, user, lat, lon)
-		done <- err
-	}()
-	return done
+// A request that has left while it waited for another user's question
+// starts no question of its own when that one is refused. Whether its wait
+// ends on the refusal or on its own leaving is the runtime's choice when
+// both are ready, so the same is done for many cells: without the rule
+// about half of them would count a question for the user who left.
+func TestARequestThatLeftAsksNothingOfItsOwn(t *testing.T) {
+	t.Parallel()
+	w := newWorld(t)
+	limiter := &countingLimiter{refuse: map[string]bool{"u-spent": true}, hold: map[string]chan struct{}{}, holding: make(chan string, 1)}
+	service := weather.New(w.pool, w.provider, limiter, slog.New(slog.NewJSONHandler(w.logs, nil)))
+	var gateMu sync.Mutex
+	gate := make(chan struct{})
+	arrived := make(chan struct{}, 64)
+	// Every request stops before it starts to wait, until the gate opens.
+	service.OnWaiting(func() {
+		gateMu.Lock()
+		open := gate
+		gateMu.Unlock()
+		arrived <- struct{}{}
+		<-open
+	})
+	start := func(ctx context.Context, user string, cell int) chan error {
+		done := make(chan error, 1)
+		go func() {
+			_, err := service.Current(ctx, user, float64(cell), 10)
+			done <- err
+		}()
+		return done
+	}
+	var limited *weather.LimitedError
+	for cell := 1; cell <= 40; cell++ {
+		hold := make(chan struct{})
+		limiter.mu.Lock()
+		limiter.hold["u-spent"] = hold
+		limiter.mu.Unlock()
+		gateMu.Lock()
+		gate = make(chan struct{})
+		open := gate
+		gateMu.Unlock()
+
+		spent := start(context.Background(), "u-spent", cell)
+		<-arrived
+		<-limiter.holding // the spent user's question is under way, held at the count
+		ctx, cancel := context.WithCancel(context.Background())
+		gone := start(ctx, "u-gone", cell)
+		<-arrived // the other request has joined it, and stands before its wait
+		cancel()
+		close(hold)                      // the question is refused …
+		time.Sleep(5 * time.Millisecond) // … and its refusal handed to both (if not yet, this cell proves nothing)
+		close(open)
+		if err := <-spent; !errors.As(err, &limited) {
+			t.Fatalf("cell %d, the spent user: %v", cell, err)
+		}
+		if err := <-gone; !errors.Is(err, context.Canceled) {
+			t.Fatalf("cell %d, the request that left: %v", cell, err)
+		}
+	}
+	for _, user := range limiter.takers() {
+		if user != "u-spent" {
+			t.Fatalf("a question was counted for %s", user)
+		}
+	}
+	if asked := w.provider.questions(); len(asked) != 0 {
+		t.Fatalf("the provider was asked %d times", len(asked))
+	}
 }

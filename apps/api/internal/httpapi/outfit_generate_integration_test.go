@@ -370,6 +370,12 @@ func TestAUserMayAskForTheWeatherOfOnlySoManyNewPlaces(t *testing.T) {
 	if asked := provider.questions(); len(asked) != 30 {
 		t.Fatalf("the provider was asked %d times", len(asked))
 	}
+	// Outfits without the weather for this reason are no failure: said as
+	// information, not as a warning.
+	logs := a.logs()
+	if !strings.Contains(logs, `"level":"INFO","msg":"outfits: the weather service may not be asked again yet`) || strings.Contains(logs, "the weather could not be had") {
+		t.Errorf("the log: %s", logs)
+	}
 }
 
 func TestTheWeatherOfThePlaceIsUsedWhenTheClientBringsNone(t *testing.T) {
