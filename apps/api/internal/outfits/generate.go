@@ -155,9 +155,11 @@ func (s *Service) Generate(ctx context.Context, userID string, request GenerateR
 			}
 		case ctx.Err() != nil:
 			return Generated{}, fmt.Errorf("outfits: generate: %w", ctx.Err())
+		case errors.As(err, new(*weather.LimitedError)):
+			// Not a failure, and it may be every generation of a minute: no warning.
+			s.log.InfoContext(ctx, "outfits: the weather service may not be asked again yet; outfits are made without the weather")
 		default:
-			// Outfits without the weather are better than no outfits (a
-			// provider that fails, or one this user may not ask again yet).
+			// Outfits without the weather are better than no outfits.
 			s.log.WarnContext(ctx, "outfits: the weather could not be had; outfits are made without it", "err", err.Error())
 		}
 	}

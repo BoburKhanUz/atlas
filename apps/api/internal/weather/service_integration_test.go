@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -453,8 +454,14 @@ func TestAPanicInAQuestionIsItsError(t *testing.T) {
 	t.Parallel()
 	w := newWorld(t)
 	w.provider.set(func(p *fakeProvider) { p.panics = true })
-	if got, err := w.service.Current(context.Background(), "u-1", 41.31, 69.24); err == nil || !strings.Contains(err.Error(), "panicked") {
+	if got, err := w.service.Current(context.Background(), "u-1", 41.31, 69.24); err == nil || !strings.Contains(err.Error(), "panicked") ||
+		strings.Contains(err.Error(), "broken") {
 		t.Fatalf("got %+v, %v", got, err)
+	}
+	// Logged with its type and where it happened; the value itself (which
+	// could hold the place) is neither logged nor answered.
+	if logs := w.logs.String(); !strings.Contains(logs, `"panic":"string"`) || !strings.Contains(logs, "fakeProvider") || strings.Contains(logs, "the provider's code is broken") {
+		t.Errorf("the log: %s", logs)
 	}
 	w.provider.set(func(p *fakeProvider) { p.panics = false })
 	if got := w.current(41.31, 69.24); got.Cached || got.Current != sunny {
@@ -593,4 +600,139 @@ func TestOnlyQuestionsToTheProviderAreCounted(t *testing.T) {
 	if got, err := w.service.Current(context.Background(), "u-fresh", 60, 10); err != nil || !got.Cached {
 		t.Fatalf("the fresh user's cell: %+v, %v", got, err)
 	}
+}
+
+// countingLimiter is a limiter that refuses the users it is told to, can
+// hold a user's question until it is let go, and remembers who asked.
+type countingLimiter struct {
+	mu      sync.Mutex
+	took    []string
+	refuse  map[string]bool
+	hold    map[string]chan struct{}
+	holding chan string // receives the user whose question is being held
+}
+
+func (l *countingLimiter) Take(_ context.Context, hits ...ratelimit.Hit) (ratelimit.Decision, error) {
+	user := hits[0].Subject
+	l.mu.Lock()
+	l.took = append(l.took, user)
+	refuse, hold := l.refuse[user], l.hold[user]
+	l.mu.Unlock()
+	if hold != nil {
+		l.holding <- user
+		<-hold
+	}
+	if refuse {
+		return ratelimit.Decision{RetryAfter: time.Minute}, nil
+	}
+	return ratelimit.Decision{Allowed: true}, nil
+}
+
+func (l *countingLimiter) takers() []string {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return append([]string(nil), l.took...)
+}
+
+// The shared question looks at the cache before anything else: an answer
+// stored since the request's own look is answered, and costs nothing.
+func TestAQuestionFindsAnAnswerStoredMeanwhile(t *testing.T) {
+	t.Parallel()
+	w := newWorld(t)
+	limiter := &countingLimiter{}
+	service := weather.New(w.pool, w.provider, limiter, slog.New(slog.NewJSONHandler(w.logs, nil)))
+	cell := weather.CellOf(41.31, 69.24)
+	w.insert(cell.Key(), sunnyRow, 10*time.Minute) // stored by another process, say
+	got, err := service.Ask(context.Background(), "u-1", cell)
+	if err != nil || !got.Cached || got.Current != sunny {
+		t.Fatalf("got %+v, %v", got, err)
+	}
+	if asked, counted := w.provider.questions(), limiter.takers(); len(asked) != 0 || len(counted) != 0 {
+		t.Fatalf("the provider was asked %d times and %d questions were counted", len(asked), len(counted))
+	}
+	// Without a stored answer the same call counts a question and asks.
+	other := weather.CellOf(50, 10)
+	if got, err := service.Ask(context.Background(), "u-1", other); err != nil || got.Cached {
+		t.Fatalf("a cell that is not stored: %+v, %v", got, err)
+	}
+	if asked, counted := w.provider.questions(), limiter.takers(); len(asked) != 1 || len(counted) != 1 {
+		t.Fatalf("the provider was asked %d times and %d questions were counted", len(asked), len(counted))
+	}
+}
+
+// A request that waits for another user's question, which is then refused
+// for that user, asks its own question on its own count.
+func TestARefusalOfOneUsersQuestionIsNotAnothers(t *testing.T) {
+	t.Parallel()
+	w := newWorld(t)
+	limiter := &countingLimiter{refuse: map[string]bool{"u-spent": true}, hold: map[string]chan struct{}{"u-spent": make(chan struct{})}, holding: make(chan string, 1)}
+	service := weather.New(w.pool, w.provider, limiter, slog.New(slog.NewJSONHandler(w.logs, nil)))
+	waiting := make(chan struct{}, 8)
+	service.OnWaiting(func() { waiting <- struct{}{} })
+
+	type outcome struct {
+		report weather.Report
+		err    error
+	}
+	ask := func(user string) chan outcome {
+		done := make(chan outcome, 1)
+		go func() {
+			report, err := service.Current(context.Background(), user, 41.31, 69.24)
+			done <- outcome{report, err}
+		}()
+		return done
+	}
+	spent := ask("u-spent")
+	<-waiting // the spent user waits for their own question,
+	if user := <-limiter.holding; user != "u-spent" {
+		t.Fatalf("the question held is %s's", user)
+	}
+	fresh := ask("u-fresh")
+	<-waiting // and the fresh user for the same one: it is still held.
+	close(limiter.hold["u-spent"])
+
+	var limited *weather.LimitedError
+	if got := <-spent; !errors.As(got.err, &limited) || limited.RetryAfter != time.Minute {
+		t.Fatalf("the spent user: %+v, %v", got.report, got.err)
+	}
+	if got := <-fresh; got.err != nil || got.report.Cached || got.report.Current != sunny {
+		t.Fatalf("the fresh user: %+v, %v", got.report, got.err)
+	}
+	if counted := limiter.takers(); !reflect.DeepEqual(counted, []string{"u-spent", "u-fresh"}) {
+		t.Fatalf("questions were counted for %v", counted)
+	}
+	if asked := w.provider.questions(); len(asked) != 1 {
+		t.Fatalf("the provider was asked %d times", len(asked))
+	}
+
+	// A request that has gone meanwhile asks nothing of its own.
+	limiter.mu.Lock()
+	limiter.hold["u-spent"] = make(chan struct{})
+	limiter.mu.Unlock()
+	spentAgain := ask2(service, context.Background(), "u-spent", 50, 10)
+	<-waiting
+	<-limiter.holding
+	ctx, cancel := context.WithCancel(context.Background())
+	gone := ask2(service, ctx, "u-gone", 50, 10)
+	<-waiting
+	cancel()
+	if err := <-gone; !errors.Is(err, context.Canceled) {
+		t.Fatalf("the request that left: %v", err)
+	}
+	close(limiter.hold["u-spent"])
+	if err := <-spentAgain; !errors.As(err, &limited) {
+		t.Fatalf("the spent user: %v", err)
+	}
+	if counted := limiter.takers(); len(counted) != 3 || counted[2] != "u-spent" {
+		t.Fatalf("questions were counted for %v", counted)
+	}
+}
+
+func ask2(service *weather.Service, ctx context.Context, user string, lat, lon float64) chan error {
+	done := make(chan error, 1)
+	go func() {
+		_, err := service.Current(ctx, user, lat, lon)
+		done <- err
+	}()
+	return done
 }

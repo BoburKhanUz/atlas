@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"runtime/debug"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -45,6 +46,8 @@ type LimitedError struct {
 
 func (e *LimitedError) Error() string { return "weather: too many questions to the provider" }
 
+var errQuestionPanicked = errors.New("weather: the question panicked")
+
 // Limiter counts the questions (ratelimit.Limiter).
 type Limiter interface {
 	Take(ctx context.Context, hits ...ratelimit.Hit) (ratelimit.Decision, error)
@@ -67,6 +70,9 @@ type Service struct {
 	log       *slog.Logger
 	askBudget time.Duration
 	asking    singleflight.Group
+	// waiting, when set (tests), is told each time a request starts to
+	// wait for a question, its own or another's.
+	waiting func()
 }
 
 // Option configures a Service.
@@ -106,18 +112,28 @@ func (s *Service) Current(ctx context.Context, userID string, lat, lon float64) 
 			// a panic would end the process: it becomes this question's error.
 			defer func() {
 				if r := recover(); r != nil {
-					report, err = nil, fmt.Errorf("weather: the question panicked: %v", r)
+					// The value may hold the place: its type and the stack are logged, not the value.
+					s.log.ErrorContext(ctx, "weather: a question panicked", "panic", fmt.Sprintf("%T", r), "stack", string(debug.Stack()))
+					report, err = nil, errQuestionPanicked
 				}
 			}()
 			ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), s.askBudget)
 			defer cancel()
 			return s.ask(ctx, userID, cell)
 		})
+		if s.waiting != nil {
+			s.waiting()
+		}
 		select {
 		case answer := <-asked:
 			var limited *LimitedError
 			if errors.As(answer.Err, &limited) && limited.user != userID {
-				continue // refused for the user who asked first; this one has their own count
+				// Refused for the user who asked first; this one has their
+				// own count, if they are still there.
+				if ctx.Err() != nil {
+					return Report{}, fmt.Errorf("weather: %w", ctx.Err())
+				}
+				continue
 			}
 			if answer.Err != nil {
 				return Report{}, answer.Err
