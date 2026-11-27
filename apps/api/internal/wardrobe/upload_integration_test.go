@@ -128,9 +128,8 @@ func TestAnUploadWhoseCommitMayStillLandKeepsItsFiles(t *testing.T) {
 	if !errors.Is(err, wardrobe.ErrOutcomeUnknown) || !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("err %v", err)
 	}
-	// The claim on the key is left alone (the open transaction holds its
-	// row: releasing it would wait for that, in vain, and it is not this
-	// request's to give up while the commit may land): see the log below.
+	// The open transaction holds the key's row: the claim cannot be
+	// released, and the log says what becomes of it.
 	if w.count(itemRows) != 0 || len(w.stored()) != 3 || w.count(countedToday) != 1 || w.count(anyKeys) != 1 || w.count(completedKeys) != 0 {
 		t.Fatalf("before the commit lands: %d items, files %v, %d counted, %d keys (%d completed)",
 			w.count(itemRows), w.stored(), w.count(countedToday), w.count(anyKeys), w.count(completedKeys))
@@ -140,8 +139,8 @@ func TestAnUploadWhoseCommitMayStillLandKeepsItsFiles(t *testing.T) {
 			t.Errorf("the log lacks %q: %s", want, w.log.String())
 		}
 	}
-	if strings.Contains(w.log.String(), "not released") {
-		t.Errorf("the claim was given up: %s", w.log.String())
+	if !strings.Contains(w.log.String(), "not released; its commit completes it") {
+		t.Errorf("what becomes of the key is not logged: %s", w.log.String())
 	}
 	if err := open.Commit(context.Background()); err != nil {
 		t.Fatal(err)
@@ -156,6 +155,52 @@ func TestAnUploadWhoseCommitMayStillLandKeepsItsFiles(t *testing.T) {
 		t.Errorf("the retry: %+v, %v", again, err)
 	}
 	// Had it not landed, the files would be the sweep's an hour later.
+}
+
+// A commit that did not report success and was lost (the database rolled
+// it back): the files stay for the sweep, and the key is free, so the
+// client's retry runs at once and creates the item, once.
+func TestAnUploadWhoseCommitWasLostCanBeRetriedAtOnce(t *testing.T) {
+	t.Parallel()
+	w := newSweepWorld(t)
+	u, up := w.uploads(nil)
+	lost := true
+	u.SetTx(func(ctx context.Context, pool *pgxpool.Pool, options pgx.TxOptions, fn func(pgx.Tx) error) error {
+		if !lost {
+			return pgx.BeginTxFunc(ctx, pool, options, fn)
+		}
+		tx, err := pool.BeginTx(ctx, options)
+		if err != nil {
+			return err
+		}
+		if err := fn(tx); err != nil {
+			_ = tx.Rollback(context.Background())
+			return err
+		}
+		if err := tx.Rollback(context.Background()); err != nil {
+			return err
+		}
+		return fmt.Errorf("commit: %w", context.DeadlineExceeded)
+	})
+	if _, err := u.Create(context.Background(), up); !errors.Is(err, wardrobe.ErrOutcomeUnknown) {
+		t.Fatalf("err %v", err)
+	}
+	if w.count(itemRows) != 0 || len(w.stored()) != 3 || w.count(countedToday) != 1 || w.count(anyKeys) != 0 {
+		t.Fatalf("after the lost commit: %d items, files %v, %d counted, %d keys", w.count(itemRows), w.stored(), w.count(countedToday), w.count(anyKeys))
+	}
+	if strings.Contains(w.log.String(), "not released") {
+		t.Errorf("the key was not released: %s", w.log.String())
+	}
+	lost = false
+	created, err := u.Create(context.Background(), up)
+	if err != nil || created.Replayed || len(created.Item.Images) != 1 {
+		t.Fatalf("the retry: %+v, %v", created, err)
+	}
+	// One item with its three files; the first attempt's three are the
+	// sweep's, and its count stays.
+	if w.count(itemRows) != 1 || len(w.stored()) != 6 || w.count(completedKeys) != 1 || w.count(countedToday) != 2 {
+		t.Errorf("after the retry: %d items, files %v, %d completed keys, %d counted", w.count(itemRows), w.stored(), w.count(completedKeys), w.count(countedToday))
+	}
 }
 
 // When the transaction failed and the database cannot say whether the item

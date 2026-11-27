@@ -1125,7 +1125,13 @@ func TestResettingThePassword(t *testing.T) {
 	// Refused, and nothing changes: an unknown token, a password that is
 	// too short or longer than the hash reads, another site's request.
 	hashed := a.hasher.hashed
-	a.is(a.do(resetWith("x"+token[1:], newPassword)), http.StatusBadRequest, "RESET_TOKEN_INVALID")
+	// Another token of the same shape: its first character changed (to
+	// another one: a token may itself begin with "x").
+	unknown := "x" + token[1:]
+	if unknown == token {
+		unknown = "y" + token[1:]
+	}
+	a.is(a.do(resetWith(unknown, newPassword)), http.StatusBadRequest, "RESET_TOKEN_INVALID")
 	if a.hasher.hashed != hashed+1 {
 		t.Error("an unknown token did not cost the same hashing as a good one")
 	}
