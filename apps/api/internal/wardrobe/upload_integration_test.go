@@ -106,8 +106,12 @@ func TestAnUploadWhoseCommitMayStillLandKeepsItsFiles(t *testing.T) {
 	t.Parallel()
 	w := newSweepWorld(t)
 	u, up := w.uploads(nil)
-	up.IdempotencyKey = "" // the key's row would be held by the open transaction
 	var open pgx.Tx
+	t.Cleanup(func() { // a failed check must not leave the transaction (and the pool's closing) hanging
+		if open != nil {
+			_ = open.Rollback(context.Background())
+		}
+	})
 	u.SetTx(func(ctx context.Context, pool *pgxpool.Pool, options pgx.TxOptions, fn func(pgx.Tx) error) error {
 		tx, err := pool.BeginTx(ctx, options)
 		if err != nil {
@@ -124,17 +128,32 @@ func TestAnUploadWhoseCommitMayStillLandKeepsItsFiles(t *testing.T) {
 	if !errors.Is(err, wardrobe.ErrOutcomeUnknown) || !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("err %v", err)
 	}
-	if w.count(itemRows) != 0 || len(w.stored()) != 3 || w.count(countedToday) != 1 {
-		t.Fatalf("before the commit lands: %d items, files %v, %d counted", w.count(itemRows), w.stored(), w.count(countedToday))
+	// The claim on the key is left alone (the open transaction holds its
+	// row: releasing it would wait for that, in vain, and it is not this
+	// request's to give up while the commit may land): see the log below.
+	if w.count(itemRows) != 0 || len(w.stored()) != 3 || w.count(countedToday) != 1 || w.count(anyKeys) != 1 || w.count(completedKeys) != 0 {
+		t.Fatalf("before the commit lands: %d items, files %v, %d counted, %d keys (%d completed)",
+			w.count(itemRows), w.stored(), w.count(countedToday), w.count(anyKeys), w.count(completedKeys))
 	}
-	if !strings.Contains(w.log.String(), "may or may not exist") || !strings.Contains(w.log.String(), `"level":"ERROR"`) {
-		t.Errorf("not logged: %s", w.log.String())
+	for _, want := range []string{`"level":"ERROR"`, "may or may not exist", `"lookup":"not found"`} {
+		if !strings.Contains(w.log.String(), want) {
+			t.Errorf("the log lacks %q: %s", want, w.log.String())
+		}
+	}
+	if strings.Contains(w.log.String(), "not released") {
+		t.Errorf("the claim was given up: %s", w.log.String())
 	}
 	if err := open.Commit(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if w.count(itemRows) != 1 || len(w.stored()) != 3 {
-		t.Errorf("after the commit landed: %d items, files %v", w.count(itemRows), w.stored())
+	open = nil
+	if w.count(itemRows) != 1 || len(w.stored()) != 3 || w.count(completedKeys) != 1 {
+		t.Errorf("after the commit landed: %d items, files %v, %d completed keys", w.count(itemRows), w.stored(), w.count(completedKeys))
+	}
+	// The retry the client makes is answered with that item.
+	again, err := u.Create(context.Background(), up)
+	if err != nil || !again.Replayed || len(again.Item.Images) != 1 {
+		t.Errorf("the retry: %+v, %v", again, err)
 	}
 	// Had it not landed, the files would be the sweep's an hour later.
 }
@@ -176,7 +195,7 @@ func TestAnUploadWhoseOutcomeCannotBeToldKeepsItsFiles(t *testing.T) {
 	if w.count(itemRows) != 1 || len(w.stored()) != 3 || w.count(countedToday) != 1 || w.count(completedKeys) != 1 {
 		t.Errorf("%d items, files %v, %d counted, %d completed keys", w.count(itemRows), w.stored(), w.count(countedToday), w.count(completedKeys))
 	}
-	if !strings.Contains(w.log.String(), "may or may not exist") {
+	if !strings.Contains(w.log.String(), "may or may not exist") || !strings.Contains(w.log.String(), `"lookup":"closed pool"`) {
 		t.Errorf("not logged: %s", w.log.String())
 	}
 }

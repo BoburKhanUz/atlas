@@ -1257,3 +1257,43 @@ func TestUploadThatWaitsInVainOrIsAbandonedIsNotLoggedAsAFailure(t *testing.T) {
 	abandoned := newUploadWorld(t, apiOptions{images: leavingPuts{local, leave}})
 	busy("a client that left", abandoned, request(abandoned, ctx))
 }
+
+// stalledAfterLeaving is a store whose write runs out of time of its own
+// after the client has gone away.
+type stalledAfterLeaving struct {
+	storage.Store
+	leave context.CancelFunc
+}
+
+func (s stalledAfterLeaving) Put(context.Context, string, []byte) error {
+	s.leave()
+	return fmt.Errorf("storage: write: the bucket did not answer: %w", context.DeadlineExceeded)
+}
+
+// A step that ran out of time is logged whoever is still waiting: that the
+// client has left makes a stalled storage no less ours to know.
+func TestUploadThatRunsOutOfTimeIsLoggedAlthoughTheClientLeft(t *testing.T) {
+	t.Parallel()
+	local, err := storage.NewLocal(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, leave := context.WithCancel(context.Background())
+	defer leave()
+	w := newUploadWorld(t, apiOptions{images: stalledAfterLeaving{local, leave}})
+	body, contentType := form(t, filePart("shirt.png", "image/png", picture(t, whiteShirt)))
+	r := httptest.NewRequest(http.MethodPost, "http://app.example.uz"+itemsPath, strings.NewReader(body)).WithContext(ctx)
+	r.Header.Set("Content-Type", contentType)
+	r.Header.Set("X-Atlas-Client", "mobile")
+	r.Header.Set("Authorization", "Bearer "+w.m.accessToken)
+	w.handler.ServeHTTP(httptest.NewRecorder(), r)
+	if ctx.Err() == nil {
+		t.Fatal("the client did not leave")
+	}
+	for _, want := range []string{`"level":"ERROR","msg":"an upload ran out of time"`, "the bucket did not answer", `"userId":"` + w.user + `"`} {
+		if !strings.Contains(w.logs(), want) {
+			t.Errorf("the log lacks %q: %s", want, w.logs())
+		}
+	}
+	w.nothingLeft("out of time after the client left", 0, 0, 0, wardrobe.DailyUploads)
+}

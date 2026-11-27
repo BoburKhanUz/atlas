@@ -189,7 +189,10 @@ func (u *Uploads) Create(ctx context.Context, up Upload) (Created, error) {
 		cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), removeTimeout)
 		defer cancel()
 		undo(cleanup, err)
-		if claim != nil {
+		// After an unknown outcome the claim is left as it is: the commit
+		// that may still land completes it (and holds its row meanwhile);
+		// if it never lands, the claim is taken for crashed in time.
+		if claim != nil && !errors.Is(err, ErrOutcomeUnknown) {
 			if releaseErr := u.keys.Release(cleanup, *claim); releaseErr != nil {
 				u.log.Warn("wardrobe: an idempotency key of a failed upload not released; it expires by itself", "userId", up.UserID, "err", releaseErr.Error())
 			}
@@ -388,8 +391,12 @@ func (u *Uploads) create(ctx context.Context, up Upload, claim *idempotency.Clai
 		// still be done (a database finishes a commit it has begun).
 		found, lookErr := u.created(ctx, up.UserID, itemID)
 		if found == nil { // not there (yet), or the look-up failed too
+			lookup := "not found"
+			if lookErr != nil {
+				lookup = lookErr.Error()
+			}
 			u.log.Error("wardrobe: an upload's item may or may not exist; its files are left to the sweep",
-				"userId", up.UserID, "itemId", itemID, "err", err.Error(), "found", lookErr == nil, "lookupErr", fmt.Sprint(lookErr))
+				"userId", up.UserID, "itemId", itemID, "err", err.Error(), "lookup", lookup)
 			return Created{}, undo, fmt.Errorf("%w: %w", ErrOutcomeUnknown, err)
 		}
 		u.log.Warn("wardrobe: an upload's transaction reported a failure after its commit", "userId", up.UserID, "itemId", itemID, "err", err.Error())
