@@ -62,7 +62,7 @@ Re-read the source before porting a part; this file is a map, not the specificat
 | Limiter in process memory | PostgreSQL-backed limiter |
 | Body limit bypass without Content-Length | `http.MaxBytesReader` on every body |
 | No per-user upload or storage cap; colour analysis without quota | Per-user upload rate, storage cap, `color_analysis` quota |
-| AI calls inside requests (up to 50 s) | River jobs; the API returns a job state |
+| AI calls inside requests (up to 50 s) | Not in B6: the contract is synchronous and both clients are written to it (ADR 0011). Jobs with a job state are a stage of their own after the cutover |
 | Access token valid 15 min after logout or deletion | Check the session row on every request (indexed) |
 | Missing indexes (WardrobeImage.wardrobeItemId, OutfitItem.*, AiConversation.userId, Outfit(userId, createdAt)) | Add in the first improvement migration |
 | Unbounded wardrobe/message reads; lists cut at 50 without paging | Cursor pagination everywhere |
