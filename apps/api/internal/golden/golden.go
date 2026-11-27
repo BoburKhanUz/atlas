@@ -710,3 +710,166 @@ func LoadAIConfig(t testing.TB) AIConfig {
 	}
 	return c
 }
+
+// AIOutcome is how a provider call ended in the Next.js adapters.
+type AIOutcome struct {
+	OK       bool            `json:"ok"`
+	Text     string          `json:"text"`
+	Output   json.RawMessage `json:"output"`
+	Metadata *struct {
+		Provider string `json:"provider"`
+		Model    string `json:"model"`
+		Usage    struct {
+			InputTokens  *float64 `json:"inputTokens"`
+			OutputTokens *float64 `json:"outputTokens"`
+			TotalTokens  *float64 `json:"totalTokens"`
+		} `json:"usage"`
+	} `json:"metadata"`
+	Kind         string   `json:"kind"`
+	Status       *int     `json:"status"`
+	RetryAfterMs *float64 `json:"retryAfterMs"`
+	Message      string   `json:"message"`
+	// Thrown: the adapter fell over with a JavaScript error of this name.
+	Thrown string `json:"thrown"`
+	// Attempts is set for the retry cases.
+	Attempts int `json:"attempts"`
+}
+
+// AISent is the request an adapter sent ("<key>" for the key).
+type AISent struct {
+	URL     string            `json:"url"`
+	Headers map[string]string `json:"headers"`
+	Body    string            `json:"body"`
+}
+
+// AISchema is a structured-output schema of a request.
+type AISchema struct {
+	Name   string          `json:"name"`
+	Schema json.RawMessage `json:"schema"`
+}
+
+// AIProviders is testdata/golden/ai-providers.json
+// (apps/web/scripts/golden-ai-providers.ts).
+type AIProviders struct {
+	GeneratedBy  string `json:"generatedBy"`
+	SourceCommit string `json:"sourceCommit"`
+	Note         string `json:"note"`
+	Text         []struct {
+		Name     string `json:"name"`
+		Provider string `json:"provider"`
+		Model    string `json:"model"`
+		Request  struct {
+			Messages []struct {
+				Role    string `json:"role"`
+				Content string `json:"content"`
+			} `json:"messages"`
+			Temperature     *float64  `json:"temperature"`
+			MaxOutputTokens *int      `json:"maxOutputTokens"`
+			JSONSchema      *AISchema `json:"jsonSchema"`
+		} `json:"request"`
+		Reply   string    `json:"reply"`
+		Sent    *AISent   `json:"sent"`
+		Outcome AIOutcome `json:"outcome"`
+	} `json:"text"`
+	Vision []struct {
+		Name     string `json:"name"`
+		Provider string `json:"provider"`
+		Request  struct {
+			MimeType        string    `json:"mimeType"`
+			MaxSide         float64   `json:"maxSide"`
+			Instruction     string    `json:"instruction"`
+			JSONSchema      *AISchema `json:"jsonSchema"`
+			MaxOutputTokens *int      `json:"maxOutputTokens"`
+			Options         *struct {
+				GeminiMediaResolution string `json:"geminiMediaResolution"`
+				GeminiThinkingLevel   string `json:"geminiThinkingLevel"`
+				OpenAIDetail          string `json:"openaiDetail"`
+			} `json:"options"`
+		} `json:"request"`
+		// ImageBytes is the picture; nil for a large one of ImageLength zero bytes.
+		ImageBytes  []int     `json:"imageBytes"`
+		ImageLength int       `json:"imageLength"`
+		Reply       *string   `json:"reply"`
+		Sent        *AISent   `json:"sent"`
+		Outcome     AIOutcome `json:"outcome"`
+	} `json:"vision"`
+	MockText []struct {
+		Name    string          `json:"name"`
+		Request json.RawMessage `json:"request"`
+		Outcome AIOutcome       `json:"outcome"`
+	} `json:"mockText"`
+	Made []struct {
+		Name     string            `json:"name"`
+		Provider string            `json:"provider"`
+		Status   int               `json:"status"`
+		Body     string            `json:"body"`
+		Headers  map[string]string `json:"headers"`
+		Outcome  AIOutcome         `json:"outcome"`
+	} `json:"made"`
+	Structured []struct {
+		Name     string    `json:"name"`
+		Provider string    `json:"provider"`
+		Output   string    `json:"output"`
+		Outcome  AIOutcome `json:"outcome"`
+	} `json:"structured"`
+	Statuses []struct {
+		Status int    `json:"status"`
+		Kind   string `json:"kind"`
+	} `json:"statuses"`
+	RetryAfter struct {
+		Now   int64 `json:"now"` // Unix milliseconds
+		Cases []struct {
+			Value *string  `json:"value"`
+			Ms    *float64 `json:"ms"`
+		} `json:"cases"`
+	} `json:"retryAfter"`
+	Retries []struct {
+		Name    string            `json:"name"`
+		Steps   []json.RawMessage `json:"steps"` // "ok", "not ours", or {kind, retryAfterMs}
+		Random  float64           `json:"random"`
+		Sleeps  []float64         `json:"sleeps"`
+		Outcome AIOutcome         `json:"outcome"`
+	} `json:"retries"`
+	Calls []struct {
+		Name   string `json:"name"`
+		Record struct {
+			Feature   string  `json:"feature"`
+			Provider  string  `json:"provider"`
+			Model     string  `json:"model"`
+			Outcome   string  `json:"outcome"`
+			LatencyMs float64 `json:"latencyMs"`
+			Attempts  int     `json:"attempts"`
+			Usage     *struct {
+				InputTokens  *float64 `json:"inputTokens"`
+				OutputTokens *float64 `json:"outputTokens"`
+				TotalTokens  *float64 `json:"totalTokens"`
+			} `json:"usage"`
+			Price *struct {
+				InputUsdPerMTok  float64 `json:"inputUsdPerMTok"`
+				OutputUsdPerMTok float64 `json:"outputUsdPerMTok"`
+			} `json:"price"`
+			HTTPStatus int `json:"httpStatus"`
+		} `json:"record"`
+		Fields json.RawMessage `json:"fields"`
+	} `json:"calls"`
+	VisionChecks []struct {
+		Name        string  `json:"name"`
+		MimeType    string  `json:"mimeType"`
+		MaxSide     float64 `json:"maxSide"`
+		Instruction string  `json:"instruction"`
+		ImageLength int     `json:"imageLength"`
+		Problem     *string `json:"problem"`
+	} `json:"visionChecks"`
+}
+
+// LoadAIProviders reads testdata/golden/ai-providers.json; unknown fields fail.
+func LoadAIProviders(t testing.TB) AIProviders {
+	t.Helper()
+	var p AIProviders
+	load(t, "ai-providers.json", &p)
+	if len(p.Text) == 0 || len(p.Vision) == 0 || len(p.Made) == 0 || len(p.Structured) == 0 || len(p.Statuses) == 0 ||
+		len(p.RetryAfter.Cases) == 0 || len(p.Retries) == 0 || len(p.Calls) == 0 || len(p.VisionChecks) == 0 || len(p.MockText) == 0 {
+		t.Fatal("ai-providers.json: a section is empty")
+	}
+	return p
+}
