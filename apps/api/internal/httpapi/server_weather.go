@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"lookly/internal/apierr"
@@ -11,12 +12,18 @@ import (
 
 // GetCurrentWeather: the weather at a place. The gate's query rule has
 // judged the coordinates. A weather service that fails is an internal
-// error, as in the Next.js API (the contract lists no other code).
+// error, as in the Next.js API; a user who has asked for the weather of too
+// many new places is asked to wait (RATE_LIMITED).
 func (s *Server) GetCurrentWeather(ctx context.Context, request contract.GetCurrentWeatherRequestObject) (contract.GetCurrentWeatherResponseObject, error) {
-	if _, ok := identityFrom(ctx); !ok {
+	id, ok := identityFrom(ctx)
+	if !ok {
 		return nil, apierr.New(apierr.Unauthorized)
 	}
-	report, err := s.s.Weather.Current(ctx, request.Params.Lat, request.Params.Lon)
+	report, err := s.s.Weather.Current(ctx, id.UserID, request.Params.Lat, request.Params.Lon)
+	var limited *weather.LimitedError
+	if errors.As(err, &limited) {
+		return nil, apierr.TooManyAttempts(limited.RetryAfter)
+	}
 	if err != nil {
 		return nil, err
 	}

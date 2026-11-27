@@ -13,16 +13,37 @@ import (
 	"golang.org/x/sync/singleflight"
 
 	"lookly/internal/platform"
+	"lookly/internal/ratelimit"
 	"lookly/internal/store"
 )
 
 const (
 	// CacheTTL is how long a cell's weather is answered from the cache.
 	CacheTTL = 30 * time.Minute
-	// askBudget bounds a question to the provider with the cache write
-	// after it, whoever of the waiting requests gives up meanwhile.
-	askBudget = openMeteoTimeout + 5*time.Second
+	// DefaultAskBudget bounds a question to the provider with the cache
+	// write after it, whoever of the waiting requests gives up meanwhile.
+	DefaultAskBudget = openMeteoTimeout + 5*time.Second
 )
+
+// How often the provider may be asked: a cell that is not in the cache
+// costs a question. A user who walks the map cannot spend the service's
+// free allowance (Open-Meteo: 10 000 questions a day), nor can many users
+// together.
+var (
+	AskPerUser = ratelimit.Rule{Name: "weather-ask:user", Limit: 30, Window: time.Hour}
+	AskShared  = ratelimit.Rule{Name: "weather-ask:shared", Limit: 300, Window: time.Hour}
+)
+
+// LimitedError: the provider may not be asked again yet, for this user or
+// for anyone; RetryAfter says how long.
+type LimitedError struct{ RetryAfter time.Duration }
+
+func (e *LimitedError) Error() string { return "weather: too many questions to the provider" }
+
+// Limiter counts the questions (ratelimit.Limiter).
+type Limiter interface {
+	Take(ctx context.Context, hits ...ratelimit.Hit) (ratelimit.Decision, error)
+}
 
 // Report is the weather of a place and whether it came from the cache.
 type Report struct {
@@ -32,36 +53,63 @@ type Report struct {
 
 // Service answers the weather of a place, asking the provider once a cell
 // while the cell's cached weather is fresh, and once for all the requests
-// that wait for the same cell in this process. (A request that looked at
-// the cache just before another's answer was stored asks once more; so do
-// two processes asked at once.)
+// that wait for the same cell in this process. (Two processes asked at
+// once each ask.)
 type Service struct {
-	pool     *pgxpool.Pool
-	provider Provider
-	log      *slog.Logger
-	asking   singleflight.Group
+	pool      *pgxpool.Pool
+	provider  Provider
+	limiter   Limiter
+	log       *slog.Logger
+	askBudget time.Duration
+	asking    singleflight.Group
 }
 
-// New returns the service over the database's cache and a provider.
-func New(pool *pgxpool.Pool, provider Provider, log *slog.Logger) *Service {
-	return &Service{pool: pool, provider: provider, log: log}
+// Option configures a Service.
+type Option func(*Service)
+
+// WithAskBudget replaces DefaultAskBudget (tests use a short one).
+func WithAskBudget(d time.Duration) Option { return func(s *Service) { s.askBudget = d } }
+
+// New returns the service over the database's cache and a provider;
+// limiter counts the questions to the provider.
+func New(pool *pgxpool.Pool, provider Provider, limiter Limiter, log *slog.Logger, opts ...Option) *Service {
+	s := &Service{pool: pool, provider: provider, limiter: limiter, log: log, askBudget: DefaultAskBudget}
+	for _, o := range opts {
+		o(s)
+	}
+	return s
 }
 
-// Current is the weather at a place: the cell's cached weather while it is
-// fresh, else the provider's, which is then cached. The provider gets the
-// cell, never the coordinates as they came. A provider's failure is the
-// error; nothing is cached of it.
-func (s *Service) Current(ctx context.Context, lat, lon float64) (Report, error) {
+// Current is the weather at a place for a user: the cell's cached weather
+// while it is fresh, else the provider's, which is then cached. The
+// provider gets the cell, never the coordinates as they came. A question
+// to the provider is counted against the user and against everyone
+// (*LimitedError when there have been too many). A provider's failure is
+// the error; nothing is cached of it.
+func (s *Service) Current(ctx context.Context, userID string, lat, lon float64) (Report, error) {
 	cell := CellOf(lat, lon)
 	if current, ok, err := s.cached(ctx, cell); err != nil {
 		return Report{}, err
 	} else if ok {
 		return Report{Current: current, Cached: true}, nil
 	}
-	asked := s.asking.DoChan(cell.Key(), func() (any, error) {
+	allowed, err := s.limiter.Take(ctx, AskPerUser.For(userID), AskShared.For("everyone"))
+	if err != nil {
+		return Report{}, fmt.Errorf("weather: count the question: %w", err)
+	}
+	if !allowed.Allowed {
+		return Report{}, &LimitedError{RetryAfter: allowed.RetryAfter}
+	}
+	asked := s.asking.DoChan(cell.Key(), func() (report any, err error) {
 		// The question outlives the request that started it: others wait
-		// for its answer.
-		ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), askBudget)
+		// for its answer. It runs on a goroutine of its own, where a panic
+		// would end the process: it becomes this question's error.
+		defer func() {
+			if r := recover(); r != nil {
+				report, err = nil, fmt.Errorf("weather: the question panicked: %v", r)
+			}
+		}()
+		ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), s.askBudget)
 		defer cancel()
 		return s.ask(ctx, cell)
 	})
@@ -97,6 +145,13 @@ func (s *Service) cached(ctx context.Context, cell Cell) (Current, bool, error) 
 
 // ask asks the provider and caches its answer.
 func (s *Service) ask(ctx context.Context, cell Cell) (Report, error) {
+	// A question that ended between this request's look at the cache and
+	// its turn has stored the answer.
+	if current, ok, err := s.cached(ctx, cell); err != nil {
+		return Report{}, err
+	} else if ok {
+		return Report{Current: current, Cached: true}, nil
+	}
 	current, err := s.provider.Current(ctx, cell)
 	if err != nil {
 		return Report{}, fmt.Errorf("weather: %w", err)

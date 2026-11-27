@@ -386,8 +386,14 @@ JavaScript's `toFixed(2)` writes them (`weather.CellOf`).
   labels are the Next.js provider's (`testdata/golden/weather.json`).
 - Requests for one cell at the same time share one question to the provider; it goes
   on when the request that started it gives up, and its answer is cached.
-- A provider's failure is `INTERNAL` on the weather route (the contract lists nothing
-  else) and "no weather" for outfit generation. The place is in no log line and no
+- A cell that is not in the cache costs a question to the provider, counted in the
+  rate limiter: 30 an hour for a user, 300 an hour for everyone
+  (`weather.AskPerUser`, `weather.AskShared`). Past that the weather route answers
+  `RATE_LIMITED` and generation goes on without the weather; the cache still answers.
+- A question has its own time limits (five seconds for the provider, ten with the
+  cache write), whatever the request allows; a panic in it is its error.
+- A provider's failure is `INTERNAL` on the weather route and "no weather" for outfit
+  generation. The place is in no log line and no
   error: the address asked is cut out of the HTTP client's errors.
 
 ## Outfits
@@ -405,13 +411,14 @@ is reproduced where it differs from Go's (`internal/engine/jsnum.go`,
 
 `internal/outfits` is the use cases; every query names the owner.
 
-- **Generate** (`POST /api/v1/outfits/generate`): one read-only transaction reads the
+- **Generate** (`POST /api/v1/outfits/generate`): at most 20 a minute for a user
+  (`outfits.GeneratePerUser`, `RATE_LIMITED` past it). One read-only transaction reads the
   wardrobe, the preferences, the stored colour profile and the feedback of the last 30
   days; the weather is the client's snapshot, else the weather of the place (through
   the cache), else none; the engine; the deterministic explanation
   (`engine.Explanation`). Nothing is stored. Until the AI ranking of stage B6 the
   answer is always `fallback: true`. Stored lists that are not lists count as empty
-  here: one bad row does not stop the outfits.
+  here and are logged: one bad row does not stop the outfits.
 - **Save** (`POST /api/v1/outfits`) judges in the Next.js route's order: roles nobody
   has, an item twice, items that are not the user's (`FORBIDDEN`), a role its item's
   kind may not have, the composition (`engine.ValidateComposition`). The items are

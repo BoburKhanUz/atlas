@@ -163,18 +163,10 @@ func (s *Server) itemBody(item wardrobe.Item) wardrobeItemBody {
 		CreatedAt: isoMillis(item.CreatedAt), UpdatedAt: isoMillis(item.UpdatedAt),
 	}
 	now := s.now()
-	primary := -1
-	for i, img := range item.Images {
+	for _, img := range item.Images {
 		body.Images = append(body.Images, s.imageBody(img, now))
-		if img.IsPrimary && primary < 0 {
-			primary = i
-		}
 	}
-	// The primary image, or the first when none is marked.
-	if primary < 0 && len(body.Images) > 0 {
-		primary = 0
-	}
-	if primary >= 0 {
+	if primary := wardrobe.Primary(item.Images); primary >= 0 {
 		body.PrimaryImage = &body.Images[primary]
 	}
 	return body

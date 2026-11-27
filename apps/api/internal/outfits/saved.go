@@ -133,8 +133,10 @@ type Stored struct {
 	Garments []Garment
 }
 
-// jsText is JSON.stringify of a value: Go's encoding without its escaping
-// of <, > and &.
+// jsText is the JSON text of a value as JSON.stringify writes it: Go's
+// encoding without its escaping of <, > and &. (Go still writes U+2028 and
+// U+2029 as escapes, which JavaScript writes raw; the text reads back as
+// the same value.)
 func jsText(v any) (string, error) {
 	var b bytes.Buffer
 	e := json.NewEncoder(&b)
@@ -347,16 +349,9 @@ func withGarments(ctx context.Context, q *store.Queries, userID string, rows []s
 	if len(itemIDs) == 0 {
 		return outfits, nil
 	}
-	images, err := q.WardrobeImagesOfItems(ctx, itemIDs)
+	byItem, err := wardrobe.ImagesOf(ctx, q, itemIDs)
 	if err != nil {
-		return nil, fmt.Errorf("the images: %w", err)
-	}
-	byItem := map[string][]wardrobe.Image{}
-	for _, r := range images {
-		byItem[r.WardrobeItemId] = append(byItem[r.WardrobeItemId], wardrobe.Image{
-			ID: r.ID, StorageKey: r.StorageKey, DisplayKey: r.DisplayKey, ThumbnailKey: r.ThumbnailKey,
-			IsPrimary: r.IsPrimary, Width: r.Width, Height: r.Height,
-		})
+		return nil, err
 	}
 	for o := range outfits {
 		for g := range outfits[o].Garments {

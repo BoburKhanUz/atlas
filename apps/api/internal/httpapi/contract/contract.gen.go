@@ -4223,6 +4223,30 @@ func (response GenerateOutfits413JSONResponse) VisitGenerateOutfitsResponse(w ht
 	return err
 }
 
+type GenerateOutfits429ResponseHeaders struct {
+	RetryAfter *string
+}
+
+type GenerateOutfits429JSONResponse struct {
+	Body    ErrorResponse
+	Headers GenerateOutfits429ResponseHeaders
+}
+
+func (response GenerateOutfits429JSONResponse) VisitGenerateOutfitsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GenerateOutfits500JSONResponse ErrorResponse
 
 func (response GenerateOutfits500JSONResponse) VisitGenerateOutfitsResponse(w http.ResponseWriter) error {
@@ -5450,6 +5474,30 @@ func (response GetCurrentWeather403JSONResponse) VisitGetCurrentWeatherResponse(
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCurrentWeather429ResponseHeaders struct {
+	RetryAfter *string
+}
+
+type GetCurrentWeather429JSONResponse struct {
+	Body    ErrorResponse
+	Headers GetCurrentWeather429ResponseHeaders
+}
+
+func (response GetCurrentWeather429JSONResponse) VisitGetCurrentWeatherResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	w.WriteHeader(429)
 	_, err := buf.WriteTo(w)
 	return err
 }

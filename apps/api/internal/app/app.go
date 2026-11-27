@@ -110,7 +110,7 @@ func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger, images storage
 		Pool: pool, Sessions: sessions, Limiter: limiter, Consent: consent, Hasher: auth.Bcrypt{}, Log: log,
 		Queue: queue, MailEnabled: cfg.Mail.Enabled(),
 	})
-	forecasts := weather.New(pool, weatherProvider(cfg), log)
+	forecasts := weather.New(pool, weatherProvider(cfg), limiter, log)
 	server := httpapi.NewServer(httpapi.Services{
 		Health:   health.New(pool, version, healthPingTimeout),
 		Accounts: users,
@@ -119,7 +119,7 @@ func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger, images storage
 		Profile:  profile.New(pool),
 		Wardrobe: wardrobe.New(pool, images, log),
 		Weather:  forecasts,
-		Outfits:  outfits.New(pool, forecasts, log),
+		Outfits:  outfits.New(pool, forecasts, limiter, log),
 		Uploads: wardrobe.NewUploads(wardrobe.UploadsConfig{
 			Pool: pool, Images: images, Processor: imaging.NewProcessor(picturesAtOnce), Limiter: limiter,
 			Keys: idempotency.New(pool), Log: log,
@@ -139,7 +139,7 @@ func weatherProvider(cfg config.Config) weather.Provider {
 	if cfg.WeatherProvider == config.WeatherMock {
 		return weather.Mock{}
 	}
-	return weather.NewOpenMeteo(weather.OpenMeteoURL, nil)
+	return weather.NewOpenMeteo(weather.OpenMeteoURL, nil, 0)
 }
 
 // storageCheckTimeout bounds the question to the bucket at start.

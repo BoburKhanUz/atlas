@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -50,7 +49,7 @@ func (s *Server) GenerateOutfits(ctx context.Context, request contract.GenerateO
 	}
 	generated, err := s.s.Outfits.Generate(ctx, id.UserID, in)
 	if err != nil {
-		return nil, err
+		return nil, outfitError(err)
 	}
 
 	body := generatedBody{
@@ -172,6 +171,10 @@ const (
 func outfitError(err error) error {
 	var role *outfits.RoleError
 	var composition *outfits.CompositionError
+	var limited *outfits.LimitedError
+	if errors.As(err, &limited) {
+		return apierr.TooManyAttempts(limited.RetryAfter)
+	}
 	switch {
 	case errors.Is(err, outfits.ErrNotFound):
 		return apierr.New(apierr.NotFound)
@@ -263,13 +266,8 @@ func (s *Server) ListOutfits(ctx context.Context, request contract.ListOutfitsRe
 				ID: g.WardrobeItemID, Role: g.Role, Category: g.Category, Subcategory: g.Subcategory, Colors: g.Colors,
 				Style: g.Style, Material: g.Material, Season: g.Season,
 			}
-			// The primary image, or the first when none is marked.
-			if len(g.Images) > 0 {
-				primary := g.Images[0]
-				if i := slices.IndexFunc(g.Images, func(img wardrobe.Image) bool { return img.IsPrimary }); i >= 0 {
-					primary = g.Images[i]
-				}
-				image := s.imageBody(primary, now)
+			if primary := wardrobe.Primary(g.Images); primary >= 0 {
+				image := s.imageBody(g.Images[primary], now)
 				item.Image = &image
 			}
 			summary.Items = append(summary.Items, item)

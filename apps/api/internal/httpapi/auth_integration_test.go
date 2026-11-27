@@ -226,10 +226,10 @@ func newAPI(t *testing.T, o apiOptions) *api {
 	if o.weather != nil {
 		forecasts = o.weather
 	}
-	weatherService := weather.New(pool, forecasts, log)
+	weatherService := weather.New(pool, forecasts, limiter, log)
 	server := httpapi.NewServer(httpapi.Services{
 		Health: health.New(pool, "test", time.Second), Accounts: users, Sessions: a.sessions, Legal: consent, Profile: profile.New(pool),
-		Weather: weatherService, Outfits: outfits.New(pool, weatherService, log),
+		Weather: weatherService, Outfits: outfits.New(pool, weatherService, limiter, log),
 		Wardrobe: wardrobe.New(pool, a.images, log), Media: a.media, Images: a.images, Now: o.now,
 		Uploads: wardrobe.NewUploads(wardrobe.UploadsConfig{
 			Pool: pool, Images: a.images, Processor: a.processor, Limiter: limiter, Keys: idempotency.New(pool), Log: log,

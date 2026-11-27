@@ -3,8 +3,11 @@
 package outfits
 
 import (
+	"bytes"
 	"context"
+	"log/slog"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -100,7 +103,9 @@ func TestWhatTheEngineIsGivenOfTheDatabase(t *testing.T) {
 	feedback("u-me", "o-theirs", "liked", time.Minute)
 	exec(`INSERT INTO "OutfitItem" ("id","outfitId","wardrobeItemId","role","createdAt") VALUES ('x-2','o-liked','w-theirs','top',now())`)
 
-	got, err := load(ctx, store.New(pool), "u-me")
+	var logs bytes.Buffer
+	s := New(pool, nil, nil, slog.New(slog.NewJSONHandler(&logs, nil)))
+	got, err := s.load(ctx, store.New(pool), "u-me")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,9 +157,16 @@ func TestWhatTheEngineIsGivenOfTheDatabase(t *testing.T) {
 		}
 	}
 
+	// The stored list that is no list (w-odd's seasons) is logged by its row
+	// and column, without its value; nothing else is.
+	if text := logs.String(); strings.Count(text, "\n") != 1 || !strings.Contains(text, `"item":"w-odd"`) ||
+		!strings.Contains(text, `"column":"season"`) || strings.Contains(text, "not json") {
+		t.Errorf("the log: %s", text)
+	}
+
 	// A user with nothing: empty, not absent, and no colour profile made up.
 	user("u-new")
-	fresh, err := load(ctx, store.New(pool), "u-new")
+	fresh, err := s.load(ctx, store.New(pool), "u-new")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -169,7 +181,58 @@ func TestWhatTheEngineIsGivenOfTheDatabase(t *testing.T) {
 
 	// A colour profile of another user that the profile points to is not used.
 	exec(`UPDATE "ColorProfile" SET "userId" = 'u-other' WHERE "id" = 'cp-me'`)
-	if again, err := load(ctx, store.New(pool), "u-me"); err != nil || again.colors != nil {
+	if again, err := s.load(ctx, store.New(pool), "u-me"); err != nil || again.colors != nil {
 		t.Errorf("another user's colour profile: %+v, %v", again.colors, err)
+	}
+}
+
+// What is read is bounded: of a wardrobe, twice what one may hold; of the
+// feedback, the newest (outfit, kind) pairs.
+func TestWhatIsReadIsBounded(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	pool := dbtest.Empty(t)
+	if err := migrations.Apply(ctx, pool); err != nil {
+		t.Fatal(err)
+	}
+	dbtest.InstallTestClock(t, pool)
+	dbtest.SetClock(t, pool, time.Date(2026, 11, 27, 9, 0, 0, 0, time.UTC))
+	const more = wardrobeRows + 1
+	if wardrobeRows != feedbackRows {
+		t.Fatal("the test counts on one number for both bounds")
+	}
+	for _, sql := range []string{
+		`INSERT INTO "User" ("id","email","passwordHash","createdAt","updatedAt") VALUES ('u-big','big@test.local','x',now(),now())`,
+		// Items b-0001 … b-2001, an outfit of each, and a "liked" for each: the higher the number, the newer.
+		`INSERT INTO "WardrobeItem" ("id","userId","category","colors","season","confidences","correctionLog","createdAt","updatedAt")
+			SELECT 'b-' || lpad(n::text, 4, '0'), 'u-big', 'shirt', '[]', '[]', '{}', '[]', now(), now() FROM generate_series(1, $1) n`,
+		`INSERT INTO "Outfit" ("id","userId","reasonsJson","isSaved","createdAt","updatedAt")
+			SELECT 'o-' || lpad(n::text, 4, '0'), 'u-big', '[]', false, now(), now() FROM generate_series(1, $1) n`,
+		`INSERT INTO "OutfitItem" ("id","outfitId","wardrobeItemId","role","createdAt")
+			SELECT 'l-' || n, 'o-' || lpad(n::text, 4, '0'), 'b-' || lpad(n::text, 4, '0'), 'top', now() FROM generate_series(1, $1) n`,
+		`INSERT INTO "OutfitFeedback" ("id","userId","outfitId","feedback","createdAt")
+			SELECT 'f-' || n, 'u-big', 'o-' || lpad(n::text, 4, '0'), 'liked', atlas_now() - ($1 - n) * interval '1 second' FROM generate_series(1, $1) n`,
+	} {
+		args := []any{}
+		if strings.Contains(sql, "$1") {
+			args = append(args, more)
+		}
+		if _, err := pool.Exec(ctx, sql, args...); err != nil {
+			t.Fatal(err)
+		}
+	}
+	s := New(pool, nil, nil, slog.New(slog.NewJSONHandler(&bytes.Buffer{}, nil)))
+	got, err := s.load(ctx, store.New(pool), "u-big")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The wardrobe: the first by id.
+	if n := len(got.wardrobe); n != wardrobeRows || got.wardrobe[0].ID != "b-0001" || got.wardrobe[n-1].ID != "b-2000" {
+		t.Errorf("%d items read, from %s to %s", n, got.wardrobe[0].ID, got.wardrobe[n-1].ID)
+	}
+	// The feedback: all but the oldest (that of b-0001).
+	liked := got.feedback.LikedItemIDs
+	if n := len(liked); n != feedbackRows || liked[0] != "b-0002" || liked[n-1] != "b-2001" {
+		t.Errorf("%d liked items, from %s to %s", n, liked[0], liked[n-1])
 	}
 }

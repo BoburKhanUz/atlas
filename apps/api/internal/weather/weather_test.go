@@ -35,7 +35,7 @@ func service(t *testing.T, status int, body string) (*weather.OpenMeteo, *[]*htt
 		_, _ = w.Write([]byte(body))
 	}))
 	t.Cleanup(server.Close)
-	return weather.NewOpenMeteo(server.URL, fixedNow), &asked
+	return weather.NewOpenMeteo(server.URL, fixedNow, 0), &asked
 }
 
 func number(t *testing.T, s string) float64 {
@@ -322,7 +322,7 @@ func TestAServiceThatDoesNotAnswerWithAWeatherIsAnError(t *testing.T) {
 	t.Cleanup(other.Close)
 	redirecting := httptest.NewServer(http.RedirectHandler(other.URL+"/v1/forecast", http.StatusFound))
 	t.Cleanup(redirecting.Close)
-	if got, err := weather.NewOpenMeteo(redirecting.URL, fixedNow).Current(context.Background(), weather.Cell{Lat: "41.31", Lon: "69.24"}); err == nil {
+	if got, err := weather.NewOpenMeteo(redirecting.URL, fixedNow, 0).Current(context.Background(), weather.Cell{Lat: "41.31", Lon: "69.24"}); err == nil {
 		t.Errorf("a redirect: answered %+v", got)
 	}
 	if elsewhere.Load() != 0 {
@@ -356,7 +356,7 @@ func TestNoErrorNamesThePlace(t *testing.T) {
 
 	gone := httptest.NewServer(http.NotFoundHandler())
 	gone.Close()
-	_, err := weather.NewOpenMeteo(gone.URL, fixedNow).Current(context.Background(), cell)
+	_, err := weather.NewOpenMeteo(gone.URL, fixedNow, 0).Current(context.Background(), cell)
 	leaks("a service that is not there", err)
 
 	release := make(chan struct{})
@@ -366,10 +366,19 @@ func TestNoErrorNamesThePlace(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 	started := time.Now()
-	_, err = weather.NewOpenMeteo(slow.URL, fixedNow).Current(ctx, cell)
+	_, err = weather.NewOpenMeteo(slow.URL, fixedNow, 0).Current(ctx, cell)
 	leaks("a service that does not answer", err)
 	if took := time.Since(started); took > 3*time.Second {
 		t.Errorf("gave up after %v, the request allowed 100 ms", took)
+	}
+
+	// The provider's own time limit, when the request has none: a service
+	// that never answers is given up on.
+	started = time.Now()
+	_, err = weather.NewOpenMeteo(slow.URL, fixedNow, 150*time.Millisecond).Current(context.Background(), cell)
+	leaks("a service that never answers", err)
+	if took := time.Since(started); took < 100*time.Millisecond || took > 3*time.Second {
+		t.Errorf("gave up after %v, the provider's limit was 150 ms", took)
 	}
 
 	for name, body := range map[string]string{"not JSON": "<html>41.31</html>", "incomplete": `{"current":{}}`} {

@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"strings"
 	"sync"
@@ -15,6 +16,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"lookly/internal/dbtest"
+	"lookly/internal/ratelimit"
 	"lookly/internal/weather"
 	"lookly/migrations"
 )
@@ -25,22 +27,30 @@ type fakeProvider struct {
 	asked   []weather.Cell
 	answer  weather.Current
 	err     error
+	panics  bool
 	arrived chan struct{} // receives when a question arrives, when not nil
-	release chan struct{} // a question waits for it, when not nil
+	release chan struct{} // a question waits for it (or for its context's end), when not nil
 }
 
 func (*fakeProvider) Name() string { return "fake" }
 
-func (p *fakeProvider) Current(_ context.Context, cell weather.Cell) (weather.Current, error) {
+func (p *fakeProvider) Current(ctx context.Context, cell weather.Cell) (weather.Current, error) {
 	p.mu.Lock()
 	p.asked = append(p.asked, cell)
-	answer, err, arrived, release := p.answer, p.err, p.arrived, p.release
+	answer, err, arrived, release, panics := p.answer, p.err, p.arrived, p.release, p.panics
 	p.mu.Unlock()
+	if panics {
+		panic("the provider's code is broken")
+	}
 	if arrived != nil {
 		arrived <- struct{}{}
 	}
 	if release != nil {
-		<-release
+		select {
+		case <-release:
+		case <-ctx.Done():
+			return weather.Current{}, ctx.Err()
+		}
 	}
 	return answer, err
 }
@@ -79,6 +89,7 @@ type world struct {
 	pool     *pgxpool.Pool
 	provider *fakeProvider
 	service  *weather.Service
+	limiter  *ratelimit.Limiter
 	logs     *syncBuffer
 	t0       time.Time
 }
@@ -88,7 +99,7 @@ var sunny = weather.Current{
 	PrecipitationAmount: 0, Humidity: 40, WindSpeed: 9, UVIndex: 6.5, Source: "fake", FetchedAt: "2026-11-27T04:00:00.000Z",
 }
 
-func newWorld(t *testing.T) *world {
+func newWorld(t *testing.T, options ...weather.Option) *world {
 	t.Helper()
 	pool := dbtest.Empty(t)
 	if err := migrations.Apply(context.Background(), pool); err != nil {
@@ -97,7 +108,8 @@ func newWorld(t *testing.T) *world {
 	dbtest.InstallTestClock(t, pool)
 	w := &world{t: t, pool: pool, provider: &fakeProvider{answer: sunny}, logs: &syncBuffer{}, t0: time.Date(2026, 11, 27, 4, 0, 0, 0, time.UTC)}
 	w.clock(0)
-	w.service = weather.New(pool, w.provider, slog.New(slog.NewJSONHandler(w.logs, nil)))
+	w.limiter = ratelimit.New(pool, []byte("weather-test-secret-weather-test-secret"))
+	w.service = weather.New(pool, w.provider, w.limiter, slog.New(slog.NewJSONHandler(w.logs, nil)), options...)
 	return w
 }
 
@@ -105,7 +117,7 @@ func (w *world) clock(d time.Duration) { dbtest.SetClock(w.t, w.pool, w.t0.Add(d
 
 func (w *world) current(lat, lon float64) weather.Report {
 	w.t.Helper()
-	report, err := w.service.Current(context.Background(), lat, lon)
+	report, err := w.service.Current(context.Background(), "u-1", lat, lon)
 	if err != nil {
 		w.t.Fatalf("current: %v", err)
 	}
@@ -208,7 +220,7 @@ func TestAFailureIsNotCached(t *testing.T) {
 	w := newWorld(t)
 	down := errors.New("the service is down")
 	w.provider.set(func(p *fakeProvider) { p.err = down })
-	if _, err := w.service.Current(context.Background(), 41.31, 69.24); !errors.Is(err, down) {
+	if _, err := w.service.Current(context.Background(), "u-1", 41.31, 69.24); !errors.Is(err, down) {
 		t.Fatalf("got %v", err)
 	}
 	// A provider that answers what is no weather.
@@ -218,7 +230,7 @@ func TestAFailureIsNotCached(t *testing.T) {
 		"no time":                    func(c *weather.Current) { c.FetchedAt = "" },
 	} {
 		w.provider.set(func(p *fakeProvider) { p.err, p.answer = nil, sunny; change(&p.answer) })
-		if got, err := w.service.Current(context.Background(), 41.31, 69.24); err == nil {
+		if got, err := w.service.Current(context.Background(), "u-1", 41.31, 69.24); err == nil {
 			t.Fatalf("%s: answered %+v", name, got)
 		}
 	}
@@ -300,7 +312,7 @@ func TestRequestsForACellAtOnceAskOnce(t *testing.T) {
 	failures := make(chan error, callers)
 	for range callers {
 		go func() {
-			report, err := w.service.Current(context.Background(), 41.311, 69.243)
+			report, err := w.service.Current(context.Background(), "u-1", 41.311, 69.243)
 			if err != nil {
 				failures <- err
 				return
@@ -313,7 +325,7 @@ func TestRequestsForACellAtOnceAskOnce(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	gaveUp := make(chan error, 1)
 	go func() {
-		_, err := w.service.Current(ctx, 41.311, 69.243)
+		_, err := w.service.Current(ctx, "u-1", 41.311, 69.243)
 		gaveUp <- err
 	}()
 	cancel()
@@ -325,8 +337,9 @@ func TestRequestsForACellAtOnceAskOnce(t *testing.T) {
 	case <-time.After(10 * time.Second):
 		t.Fatal("the request that gave up is still waiting")
 	}
-	// Let the others reach the question before it is answered.
-	time.Sleep(300 * time.Millisecond)
+	// Answered at once: whichever of the others has not reached the
+	// question yet finds the answer in the cache, at its first look or at
+	// the look its own question takes before asking.
 	close(release)
 	for range callers {
 		select {
@@ -358,7 +371,7 @@ func TestAQuestionOutlivesTheRequestThatAskedIt(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
 	go func() {
-		_, err := w.service.Current(ctx, 41.31, 69.24)
+		_, err := w.service.Current(ctx, "u-1", 41.31, 69.24)
 		done <- err
 	}()
 	<-arrived
@@ -403,7 +416,110 @@ func TestTheWeatherIsAnsweredAlthoughItCouldNotBeCached(t *testing.T) {
 	if _, err := w.pool.Exec(context.Background(), `ALTER TABLE "WeatherCache" RENAME TO "WeatherCacheGone"`); err != nil {
 		t.Fatal(err)
 	}
-	if got, err := w.service.Current(context.Background(), 41.31, 69.24); err == nil {
+	if got, err := w.service.Current(context.Background(), "u-1", 41.31, 69.24); err == nil {
 		t.Fatalf("answered %+v without a cache table", got)
+	}
+}
+
+// A provider that never answers is given up on after the question's own
+// time limit, although the request sets none; the next request asks again.
+func TestAQuestionIsGivenUpOnAfterItsTimeLimit(t *testing.T) {
+	t.Parallel()
+	w := newWorld(t, weather.WithAskBudget(200*time.Millisecond))
+	release := make(chan struct{})
+	w.provider.set(func(p *fakeProvider) { p.release = release })
+	started := time.Now()
+	if got, err := w.service.Current(context.Background(), "u-1", 41.31, 69.24); !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("got %+v, %v", got, err)
+	}
+	if took := time.Since(started); took < 150*time.Millisecond || took > 5*time.Second {
+		t.Fatalf("gave up after %v, the limit was 200 ms", took)
+	}
+	if rows := w.rows(); len(rows) != 0 {
+		t.Fatalf("cached: %+v", rows)
+	}
+	close(release)
+	if got := w.current(41.31, 69.24); got.Cached || got.Current != sunny {
+		t.Fatalf("the next request: %+v", got)
+	}
+	if asked := w.provider.questions(); len(asked) != 2 {
+		t.Fatalf("asked %d times", len(asked))
+	}
+}
+
+// A panic in the provider's code is that question's error, for every
+// request that waited for it; the process and the next question go on.
+func TestAPanicInAQuestionIsItsError(t *testing.T) {
+	t.Parallel()
+	w := newWorld(t)
+	w.provider.set(func(p *fakeProvider) { p.panics = true })
+	if got, err := w.service.Current(context.Background(), "u-1", 41.31, 69.24); err == nil || !strings.Contains(err.Error(), "panicked") {
+		t.Fatalf("got %+v, %v", got, err)
+	}
+	w.provider.set(func(p *fakeProvider) { p.panics = false })
+	if got := w.current(41.31, 69.24); got.Cached || got.Current != sunny {
+		t.Fatalf("after the panic: %+v", got)
+	}
+}
+
+// Each cell that is not in the cache costs a question: a user has 30 an
+// hour, everyone together 300. What the cache answers costs nothing.
+func TestTheProviderIsAskedOnlySoOften(t *testing.T) {
+	t.Parallel()
+	w := newWorld(t)
+	// The numbers the owner was told (docs/plan/B5.md).
+	if weather.AskPerUser.Limit != 30 || weather.AskShared.Limit != 300 || weather.AskPerUser.Window != time.Hour || weather.AskShared.Window != time.Hour {
+		t.Fatalf("the limits are %+v and %+v", weather.AskPerUser, weather.AskShared)
+	}
+	ask := func(user string, cell int) (weather.Report, error) {
+		return w.service.Current(context.Background(), user, float64(cell)/100, 10)
+	}
+	for cell := 1; cell <= weather.AskPerUser.Limit; cell++ {
+		if _, err := ask("u-walker", cell); err != nil {
+			t.Fatalf("cell %d: %v", cell, err)
+		}
+	}
+	// One more new cell is refused, with the time to wait; nothing was asked for it.
+	w.clock(20 * time.Minute)
+	var limited *weather.LimitedError
+	if got, err := ask("u-walker", 5000); !errors.As(err, &limited) || limited.RetryAfter != 40*time.Minute {
+		t.Fatalf("the 31st cell: %+v, %v", got, err)
+	}
+	if asked := w.provider.questions(); len(asked) != weather.AskPerUser.Limit {
+		t.Fatalf("asked %d times", len(asked))
+	}
+	// Cells in the cache cost nothing, however many; another user has their own count.
+	for cell := 1; cell <= weather.AskPerUser.Limit; cell++ {
+		if got, err := ask("u-walker", cell); err != nil || !got.Cached {
+			t.Fatalf("cached cell %d: %+v, %v", cell, got, err)
+		}
+	}
+	if got, err := ask("u-other", 6000); err != nil || got.Cached {
+		t.Fatalf("another user: %+v, %v", got, err)
+	}
+	// An hour after the first question the user may ask again.
+	w.clock(time.Hour)
+	if got, err := ask("u-walker", 5000); err != nil || got.Cached {
+		t.Fatalf("after the hour: %+v, %v", got, err)
+	}
+
+	// Everyone together: 300 an hour. Everyone's hour began with the very
+	// first question and has ended too: the walker's question just now is
+	// the first of the new one.
+	asked := 1
+	for user := 0; asked < weather.AskShared.Limit; user++ {
+		for cell := 0; cell < weather.AskPerUser.Limit-1 && asked < weather.AskShared.Limit; cell++ {
+			if _, err := ask(fmt.Sprintf("u-crowd-%d", user), 10000+user*100+cell); err != nil {
+				t.Fatalf("question %d: %v", asked+1, err)
+			}
+			asked++
+		}
+	}
+	if got, err := ask("u-late", 20000); !errors.As(err, &limited) || limited.RetryAfter <= 0 {
+		t.Fatalf("the 301st question of the hour: %+v, %v", got, err)
+	}
+	// The cache still answers everyone (the cell the walker asked for this hour).
+	if got, err := ask("u-late", 5000); err != nil || !got.Cached {
+		t.Fatalf("a cached cell when the provider may not be asked: %+v, %v", got, err)
 	}
 }

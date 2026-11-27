@@ -5598,6 +5598,27 @@
               "PAYLOAD_TOO_LARGE"
             ]
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: RATE_LIMITED",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying (retryable codes)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "x-error-codes": [
+              "RATE_LIMITED"
+            ]
+          },
           "500": {
             "content": {
               "application/json": {
@@ -7431,6 +7452,27 @@
             "description": "Error. code: CONSENT_REQUIRED",
             "x-error-codes": [
               "CONSENT_REQUIRED"
+            ]
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: RATE_LIMITED",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying (retryable codes)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "x-error-codes": [
+              "RATE_LIMITED"
             ]
           },
           "500": {

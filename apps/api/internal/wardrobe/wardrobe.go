@@ -256,18 +256,46 @@ func withImages(ctx context.Context, q *store.Queries, rows []store.WardrobeItem
 		}
 		items[i], ids[i], index[row.ID] = item, row.ID, i
 	}
-	images, err := q.WardrobeImagesOfItems(ctx, ids)
+	images, err := ImagesOf(ctx, q, ids)
+	if err != nil {
+		return nil, err
+	}
+	for id, found := range images {
+		items[index[id]].Images = found
+	}
+	return items, nil
+}
+
+// ImagesOf reads the images of the items named, by item id, each item's in
+// the order they were added.
+func ImagesOf(ctx context.Context, q *store.Queries, itemIDs []string) (map[string][]Image, error) {
+	rows, err := q.WardrobeImagesOfItems(ctx, itemIDs)
 	if err != nil {
 		return nil, fmt.Errorf("wardrobe: images: %w", err)
 	}
-	for _, img := range images {
-		i := index[img.WardrobeItemId]
-		items[i].Images = append(items[i].Images, Image{
+	images := map[string][]Image{}
+	for _, img := range rows {
+		images[img.WardrobeItemId] = append(images[img.WardrobeItemId], Image{
 			ID: img.ID, StorageKey: img.StorageKey, DisplayKey: img.DisplayKey, ThumbnailKey: img.ThumbnailKey,
 			IsPrimary: img.IsPrimary, Width: img.Width, Height: img.Height,
 		})
 	}
-	return items, nil
+	return images, nil
+}
+
+// Primary is the place of an item's primary image among its images: the
+// first one marked primary, or the first when none is marked; -1 when the
+// item has no image.
+func Primary(images []Image) int {
+	for i, img := range images {
+		if img.IsPrimary {
+			return i
+		}
+	}
+	if len(images) == 0 {
+		return -1
+	}
+	return 0
 }
 
 // itemOf reads a stored row, whose lists, confidences and log are JSON text

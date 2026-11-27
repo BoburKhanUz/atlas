@@ -10,11 +10,13 @@ import (
 	"fmt"
 	"log/slog"
 	"slices"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"lookly/internal/engine"
+	"lookly/internal/ratelimit"
 	"lookly/internal/store"
 	"lookly/internal/wardrobe"
 	"lookly/internal/weather"
@@ -31,22 +33,39 @@ const (
 	feedbackRows = 2000
 )
 
+// GeneratePerUser is how often a user may have outfits made: a generation
+// scores up to 5000 combinations.
+var GeneratePerUser = ratelimit.Rule{Name: "outfits-generate:user", Limit: 20, Window: time.Minute}
+
+// LimitedError: the user has had outfits made too often; RetryAfter says
+// how long to wait.
+type LimitedError struct{ RetryAfter time.Duration }
+
+func (e *LimitedError) Error() string { return "outfits: too many generations" }
+
 // Forecasts is where the weather of a place comes from (weather.Service).
 type Forecasts interface {
-	Current(ctx context.Context, lat, lon float64) (weather.Report, error)
+	Current(ctx context.Context, userID string, lat, lon float64) (weather.Report, error)
+}
+
+// Limiter counts the generations (ratelimit.Limiter).
+type Limiter interface {
+	Take(ctx context.Context, hits ...ratelimit.Hit) (ratelimit.Decision, error)
 }
 
 // Service is the outfit use cases.
 type Service struct {
 	pool      *pgxpool.Pool
 	forecasts Forecasts
+	limiter   Limiter
 	log       *slog.Logger
 }
 
 // New returns the service over the pool; forecasts answers the weather of a
-// place for a generation that brings coordinates and no weather.
-func New(pool *pgxpool.Pool, forecasts Forecasts, log *slog.Logger) *Service {
-	return &Service{pool: pool, forecasts: forecasts, log: log}
+// place for a generation that brings coordinates and no weather, limiter
+// counts the generations.
+func New(pool *pgxpool.Pool, forecasts Forecasts, limiter Limiter, log *slog.Logger) *Service {
+	return &Service{pool: pool, forecasts: forecasts, limiter: limiter, log: log}
 }
 
 // GenerateRequest is a request for outfits. Everything is optional.
@@ -82,11 +101,14 @@ type Outfit struct {
 	Images      []*wardrobe.Image
 }
 
-// list reads a stored JSON list of texts; what is not one is empty, as in
-// the Next.js route (one bad row does not stop the outfits).
-func list(raw string) []string {
+// list reads a stored JSON list of texts. What is not one counts as empty
+// and is logged: one bad row does not stop the outfits. (The Next.js route
+// took only text that is no JSON for empty; any other JSON value went to
+// the engine as it was.) what names the row and the column, never a value.
+func (s *Service) list(ctx context.Context, raw string, what ...any) []string {
 	var values []string
 	if err := json.Unmarshal([]byte(raw), &values); err != nil || values == nil {
+		s.log.WarnContext(ctx, "outfits: a stored list is not a list of texts; it counts as empty", what...)
 		return []string{}
 	}
 	return values
@@ -103,9 +125,16 @@ type read struct {
 // Generate makes outfits from the user's wardrobe for the request's
 // occasion and weather. Nothing is stored.
 func (s *Service) Generate(ctx context.Context, userID string, request GenerateRequest) (Generated, error) {
+	allowed, err := s.limiter.Take(ctx, GeneratePerUser.For(userID))
+	if err != nil {
+		return Generated{}, fmt.Errorf("outfits: generate: count: %w", err)
+	}
+	if !allowed.Allowed {
+		return Generated{}, &LimitedError{RetryAfter: allowed.RetryAfter}
+	}
 	var data read
-	err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly}, func(tx pgx.Tx) (err error) {
-		data, err = load(ctx, store.New(tx), userID)
+	err = pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly}, func(tx pgx.Tx) (err error) {
+		data, err = s.load(ctx, store.New(tx), userID)
 		return err
 	})
 	if err != nil {
@@ -116,7 +145,7 @@ func (s *Service) Generate(ctx context.Context, userID string, request GenerateR
 	// else none. An empty wardrobe needs no weather.
 	conditions := request.Weather
 	if conditions == nil && request.Lat != nil && request.Lon != nil && len(data.wardrobe) > 0 {
-		report, err := s.forecasts.Current(ctx, *request.Lat, *request.Lon)
+		report, err := s.forecasts.Current(ctx, userID, *request.Lat, *request.Lon)
 		switch {
 		case err == nil:
 			conditions = &engine.Weather{
@@ -127,7 +156,8 @@ func (s *Service) Generate(ctx context.Context, userID string, request GenerateR
 		case ctx.Err() != nil:
 			return Generated{}, fmt.Errorf("outfits: generate: %w", ctx.Err())
 		default:
-			// Outfits without the weather are better than no outfits.
+			// Outfits without the weather are better than no outfits (a
+			// provider that fails, or one this user may not ask again yet).
 			s.log.WarnContext(ctx, "outfits: the weather could not be had; outfits are made without it", "err", err.Error())
 		}
 	}
@@ -171,7 +201,7 @@ func (s *Service) Generate(ctx context.Context, userID string, request GenerateR
 
 // load reads the wardrobe, the preferences, the colour profile and the
 // recent feedback of a user.
-func load(ctx context.Context, q *store.Queries, userID string) (read, error) {
+func (s *Service) load(ctx context.Context, q *store.Queries, userID string) (read, error) {
 	var data read
 	rows, err := q.WardrobeForOutfits(ctx, store.WardrobeForOutfitsParams{UserID: userID, RowLimit: wardrobeRows})
 	if err != nil {
@@ -180,8 +210,8 @@ func load(ctx context.Context, q *store.Queries, userID string) (read, error) {
 	data.wardrobe = make([]engine.Item, 0, len(rows))
 	for _, r := range rows {
 		data.wardrobe = append(data.wardrobe, engine.Item{
-			ID: r.ID, Category: r.Category, Subcategory: r.Subcategory, Colors: list(r.Colors), Pattern: r.Pattern,
-			Material: r.Material, SleeveLength: r.SleeveLength, Fit: r.Fit, Style: r.Style, Season: list(r.Season),
+			ID: r.ID, Category: r.Category, Subcategory: r.Subcategory, Colors: s.list(ctx, r.Colors, "item", r.ID, "column", "colors"), Pattern: r.Pattern,
+			Material: r.Material, SleeveLength: r.SleeveLength, Fit: r.Fit, Style: r.Style, Season: s.list(ctx, r.Season, "item", r.ID, "column", "season"),
 			Gender: r.Gender, Formality: r.Formality,
 		})
 	}
@@ -196,18 +226,25 @@ func load(ctx context.Context, q *store.Queries, userID string) (read, error) {
 	}
 	switch preferences, err := q.UserPreferencesByUser(ctx, userID); {
 	case err == nil:
-		data.profile.PreferredStyles, data.profile.DislikedStyles = list(preferences.PreferredStyles), list(preferences.DislikedStyles)
-		data.profile.FavoriteColors, data.profile.DislikedColors = list(preferences.FavoriteColors), list(preferences.DislikedColors)
+		of := func(raw, column string) []string {
+			return s.list(ctx, raw, "preferences", preferences.ID, "column", column)
+		}
+		data.profile.PreferredStyles, data.profile.DislikedStyles = of(preferences.PreferredStyles, "preferredStyles"), of(preferences.DislikedStyles, "dislikedStyles")
+		data.profile.FavoriteColors, data.profile.DislikedColors = of(preferences.FavoriteColors, "favoriteColors"), of(preferences.DislikedColors, "dislikedColors")
 	case !errors.Is(err, pgx.ErrNoRows):
 		return read{}, fmt.Errorf("preferences: %w", err)
 	}
 	// The stored colour profile; never made up when there is none.
 	switch colors, err := q.ColorProfileOfUser(ctx, userID); {
 	case err == nil:
+		of := func(raw, column string) []string {
+			return s.list(ctx, raw, "colorProfile", colors.ID, "column", column)
+		}
 		data.colors = &engine.ColorProfile{
 			Season: colors.Season, SecondarySeason: colors.SecondarySeason, Undertone: colors.Undertone,
 			Confidence: colors.Confidence, UndertoneConfidence: colors.UndertoneConfidence, SecondaryConfidence: colors.SecondaryConfidence,
-			RecommendedColors: list(colors.RecommendedColors), NeutralColors: list(colors.NeutralColors), CautionColors: list(colors.CautionColors),
+			RecommendedColors: of(colors.RecommendedColors, "recommendedColors"), NeutralColors: of(colors.NeutralColors, "neutralColors"),
+			CautionColors: of(colors.CautionColors, "cautionColors"),
 		}
 	case !errors.Is(err, pgx.ErrNoRows):
 		return read{}, fmt.Errorf("colour profile: %w", err)
@@ -288,19 +325,15 @@ func (s *Service) primaryImages(ctx context.Context, outfits []engine.Candidate)
 			}
 		}
 	}
-	rows, err := store.New(s.pool).WardrobeImagesOfItems(ctx, ids)
+	images, err := wardrobe.ImagesOf(ctx, store.New(s.pool), ids)
 	if err != nil {
-		return nil, fmt.Errorf("images: %w", err)
+		return nil, err
 	}
-	images := map[string]*wardrobe.Image{}
-	for _, r := range rows {
-		if current, has := images[r.WardrobeItemId]; has && (current.IsPrimary || !r.IsPrimary) {
-			continue // the first primary image, or the first image while no primary is seen
-		}
-		images[r.WardrobeItemId] = &wardrobe.Image{
-			ID: r.ID, StorageKey: r.StorageKey, DisplayKey: r.DisplayKey, ThumbnailKey: r.ThumbnailKey,
-			IsPrimary: r.IsPrimary, Width: r.Width, Height: r.Height,
+	primary := map[string]*wardrobe.Image{}
+	for id, found := range images {
+		if at := wardrobe.Primary(found); at >= 0 {
+			primary[id] = &found[at]
 		}
 	}
-	return images, nil
+	return primary, nil
 }

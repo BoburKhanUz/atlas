@@ -5,12 +5,14 @@ package httpapi_test
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
+	"lookly/internal/dbtest"
 	"lookly/internal/engine"
 	"lookly/internal/golden"
 	"lookly/internal/weather"
@@ -147,6 +149,13 @@ func (a *api) generated(c call, want map[string]any) answer {
 	return got
 }
 
+// forgetAttempts empties the rate limiter: for a test that asks more often
+// than a user may.
+func (a *api) forgetAttempts() {
+	a.t.Helper()
+	a.exec(`DELETE FROM "RateLimitBucket"`)
+}
+
 func outfitIDs(got answer) []string {
 	var ids []string
 	for _, o := range got.body["outfits"].([]any) {
@@ -221,6 +230,7 @@ func TestOutfitsAreMadeOfTheWardrobeForTheOccasionAndTheWeather(t *testing.T) {
 	if reflect.DeepEqual(cold.body["outfits"], plain.body["outfits"]) {
 		t.Error("the weather changed nothing")
 	}
+	a.forgetAttempts() // more generations than a user may have in a minute
 	// "Another option": some seed gives another best outfit than no seed,
 	// and each seed's answer is the engine's for that seed.
 	best := outfitIDs(a.do(generateCall(m, map[string]any{"topN": 1})))
@@ -286,6 +296,80 @@ func TestAWardrobeThatIsNotEnoughIsToldWhy(t *testing.T) {
 	told(map[string]any{}, 2, noMain, nil, nil)
 	a.insertItem(user, rows[0]) // a T-shirt, no trousers
 	told(map[string]any{}, 3, noMain, nil, nil)
+
+	// Everything an outfit needs, and nothing of it for the day: summer
+	// clothes in a hard frost.
+	a.exec(`DELETE FROM "WardrobeItem" WHERE "userId" = $1`, user)
+	summer := []golden.WardrobeRow{
+		garment("s-tee", "shirt", "tshirt", []string{"white"}, "casual", "casual", []string{"summer"}),
+		garment("s-shorts", "pants", "shorts", []string{"beige"}, "casual", "casual", []string{"summer"}),
+		garment("s-sandals", "shoes", "sandals", []string{"brown"}, "casual", "casual", []string{"summer"}),
+	}
+	for _, row := range summer {
+		a.insertItem(user, row)
+	}
+	frost := map[string]any{"temperature": -15.0, "feelsLike": -22.0, "condition": "snow", "precipitationProbability": 90.0, "humidity": 80.0, "windSpeed": 30.0, "uvIndex": 0.0}
+	if result := engine.Generate(engine.Input{Wardrobe: itemsOf(t, summer), TopN: ptr(3.0), Profile: &noPreferences, Feedback: &noFeedback, Weather: &engine.Weather{
+		Temperature: ptr(-15.0), FeelsLike: ptr(-22.0), Condition: ptr("snow"), PrecipitationProbability: ptr(90.0), Humidity: ptr(80.0), WindSpeed: ptr(30.0), UVIndex: ptr(0.0),
+	}}); len(result.Outfits) != 0 || result.Problem != engine.NothingSuitable {
+		t.Fatalf("the test's wardrobe is not one that has nothing suitable: %d outfits, %q", len(result.Outfits), result.Problem)
+	}
+	told(map[string]any{"weather": frost}, 3, "Garderobingizdagi kiyimlar bugungi ob-havo yoki tadbirga mos kelmadi. Boshqa kiyimlar qo‘shib ko‘ring.", frost, nil)
+}
+
+func TestAUserMayHaveOutfitsMadeOnlySoOften(t *testing.T) {
+	t.Parallel()
+	a, m, _ := wearer(t, apiOptions{})
+	for n := 1; n <= 20; n++ {
+		// What the gate refuses is not a generation: it is not counted.
+		a.is(a.do(generateCall(m, map[string]any{"topN": 9})), http.StatusBadRequest, "VALIDATION_ERROR")
+		if got := a.do(generateCall(m, map[string]any{"seed": n})); got.status != http.StatusOK {
+			t.Fatalf("generation %d: %d %s", n, got.status, got.raw)
+		}
+	}
+	dbtest.SetClock(t, a.pool, outfitT0.Add(15*time.Second))
+	refused := a.do(generateCall(m, map[string]any{}))
+	a.is(refused, http.StatusTooManyRequests, "RATE_LIMITED")
+	if wait := refused.header.Get("Retry-After"); wait != "45" {
+		t.Errorf("Retry-After %q, want 45 (the minute began 15 seconds ago)", wait)
+	}
+	// Another user is not held up; and the minute ends.
+	other := a.mobileRegister(nil)
+	a.is(a.do(generateCall(other, map[string]any{})), http.StatusOK, "")
+	dbtest.SetClock(t, a.pool, outfitT0.Add(time.Minute))
+	a.is(a.do(generateCall(m, map[string]any{})), http.StatusOK, "")
+}
+
+func TestAUserMayAskForTheWeatherOfOnlySoManyNewPlaces(t *testing.T) {
+	t.Parallel()
+	provider := &forecasts{answer: drizzle}
+	a, m, _ := wearer(t, apiOptions{weather: provider})
+	place := func(n int) string { return fmt.Sprintf("lat=%d.5&lon=10", n) }
+	for n := 1; n <= 30; n++ {
+		a.is(a.do(weatherCall(m, place(n))), http.StatusOK, "")
+	}
+	dbtest.SetClock(t, a.pool, outfitT0.Add(10*time.Minute))
+	refused := a.do(weatherCall(m, place(31)))
+	a.is(refused, http.StatusTooManyRequests, "RATE_LIMITED")
+	if wait := refused.header.Get("Retry-After"); wait != "3000" {
+		t.Errorf("Retry-After %q, want 3000 (the hour began 10 minutes ago)", wait)
+	}
+	// A place the cache knows costs nothing.
+	if got := a.do(weatherCall(m, place(7))); got.status != http.StatusOK || got.body["weather"].(map[string]any)["cached"] != true {
+		t.Fatalf("a cached place: %d %s", got.status, got.raw)
+	}
+	// Outfits are made all the same, without the weather of a new place, and with the weather of a known one.
+	without := a.do(generateCall(m, map[string]any{"lat": 55.5, "lon": 10}))
+	if without.status != http.StatusOK || without.body["weatherUsed"] != nil || len(outfitIDs(without)) == 0 {
+		t.Fatalf("generation for a new place: %d %s", without.status, without.raw)
+	}
+	with := a.do(generateCall(m, map[string]any{"lat": 7.5, "lon": 10}))
+	if with.status != http.StatusOK || with.body["weatherUsed"] == nil {
+		t.Fatalf("generation for a known place: %d %s", with.status, with.raw)
+	}
+	if asked := provider.questions(); len(asked) != 30 {
+		t.Fatalf("the provider was asked %d times", len(asked))
+	}
 }
 
 func TestTheWeatherOfThePlaceIsUsedWhenTheClientBringsNone(t *testing.T) {

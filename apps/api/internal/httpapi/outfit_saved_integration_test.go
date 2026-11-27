@@ -3,6 +3,7 @@
 package httpapi_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"time"
 
 	"lookly/internal/dbtest"
+	"lookly/internal/httpapi"
 )
 
 const outfitsPath = "/api/v1/outfits"
@@ -569,6 +571,128 @@ func TestOutfitRoutesNeedASessionAndConsentBeforeAnythingElse(t *testing.T) {
 	}
 	if n := query[int](a, `SELECT count(*) FROM "Outfit"`) + query[int](a, `SELECT count(*) FROM "OutfitFeedback"`); n != 1 || a.rowJSON("Outfit", id)["isSaved"] != false {
 		t.Fatal("a refused request changed something")
+	}
+
+	// A web session's write from another site is refused, on every writing route.
+	web := a.webLogin()
+	owned := a.userID(web.email)
+	for _, row := range closet() {
+		row.ID = "w-" + row.ID
+		a.insertItem(owned, row)
+	}
+	cookies := map[string]string{httpapi.AccessCookie: web.at}
+	own := map[string]string{"Origin": "http://app.example.uz"}
+	made := a.do(call{path: outfitsPath, cookies: cookies, headers: own, body: map[string]any{"items": pieces("w-c-tee", "top", "w-c-jeans", "bottom", "w-c-sneakers", "shoes")}})
+	a.is(made, http.StatusCreated, "")
+	webOutfit := made.text("outfit", "id")
+	for _, c := range []call{
+		{path: outfitsPath, body: map[string]any{"items": pieces("w-c-tee", "top", "w-c-jeans", "bottom", "w-c-sneakers", "shoes")}},
+		{method: http.MethodPatch, path: outfitsPath + "/" + webOutfit, contract: outfitsPath + "/{id}", body: map[string]any{"isSaved": true}},
+		{method: http.MethodDelete, path: outfitsPath + "/" + webOutfit, contract: outfitsPath + "/{id}"},
+		{path: outfitsPath + "/" + webOutfit + "/feedback", contract: outfitsPath + "/{id}/feedback", body: map[string]any{"feedback": "saved"}},
+	} {
+		c.cookies, c.headers = cookies, map[string]string{"Origin": "https://evil.example"}
+		a.is(a.do(c), http.StatusForbidden, "FORBIDDEN")
+	}
+	if stored := a.rowJSON("Outfit", webOutfit); stored["isSaved"] != false || query[int](a, `SELECT count(*) FROM "Outfit" WHERE "userId" = $1`, owned) != 1 {
+		t.Fatal("a write from another site changed something")
+	}
+}
+
+// An item cannot leave the wardrobe while an outfit is being made of it:
+// the save waits for a removal under way and then sees the item gone.
+func TestSavingWaitsForAnItemThatIsBeingRemoved(t *testing.T) {
+	t.Parallel()
+	a, m, _ := wearer(t, apiOptions{})
+	ctx := context.Background()
+	removal, err := a.pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = removal.Rollback(ctx) }()
+	if _, err := removal.Exec(ctx, `DELETE FROM "WardrobeItem" WHERE "id" = 'c-tee'`); err != nil {
+		t.Fatal(err)
+	}
+	saved := make(chan answer, 1)
+	go func() { saved <- a.do(outfitsCall(m, http.MethodPost, "", map[string]any{"items": casualPieces})) }()
+	select {
+	case got := <-saved:
+		t.Fatalf("the save did not wait for the removal: %d %s", got.status, got.raw)
+	case <-time.After(500 * time.Millisecond):
+	}
+	if err := removal.Commit(ctx); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case got := <-saved:
+		// The item is gone: not the user's any more. Not a broken reference (500).
+		a.is(got, http.StatusForbidden, "FORBIDDEN")
+	case <-time.After(20 * time.Second):
+		t.Fatal("the save is still waiting")
+	}
+	if n := query[int](a, `SELECT count(*) FROM "Outfit"`); n != 0 {
+		t.Fatalf("%d outfits stored", n)
+	}
+}
+
+// Feedback reads whether the outfit is saved under a lock: a change under
+// way is waited for, and what the feedback does follows from the changed row.
+func TestFeedbackWaitsForAChangeOfTheOutfit(t *testing.T) {
+	t.Parallel()
+	a, m, _ := wearer(t, apiOptions{})
+	id := a.save(m, map[string]any{"items": casualPieces})
+	ctx := context.Background()
+	change, err := a.pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = change.Rollback(ctx) }()
+	if _, err := change.Exec(ctx, `UPDATE "Outfit" SET "isSaved" = true WHERE "id" = $1`, id); err != nil {
+		t.Fatal(err)
+	}
+	given := make(chan answer, 1)
+	go func() { given <- a.do(feedbackCall(m, id, map[string]any{"feedback": "rejected"})) }()
+	select {
+	case got := <-given:
+		t.Fatalf("the feedback did not wait for the change: %d %s", got.status, got.raw)
+	case <-time.After(500 * time.Millisecond):
+	}
+	if err := change.Commit(ctx); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case got := <-given:
+		a.is(got, http.StatusCreated, "")
+	case <-time.After(20 * time.Second):
+		t.Fatal("the feedback is still waiting")
+	}
+	// Saved by the change, then unsaved by the rejection that came after it.
+	if a.rowJSON("Outfit", id)["isSaved"] != false {
+		t.Fatal("the rejection did not see that the outfit had been saved")
+	}
+}
+
+// Rows the API never makes: another user's item in an outfit. It is not
+// shown, in the list or in the detail.
+func TestAnotherUsersItemInAnOutfitIsNotShown(t *testing.T) {
+	t.Parallel()
+	a, m, _ := wearer(t, apiOptions{})
+	other := a.mobileRegister(nil)
+	a.insertItem(a.userID(other.email), garment("o-secret", "outerwear", "coat", []string{"red"}, "classic", "casual", []string{"winter"}))
+	a.exec(`INSERT INTO "WardrobeImage" ("id","wardrobeItemId","storageKey","isPrimary","createdAt") VALUES ('i-secret','o-secret','wardrobe/other/secret.webp',true,now())`)
+	id := a.save(m, map[string]any{"items": casualPieces})
+	a.exec(`INSERT INTO "OutfitItem" ("id","outfitId","wardrobeItemId","role","createdAt") VALUES ('x-1',$1,'o-secret','outerwear',now())`, id)
+	for name, got := range map[string]answer{
+		"the detail": a.do(outfitCall(m, http.MethodGet, id, nil)), "the list": a.do(outfitsCall(m, http.MethodGet, "", nil)),
+	} {
+		if got.status != http.StatusOK || strings.Contains(string(got.raw), "secret") || strings.Count(string(got.raw), `"role"`) != len(casualPieces) {
+			t.Errorf("%s: %d %s", name, got.status, got.raw)
+		}
+	}
+	// The other user does not see the outfit either, although an item of theirs is in it.
+	a.is(a.do(outfitCall(other, http.MethodGet, id, nil)), http.StatusNotFound, "NOT_FOUND")
+	if got := a.do(outfitsCall(other, http.MethodGet, "", nil)); len(got.body["outfits"].([]any)) != 0 {
+		t.Errorf("the other user's list: %s", got.raw)
 	}
 }
 

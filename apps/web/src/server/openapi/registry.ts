@@ -206,7 +206,8 @@ export const OPERATIONS: Operation[] = [
     method: 'POST', path: '/api/v1/outfits/generate', route: 'api/v1/outfits/generate', operationId: 'generateOutfits', tags: ['outfits'],
     summary: 'Generate outfit suggestions from the wardrobe: a deterministic engine (hard filters, bounded candidates, scoring, stable order) plus optional AI reranking/explanation that never fails the request (fallback: true). The same wardrobe, context and seed always give the same result; omit seed for the best outfits, send a new seed for another deterministic option.', auth: 'required', jsonBody: Req.OutfitGenerateRequest,
     success: [{ status: 200, description: 'Suggestions (empty with a message when the wardrobe is not enough)', schema: Res.OutfitGenerateResponse }],
-    errors: [],
+    // RATE_LIMITED: the Go backend allows 20 generations a minute per user (docs/plan/B5.md); this server has no such limit.
+    errors: ['RATE_LIMITED'],
   },
   {
     method: 'GET', path: '/api/v1/outfits', route: 'api/v1/outfits', operationId: 'listOutfits', tags: ['outfits'],
@@ -269,7 +270,9 @@ export const OPERATIONS: Operation[] = [
     method: 'GET', path: '/api/v1/weather/current', route: 'api/v1/weather/current', operationId: 'getCurrentWeather', tags: ['weather'],
     summary: 'Current weather (cached 30 min per ~1 km cell)', auth: 'required', query: Req.WeatherQuery,
     success: [{ status: 200, description: 'Weather', schema: Res.WeatherResponse }],
-    errors: [],
+    // RATE_LIMITED: the Go backend bounds how many new places a user (30 an hour) and everyone (300 an hour) may ask the
+    // weather service for (docs/plan/B5.md); this server has no such limit.
+    errors: ['RATE_LIMITED'],
   },
   {
     method: 'GET', path: '/api/health', route: 'api/health', operationId: 'getHealth', tags: ['service'],

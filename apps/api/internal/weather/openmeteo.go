@@ -78,16 +78,21 @@ type OpenMeteo struct {
 }
 
 // NewOpenMeteo returns the provider. origin is the service's origin
-// (OpenMeteoURL; a test's stand-in), now the clock (nil: time.Now).
-func NewOpenMeteo(origin string, now func() time.Time) *OpenMeteo {
+// (OpenMeteoURL; a test's stand-in), now the clock (nil: time.Now),
+// timeout how long one question may take (0: five seconds, as in the
+// Next.js provider).
+func NewOpenMeteo(origin string, now func() time.Time, timeout time.Duration) *OpenMeteo {
 	if now == nil {
 		now = time.Now
+	}
+	if timeout <= 0 {
+		timeout = openMeteoTimeout
 	}
 	return &OpenMeteo{
 		origin: origin,
 		now:    now,
 		client: &http.Client{
-			Timeout: openMeteoTimeout,
+			Timeout: timeout,
 			// The service answers where it is asked; an answer that sends
 			// us elsewhere is a failure, not a place to go.
 			CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },

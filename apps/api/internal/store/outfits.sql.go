@@ -419,9 +419,10 @@ func (q *Queries) OutfitOfUser(ctx context.Context, arg OutfitOfUserParams) (Out
 }
 
 const recentOutfitFeedback = `-- name: RecentOutfitFeedback :many
-SELECT DISTINCT f."outfitId", f."feedback" FROM "OutfitFeedback" f
+SELECT f."outfitId", f."feedback" FROM "OutfitFeedback" f
  WHERE f."userId" = $1 AND f."createdAt" >= atlas_now() - $2::int * interval '1 day'
- ORDER BY f."outfitId", f."feedback" LIMIT $3
+ GROUP BY f."outfitId", f."feedback"
+ ORDER BY max(f."createdAt") DESC, f."outfitId", f."feedback" LIMIT $3
 `
 
 type RecentOutfitFeedbackParams struct {
@@ -435,7 +436,8 @@ type RecentOutfitFeedbackRow struct {
 	Feedback string
 }
 
-// Which of the user's outfits got which kind of feedback in the last days.
+// Which of the user's outfits got which kind of feedback in the last days:
+// the newest first, so that what the limit leaves out is the oldest.
 func (q *Queries) RecentOutfitFeedback(ctx context.Context, arg RecentOutfitFeedbackParams) ([]RecentOutfitFeedbackRow, error) {
 	rows, err := q.db.Query(ctx, recentOutfitFeedback, arg.UserID, arg.Days, arg.RowLimit)
 	if err != nil {

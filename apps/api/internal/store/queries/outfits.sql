@@ -16,10 +16,12 @@ SELECT c.* FROM "UserProfile" p JOIN "ColorProfile" c ON c."id" = p."colorProfil
  WHERE p."userId" = $1;
 
 -- name: RecentOutfitFeedback :many
--- Which of the user's outfits got which kind of feedback in the last days.
-SELECT DISTINCT f."outfitId", f."feedback" FROM "OutfitFeedback" f
+-- Which of the user's outfits got which kind of feedback in the last days:
+-- the newest first, so that what the limit leaves out is the oldest.
+SELECT f."outfitId", f."feedback" FROM "OutfitFeedback" f
  WHERE f."userId" = sqlc.arg(user_id) AND f."createdAt" >= atlas_now() - sqlc.arg(days)::int * interval '1 day'
- ORDER BY f."outfitId", f."feedback" LIMIT sqlc.arg(row_limit);
+ GROUP BY f."outfitId", f."feedback"
+ ORDER BY max(f."createdAt") DESC, f."outfitId", f."feedback" LIMIT sqlc.arg(row_limit);
 
 -- name: ItemsOfOutfits :many
 -- The items of the user's outfits named, in the order they were added.
