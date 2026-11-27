@@ -1,5 +1,9 @@
 # Design references
 
+Kept here, not under `docs/`: no image may be tracked under `docs/` (a test in
+`apps/web/tests/unit/ai/real-data-validation.test.ts` keeps evaluation photos out of Git).
+The app does not bundle this folder; its assets are under `assets/`.
+
 Mockups the owner brought or approved, kept as the reference a stage builds to.
 A mockup is a picture, not a specification: the app is built with its own design
 tokens (`apps/mobile/lib/core/design/tokens.dart`), font (Manrope) and brand mark
