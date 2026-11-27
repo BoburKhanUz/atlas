@@ -607,3 +607,38 @@ func LoadIdempotency(t testing.TB) Idempotency {
 	}
 	return i
 }
+
+// OutfitValidation is testdata/golden/outfit-validation.json
+// (apps/web/scripts/golden-outfit-validation.ts): what the Next.js API
+// answers to the bodies of the outfit routes, the outfit list's query and
+// the weather's coordinates.
+type OutfitValidation struct {
+	GeneratedBy  string           `json:"generatedBy"`
+	SourceCommit string           `json:"sourceCommit"`
+	Note         string           `json:"note"`
+	Generate     []ValidationCase `json:"generate"`
+	Save         []ValidationCase `json:"save"`
+	Patch        []ValidationCase `json:"patch"`
+	Feedback     []ValidationCase `json:"feedback"`
+	Saved        []struct {
+		Saved *string `json:"saved"`
+		Outcome
+	} `json:"saved"`
+	Coordinates []struct {
+		Lat *string `json:"lat"`
+		Lon *string `json:"lon"`
+		Outcome
+	} `json:"coordinates"`
+}
+
+// LoadOutfitValidation reads testdata/golden/outfit-validation.json;
+// unknown fields fail.
+func LoadOutfitValidation(t testing.TB) OutfitValidation {
+	t.Helper()
+	var o OutfitValidation
+	load(t, "outfit-validation.json", &o)
+	if len(o.Generate) == 0 || len(o.Save) == 0 || len(o.Patch) == 0 || len(o.Feedback) == 0 || len(o.Saved) == 0 || len(o.Coordinates) == 0 {
+		t.Fatal("outfit-validation.json: a section is empty")
+	}
+	return o
+}

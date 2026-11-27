@@ -1,0 +1,6229 @@
+{
+ "generatedBy": "apps/web/scripts/golden-outfit-validation.ts",
+ "sourceCommit": "d24afdc3aedfee642259b39ed82d6187470b4f2c",
+ "note": "generate, save, patch, feedback: raw bodies through parseJson. saved, coordinates: the parameters as the routes pass them (an empty one is absent) through validate.",
+ "generate": [
+  {
+   "name": "an empty body",
+   "body": "",
+   "ok": true,
+   "value": {}
+  },
+  {
+   "name": "white space only",
+   "body": "  \n",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "not JSON",
+   "body": "{occasion",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "two JSON values",
+   "body": "{}{}",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "JSON null",
+   "body": "null",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "a JSON array",
+   "body": "[]",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "a JSON number",
+   "body": "12",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "an empty object",
+   "body": "{}",
+   "ok": true,
+   "value": {}
+  },
+  {
+   "name": "members that are not known",
+   "body": "{\"other\":1,\"wardrobe\":[]}",
+   "ok": true,
+   "value": {}
+  },
+  {
+   "name": "occasion work",
+   "body": "{\"occasion\":\"work\"}",
+   "ok": true,
+   "value": {
+    "occasion": "work"
+   }
+  },
+  {
+   "name": "occasion wedding",
+   "body": "{\"occasion\":\"wedding\"}",
+   "ok": true,
+   "value": {
+    "occasion": "wedding"
+   }
+  },
+  {
+   "name": "occasion date",
+   "body": "{\"occasion\":\"date\"}",
+   "ok": true,
+   "value": {
+    "occasion": "date"
+   }
+  },
+  {
+   "name": "occasion travel",
+   "body": "{\"occasion\":\"travel\"}",
+   "ok": true,
+   "value": {
+    "occasion": "travel"
+   }
+  },
+  {
+   "name": "occasion casual",
+   "body": "{\"occasion\":\"casual\"}",
+   "ok": true,
+   "value": {
+    "occasion": "casual"
+   }
+  },
+  {
+   "name": "occasion other",
+   "body": "{\"occasion\":\"other\"}",
+   "ok": true,
+   "value": {
+    "occasion": "other"
+   }
+  },
+  {
+   "name": "occasion null",
+   "body": "{\"occasion\":null}",
+   "ok": true,
+   "value": {
+    "occasion": null
+   }
+  },
+  {
+   "name": "occasion a number",
+   "body": "{\"occasion\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\"",
+   "details": [
+    {
+     "path": "occasion",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\""
+    }
+   ]
+  },
+  {
+   "name": "occasion true",
+   "body": "{\"occasion\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\"",
+   "details": [
+    {
+     "path": "occasion",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\""
+    }
+   ]
+  },
+  {
+   "name": "occasion a string",
+   "body": "{\"occasion\":\"text\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\"",
+   "details": [
+    {
+     "path": "occasion",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\""
+    }
+   ]
+  },
+  {
+   "name": "occasion an array",
+   "body": "{\"occasion\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\"",
+   "details": [
+    {
+     "path": "occasion",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\""
+    }
+   ]
+  },
+  {
+   "name": "occasion an object",
+   "body": "{\"occasion\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\"",
+   "details": [
+    {
+     "path": "occasion",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\""
+    }
+   ]
+  },
+  {
+   "name": "occasion unknown",
+   "body": "{\"occasion\":\"party\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\"",
+   "details": [
+    {
+     "path": "occasion",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\""
+    }
+   ]
+  },
+  {
+   "name": "occasion in upper case",
+   "body": "{\"occasion\":\"Work\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\"",
+   "details": [
+    {
+     "path": "occasion",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\""
+    }
+   ]
+  },
+  {
+   "name": "occasion empty",
+   "body": "{\"occasion\":\"\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\"",
+   "details": [
+    {
+     "path": "occasion",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\""
+    }
+   ]
+  },
+  {
+   "name": "weather whole",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather with a member more",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5,\"pressure\":1013}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather null",
+   "body": "{\"weather\":null}",
+   "ok": true,
+   "value": {
+    "weather": null
+   }
+  },
+  {
+   "name": "weather a number",
+   "body": "{\"weather\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "weather",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "weather true",
+   "body": "{\"weather\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "weather",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "weather a string",
+   "body": "{\"weather\":\"text\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string",
+   "details": [
+    {
+     "path": "weather",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "weather an array",
+   "body": "{\"weather\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "weather",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "weather empty",
+   "body": "{\"weather\":{}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "weather.temperature",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    },
+    {
+     "path": "weather.feelsLike",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    },
+    {
+     "path": "weather.condition",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    },
+    {
+     "path": "weather.precipitationProbability",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    },
+    {
+     "path": "weather.humidity",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    },
+    {
+     "path": "weather.windSpeed",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    },
+    {
+     "path": "weather.uvIndex",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "weather without temperature",
+   "body": "{\"weather\":{\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "weather.temperature",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "weather without feelsLike",
+   "body": "{\"weather\":{\"temperature\":21.5,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "weather.feelsLike",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "weather without condition",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "weather.condition",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "weather without precipitationProbability",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "weather.precipitationProbability",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "weather without humidity",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "weather.humidity",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "weather without windSpeed",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "weather.windSpeed",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "weather without uvIndex",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "weather.uvIndex",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "weather temperature null",
+   "body": "{\"weather\":{\"temperature\":null,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null",
+   "details": [
+    {
+     "path": "weather.temperature",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "weather temperature of another type",
+   "body": "{\"weather\":{\"temperature\":\"5\",\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "weather.temperature",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "weather feelsLike null",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":null,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null",
+   "details": [
+    {
+     "path": "weather.feelsLike",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "weather feelsLike of another type",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":\"5\",\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "weather.feelsLike",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "weather condition null",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":null,\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "weather.condition",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "weather condition of another type",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":5,\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "weather.condition",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "weather precipitationProbability null",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":null,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null",
+   "details": [
+    {
+     "path": "weather.precipitationProbability",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "weather precipitationProbability of another type",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":\"5\",\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "weather.precipitationProbability",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "weather humidity null",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":null,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null",
+   "details": [
+    {
+     "path": "weather.humidity",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "weather humidity of another type",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":\"5\",\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "weather.humidity",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "weather windSpeed null",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":null,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null",
+   "details": [
+    {
+     "path": "weather.windSpeed",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "weather windSpeed of another type",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":\"5\",\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "weather.windSpeed",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "weather uvIndex null",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":null}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null",
+   "details": [
+    {
+     "path": "weather.uvIndex",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "weather uvIndex of another type",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":\"5\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "weather.uvIndex",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "weather temperature -90",
+   "body": "{\"weather\":{\"temperature\":-90,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": -90,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather temperature -90.5",
+   "body": "{\"weather\":{\"temperature\":-90.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=-90",
+   "details": [
+    {
+     "path": "weather.temperature",
+     "message": "Juda kichik: kutilgan number >=-90"
+    }
+   ]
+  },
+  {
+   "name": "weather temperature 70",
+   "body": "{\"weather\":{\"temperature\":70,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 70,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather temperature 70.5",
+   "body": "{\"weather\":{\"temperature\":70.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=70",
+   "details": [
+    {
+     "path": "weather.temperature",
+     "message": "Juda katta: kutilgan number <=70"
+    }
+   ]
+  },
+  {
+   "name": "weather feelsLike -100",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":-100,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": -100,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather feelsLike -100.5",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":-100.5,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=-100",
+   "details": [
+    {
+     "path": "weather.feelsLike",
+     "message": "Juda kichik: kutilgan number >=-100"
+    }
+   ]
+  },
+  {
+   "name": "weather feelsLike 80",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":80,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 80,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather feelsLike 80.5",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":80.5,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=80",
+   "details": [
+    {
+     "path": "weather.feelsLike",
+     "message": "Juda katta: kutilgan number <=80"
+    }
+   ]
+  },
+  {
+   "name": "weather precipitationProbability 0",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":0,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 0,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather precipitationProbability -0.5",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":-0.5,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=0",
+   "details": [
+    {
+     "path": "weather.precipitationProbability",
+     "message": "Juda kichik: kutilgan number >=0"
+    }
+   ]
+  },
+  {
+   "name": "weather precipitationProbability 100",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":100,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 100,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather precipitationProbability 100.5",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":100.5,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=100",
+   "details": [
+    {
+     "path": "weather.precipitationProbability",
+     "message": "Juda katta: kutilgan number <=100"
+    }
+   ]
+  },
+  {
+   "name": "weather humidity 0",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":0,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 0,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather humidity -0.5",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":-0.5,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=0",
+   "details": [
+    {
+     "path": "weather.humidity",
+     "message": "Juda kichik: kutilgan number >=0"
+    }
+   ]
+  },
+  {
+   "name": "weather humidity 100",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":100,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 100,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather humidity 100.5",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":100.5,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=100",
+   "details": [
+    {
+     "path": "weather.humidity",
+     "message": "Juda katta: kutilgan number <=100"
+    }
+   ]
+  },
+  {
+   "name": "weather windSpeed 0",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":0,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 0,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather windSpeed -0.5",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":-0.5,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=0",
+   "details": [
+    {
+     "path": "weather.windSpeed",
+     "message": "Juda kichik: kutilgan number >=0"
+    }
+   ]
+  },
+  {
+   "name": "weather windSpeed 500",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":500,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 500,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather windSpeed 500.5",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":500.5,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=500",
+   "details": [
+    {
+     "path": "weather.windSpeed",
+     "message": "Juda katta: kutilgan number <=500"
+    }
+   ]
+  },
+  {
+   "name": "weather uvIndex 0",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":0}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 0
+    }
+   }
+  },
+  {
+   "name": "weather uvIndex -0.5",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":-0.5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=0",
+   "details": [
+    {
+     "path": "weather.uvIndex",
+     "message": "Juda kichik: kutilgan number >=0"
+    }
+   ]
+  },
+  {
+   "name": "weather uvIndex 30",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":30}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 30
+    }
+   }
+  },
+  {
+   "name": "weather uvIndex 30.5",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":30.5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=30",
+   "details": [
+    {
+     "path": "weather.uvIndex",
+     "message": "Juda katta: kutilgan number <=30"
+    }
+   ]
+  },
+  {
+   "name": "weather condition empty",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "weather.condition",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "weather condition of spaces",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"   \",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "weather.condition",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "weather condition trimmed",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"  rain \\n\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "rain",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather condition of 40 characters",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"cccccccccccccccccccccccccccccccccccccccc\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "cccccccccccccccccccccccccccccccccccccccc",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather condition of 41 characters",
+   "body": "{\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"ccccccccccccccccccccccccccccccccccccccccc\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=40 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "weather.condition",
+     "message": "Juda katta: kutilgan string <=40 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "weather with everything wrong",
+   "body": "{\"weather\":{\"temperature\":99,\"feelsLike\":\"x\",\"condition\":\"\",\"humidity\":-1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=70",
+   "details": [
+    {
+     "path": "weather.temperature",
+     "message": "Juda katta: kutilgan number <=70"
+    },
+    {
+     "path": "weather.feelsLike",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    },
+    {
+     "path": "weather.condition",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    },
+    {
+     "path": "weather.precipitationProbability",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    },
+    {
+     "path": "weather.humidity",
+     "message": "Juda kichik: kutilgan number >=0"
+    },
+    {
+     "path": "weather.windSpeed",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    },
+    {
+     "path": "weather.uvIndex",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "weather temperature past the largest number",
+   "body": "{\"weather\":{\"temperature\":1e400,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "weather.temperature",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "lat -90",
+   "body": "{\"lat\":-90}",
+   "ok": true,
+   "value": {
+    "lat": -90
+   }
+  },
+  {
+   "name": "lat 90",
+   "body": "{\"lat\":90}",
+   "ok": true,
+   "value": {
+    "lat": 90
+   }
+  },
+  {
+   "name": "lat -90.5",
+   "body": "{\"lat\":-90.5}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=-90",
+   "details": [
+    {
+     "path": "lat",
+     "message": "Juda kichik: kutilgan number >=-90"
+    }
+   ]
+  },
+  {
+   "name": "lat 90.5",
+   "body": "{\"lat\":90.5}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=90",
+   "details": [
+    {
+     "path": "lat",
+     "message": "Juda katta: kutilgan number <=90"
+    }
+   ]
+  },
+  {
+   "name": "lat 0",
+   "body": "{\"lat\":0}",
+   "ok": true,
+   "value": {
+    "lat": 0
+   }
+  },
+  {
+   "name": "lat 41.311",
+   "body": "{\"lat\":41.311}",
+   "ok": true,
+   "value": {
+    "lat": 41.311
+   }
+  },
+  {
+   "name": "lon -180",
+   "body": "{\"lon\":-180}",
+   "ok": true,
+   "value": {
+    "lon": -180
+   }
+  },
+  {
+   "name": "lon 180",
+   "body": "{\"lon\":180}",
+   "ok": true,
+   "value": {
+    "lon": 180
+   }
+  },
+  {
+   "name": "lon -180.5",
+   "body": "{\"lon\":-180.5}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=-180",
+   "details": [
+    {
+     "path": "lon",
+     "message": "Juda kichik: kutilgan number >=-180"
+    }
+   ]
+  },
+  {
+   "name": "lon 180.5",
+   "body": "{\"lon\":180.5}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=180",
+   "details": [
+    {
+     "path": "lon",
+     "message": "Juda katta: kutilgan number <=180"
+    }
+   ]
+  },
+  {
+   "name": "lon 0",
+   "body": "{\"lon\":0}",
+   "ok": true,
+   "value": {
+    "lon": 0
+   }
+  },
+  {
+   "name": "lon 69.24",
+   "body": "{\"lon\":69.24}",
+   "ok": true,
+   "value": {
+    "lon": 69.24
+   }
+  },
+  {
+   "name": "lat null",
+   "body": "{\"lat\":null}",
+   "ok": true,
+   "value": {
+    "lat": null
+   }
+  },
+  {
+   "name": "lat a number",
+   "body": "{\"lat\":7}",
+   "ok": true,
+   "value": {
+    "lat": 7
+   }
+  },
+  {
+   "name": "lat true",
+   "body": "{\"lat\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "lat",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "lat a string",
+   "body": "{\"lat\":\"text\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "lat",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "lat an array",
+   "body": "{\"lat\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "lat",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "lat an object",
+   "body": "{\"lat\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan object",
+   "details": [
+    {
+     "path": "lat",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "lon null",
+   "body": "{\"lon\":null}",
+   "ok": true,
+   "value": {
+    "lon": null
+   }
+  },
+  {
+   "name": "lon a number",
+   "body": "{\"lon\":7}",
+   "ok": true,
+   "value": {
+    "lon": 7
+   }
+  },
+  {
+   "name": "lon true",
+   "body": "{\"lon\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "lon",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "lon a string",
+   "body": "{\"lon\":\"text\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "lon",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "lon an array",
+   "body": "{\"lon\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "lon",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "lon an object",
+   "body": "{\"lon\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan object",
+   "details": [
+    {
+     "path": "lon",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "lat and lon",
+   "body": "{\"lat\":41.31,\"lon\":69.24}",
+   "ok": true,
+   "value": {
+    "lat": 41.31,
+    "lon": 69.24
+   }
+  },
+  {
+   "name": "seed 0",
+   "body": "{\"seed\":0}",
+   "ok": true,
+   "value": {
+    "seed": 0
+   }
+  },
+  {
+   "name": "seed 1",
+   "body": "{\"seed\":1}",
+   "ok": true,
+   "value": {
+    "seed": 1
+   }
+  },
+  {
+   "name": "seed -5",
+   "body": "{\"seed\":-5}",
+   "ok": true,
+   "value": {
+    "seed": -5
+   }
+  },
+  {
+   "name": "seed 1.5",
+   "body": "{\"seed\":1.5}",
+   "ok": true,
+   "value": {
+    "seed": 1.5
+   }
+  },
+  {
+   "name": "seed 123456789",
+   "body": "{\"seed\":123456789}",
+   "ok": true,
+   "value": {
+    "seed": 123456789
+   }
+  },
+  {
+   "name": "seed 1e+21",
+   "body": "{\"seed\":1e+21}",
+   "ok": true,
+   "value": {
+    "seed": 1e+21
+   }
+  },
+  {
+   "name": "seed -1e-7",
+   "body": "{\"seed\":-1e-7}",
+   "ok": true,
+   "value": {
+    "seed": -1e-7
+   }
+  },
+  {
+   "name": "seed 9007199254740992",
+   "body": "{\"seed\":9007199254740992}",
+   "ok": true,
+   "value": {
+    "seed": 9007199254740992
+   }
+  },
+  {
+   "name": "seed null",
+   "body": "{\"seed\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null",
+   "details": [
+    {
+     "path": "seed",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "seed a number",
+   "body": "{\"seed\":7}",
+   "ok": true,
+   "value": {
+    "seed": 7
+   }
+  },
+  {
+   "name": "seed true",
+   "body": "{\"seed\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "seed",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "seed a string",
+   "body": "{\"seed\":\"text\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "seed",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "seed an array",
+   "body": "{\"seed\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "seed",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "seed an object",
+   "body": "{\"seed\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan object",
+   "details": [
+    {
+     "path": "seed",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "seed past the largest number",
+   "body": "{\"seed\":1e400}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "seed",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "seed negative past the largest number",
+   "body": "{\"seed\":-1e400}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "seed",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "topN 1",
+   "body": "{\"topN\":1}",
+   "ok": true,
+   "value": {
+    "topN": 1
+   }
+  },
+  {
+   "name": "topN 2",
+   "body": "{\"topN\":2}",
+   "ok": true,
+   "value": {
+    "topN": 2
+   }
+  },
+  {
+   "name": "topN 3",
+   "body": "{\"topN\":3}",
+   "ok": true,
+   "value": {
+    "topN": 3
+   }
+  },
+  {
+   "name": "topN 4",
+   "body": "{\"topN\":4}",
+   "ok": true,
+   "value": {
+    "topN": 4
+   }
+  },
+  {
+   "name": "topN 5",
+   "body": "{\"topN\":5}",
+   "ok": true,
+   "value": {
+    "topN": 5
+   }
+  },
+  {
+   "name": "topN 0",
+   "body": "{\"topN\":0}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=1",
+   "details": [
+    {
+     "path": "topN",
+     "message": "Juda kichik: kutilgan number >=1"
+    }
+   ]
+  },
+  {
+   "name": "topN 6",
+   "body": "{\"topN\":6}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=5",
+   "details": [
+    {
+     "path": "topN",
+     "message": "Juda katta: kutilgan number <=5"
+    }
+   ]
+  },
+  {
+   "name": "topN -1",
+   "body": "{\"topN\":-1}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=1",
+   "details": [
+    {
+     "path": "topN",
+     "message": "Juda kichik: kutilgan number >=1"
+    }
+   ]
+  },
+  {
+   "name": "topN 2.5",
+   "body": "{\"topN\":2.5}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan int, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "topN",
+     "message": "Noto‘g‘ri kirish: kutilgan int, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "topN 100000000000000000000",
+   "body": "{\"topN\":100000000000000000000}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan int <=9007199254740991",
+   "details": [
+    {
+     "path": "topN",
+     "message": "Juda katta: kutilgan int <=9007199254740991"
+    },
+    {
+     "path": "topN",
+     "message": "Juda katta: kutilgan number <=5"
+    }
+   ]
+  },
+  {
+   "name": "topN null",
+   "body": "{\"topN\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null",
+   "details": [
+    {
+     "path": "topN",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "topN a number",
+   "body": "{\"topN\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=5",
+   "details": [
+    {
+     "path": "topN",
+     "message": "Juda katta: kutilgan number <=5"
+    }
+   ]
+  },
+  {
+   "name": "topN true",
+   "body": "{\"topN\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "topN",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "topN a string",
+   "body": "{\"topN\":\"text\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "topN",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "topN an array",
+   "body": "{\"topN\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "topN",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "topN an object",
+   "body": "{\"topN\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan object",
+   "details": [
+    {
+     "path": "topN",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "everything",
+   "body": "{\"occasion\":\"work\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5},\"lat\":41.31,\"lon\":69.24,\"seed\":7,\"topN\":5}",
+   "ok": true,
+   "value": {
+    "occasion": "work",
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    },
+    "lat": 41.31,
+    "lon": 69.24,
+    "seed": 7,
+    "topN": 5
+   }
+  },
+  {
+   "name": "everything null that may be",
+   "body": "{\"occasion\":null,\"weather\":null,\"lat\":null,\"lon\":null}",
+   "ok": true,
+   "value": {
+    "occasion": null,
+    "weather": null,
+    "lat": null,
+    "lon": null
+   }
+  },
+  {
+   "name": "everything wrong",
+   "body": "{\"occasion\":\"x\",\"weather\":\"x\",\"lat\":\"x\",\"lon\":200,\"seed\":\"x\",\"topN\":9}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\"",
+   "details": [
+    {
+     "path": "occasion",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\""
+    },
+    {
+     "path": "weather",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string"
+    },
+    {
+     "path": "lat",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    },
+    {
+     "path": "lon",
+     "message": "Juda katta: kutilgan number <=180"
+    },
+    {
+     "path": "seed",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    },
+    {
+     "path": "topN",
+     "message": "Juda katta: kutilgan number <=5"
+    }
+   ]
+  },
+  {
+   "name": "a member twice (the last counts)",
+   "body": "{\"topN\":9,\"topN\":2}",
+   "ok": true,
+   "value": {
+    "topN": 2
+   }
+  }
+ ],
+ "save": [
+  {
+   "name": "an empty body",
+   "body": "",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "items",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "white space only",
+   "body": "  \n",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "not JSON",
+   "body": "{occasion",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "two JSON values",
+   "body": "{}{}",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "JSON null",
+   "body": "null",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "a JSON array",
+   "body": "[]",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "a JSON number",
+   "body": "12",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "an empty object",
+   "body": "{}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "items",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "the items only",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}]}",
+   "ok": true,
+   "value": {
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "members that are not known",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"other\":1}",
+   "ok": true,
+   "value": {
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "everything",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"occasion\":\"date\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5},\"name\":\"Kechki\",\"score\":87.5,\"reasons\":[\"weather\",\"occasion\"],\"explanation\":\"Yaxshi\",\"isSaved\":true}",
+   "ok": true,
+   "value": {
+    "occasion": "date",
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    },
+    "name": "Kechki",
+    "score": 87.5,
+    "reasons": [
+     "weather",
+     "occasion"
+    ],
+    "explanation": "Yaxshi",
+    "isSaved": true,
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "everything null that may be",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"occasion\":null,\"weather\":null,\"name\":null,\"score\":null,\"explanation\":null}",
+   "ok": true,
+   "value": {
+    "occasion": null,
+    "weather": null,
+    "name": null,
+    "score": null,
+    "explanation": null,
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "items null",
+   "body": "{\"items\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan null",
+   "details": [
+    {
+     "path": "items",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "items a number",
+   "body": "{\"items\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "items",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "items true",
+   "body": "{\"items\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "items",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "items a string",
+   "body": "{\"items\":\"text\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan string",
+   "details": [
+    {
+     "path": "items",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "items an array",
+   "body": "{\"items\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string",
+   "details": [
+    {
+     "path": "items.0",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "items an object",
+   "body": "{\"items\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan object",
+   "details": [
+    {
+     "path": "items",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "items empty",
+   "body": "{\"items\":[]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan array >=1 element bo‘lishi kerak",
+   "details": [
+    {
+     "path": "items",
+     "message": "Juda kichik: kutilgan array >=1 element bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "items of 12",
+   "body": "{\"items\":[{\"itemId\":\"c0\",\"role\":\"top\"},{\"itemId\":\"c1\",\"role\":\"top\"},{\"itemId\":\"c2\",\"role\":\"top\"},{\"itemId\":\"c3\",\"role\":\"top\"},{\"itemId\":\"c4\",\"role\":\"top\"},{\"itemId\":\"c5\",\"role\":\"top\"},{\"itemId\":\"c6\",\"role\":\"top\"},{\"itemId\":\"c7\",\"role\":\"top\"},{\"itemId\":\"c8\",\"role\":\"top\"},{\"itemId\":\"c9\",\"role\":\"top\"},{\"itemId\":\"c10\",\"role\":\"top\"},{\"itemId\":\"c11\",\"role\":\"top\"}]}",
+   "ok": true,
+   "value": {
+    "items": [
+     {
+      "itemId": "c0",
+      "role": "top"
+     },
+     {
+      "itemId": "c1",
+      "role": "top"
+     },
+     {
+      "itemId": "c2",
+      "role": "top"
+     },
+     {
+      "itemId": "c3",
+      "role": "top"
+     },
+     {
+      "itemId": "c4",
+      "role": "top"
+     },
+     {
+      "itemId": "c5",
+      "role": "top"
+     },
+     {
+      "itemId": "c6",
+      "role": "top"
+     },
+     {
+      "itemId": "c7",
+      "role": "top"
+     },
+     {
+      "itemId": "c8",
+      "role": "top"
+     },
+     {
+      "itemId": "c9",
+      "role": "top"
+     },
+     {
+      "itemId": "c10",
+      "role": "top"
+     },
+     {
+      "itemId": "c11",
+      "role": "top"
+     }
+    ]
+   }
+  },
+  {
+   "name": "items of 13",
+   "body": "{\"items\":[{\"itemId\":\"c0\",\"role\":\"top\"},{\"itemId\":\"c1\",\"role\":\"top\"},{\"itemId\":\"c2\",\"role\":\"top\"},{\"itemId\":\"c3\",\"role\":\"top\"},{\"itemId\":\"c4\",\"role\":\"top\"},{\"itemId\":\"c5\",\"role\":\"top\"},{\"itemId\":\"c6\",\"role\":\"top\"},{\"itemId\":\"c7\",\"role\":\"top\"},{\"itemId\":\"c8\",\"role\":\"top\"},{\"itemId\":\"c9\",\"role\":\"top\"},{\"itemId\":\"c10\",\"role\":\"top\"},{\"itemId\":\"c11\",\"role\":\"top\"},{\"itemId\":\"c12\",\"role\":\"top\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan array <=12 element bo‘lishi kerak",
+   "details": [
+    {
+     "path": "items",
+     "message": "Juda katta: kutilgan array <=12 element bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "an item null",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},null]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null",
+   "details": [
+    {
+     "path": "items.1",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "an item a number",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},7]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "items.1",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "an item true",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},true]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "items.1",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "an item a string",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},\"text\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string",
+   "details": [
+    {
+     "path": "items.1",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "an item an array",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},[\"x\"]]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "items.1",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "an item empty",
+   "body": "{\"items\":[{}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "items.0.itemId",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    },
+    {
+     "path": "items.0.role",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "an item with a member more",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\",\"note\":\"x\"}]}",
+   "ok": true,
+   "value": {
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     }
+    ]
+   }
+  },
+  {
+   "name": "itemId null",
+   "body": "{\"items\":[{\"itemId\":null,\"role\":\"top\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "items.0.itemId",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "itemId a number",
+   "body": "{\"items\":[{\"itemId\":7,\"role\":\"top\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "items.0.itemId",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "itemId true",
+   "body": "{\"items\":[{\"itemId\":true,\"role\":\"top\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "items.0.itemId",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "itemId an array",
+   "body": "{\"items\":[{\"itemId\":[\"x\"],\"role\":\"top\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "items.0.itemId",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "itemId an object",
+   "body": "{\"items\":[{\"itemId\":{\"a\":1},\"role\":\"top\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "items.0.itemId",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "role null",
+   "body": "{\"items\":[{\"itemId\":\"c1\",\"role\":null}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "items.0.role",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "role a number",
+   "body": "{\"items\":[{\"itemId\":\"c1\",\"role\":7}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "items.0.role",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "role true",
+   "body": "{\"items\":[{\"itemId\":\"c1\",\"role\":true}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "items.0.role",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "role an array",
+   "body": "{\"items\":[{\"itemId\":\"c1\",\"role\":[\"x\"]}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "items.0.role",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "role an object",
+   "body": "{\"items\":[{\"itemId\":\"c1\",\"role\":{\"a\":1}}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "items.0.role",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "itemId \"\" (0)",
+   "body": "{\"items\":[{\"itemId\":\"\",\"role\":\"top\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "items.0.itemId",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "itemId \"   \" (3)",
+   "body": "{\"items\":[{\"itemId\":\"   \",\"role\":\"top\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "items.0.itemId",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "itemId \" c1 \" (4)",
+   "body": "{\"items\":[{\"itemId\":\" c1 \",\"role\":\"top\"}]}",
+   "ok": true,
+   "value": {
+    "items": [
+     {
+      "itemId": "c1",
+      "role": "top"
+     }
+    ]
+   }
+  },
+  {
+   "name": "itemId \"ccccccccccc (64)",
+   "body": "{\"items\":[{\"itemId\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"role\":\"top\"}]}",
+   "ok": true,
+   "value": {
+    "items": [
+     {
+      "itemId": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "role": "top"
+     }
+    ]
+   }
+  },
+  {
+   "name": "itemId \"ccccccccccc (65)",
+   "body": "{\"items\":[{\"itemId\":\"ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"role\":\"top\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=64 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "items.0.itemId",
+     "message": "Juda katta: kutilgan string <=64 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "role \"\" (0)",
+   "body": "{\"items\":[{\"itemId\":\"c1\",\"role\":\"\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "items.0.role",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "role \"   \" (3)",
+   "body": "{\"items\":[{\"itemId\":\"c1\",\"role\":\"   \"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "items.0.role",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "role \" top \" (5)",
+   "body": "{\"items\":[{\"itemId\":\"c1\",\"role\":\" top \"}]}",
+   "ok": true,
+   "value": {
+    "items": [
+     {
+      "itemId": "c1",
+      "role": "top"
+     }
+    ]
+   }
+  },
+  {
+   "name": "role \"rrrrrrrrrrr (30)",
+   "body": "{\"items\":[{\"itemId\":\"c1\",\"role\":\"rrrrrrrrrrrrrrrrrrrrrrrrrrrrrr\"}]}",
+   "ok": true,
+   "value": {
+    "items": [
+     {
+      "itemId": "c1",
+      "role": "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
+     }
+    ]
+   }
+  },
+  {
+   "name": "role \"rrrrrrrrrrr (31)",
+   "body": "{\"items\":[{\"itemId\":\"c1\",\"role\":\"rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=30 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "items.0.role",
+     "message": "Juda katta: kutilgan string <=30 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "role \"no_such_rol (12)",
+   "body": "{\"items\":[{\"itemId\":\"c1\",\"role\":\"no_such_role\"}]}",
+   "ok": true,
+   "value": {
+    "items": [
+     {
+      "itemId": "c1",
+      "role": "no_such_role"
+     }
+    ]
+   }
+  },
+  {
+   "name": "several items wrong",
+   "body": "{\"items\":[{\"itemId\":\"\",\"role\":\"\"},{\"itemId\":5},{\"role\":\"top\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "items.0.itemId",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    },
+    {
+     "path": "items.0.role",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    },
+    {
+     "path": "items.1.itemId",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    },
+    {
+     "path": "items.1.role",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    },
+    {
+     "path": "items.2.itemId",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "occasion work",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"occasion\":\"work\"}",
+   "ok": true,
+   "value": {
+    "occasion": "work",
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "occasion wedding",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"occasion\":\"wedding\"}",
+   "ok": true,
+   "value": {
+    "occasion": "wedding",
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "occasion date",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"occasion\":\"date\"}",
+   "ok": true,
+   "value": {
+    "occasion": "date",
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "occasion travel",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"occasion\":\"travel\"}",
+   "ok": true,
+   "value": {
+    "occasion": "travel",
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "occasion casual",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"occasion\":\"casual\"}",
+   "ok": true,
+   "value": {
+    "occasion": "casual",
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "occasion other",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"occasion\":\"other\"}",
+   "ok": true,
+   "value": {
+    "occasion": "other",
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "occasion null",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"occasion\":null}",
+   "ok": true,
+   "value": {
+    "occasion": null,
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "occasion a number",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"occasion\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\"",
+   "details": [
+    {
+     "path": "occasion",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\""
+    }
+   ]
+  },
+  {
+   "name": "occasion true",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"occasion\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\"",
+   "details": [
+    {
+     "path": "occasion",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\""
+    }
+   ]
+  },
+  {
+   "name": "occasion a string",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"occasion\":\"text\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\"",
+   "details": [
+    {
+     "path": "occasion",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\""
+    }
+   ]
+  },
+  {
+   "name": "occasion an array",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"occasion\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\"",
+   "details": [
+    {
+     "path": "occasion",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\""
+    }
+   ]
+  },
+  {
+   "name": "occasion an object",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"occasion\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\"",
+   "details": [
+    {
+     "path": "occasion",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\""
+    }
+   ]
+  },
+  {
+   "name": "occasion unknown",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"occasion\":\"party\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\"",
+   "details": [
+    {
+     "path": "occasion",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\""
+    }
+   ]
+  },
+  {
+   "name": "occasion in upper case",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"occasion\":\"Work\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\"",
+   "details": [
+    {
+     "path": "occasion",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\""
+    }
+   ]
+  },
+  {
+   "name": "occasion empty",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"occasion\":\"\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\"",
+   "details": [
+    {
+     "path": "occasion",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\""
+    }
+   ]
+  },
+  {
+   "name": "weather whole",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    },
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "weather with a member more",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5,\"pressure\":1013}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    },
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "weather null",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":null}",
+   "ok": true,
+   "value": {
+    "weather": null,
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "weather a number",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "weather",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "weather true",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "weather",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "weather a string",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":\"text\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string",
+   "details": [
+    {
+     "path": "weather",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "weather an array",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "weather",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "weather empty",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "weather.temperature",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    },
+    {
+     "path": "weather.feelsLike",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    },
+    {
+     "path": "weather.condition",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    },
+    {
+     "path": "weather.precipitationProbability",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    },
+    {
+     "path": "weather.humidity",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    },
+    {
+     "path": "weather.windSpeed",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    },
+    {
+     "path": "weather.uvIndex",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "weather without temperature",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "weather.temperature",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "weather without feelsLike",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "weather.feelsLike",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "weather without condition",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "weather.condition",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "weather without precipitationProbability",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "weather.precipitationProbability",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "weather without humidity",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "weather.humidity",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "weather without windSpeed",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "weather.windSpeed",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "weather without uvIndex",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "weather.uvIndex",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "weather temperature null",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":null,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null",
+   "details": [
+    {
+     "path": "weather.temperature",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "weather temperature of another type",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":\"5\",\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "weather.temperature",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "weather feelsLike null",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":null,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null",
+   "details": [
+    {
+     "path": "weather.feelsLike",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "weather feelsLike of another type",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":\"5\",\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "weather.feelsLike",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "weather condition null",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":null,\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "weather.condition",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "weather condition of another type",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":5,\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "weather.condition",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "weather precipitationProbability null",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":null,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null",
+   "details": [
+    {
+     "path": "weather.precipitationProbability",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "weather precipitationProbability of another type",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":\"5\",\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "weather.precipitationProbability",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "weather humidity null",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":null,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null",
+   "details": [
+    {
+     "path": "weather.humidity",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "weather humidity of another type",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":\"5\",\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "weather.humidity",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "weather windSpeed null",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":null,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null",
+   "details": [
+    {
+     "path": "weather.windSpeed",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "weather windSpeed of another type",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":\"5\",\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "weather.windSpeed",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "weather uvIndex null",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":null}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null",
+   "details": [
+    {
+     "path": "weather.uvIndex",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "weather uvIndex of another type",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":\"5\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "weather.uvIndex",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "weather temperature -90",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":-90,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": -90,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    },
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "weather temperature -90.5",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":-90.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=-90",
+   "details": [
+    {
+     "path": "weather.temperature",
+     "message": "Juda kichik: kutilgan number >=-90"
+    }
+   ]
+  },
+  {
+   "name": "weather temperature 70",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":70,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 70,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    },
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "weather temperature 70.5",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":70.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=70",
+   "details": [
+    {
+     "path": "weather.temperature",
+     "message": "Juda katta: kutilgan number <=70"
+    }
+   ]
+  },
+  {
+   "name": "weather feelsLike -100",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":-100,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": -100,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    },
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "weather feelsLike -100.5",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":-100.5,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=-100",
+   "details": [
+    {
+     "path": "weather.feelsLike",
+     "message": "Juda kichik: kutilgan number >=-100"
+    }
+   ]
+  },
+  {
+   "name": "weather feelsLike 80",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":80,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 80,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    },
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "weather feelsLike 80.5",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":80.5,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=80",
+   "details": [
+    {
+     "path": "weather.feelsLike",
+     "message": "Juda katta: kutilgan number <=80"
+    }
+   ]
+  },
+  {
+   "name": "weather precipitationProbability 0",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":0,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 0,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    },
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "weather precipitationProbability -0.5",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":-0.5,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=0",
+   "details": [
+    {
+     "path": "weather.precipitationProbability",
+     "message": "Juda kichik: kutilgan number >=0"
+    }
+   ]
+  },
+  {
+   "name": "weather precipitationProbability 100",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":100,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 100,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    },
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "weather precipitationProbability 100.5",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":100.5,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=100",
+   "details": [
+    {
+     "path": "weather.precipitationProbability",
+     "message": "Juda katta: kutilgan number <=100"
+    }
+   ]
+  },
+  {
+   "name": "weather humidity 0",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":0,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 0,
+     "windSpeed": 12,
+     "uvIndex": 5
+    },
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "weather humidity -0.5",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":-0.5,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=0",
+   "details": [
+    {
+     "path": "weather.humidity",
+     "message": "Juda kichik: kutilgan number >=0"
+    }
+   ]
+  },
+  {
+   "name": "weather humidity 100",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":100,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 100,
+     "windSpeed": 12,
+     "uvIndex": 5
+    },
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "weather humidity 100.5",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":100.5,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=100",
+   "details": [
+    {
+     "path": "weather.humidity",
+     "message": "Juda katta: kutilgan number <=100"
+    }
+   ]
+  },
+  {
+   "name": "weather windSpeed 0",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":0,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 0,
+     "uvIndex": 5
+    },
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "weather windSpeed -0.5",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":-0.5,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=0",
+   "details": [
+    {
+     "path": "weather.windSpeed",
+     "message": "Juda kichik: kutilgan number >=0"
+    }
+   ]
+  },
+  {
+   "name": "weather windSpeed 500",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":500,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 500,
+     "uvIndex": 5
+    },
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "weather windSpeed 500.5",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":500.5,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=500",
+   "details": [
+    {
+     "path": "weather.windSpeed",
+     "message": "Juda katta: kutilgan number <=500"
+    }
+   ]
+  },
+  {
+   "name": "weather uvIndex 0",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":0}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 0
+    },
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "weather uvIndex -0.5",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":-0.5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=0",
+   "details": [
+    {
+     "path": "weather.uvIndex",
+     "message": "Juda kichik: kutilgan number >=0"
+    }
+   ]
+  },
+  {
+   "name": "weather uvIndex 30",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":30}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 30
+    },
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "weather uvIndex 30.5",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":30.5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=30",
+   "details": [
+    {
+     "path": "weather.uvIndex",
+     "message": "Juda katta: kutilgan number <=30"
+    }
+   ]
+  },
+  {
+   "name": "weather condition empty",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "weather.condition",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "weather condition of spaces",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"   \",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "weather.condition",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "weather condition trimmed",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"  rain \\n\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "rain",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    },
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "weather condition of 40 characters",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"cccccccccccccccccccccccccccccccccccccccc\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "cccccccccccccccccccccccccccccccccccccccc",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    },
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "weather condition of 41 characters",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"ccccccccccccccccccccccccccccccccccccccccc\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=40 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "weather.condition",
+     "message": "Juda katta: kutilgan string <=40 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "weather with everything wrong",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":99,\"feelsLike\":\"x\",\"condition\":\"\",\"humidity\":-1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=70",
+   "details": [
+    {
+     "path": "weather.temperature",
+     "message": "Juda katta: kutilgan number <=70"
+    },
+    {
+     "path": "weather.feelsLike",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    },
+    {
+     "path": "weather.condition",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    },
+    {
+     "path": "weather.precipitationProbability",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    },
+    {
+     "path": "weather.humidity",
+     "message": "Juda kichik: kutilgan number >=0"
+    },
+    {
+     "path": "weather.windSpeed",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    },
+    {
+     "path": "weather.uvIndex",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "weather temperature past the largest number",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"weather\":{\"temperature\":1e400,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "weather.temperature",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "name a number",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"name\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "name true",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"name\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "name an array",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"name\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "name an object",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"name\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "name text 0",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"name\":\"\"}",
+   "ok": true,
+   "value": {
+    "name": "",
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "name text 1",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"name\":\"   \"}",
+   "ok": true,
+   "value": {
+    "name": "",
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "name text 2",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"name\":\"  Yozgi  \"}",
+   "ok": true,
+   "value": {
+    "name": "Yozgi",
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "name text 3",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"name\":\"nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn\"}",
+   "ok": true,
+   "value": {
+    "name": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "name text 4",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"name\":\"nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=80 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "name",
+     "message": "Juda katta: kutilgan string <=80 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "name text 5",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"name\":\" nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn \"}",
+   "ok": true,
+   "value": {
+    "name": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "name text 6",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"name\":\"ўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўў\"}",
+   "ok": true,
+   "value": {
+    "name": "ўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўў",
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "name text 7",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"name\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+   "ok": true,
+   "value": {
+    "name": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "name text 8",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"name\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=80 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "name",
+     "message": "Juda katta: kutilgan string <=80 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "score 0",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"score\":0}",
+   "ok": true,
+   "value": {
+    "score": 0,
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "score 100",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"score\":100}",
+   "ok": true,
+   "value": {
+    "score": 100,
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "score -0.5",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"score\":-0.5}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=0",
+   "details": [
+    {
+     "path": "score",
+     "message": "Juda kichik: kutilgan number >=0"
+    }
+   ]
+  },
+  {
+   "name": "score 100.5",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"score\":100.5}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=100",
+   "details": [
+    {
+     "path": "score",
+     "message": "Juda katta: kutilgan number <=100"
+    }
+   ]
+  },
+  {
+   "name": "score 50",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"score\":50}",
+   "ok": true,
+   "value": {
+    "score": 50,
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "score 49.5",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"score\":49.5}",
+   "ok": true,
+   "value": {
+    "score": 49.5,
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "score 1000",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"score\":1000}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=100",
+   "details": [
+    {
+     "path": "score",
+     "message": "Juda katta: kutilgan number <=100"
+    }
+   ]
+  },
+  {
+   "name": "score true",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"score\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "score",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "score a string",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"score\":\"text\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "score",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "score an array",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"score\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "score",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "score an object",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"score\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan object",
+   "details": [
+    {
+     "path": "score",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "reasons null",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"reasons\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan null",
+   "details": [
+    {
+     "path": "reasons",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "reasons a number",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"reasons\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "reasons",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "reasons true",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"reasons\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "reasons",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "reasons a string",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"reasons\":\"text\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan string",
+   "details": [
+    {
+     "path": "reasons",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "reasons an object",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"reasons\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan object",
+   "details": [
+    {
+     "path": "reasons",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "reasons empty",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"reasons\":[]}",
+   "ok": true,
+   "value": {
+    "reasons": [],
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "reasons of 20",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"reasons\":[\"r0\",\"r1\",\"r2\",\"r3\",\"r4\",\"r5\",\"r6\",\"r7\",\"r8\",\"r9\",\"r10\",\"r11\",\"r12\",\"r13\",\"r14\",\"r15\",\"r16\",\"r17\",\"r18\",\"r19\"]}",
+   "ok": true,
+   "value": {
+    "reasons": [
+     "r0",
+     "r1",
+     "r2",
+     "r3",
+     "r4",
+     "r5",
+     "r6",
+     "r7",
+     "r8",
+     "r9",
+     "r10",
+     "r11",
+     "r12",
+     "r13",
+     "r14",
+     "r15",
+     "r16",
+     "r17",
+     "r18",
+     "r19"
+    ],
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "reasons of 21",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"reasons\":[\"r0\",\"r1\",\"r2\",\"r3\",\"r4\",\"r5\",\"r6\",\"r7\",\"r8\",\"r9\",\"r10\",\"r11\",\"r12\",\"r13\",\"r14\",\"r15\",\"r16\",\"r17\",\"r18\",\"r19\",\"r20\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan array <=20 element bo‘lishi kerak",
+   "details": [
+    {
+     "path": "reasons",
+     "message": "Juda katta: kutilgan array <=20 element bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a reason of 120 characters",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"reasons\":[\"rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr\"]}",
+   "ok": true,
+   "value": {
+    "reasons": [
+     "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
+    ],
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "a reason of 121 characters",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"reasons\":[\"ok\",\"rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=120 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "reasons.1",
+     "message": "Juda katta: kutilgan string <=120 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "reasons that are not text",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"reasons\":[\"ok\",5,null,[\"x\"]]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "reasons.1",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    },
+    {
+     "path": "reasons.2",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    },
+    {
+     "path": "reasons.3",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "a reason with spaces around (kept)",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"reasons\":[\"  spaced  \",\"\"]}",
+   "ok": true,
+   "value": {
+    "reasons": [
+     "  spaced  ",
+     ""
+    ],
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "explanation a number",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"explanation\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "explanation",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "explanation true",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"explanation\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "explanation",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "explanation an array",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"explanation\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "explanation",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "explanation an object",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"explanation\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "explanation",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "explanation of 2000 characters",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"explanation\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\"}",
+   "ok": true,
+   "value": {
+    "explanation": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "explanation of 2001 characters",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"explanation\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=2000 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "explanation",
+     "message": "Juda katta: kutilgan string <=2000 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "explanation with spaces around (kept)",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"explanation\":\"  spaced  \"}",
+   "ok": true,
+   "value": {
+    "explanation": "  spaced  ",
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "explanation empty",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"explanation\":\"\"}",
+   "ok": true,
+   "value": {
+    "explanation": "",
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "isSaved null",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"isSaved\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan null",
+   "details": [
+    {
+     "path": "isSaved",
+     "message": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "isSaved a number",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"isSaved\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "isSaved",
+     "message": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "isSaved a string",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"isSaved\":\"text\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan string",
+   "details": [
+    {
+     "path": "isSaved",
+     "message": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "isSaved an array",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"isSaved\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "isSaved",
+     "message": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "isSaved an object",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"isSaved\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan object",
+   "details": [
+    {
+     "path": "isSaved",
+     "message": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "isSaved false",
+   "body": "{\"items\":[{\"itemId\":\"cshirt\",\"role\":\"top\"},{\"itemId\":\"cpants\",\"role\":\"bottom\"},{\"itemId\":\"cshoes\",\"role\":\"shoes\"}],\"isSaved\":false}",
+   "ok": true,
+   "value": {
+    "isSaved": false,
+    "items": [
+     {
+      "itemId": "cshirt",
+      "role": "top"
+     },
+     {
+      "itemId": "cpants",
+      "role": "bottom"
+     },
+     {
+      "itemId": "cshoes",
+      "role": "shoes"
+     }
+    ]
+   }
+  },
+  {
+   "name": "everything wrong",
+   "body": "{\"items\":\"x\",\"occasion\":\"x\",\"weather\":5,\"name\":5,\"score\":\"x\",\"reasons\":\"x\",\"explanation\":5,\"isSaved\":\"x\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\"",
+   "details": [
+    {
+     "path": "occasion",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"work\"|\"wedding\"|\"date\"|\"travel\"|\"casual\"|\"other\""
+    },
+    {
+     "path": "weather",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam"
+    },
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    },
+    {
+     "path": "score",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    },
+    {
+     "path": "reasons",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan string"
+    },
+    {
+     "path": "explanation",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    },
+    {
+     "path": "isSaved",
+     "message": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan string"
+    },
+    {
+     "path": "items",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan string"
+    }
+   ]
+  }
+ ],
+ "patch": [
+  {
+   "name": "an empty body",
+   "body": "",
+   "ok": true,
+   "value": {}
+  },
+  {
+   "name": "white space only",
+   "body": "  \n",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "not JSON",
+   "body": "{occasion",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "two JSON values",
+   "body": "{}{}",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "JSON null",
+   "body": "null",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "a JSON array",
+   "body": "[]",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "a JSON number",
+   "body": "12",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "an empty object",
+   "body": "{}",
+   "ok": true,
+   "value": {}
+  },
+  {
+   "name": "members that are not known",
+   "body": "{\"score\":5,\"items\":[]}",
+   "ok": true,
+   "value": {}
+  },
+  {
+   "name": "isSaved true",
+   "body": "{\"isSaved\":true}",
+   "ok": true,
+   "value": {
+    "isSaved": true
+   }
+  },
+  {
+   "name": "isSaved false",
+   "body": "{\"isSaved\":false}",
+   "ok": true,
+   "value": {
+    "isSaved": false
+   }
+  },
+  {
+   "name": "isSaved null",
+   "body": "{\"isSaved\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan null",
+   "details": [
+    {
+     "path": "isSaved",
+     "message": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "isSaved a number",
+   "body": "{\"isSaved\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "isSaved",
+     "message": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "isSaved a string",
+   "body": "{\"isSaved\":\"text\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan string",
+   "details": [
+    {
+     "path": "isSaved",
+     "message": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "isSaved an array",
+   "body": "{\"isSaved\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "isSaved",
+     "message": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "isSaved an object",
+   "body": "{\"isSaved\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan object",
+   "details": [
+    {
+     "path": "isSaved",
+     "message": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "name a number",
+   "body": "{\"name\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "name true",
+   "body": "{\"name\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "name an array",
+   "body": "{\"name\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "name an object",
+   "body": "{\"name\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "name null",
+   "body": "{\"name\":null}",
+   "ok": true,
+   "value": {
+    "name": null
+   }
+  },
+  {
+   "name": "name text 0",
+   "body": "{\"name\":\"\"}",
+   "ok": true,
+   "value": {
+    "name": ""
+   }
+  },
+  {
+   "name": "name text 1",
+   "body": "{\"name\":\"   \"}",
+   "ok": true,
+   "value": {
+    "name": ""
+   }
+  },
+  {
+   "name": "name text 2",
+   "body": "{\"name\":\"  Yozgi  \"}",
+   "ok": true,
+   "value": {
+    "name": "Yozgi"
+   }
+  },
+  {
+   "name": "name text 3",
+   "body": "{\"name\":\"nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn\"}",
+   "ok": true,
+   "value": {
+    "name": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+   }
+  },
+  {
+   "name": "name text 4",
+   "body": "{\"name\":\"nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=80 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "name",
+     "message": "Juda katta: kutilgan string <=80 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "name text 5",
+   "body": "{\"name\":\" nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn \"}",
+   "ok": true,
+   "value": {
+    "name": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+   }
+  },
+  {
+   "name": "both",
+   "body": "{\"isSaved\":true,\"name\":\"Ish uchun\"}",
+   "ok": true,
+   "value": {
+    "isSaved": true,
+    "name": "Ish uchun"
+   }
+  },
+  {
+   "name": "both wrong",
+   "body": "{\"isSaved\":\"x\",\"name\":5}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan string",
+   "details": [
+    {
+     "path": "isSaved",
+     "message": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan string"
+    },
+    {
+     "path": "name",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  }
+ ],
+ "feedback": [
+  {
+   "name": "an empty body",
+   "body": "",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"liked\"|\"disliked\"|\"saved\"|\"rejected\"",
+   "details": [
+    {
+     "path": "feedback",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"liked\"|\"disliked\"|\"saved\"|\"rejected\""
+    }
+   ]
+  },
+  {
+   "name": "white space only",
+   "body": "  \n",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "not JSON",
+   "body": "{occasion",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "two JSON values",
+   "body": "{}{}",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "JSON null",
+   "body": "null",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "a JSON array",
+   "body": "[]",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "a JSON number",
+   "body": "12",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "an empty object",
+   "body": "{}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"liked\"|\"disliked\"|\"saved\"|\"rejected\"",
+   "details": [
+    {
+     "path": "feedback",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"liked\"|\"disliked\"|\"saved\"|\"rejected\""
+    }
+   ]
+  },
+  {
+   "name": "feedback liked",
+   "body": "{\"feedback\":\"liked\"}",
+   "ok": true,
+   "value": {
+    "feedback": "liked"
+   }
+  },
+  {
+   "name": "feedback disliked",
+   "body": "{\"feedback\":\"disliked\"}",
+   "ok": true,
+   "value": {
+    "feedback": "disliked"
+   }
+  },
+  {
+   "name": "feedback saved",
+   "body": "{\"feedback\":\"saved\"}",
+   "ok": true,
+   "value": {
+    "feedback": "saved"
+   }
+  },
+  {
+   "name": "feedback rejected",
+   "body": "{\"feedback\":\"rejected\"}",
+   "ok": true,
+   "value": {
+    "feedback": "rejected"
+   }
+  },
+  {
+   "name": "feedback null",
+   "body": "{\"feedback\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"liked\"|\"disliked\"|\"saved\"|\"rejected\"",
+   "details": [
+    {
+     "path": "feedback",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"liked\"|\"disliked\"|\"saved\"|\"rejected\""
+    }
+   ]
+  },
+  {
+   "name": "feedback a number",
+   "body": "{\"feedback\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"liked\"|\"disliked\"|\"saved\"|\"rejected\"",
+   "details": [
+    {
+     "path": "feedback",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"liked\"|\"disliked\"|\"saved\"|\"rejected\""
+    }
+   ]
+  },
+  {
+   "name": "feedback true",
+   "body": "{\"feedback\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"liked\"|\"disliked\"|\"saved\"|\"rejected\"",
+   "details": [
+    {
+     "path": "feedback",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"liked\"|\"disliked\"|\"saved\"|\"rejected\""
+    }
+   ]
+  },
+  {
+   "name": "feedback a string",
+   "body": "{\"feedback\":\"text\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"liked\"|\"disliked\"|\"saved\"|\"rejected\"",
+   "details": [
+    {
+     "path": "feedback",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"liked\"|\"disliked\"|\"saved\"|\"rejected\""
+    }
+   ]
+  },
+  {
+   "name": "feedback an array",
+   "body": "{\"feedback\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"liked\"|\"disliked\"|\"saved\"|\"rejected\"",
+   "details": [
+    {
+     "path": "feedback",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"liked\"|\"disliked\"|\"saved\"|\"rejected\""
+    }
+   ]
+  },
+  {
+   "name": "feedback an object",
+   "body": "{\"feedback\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"liked\"|\"disliked\"|\"saved\"|\"rejected\"",
+   "details": [
+    {
+     "path": "feedback",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"liked\"|\"disliked\"|\"saved\"|\"rejected\""
+    }
+   ]
+  },
+  {
+   "name": "feedback unknown",
+   "body": "{\"feedback\":\"loved\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"liked\"|\"disliked\"|\"saved\"|\"rejected\"",
+   "details": [
+    {
+     "path": "feedback",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"liked\"|\"disliked\"|\"saved\"|\"rejected\""
+    }
+   ]
+  },
+  {
+   "name": "feedback in upper case",
+   "body": "{\"feedback\":\"Liked\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"liked\"|\"disliked\"|\"saved\"|\"rejected\"",
+   "details": [
+    {
+     "path": "feedback",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"liked\"|\"disliked\"|\"saved\"|\"rejected\""
+    }
+   ]
+  },
+  {
+   "name": "members that are not known",
+   "body": "{\"feedback\":\"liked\",\"outfitId\":\"x\"}",
+   "ok": true,
+   "value": {
+    "feedback": "liked"
+   }
+  },
+  {
+   "name": "note null",
+   "body": "{\"feedback\":\"liked\",\"note\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "note",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "note a number",
+   "body": "{\"feedback\":\"liked\",\"note\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "note",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "note true",
+   "body": "{\"feedback\":\"liked\",\"note\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "note",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "note an array",
+   "body": "{\"feedback\":\"liked\",\"note\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "note",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "note an object",
+   "body": "{\"feedback\":\"liked\",\"note\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "note",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "note text 0",
+   "body": "{\"feedback\":\"disliked\",\"note\":\"\"}",
+   "ok": true,
+   "value": {
+    "feedback": "disliked",
+    "note": ""
+   }
+  },
+  {
+   "name": "note text 1",
+   "body": "{\"feedback\":\"disliked\",\"note\":\"   \"}",
+   "ok": true,
+   "value": {
+    "feedback": "disliked",
+    "note": ""
+   }
+  },
+  {
+   "name": "note text 2",
+   "body": "{\"feedback\":\"disliked\",\"note\":\"  rangi yoqmadi  \"}",
+   "ok": true,
+   "value": {
+    "feedback": "disliked",
+    "note": "rangi yoqmadi"
+   }
+  },
+  {
+   "name": "note text 3",
+   "body": "{\"feedback\":\"disliked\",\"note\":\"nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn\"}",
+   "ok": true,
+   "value": {
+    "feedback": "disliked",
+    "note": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+   }
+  },
+  {
+   "name": "note text 4",
+   "body": "{\"feedback\":\"disliked\",\"note\":\"nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=500 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "note",
+     "message": "Juda katta: kutilgan string <=500 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "note text 5",
+   "body": "{\"feedback\":\"disliked\",\"note\":\" nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn \"}",
+   "ok": true,
+   "value": {
+    "feedback": "disliked",
+    "note": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+   }
+  },
+  {
+   "name": "a note without feedback",
+   "body": "{\"note\":\"x\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"liked\"|\"disliked\"|\"saved\"|\"rejected\"",
+   "details": [
+    {
+     "path": "feedback",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"liked\"|\"disliked\"|\"saved\"|\"rejected\""
+    }
+   ]
+  }
+ ],
+ "saved": [
+  {
+   "saved": null,
+   "ok": true,
+   "value": {}
+  },
+  {
+   "saved": "",
+   "ok": true,
+   "value": {}
+  },
+  {
+   "saved": "0",
+   "ok": true,
+   "value": {
+    "saved": "0"
+   }
+  },
+  {
+   "saved": "1",
+   "ok": true,
+   "value": {
+    "saved": "1"
+   }
+  },
+  {
+   "saved": "true",
+   "ok": true,
+   "value": {
+    "saved": "true"
+   }
+  },
+  {
+   "saved": "false",
+   "ok": true,
+   "value": {
+    "saved": "false"
+   }
+  },
+  {
+   "saved": "yes",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"0\"|\"1\"|\"true\"|\"false\"",
+   "details": [
+    {
+     "path": "saved",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"0\"|\"1\"|\"true\"|\"false\""
+    }
+   ]
+  },
+  {
+   "saved": "TRUE",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"0\"|\"1\"|\"true\"|\"false\"",
+   "details": [
+    {
+     "path": "saved",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"0\"|\"1\"|\"true\"|\"false\""
+    }
+   ]
+  },
+  {
+   "saved": " 1",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"0\"|\"1\"|\"true\"|\"false\"",
+   "details": [
+    {
+     "path": "saved",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"0\"|\"1\"|\"true\"|\"false\""
+    }
+   ]
+  },
+  {
+   "saved": "01",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"0\"|\"1\"|\"true\"|\"false\"",
+   "details": [
+    {
+     "path": "saved",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"0\"|\"1\"|\"true\"|\"false\""
+    }
+   ]
+  },
+  {
+   "saved": "null",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"0\"|\"1\"|\"true\"|\"false\"",
+   "details": [
+    {
+     "path": "saved",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"0\"|\"1\"|\"true\"|\"false\""
+    }
+   ]
+  }
+ ],
+ "coordinates": [
+  {
+   "lat": "41.31",
+   "lon": "69.24",
+   "ok": true,
+   "value": {
+    "lat": 41.31,
+    "lon": 69.24
+   }
+  },
+  {
+   "lat": null,
+   "lon": null,
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "lat va lon parametrlari noto‘g‘ri",
+   "details": [
+    {
+     "path": "lat",
+     "message": "lat va lon parametrlari noto‘g‘ri"
+    },
+    {
+     "path": "lon",
+     "message": "lat va lon parametrlari noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "lat": "41.31",
+   "lon": null,
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "lat va lon parametrlari noto‘g‘ri",
+   "details": [
+    {
+     "path": "lon",
+     "message": "lat va lon parametrlari noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "lat": null,
+   "lon": "69.24",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "lat va lon parametrlari noto‘g‘ri",
+   "details": [
+    {
+     "path": "lat",
+     "message": "lat va lon parametrlari noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "lat": "",
+   "lon": "",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "lat va lon parametrlari noto‘g‘ri",
+   "details": [
+    {
+     "path": "lat",
+     "message": "lat va lon parametrlari noto‘g‘ri"
+    },
+    {
+     "path": "lon",
+     "message": "lat va lon parametrlari noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "lat": "-90",
+   "lon": "-180",
+   "ok": true,
+   "value": {
+    "lat": -90,
+    "lon": -180
+   }
+  },
+  {
+   "lat": "90",
+   "lon": "180",
+   "ok": true,
+   "value": {
+    "lat": 90,
+    "lon": 180
+   }
+  },
+  {
+   "lat": "-90.01",
+   "lon": "0",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=-90",
+   "details": [
+    {
+     "path": "lat",
+     "message": "Juda kichik: kutilgan number >=-90"
+    }
+   ]
+  },
+  {
+   "lat": "90.01",
+   "lon": "0",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=90",
+   "details": [
+    {
+     "path": "lat",
+     "message": "Juda katta: kutilgan number <=90"
+    }
+   ]
+  },
+  {
+   "lat": "0",
+   "lon": "-180.01",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=-180",
+   "details": [
+    {
+     "path": "lon",
+     "message": "Juda kichik: kutilgan number >=-180"
+    }
+   ]
+  },
+  {
+   "lat": "0",
+   "lon": "180.01",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=180",
+   "details": [
+    {
+     "path": "lon",
+     "message": "Juda katta: kutilgan number <=180"
+    }
+   ]
+  },
+  {
+   "lat": "91",
+   "lon": "181",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=90",
+   "details": [
+    {
+     "path": "lat",
+     "message": "Juda katta: kutilgan number <=90"
+    },
+    {
+     "path": "lon",
+     "message": "Juda katta: kutilgan number <=180"
+    }
+   ]
+  },
+  {
+   "lat": "abc",
+   "lon": "69.24",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "lat va lon parametrlari noto‘g‘ri",
+   "details": [
+    {
+     "path": "lat",
+     "message": "lat va lon parametrlari noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "lat": "41.31",
+   "lon": "abc",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "lat va lon parametrlari noto‘g‘ri",
+   "details": [
+    {
+     "path": "lon",
+     "message": "lat va lon parametrlari noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "lat": "abc",
+   "lon": "abc",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "lat va lon parametrlari noto‘g‘ri",
+   "details": [
+    {
+     "path": "lat",
+     "message": "lat va lon parametrlari noto‘g‘ri"
+    },
+    {
+     "path": "lon",
+     "message": "lat va lon parametrlari noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "lat": " 41.31 ",
+   "lon": "\t69.24\n",
+   "ok": true,
+   "value": {
+    "lat": 41.31,
+    "lon": 69.24
+   }
+  },
+  {
+   "lat": "4.131e1",
+   "lon": "6924e-2",
+   "ok": true,
+   "value": {
+    "lat": 41.31,
+    "lon": 69.24
+   }
+  },
+  {
+   "lat": "0x10",
+   "lon": "0b11",
+   "ok": true,
+   "value": {
+    "lat": 16,
+    "lon": 3
+   }
+  },
+  {
+   "lat": "+41",
+   "lon": "-0",
+   "ok": true,
+   "value": {
+    "lat": 41,
+    "lon": 0
+   }
+  },
+  {
+   "lat": ".5",
+   "lon": "5.",
+   "ok": true,
+   "value": {
+    "lat": 0.5,
+    "lon": 5
+   }
+  },
+  {
+   "lat": "Infinity",
+   "lon": "0",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "lat va lon parametrlari noto‘g‘ri",
+   "details": [
+    {
+     "path": "lat",
+     "message": "lat va lon parametrlari noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "lat": "-Infinity",
+   "lon": "0",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "lat va lon parametrlari noto‘g‘ri",
+   "details": [
+    {
+     "path": "lat",
+     "message": "lat va lon parametrlari noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "lat": "NaN",
+   "lon": "0",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "lat va lon parametrlari noto‘g‘ri",
+   "details": [
+    {
+     "path": "lat",
+     "message": "lat va lon parametrlari noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "lat": "1e400",
+   "lon": "0",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "lat va lon parametrlari noto‘g‘ri",
+   "details": [
+    {
+     "path": "lat",
+     "message": "lat va lon parametrlari noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "lat": "41,31",
+   "lon": "69,24",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "lat va lon parametrlari noto‘g‘ri",
+   "details": [
+    {
+     "path": "lat",
+     "message": "lat va lon parametrlari noto‘g‘ri"
+    },
+    {
+     "path": "lon",
+     "message": "lat va lon parametrlari noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "lat": "   ",
+   "lon": "0",
+   "ok": true,
+   "value": {
+    "lat": 0,
+    "lon": 0
+   }
+  },
+  {
+   "lat": "41.31abc",
+   "lon": "0",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "lat va lon parametrlari noto‘g‘ri",
+   "details": [
+    {
+     "path": "lat",
+     "message": "lat va lon parametrlari noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "lat": "٤١",
+   "lon": "0",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "lat va lon parametrlari noto‘g‘ri",
+   "details": [
+    {
+     "path": "lat",
+     "message": "lat va lon parametrlari noto‘g‘ri"
+    }
+   ]
+  },
+  {
+   "lat": "41.123456789",
+   "lon": "69.987654321",
+   "ok": true,
+   "value": {
+    "lat": 41.123456789,
+    "lon": 69.987654321
+   }
+  }
+ ]
+}

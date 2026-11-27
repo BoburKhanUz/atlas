@@ -66,6 +66,10 @@ func msgTooManyItems(max int) string {
 	return fmt.Sprintf("Juda katta: kutilgan array <=%d element bo‘lishi kerak", max)
 }
 
+func msgTooFewItems(min int) string {
+	return fmt.Sprintf("Juda kichik: kutilgan array >=%d element bo‘lishi kerak", min)
+}
+
 // kind is "number" or "int", as the validator names the limit it checked.
 func msgTooSmall(kind string, min int64) string {
 	return fmt.Sprintf("Juda kichik: kutilgan %s >=%d", kind, min)
