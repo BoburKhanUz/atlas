@@ -682,3 +682,31 @@ func LoadWeather(t testing.TB) Weather {
 	}
 	return w
 }
+
+// AIConfig is testdata/golden/ai-config.json
+// (apps/web/scripts/golden-ai-config.ts): what the Next.js AI configuration
+// parser makes of an environment, or the variable its refusal names.
+type AIConfig struct {
+	GeneratedBy  string `json:"generatedBy"`
+	SourceCommit string `json:"sourceCommit"`
+	Note         string `json:"note"`
+	Cases        []struct {
+		Name     string            `json:"name"`
+		Env      map[string]string `json:"env"`
+		OK       bool              `json:"ok"`
+		Config   json.RawMessage   `json:"config"`
+		Error    string            `json:"error"`
+		Variable string            `json:"variable"`
+	} `json:"cases"`
+}
+
+// LoadAIConfig reads testdata/golden/ai-config.json; unknown fields fail.
+func LoadAIConfig(t testing.TB) AIConfig {
+	t.Helper()
+	var c AIConfig
+	load(t, "ai-config.json", &c)
+	if len(c.Cases) == 0 {
+		t.Fatal("ai-config.json: no cases")
+	}
+	return c
+}

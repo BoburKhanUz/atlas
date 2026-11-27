@@ -13,6 +13,7 @@ import (
 	"lookly/internal/apierr"
 	"lookly/internal/catalog"
 	"lookly/internal/legal"
+	"lookly/internal/platform"
 	"lookly/internal/session"
 )
 
@@ -601,10 +602,4 @@ func utf16Length(s string) int {
 }
 
 // isJSWhiteSpace is what JavaScript's String.prototype.trim removes.
-func isJSWhiteSpace(r rune) bool {
-	switch r {
-	case '\t', '\n', '\v', '\f', '\r', ' ', 0x00A0, 0x1680, 0x2028, 0x2029, 0x202F, 0x205F, 0x3000, 0xFEFF:
-		return true
-	}
-	return r >= 0x2000 && r <= 0x200A
-}
+func isJSWhiteSpace(r rune) bool { return platform.IsJSWhiteSpace(r) }

@@ -26,8 +26,8 @@ func env(vars map[string]string) func(string) (string, bool) {
 func valid() map[string]string {
 	return configtest.Env(map[string]string{
 		"LOOKLY_ENV": "production", "DATABASE_URL": dbURL,
-		// Until stage B6 a deployed server analyses garments with the mock, acknowledged.
-		"AI_VISION_PROVIDER": "mock", "AI_ALLOW_MOCK_IN_PRODUCTION": "1",
+		// The mock AI, acknowledged: the tests of the AI settings are in ai_test.go.
+		"AI_LLM_PROVIDER": "mock", "AI_VISION_PROVIDER": "mock", "AI_ALLOW_MOCK_IN_PRODUCTION": "1",
 	})
 }
 
@@ -146,8 +146,8 @@ func TestExplicitValues(t *testing.T) {
 	if plain, err := config.Load(env(with(nil))); err != nil || plain.SweepMaxRemovals != 0 {
 		t.Errorf("sweep limit unset: %d, %v", plain.SweepMaxRemovals, err)
 	}
-	if c.VisionProvider != config.VisionMock {
-		t.Errorf("vision provider %q", c.VisionProvider)
+	if c.AI.Vision.Provider != config.AIMock || !c.AI.MockInProduction {
+		t.Errorf("vision provider %q, mock in production %t", c.AI.Vision.Provider, c.AI.MockInProduction)
 	}
 	if c.MediaURLTTL != 10*time.Minute {
 		t.Errorf("media link lifetime %s", c.MediaURLTTL)
@@ -169,8 +169,8 @@ func TestExplicitValues(t *testing.T) {
 		// needs no acknowledgement.
 		for _, provider := range []string{"<unset>", "mock", "MOCK"} {
 			c, err := config.Load(env(with(map[string]string{"LOOKLY_ENV": e, "AI_VISION_PROVIDER": provider, "AI_ALLOW_MOCK_IN_PRODUCTION": "<unset>"})))
-			if err != nil || c.VisionProvider != config.VisionMock {
-				t.Errorf("%s with AI_VISION_PROVIDER %s: provider %q, err %v", e, provider, c.VisionProvider, err)
+			if err != nil || c.AI.Vision.Provider != config.AIMock || c.AI.MockInProduction {
+				t.Errorf("%s with AI_VISION_PROVIDER %s: provider %q, err %v", e, provider, c.AI.Vision.Provider, err)
 			}
 		}
 		// Outside production the driver's default is acceptable.
@@ -230,12 +230,13 @@ func TestRefusals(t *testing.T) {
 		{"vision provider missing in production", map[string]string{"AI_VISION_PROVIDER": "<unset>"}, "AI_VISION_PROVIDER"},
 		{"vision provider empty in production", map[string]string{"AI_VISION_PROVIDER": " "}, "AI_VISION_PROVIDER"},
 		{"vision provider missing in staging", map[string]string{"LOOKLY_ENV": "staging", "AI_VISION_PROVIDER": "<unset>"}, "AI_VISION_PROVIDER"},
-		{"mock not acknowledged in production", map[string]string{"AI_ALLOW_MOCK_IN_PRODUCTION": "<unset>"}, "AI_VISION_PROVIDER"},
-		{"mock not acknowledged in staging", map[string]string{"LOOKLY_ENV": "staging", "AI_ALLOW_MOCK_IN_PRODUCTION": "0"}, "AI_VISION_PROVIDER"},
-		{"mock acknowledged with another word", map[string]string{"AI_ALLOW_MOCK_IN_PRODUCTION": "true"}, "AI_VISION_PROVIDER"},
-		{"a real vision provider before B6", map[string]string{"AI_VISION_PROVIDER": "openai"}, "AI_VISION_PROVIDER"},
-		{"a real vision provider in development", map[string]string{"LOOKLY_ENV": "development", "AI_VISION_PROVIDER": "gemini"}, "AI_VISION_PROVIDER"},
+		{"mock not acknowledged in production", map[string]string{"AI_ALLOW_MOCK_IN_PRODUCTION": "<unset>"}, "AI_ALLOW_MOCK_IN_PRODUCTION"},
+		{"mock not acknowledged in staging", map[string]string{"LOOKLY_ENV": "staging", "AI_ALLOW_MOCK_IN_PRODUCTION": "0"}, "AI_ALLOW_MOCK_IN_PRODUCTION"},
+		{"mock acknowledged with another word", map[string]string{"AI_ALLOW_MOCK_IN_PRODUCTION": "true"}, "AI_ALLOW_MOCK_IN_PRODUCTION"},
+		{"a real vision provider without its key", map[string]string{"AI_VISION_PROVIDER": "openai", "AI_VISION_MODEL": "m"}, "OPENAI_API_KEY"},
+		{"a real vision provider without its model", map[string]string{"LOOKLY_ENV": "development", "AI_VISION_PROVIDER": "gemini", "GEMINI_API_KEY": "k"}, "AI_VISION_MODEL"},
 		{"an unknown vision provider", map[string]string{"LOOKLY_ENV": "test", "AI_VISION_PROVIDER": "claude"}, "AI_VISION_PROVIDER"},
+		{"text provider missing in production", map[string]string{"AI_LLM_PROVIDER": "<unset>"}, "AI_LLM_PROVIDER"},
 		{"media secret missing", map[string]string{"MEDIA_SIGNING_SECRET": "<unset>"}, "MEDIA_SIGNING_SECRET"},
 		{"media secret empty", map[string]string{"MEDIA_SIGNING_SECRET": ""}, "MEDIA_SIGNING_SECRET"},
 		{"media secret short", map[string]string{"MEDIA_SIGNING_SECRET": strings.Repeat("m", 31)}, "MEDIA_SIGNING_SECRET"},

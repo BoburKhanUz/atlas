@@ -59,9 +59,8 @@ type Config struct {
 	MediaSigningSecret []byte // secret
 	MediaURLTTL        time.Duration
 
-	// VisionProvider is who analyses the garment photos. Until the real
-	// providers (stage B6) it is the development mock or nothing starts.
-	VisionProvider string
+	// AI is the configuration of the AI providers, quotas' rollout included.
+	AI AI
 
 	// WeatherProvider is who is asked for the weather: WeatherOpenMeteo or,
 	// outside the deployed environments, WeatherMock.
@@ -84,9 +83,6 @@ type Config struct {
 	// sweep's own limit.
 	SweepMaxRemovals int
 }
-
-// VisionMock is the development mock of garment analysis.
-const VisionMock = "mock"
 
 // Weather providers (WEATHER_PROVIDER).
 const (
@@ -319,22 +315,12 @@ func Load(getenv func(string) (string, bool)) (Config, error) {
 	}
 	c.Mail = loadMail(c.Env, c.PublicBaseURL, value, getenv, fail)
 
-	// Garment analysis. The variables are the Next.js server's; until the
-	// real providers are ported (stage B6) only the mock is accepted, and
-	// where the server is deployed only when it is acknowledged, as there.
+	// The AI providers: the Next.js server's variables, read by its rules.
 	deployed := c.Env == Production || c.Env == Staging
-	provider, set := value("AI_VISION_PROVIDER")
-	provider = strings.ToLower(provider)
-	switch {
-	case !set && deployed:
-		fail("AI_VISION_PROVIDER", "must be set in %s", c.Env)
-	case set && provider != VisionMock:
-		fail("AI_VISION_PROVIDER", "must be mock: the Go server has no other garment analysis before stage B6")
-	default:
-		c.VisionProvider = VisionMock
-		if allow, _ := value("AI_ALLOW_MOCK_IN_PRODUCTION"); deployed && allow != "1" {
-			fail("AI_VISION_PROVIDER", "mock is refused in %s unless AI_ALLOW_MOCK_IN_PRODUCTION=1", c.Env)
-		}
+	if ai, refusal := loadAI(deployed, value); refusal != nil {
+		fail(refusal.variable, "%s", refusal.message)
+	} else {
+		c.AI = ai
 	}
 
 	// The weather. The variable is the Next.js server's, which took every
@@ -495,8 +481,8 @@ func (c Config) LogValue() slog.Value {
 		slog.String("r2Bucket", c.R2.Bucket),
 		slog.String("r2Credentials", setOrNot(c.R2.SecretAccessKey)),
 		slog.Int("sweepMaxRemovals", c.SweepMaxRemovals),
-		slog.String("visionProvider", c.VisionProvider),
 		slog.String("weatherProvider", c.WeatherProvider),
+		slog.Any("ai", c.AI),
 	)
 }
 
@@ -505,10 +491,10 @@ func (c Config) String() string {
 	return fmt.Sprintf("Config{Env:%s HTTPAddr:%s DatabaseURL:[set] DBMaxConns:%d LogLevel:%s ShutdownGrace:%s "+
 		"JWTSecret:[set] SessionEncKey:[set] DecryptOnlyKeys:%d AccessTokenTTL:%s RefreshTokenTTL:%s CookieSecure:%t TrustProxy:%t "+
 		"MediaSigningSecret:[set] MediaURLTTL:%s "+
-		"PublicBaseURL:%s %s StorageDriver:%s StorageLocalDir:%s %s SweepMaxRemovals:%d VisionProvider:%s WeatherProvider:%s}",
+		"PublicBaseURL:%s %s StorageDriver:%s StorageLocalDir:%s %s SweepMaxRemovals:%d WeatherProvider:%s %s}",
 		c.Env, c.HTTPAddr, c.DBMaxConns, c.LogLevel, c.ShutdownGrace,
 		len(c.SessionDecryptKeys), c.AccessTokenTTL, c.RefreshTokenTTL, c.CookieSecure, c.TrustProxy, c.MediaURLTTL,
-		c.PublicBaseURL, c.Mail, c.StorageDriver, c.StorageLocalDir, c.R2, c.SweepMaxRemovals, c.VisionProvider, c.WeatherProvider)
+		c.PublicBaseURL, c.Mail, c.StorageDriver, c.StorageLocalDir, c.R2, c.SweepMaxRemovals, c.WeatherProvider, c.AI)
 }
 
 // GoString keeps the secrets out of %#v.

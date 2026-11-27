@@ -325,7 +325,7 @@ func production(t *testing.T, extra map[string]string, during func(addr string))
 		"DATABASE_URL":      "postgresql://lookly@127.0.0.1:1/lookly?sslmode=disable", // nothing listens there
 		"STORAGE_LOCAL_DIR": t.TempDir(),
 		// Until stage B6 a deployed server needs the mock acknowledged.
-		"AI_VISION_PROVIDER": "mock", "AI_ALLOW_MOCK_IN_PRODUCTION": "1",
+		"AI_LLM_PROVIDER": "mock", "AI_VISION_PROVIDER": "mock", "AI_ALLOW_MOCK_IN_PRODUCTION": "1",
 	}
 	for k, v := range extra {
 		vars[k] = v
@@ -397,4 +397,34 @@ func TestServeInProductionRefusesWritesFromAnHTTPOrigin(t *testing.T) {
 			t.Errorf("a write from the https origin of our host: %d, want it past the guard (500: the database is down)", got)
 		}
 	})
+}
+
+// While stage B6 is under way the server has the AI settings before it has
+// the AI: a real provider configured for a role this build cannot serve yet
+// stops the server, instead of being quietly served by the mock.
+func TestServeRefusesARealAIProviderItCannotServeYet(t *testing.T) {
+	t.Parallel()
+	for name, vars := range map[string]map[string]string{
+		"vision":  {"AI_VISION_PROVIDER": "gemini", "AI_VISION_MODEL": "gemini-vision-test", "GEMINI_API_KEY": "fake-key-not-printed"},
+		"text":    {"AI_LLM_PROVIDER": "openai", "AI_LLM_MODEL": "gpt-test", "OPENAI_API_KEY": "fake-key-not-printed"},
+		"stylist": {"AI_STYLIST_PROVIDER": "gemini", "AI_STYLIST_MODEL": "gemini-test", "GEMINI_API_KEY": "fake-key-not-printed"},
+		"outfit":  {"AI_OUTFIT_PROVIDER": "openai", "AI_OUTFIT_MODEL": "gpt-test", "OPENAI_API_KEY": "fake-key-not-printed"},
+	} {
+		addr := freeAddr(t)
+		all := configtest.Env(map[string]string{"LOOKLY_ENV": "development", "LOOKLY_HTTP_ADDR": addr, "DATABASE_URL": "postgresql://u@127.0.0.1:1/x"})
+		for k, v := range vars {
+			all[k] = v
+		}
+		for _, command := range []string{"serve", "worker"} {
+			var stderr bytes.Buffer
+			code := app.Run(context.Background(), []string{command}, env(all), &bytes.Buffer{}, &stderr)
+			if code != 2 || !strings.Contains(stderr.String(), "real AI provider") || strings.Contains(stderr.String(), "fake-key") {
+				t.Errorf("%s, %s: exit %d, stderr %q", name, command, code, stderr.String())
+			}
+		}
+		if c, err := net.DialTimeout("tcp", addr, 100*time.Millisecond); err == nil {
+			c.Close()
+			t.Errorf("%s: something listens on the address", name)
+		}
+	}
 }
