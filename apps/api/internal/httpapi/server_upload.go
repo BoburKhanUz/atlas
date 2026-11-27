@@ -166,10 +166,7 @@ func (s *Server) CreateWardrobeItem(ctx context.Context, request contract.Create
 	}
 	created, err := s.s.Uploads.Create(ctx, up)
 	if err != nil {
-		// Out of time anywhere but in the wait for a processing slot (the
-		// storage, the database) is answered "try again" too, and is ours
-		// to know; a client that left is not.
-		if outOfTime(err) && !errors.Is(err, imaging.ErrBusy) && !errors.Is(ctx.Err(), context.Canceled) {
+		if stalled(err) {
 			if info := infoFrom(ctx); info != nil {
 				info.log.Error("an upload ran out of time", "requestId", info.id, "userId", id.UserID, "err", err.Error())
 			}
@@ -227,6 +224,11 @@ func uploadError(err error) error {
 	case errors.Is(err, wardrobe.ErrNoUser):
 		// The account was deleted after the gate let the request in.
 		return apierr.New(apierr.Unauthorized)
+	case errors.Is(err, wardrobe.ErrOutcomeUnknown):
+		// Whatever its cause, not "nothing happened, try again": the
+		// server's error, logged where it arose. (A retry with the same
+		// key still finds the item if it was created.)
+		return err
 	case errors.Is(err, imaging.ErrBusy), outOfTime(err):
 		// The picture could not be processed within the request's time
 		// (every slot busy), a step ran out of time, or the request ended
@@ -238,6 +240,17 @@ func uploadError(err error) error {
 
 func outOfTime(err error) bool {
 	return errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled)
+}
+
+// stalled: a step of the upload ran out of time where it should not (the
+// storage, the database). It is answered "try again" like a busy server,
+// and is ours to know. The everyday ends are not: no processing slot in
+// time, and a step cut short because the client left (the error is the
+// cancellation itself; a step with time of its own that still ran out is
+// stalled whoever is waiting). An unknown outcome is logged where it arose.
+func stalled(err error) bool {
+	return outOfTime(err) && !errors.Is(err, context.Canceled) &&
+		!errors.Is(err, imaging.ErrBusy) && !errors.Is(err, wardrobe.ErrOutcomeUnknown)
 }
 
 // uploadedFile is the picture of an upload form.

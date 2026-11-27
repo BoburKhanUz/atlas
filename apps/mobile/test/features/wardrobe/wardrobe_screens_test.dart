@@ -259,6 +259,31 @@ void main() {
     expect(keys.toSet(), hasLength(1));
   });
 
+  testWidgets('add: a busy server is said to be busy (not "the AI is down"); Retry sends the same upload', (
+    tester,
+  ) async {
+    final app = App(tester);
+    var posts = 0;
+    await app.start(
+      wardrobe: (r) {
+        if (r.method != 'POST') return JsonReply(200, pageJson(const []));
+        posts++;
+        return posts == 1
+            ? JsonReply(503, errorBody('AI_UNAVAILABLE'), headers: {'Retry-After': '15'})
+            : JsonReply(201, uploadJson('new-1'));
+      },
+    );
+    await app.tap(find.byKey(const Key('wardrobe.add')));
+    await app.tap(find.byKey(const Key('add.camera')));
+    await app.tap(find.byKey(const Key('add.upload')));
+    expect(tester.widget<Text>(find.byKey(const Key('add.failure'))).data, WardrobeMessages.uploadBusy);
+    expect(find.textContaining('AI xizmati'), findsNothing);
+    await app.tap(find.byKey(const Key('add.retry')));
+    expect(find.byKey(const Key('add.completed')), findsOneWidget);
+    final keys = app.h.backend.to(P.wardrobe).where((r) => r.method == 'POST').map((r) => r.header('Idempotency-Key'));
+    expect(keys.toSet(), hasLength(1));
+  });
+
   testWidgets('add: a rejected photo explains why and offers another one', (tester) async {
     final app = App(tester, picker: FakePicker(result: photo())..result = null);
     app.picker.result = null;

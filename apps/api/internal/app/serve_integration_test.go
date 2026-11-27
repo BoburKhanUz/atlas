@@ -110,7 +110,10 @@ func registrationOf(email string) string {
 // gate → router. One account goes through register, "who am I", refresh and
 // sign-out over real HTTP, with the real password hasher.
 func TestServeRunsTheAuthOperationsEndToEnd(t *testing.T) {
-	t.Parallel()
+	// Not parallel: this server hashes passwords at the production cost, and
+	// under the race detector, beside the package's parallel tests, a hash
+	// took longer than the request time limit on CI (twice, 35 s and 37 s;
+	// 3 s when it runs alone).
 	pool := schemaDB(t)
 	call, stdout := startServer(t, pool, nil)
 

@@ -294,7 +294,7 @@ library only.
 | `maintenance_cleanup` | the worker, hourly and at start | removes expired rows (B1) | 3 |
 | `password_reset_mail` | a reset request | makes a link and e-mails it; carries a user id or nothing | 4 |
 | `account_purge_images` | an account deletion, in its transaction | removes `users/<id>` from the storage directory | River's default (25, over about three weeks) |
-| `storage_sweep` | the worker, hourly and at start | removes stored image files no image row names and older than an hour (`wardrobe.Sweeper`), each asked about once more just before it is removed; removes nothing and fails when it finds more of them than it may remove (more than the known files, more than 1000, or more than `STORAGE_SWEEP_MAX_REMOVALS`) or when the database holds no image row at all; names we never make are logged, never removed | 3 |
+| `storage_sweep` | the worker, hourly and at start | removes stored image files no image row names and older than an hour (`wardrobe.Sweeper`), each asked about once more just before it is removed; removes nothing and fails when it finds more of them than it may remove (by its own rule as many as the known files, at most 1000, always up to 50; or `STORAGE_SWEEP_MAX_REMOVALS` when that is set) or when the database holds no image row at all; names we never make are logged, never removed | 3 |
 
 Job rows hold user ids, never addresses or tokens. River keeps finished jobs for a day.
 

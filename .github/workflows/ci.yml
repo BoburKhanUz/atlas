@@ -343,10 +343,9 @@ jobs:
         # nodynamic: the WebP encoder is the transpiled one, never a libwebp
         # of the runner (ADR 0009); without it the imaging and server tests fail.
         # Two runs: under the race detector the two image packages keep every
-        # core busy for minutes, and beside them the tests that are held to
-        # real time limits run out of time (a registration's password hash
-        # took longer than the server's 30 s request limit). Every package is
-        # in one run or the other: the first takes all but the two named.
+        # core busy for minutes; on their own they leave more room to the
+        # tests that are held to real time limits. Every package is in one
+        # run or the other: the first takes all but the two named.
         run: |
           go list ./... | grep -v -x -e lookly/internal/imaging -e lookly/internal/vision \
             | xargs go test -race -tags integration,nodynamic

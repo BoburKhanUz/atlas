@@ -314,6 +314,14 @@ func TestSweepWithTheOperatorsLimit(t *testing.T) {
 	if report, err := w.sweep(); err != nil || report.Removed != wardrobe.SweepSmallRun+30 || len(w.stored()) != 1 {
 		t.Fatalf("with the operator's limit: %+v, %v", report, err)
 	}
+	// Beyond the sweep's own thousand too: every orphan goes, none is left
+	// uncounted.
+	many := wardrobe.SweepMaxRemovals + 100
+	w.orphans(many)
+	w.max = many + 50
+	if report, err := w.sweep(); err != nil || report.Removed != many || report.NotRemoved != 0 || len(w.stored()) != 1 {
+		t.Fatalf("with a limit over a thousand: %+v, %v, %d stored", report, err, len(w.stored()))
+	}
 }
 
 // namedMeanwhile is a store during whose first removal a file gets its

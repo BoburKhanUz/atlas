@@ -45,8 +45,9 @@ var (
 	ErrReplayGone = errors.New("wardrobe: the item this request created was deleted")
 	// ErrNoUser: the account does not exist (any more).
 	ErrNoUser = errors.New("wardrobe: no such user")
-	// ErrOutcomeUnknown: the creating transaction failed, and whether the
-	// item exists could not be found out. The stored files were left.
+	// ErrOutcomeUnknown: the item's rows were written and their commit did
+	// not report success; the item was not found afterwards, or could not
+	// be looked up. The stored files and the day's count were left.
 	ErrOutcomeUnknown = errors.New("wardrobe: whether the item was created is not known")
 )
 
@@ -143,11 +144,12 @@ func DailyUploadHit(userID string, now time.Time) ratelimit.Hit {
 // did not decode stays counted, because it took a processing slot (else a
 // stream of such files would keep the slots busy at no cost).
 //
-// One failure is of another kind: the creating transaction ended without
-// its answer (a timeout during the commit, a lost connection). The item is
-// then looked up: if it is there, the upload succeeded; if whether it is
-// there cannot be told either, the files and the count are kept, for the
-// sweep to judge, and the error says so (ErrOutcomeUnknown).
+// One failure is of another kind: the rows were written and the commit did
+// not report success (a timeout during the commit, a lost connection). The
+// commit may have been done, or may still be done. The item is looked up:
+// if it is there, the upload succeeded; if not, nothing is taken back, the
+// files and the count are kept for the sweep to judge (it asks the database
+// before it removes a file), and the error says so (ErrOutcomeUnknown).
 //
 // The refusals: imaging.ErrUnsupported, imaging.ErrInvalid and
 // imaging.ErrDimensions for the picture; ErrWardrobeFull and
@@ -327,9 +329,12 @@ func (u *Uploads) create(ctx context.Context, up Upload, claim *idempotency.Clai
 
 	var item Item
 	itemID := platform.NewID()
+	// written: every row was written; only the commit was left to do.
+	written := false
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), createTimeout)
 	defer cancel()
-	err = u.inTx(ctx, u.pool, pgx.TxOptions{IsoLevel: pgx.ReadCommitted}, func(tx pgx.Tx) error {
+	err = u.inTx(ctx, u.pool, pgx.TxOptions{IsoLevel: pgx.ReadCommitted}, func(tx pgx.Tx) (err error) {
+		defer func() { written = err == nil }()
 		q := store.New(tx)
 		// The user's uploads go one at a time from here on, so the count
 		// below is the wardrobe's, and not while the account is deleted.
@@ -375,16 +380,17 @@ func (u *Uploads) create(ctx context.Context, up Upload, claim *idempotency.Clai
 				return Created{}, undo, err
 			}
 		}
-		// The transaction ended without its answer: the commit may have
-		// been done all the same.
-		found, lookErr := u.created(ctx, up.UserID, itemID)
-		switch {
-		case lookErr != nil:
-			u.log.Error("wardrobe: an upload's item may or may not exist; its files are left to the sweep",
-				"userId", up.UserID, "itemId", itemID, "err", err.Error(), "lookupErr", lookErr.Error())
-			return Created{}, undo, fmt.Errorf("%w: %w", ErrOutcomeUnknown, err)
-		case found == nil:
+		if !written {
+			// A failure before the commit: rolled back for certain.
 			return Created{}, undo, fmt.Errorf("wardrobe: create the item: %w", err)
+		}
+		// The commit did not report success: it may have been done, or may
+		// still be done (a database finishes a commit it has begun).
+		found, lookErr := u.created(ctx, up.UserID, itemID)
+		if found == nil { // not there (yet), or the look-up failed too
+			u.log.Error("wardrobe: an upload's item may or may not exist; its files are left to the sweep",
+				"userId", up.UserID, "itemId", itemID, "err", err.Error(), "found", lookErr == nil, "lookupErr", fmt.Sprint(lookErr))
+			return Created{}, undo, fmt.Errorf("%w: %w", ErrOutcomeUnknown, err)
 		}
 		u.log.Warn("wardrobe: an upload's transaction reported a failure after its commit", "userId", up.UserID, "itemId", itemID, "err", err.Error())
 		item = *found
@@ -392,8 +398,8 @@ func (u *Uploads) create(ctx context.Context, up Upload, claim *idempotency.Clai
 	return Created{Item: item, Detection: detection}, undo, nil
 }
 
-// created looks an item up after its transaction failed: nil when it is not
-// there. It asks with time of its own; the transaction's may be used up.
+// created looks an item up after its commit failed: nil when it is not
+// there (yet). It asks with time of its own; the transaction's may be used up.
 func (u *Uploads) created(ctx context.Context, userID, itemID string) (*Item, error) {
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), removeTimeout)
 	defer cancel()

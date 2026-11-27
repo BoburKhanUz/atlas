@@ -5,6 +5,7 @@ package wardrobe_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"strings"
 	"testing"
@@ -79,20 +80,15 @@ func TestAnUploadWhoseCommitWasReportedAsFailedIsAnUpload(t *testing.T) {
 	}
 }
 
-// A transaction that failed and was rolled back leaves nothing: no row, no
-// file, no claim on the key, and the attempt is given back to the day.
-func TestAnUploadWhoseTransactionFailedLeavesNothing(t *testing.T) {
+// A transaction that fails while the rows are written is rolled back for
+// certain, and leaves nothing: no row, no file, no claim on the key, and
+// the attempt is given back to the day.
+func TestAnUploadWhoseRowsCannotBeWrittenLeavesNothing(t *testing.T) {
 	t.Parallel()
 	w := newSweepWorld(t)
+	w.exec(`CREATE FUNCTION refuse_images() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'the disk of the database is full'; END $$`)
+	w.exec(`CREATE TRIGGER refuse_images BEFORE INSERT ON "WardrobeImage" FOR EACH ROW EXECUTE FUNCTION refuse_images()`)
 	u, up := w.uploads(nil)
-	u.SetTx(func(ctx context.Context, pool *pgxpool.Pool, options pgx.TxOptions, fn func(pgx.Tx) error) error {
-		return pgx.BeginTxFunc(ctx, pool, options, func(tx pgx.Tx) error {
-			if err := fn(tx); err != nil {
-				return err
-			}
-			return errors.New("the disk of the database is full")
-		})
-	})
 	_, err := u.Create(context.Background(), up)
 	if err == nil || errors.Is(err, wardrobe.ErrOutcomeUnknown) || !strings.Contains(err.Error(), "the disk of the database is full") {
 		t.Fatalf("err %v", err)
@@ -100,6 +96,47 @@ func TestAnUploadWhoseTransactionFailedLeavesNothing(t *testing.T) {
 	if w.count(itemRows) != 0 || len(w.stored()) != 0 || w.count(anyKeys) != 0 || w.count(countedToday) != 0 {
 		t.Errorf("%d items, files %v, %d keys, %d counted", w.count(itemRows), w.stored(), w.count(anyKeys), w.count(countedToday))
 	}
+}
+
+// A commit that did not report success may still be done (a database
+// finishes a commit it has begun). The item is not there yet when it is
+// looked up: nothing is taken back, so that the item, when the commit
+// lands, has its files.
+func TestAnUploadWhoseCommitMayStillLandKeepsItsFiles(t *testing.T) {
+	t.Parallel()
+	w := newSweepWorld(t)
+	u, up := w.uploads(nil)
+	up.IdempotencyKey = "" // the key's row would be held by the open transaction
+	var open pgx.Tx
+	u.SetTx(func(ctx context.Context, pool *pgxpool.Pool, options pgx.TxOptions, fn func(pgx.Tx) error) error {
+		tx, err := pool.BeginTx(ctx, options)
+		if err != nil {
+			return err
+		}
+		if err := fn(tx); err != nil {
+			_ = tx.Rollback(context.Background())
+			return err
+		}
+		open = tx // the commit is on its way
+		return fmt.Errorf("commit: %w", context.DeadlineExceeded)
+	})
+	_, err := u.Create(context.Background(), up)
+	if !errors.Is(err, wardrobe.ErrOutcomeUnknown) || !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("err %v", err)
+	}
+	if w.count(itemRows) != 0 || len(w.stored()) != 3 || w.count(countedToday) != 1 {
+		t.Fatalf("before the commit lands: %d items, files %v, %d counted", w.count(itemRows), w.stored(), w.count(countedToday))
+	}
+	if !strings.Contains(w.log.String(), "may or may not exist") || !strings.Contains(w.log.String(), `"level":"ERROR"`) {
+		t.Errorf("not logged: %s", w.log.String())
+	}
+	if err := open.Commit(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if w.count(itemRows) != 1 || len(w.stored()) != 3 {
+		t.Errorf("after the commit landed: %d items, files %v", w.count(itemRows), w.stored())
+	}
+	// Had it not landed, the files would be the sweep's an hour later.
 }
 
 // When the transaction failed and the database cannot say whether the item
@@ -129,13 +166,15 @@ func TestAnUploadWhoseOutcomeCannotBeToldKeepsItsFiles(t *testing.T) {
 	})
 	_, err = u.Create(context.Background(), wardrobe.Upload{
 		UserID: "u_one", File: golden.TestdataFile(t, "vision/e2e-white-shirt.png"), FileName: "shirt.png", HintName: "shirt.png", Fields: map[string]string{},
+		IdempotencyKey: "upload-key-0001",
 	})
 	if !errors.Is(err, wardrobe.ErrOutcomeUnknown) || !strings.Contains(err.Error(), "the connection broke after the commit") {
 		t.Fatalf("err %v", err)
 	}
-	// The item is there in fact, and so are its files and its count.
-	if w.count(itemRows) != 1 || len(w.stored()) != 3 || w.count(countedToday) != 1 {
-		t.Errorf("%d items, files %v, %d counted", w.count(itemRows), w.stored(), w.count(countedToday))
+	// The item is there in fact, and so are its files, its count and its
+	// key, which a retry is answered from.
+	if w.count(itemRows) != 1 || len(w.stored()) != 3 || w.count(countedToday) != 1 || w.count(completedKeys) != 1 {
+		t.Errorf("%d items, files %v, %d counted, %d completed keys", w.count(itemRows), w.stored(), w.count(countedToday), w.count(completedKeys))
 	}
 	if !strings.Contains(w.log.String(), "may or may not exist") {
 		t.Errorf("not logged: %s", w.log.String())

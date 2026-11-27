@@ -52,7 +52,10 @@ func TestUploadErrorsAndTheirAnswers(t *testing.T) {
 	}
 	// What is not a refusal stays the server's error: an unforeseen failure,
 	// and an item that may or may not have been created.
-	for _, err := range []error{unknown, fmt.Errorf("%w: %w", wardrobe.ErrOutcomeUnknown, unknown)} {
+	for _, err := range []error{
+		unknown, fmt.Errorf("%w: %w", wardrobe.ErrOutcomeUnknown, unknown),
+		fmt.Errorf("%w: commit: %w", wardrobe.ErrOutcomeUnknown, context.DeadlineExceeded), // not "try again, nothing happened"
+	} {
 		if got := httpapi.UploadError(err); got != err { //nolint:errorlint // the error itself, untouched
 			t.Errorf("%v became %v", err, got)
 		}
@@ -118,5 +121,29 @@ func TestUploadsInFlightAreBounded(t *testing.T) {
 	second()
 	if f.Users() != 0 {
 		t.Fatalf("%d users still counted", f.Users())
+	}
+}
+
+// Which ends of an upload are logged as a step that ran out of time: the
+// storage or the database, whoever is still waiting; not the everyday
+// ones, and not an unknown outcome (logged where it arises).
+func TestWhichUploadsAreLoggedAsStalled(t *testing.T) {
+	t.Parallel()
+	for name, c := range map[string]struct {
+		err  error
+		want bool
+	}{
+		"the storage out of time":             {fmt.Errorf("storage: write: %w", context.DeadlineExceeded), true},
+		"the database out of time":            {fmt.Errorf("wardrobe: create the item: %w", context.DeadlineExceeded), true},
+		"no processing slot in time":          {fmt.Errorf("%w: %w", imaging.ErrBusy, context.DeadlineExceeded), false},
+		"no slot when the client left":        {fmt.Errorf("%w: %w", imaging.ErrBusy, context.Canceled), false},
+		"a step cut short by a client's exit": {fmt.Errorf("storage: write: %w", context.Canceled), false},
+		"an unknown outcome":                  {fmt.Errorf("%w: commit: %w", wardrobe.ErrOutcomeUnknown, context.DeadlineExceeded), false},
+		"a refusal":                           {imaging.ErrInvalid, false},
+		"another failure":                     {errors.New("the disk is full"), false},
+	} {
+		if got := httpapi.UploadStalled(c.err); got != c.want {
+			t.Errorf("%s: stalled %v", name, got)
+		}
 	}
 }

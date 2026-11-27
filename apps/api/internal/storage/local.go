@@ -110,9 +110,13 @@ func (l *Local) Put(ctx context.Context, key string, data []byte) error {
 	if err := syncDir(dir); err != nil {
 		return fmt.Errorf("storage: write %s: %w", key, err)
 	}
-	if newOwner { // the owner's directory is itself a new name
-		if err := syncDir(filepath.Dir(dir)); err != nil {
-			return fmt.Errorf("storage: write %s: %w", key, err)
+	if newOwner {
+		// The owner's directory is itself a new name, and so may be the
+		// directory of all owners (the first file of an installation).
+		for _, above := range []string{filepath.Dir(dir), filepath.Dir(filepath.Dir(dir))} {
+			if err := syncDir(above); err != nil {
+				return fmt.Errorf("storage: write %s: %w", key, err)
+			}
 		}
 	}
 	return nil
