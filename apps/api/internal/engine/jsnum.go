@@ -6,18 +6,14 @@ import (
 	"strconv"
 	"strings"
 	"unicode/utf16"
+
+	"lookly/internal/platform"
 )
 
 // The TypeScript engine's arithmetic where JavaScript and Go differ.
 
 // jsRound is Math.round: to the nearest integer, a half towards +∞.
-func jsRound(x float64) float64 {
-	r := math.Floor(x)
-	if x-r >= 0.5 {
-		r++
-	}
-	return r
-}
+func jsRound(x float64) float64 { return platform.RoundHalfUp(x) }
 
 // jsNumberString is String(number): the shortest digits that read back as
 // the number, in decimal notation from 1e-6 up to (not including) 1e21 and

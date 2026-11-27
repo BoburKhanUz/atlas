@@ -115,7 +115,7 @@ func TestServeRunsTheAuthOperationsEndToEnd(t *testing.T) {
 	// took longer than the request time limit on CI (twice, 35 s and 37 s;
 	// 3 s when it runs alone).
 	pool := schemaDB(t)
-	call, stdout := startServer(t, pool, nil)
+	call, stdout := startServer(t, pool, map[string]string{"WEATHER_PROVIDER": "mock"})
 
 	if status, body := call(http.MethodGet, "/api/v1/auth/me", ""); status != http.StatusUnauthorized || body["code"] != "UNAUTHORIZED" {
 		t.Fatalf("me without a session: %d %v", status, body)
@@ -134,6 +134,15 @@ func TestServeRunsTheAuthOperationsEndToEnd(t *testing.T) {
 	}
 	if status, body := call(http.MethodPost, "/api/v1/auth/login", `{"email":"wired@test.local","password":"wrong-password"}`); status != http.StatusUnauthorized || body["code"] != "UNAUTHORIZED" {
 		t.Fatalf("wrong password: %d %v", status, body)
+	}
+	// The weather provider the configuration names (the mock: a test asks
+	// no service), behind the cache.
+	for _, cached := range []bool{false, true} {
+		status, body := call(http.MethodGet, "/api/v1/weather/current?lat=41.311482&lon=69.240562", "")
+		weather, _ := body["weather"].(map[string]any)
+		if status != http.StatusOK || weather["source"] != "mock" || weather["conditionLabel"] != "Qisman bulutli (demo)" || weather["cached"] != cached {
+			t.Fatalf("the weather (cached %t): %d %v", cached, status, body)
+		}
 	}
 	if status, body := call(http.MethodPost, "/api/v1/auth/logout", ""); status != http.StatusOK || body["ok"] != true {
 		t.Fatalf("logout: %d %v", status, body)

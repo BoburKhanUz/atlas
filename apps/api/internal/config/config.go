@@ -63,6 +63,10 @@ type Config struct {
 	// providers (stage B6) it is the development mock or nothing starts.
 	VisionProvider string
 
+	// WeatherProvider is who is asked for the weather: WeatherOpenMeteo or,
+	// outside the deployed environments, WeatherMock.
+	WeatherProvider string
+
 	// PublicBaseURL is the site's public origin (links in e-mails, absolute
 	// image links); "" when not configured.
 	PublicBaseURL string
@@ -83,6 +87,14 @@ type Config struct {
 
 // VisionMock is the development mock of garment analysis.
 const VisionMock = "mock"
+
+// Weather providers (WEATHER_PROVIDER).
+const (
+	// WeatherOpenMeteo is the Open-Meteo forecast service.
+	WeatherOpenMeteo = "open-meteo"
+	// WeatherMock is the same demo weather everywhere.
+	WeatherMock = "mock"
+)
 
 const (
 	defaultHTTPAddr      = ":8080"
@@ -325,6 +337,21 @@ func Load(getenv func(string) (string, bool)) (Config, error) {
 		}
 	}
 
+	// The weather. The variable is the Next.js server's, which took every
+	// value but "mock" for the real service; here an unknown value stops
+	// the server, and so does the demo weather where users would be shown
+	// it as theirs.
+	switch weather, set := value("WEATHER_PROVIDER"); {
+	case !set, strings.EqualFold(weather, WeatherOpenMeteo):
+		c.WeatherProvider = WeatherOpenMeteo
+	case strings.EqualFold(weather, WeatherMock) && deployed:
+		fail("WEATHER_PROVIDER", "mock is refused in %s", c.Env)
+	case strings.EqualFold(weather, WeatherMock):
+		c.WeatherProvider = WeatherMock
+	default:
+		fail("WEATHER_PROVIDER", "must be open-meteo or mock")
+	}
+
 	c.StorageDriver, c.StorageLocalDir, c.R2 = loadStorage(c.Env, value, getenv, fail)
 	if v, ok := value("STORAGE_SWEEP_MAX_REMOVALS"); ok {
 		n, err := strconv.Atoi(v)
@@ -469,6 +496,7 @@ func (c Config) LogValue() slog.Value {
 		slog.String("r2Credentials", setOrNot(c.R2.SecretAccessKey)),
 		slog.Int("sweepMaxRemovals", c.SweepMaxRemovals),
 		slog.String("visionProvider", c.VisionProvider),
+		slog.String("weatherProvider", c.WeatherProvider),
 	)
 }
 
@@ -477,10 +505,10 @@ func (c Config) String() string {
 	return fmt.Sprintf("Config{Env:%s HTTPAddr:%s DatabaseURL:[set] DBMaxConns:%d LogLevel:%s ShutdownGrace:%s "+
 		"JWTSecret:[set] SessionEncKey:[set] DecryptOnlyKeys:%d AccessTokenTTL:%s RefreshTokenTTL:%s CookieSecure:%t TrustProxy:%t "+
 		"MediaSigningSecret:[set] MediaURLTTL:%s "+
-		"PublicBaseURL:%s %s StorageDriver:%s StorageLocalDir:%s %s SweepMaxRemovals:%d VisionProvider:%s}",
+		"PublicBaseURL:%s %s StorageDriver:%s StorageLocalDir:%s %s SweepMaxRemovals:%d VisionProvider:%s WeatherProvider:%s}",
 		c.Env, c.HTTPAddr, c.DBMaxConns, c.LogLevel, c.ShutdownGrace,
 		len(c.SessionDecryptKeys), c.AccessTokenTTL, c.RefreshTokenTTL, c.CookieSecure, c.TrustProxy, c.MediaURLTTL,
-		c.PublicBaseURL, c.Mail, c.StorageDriver, c.StorageLocalDir, c.R2, c.SweepMaxRemovals, c.VisionProvider)
+		c.PublicBaseURL, c.Mail, c.StorageDriver, c.StorageLocalDir, c.R2, c.SweepMaxRemovals, c.VisionProvider, c.WeatherProvider)
 }
 
 // GoString keeps the secrets out of %#v.

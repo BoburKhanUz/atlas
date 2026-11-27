@@ -47,6 +47,7 @@ import (
 	"lookly/internal/session"
 	"lookly/internal/storage"
 	"lookly/internal/wardrobe"
+	"lookly/internal/weather"
 	"lookly/migrations"
 )
 
@@ -133,6 +134,8 @@ type apiOptions struct {
 	mailDisabled bool
 	// queue replaces the job queue (River on the test's database).
 	queue accounts.Queue
+	// weather replaces the weather provider (the mock).
+	weather weather.Provider
 }
 
 // api is the server on its own database.
@@ -218,8 +221,13 @@ func newAPI(t *testing.T, o apiOptions) *api {
 	if a.media == nil {
 		a.media = media.NewSigner([]byte("http-test-media-secret-http-test-media-secret"), time.Hour, "")
 	}
+	var forecasts weather.Provider = weather.Mock{}
+	if o.weather != nil {
+		forecasts = o.weather
+	}
 	server := httpapi.NewServer(httpapi.Services{
 		Health: health.New(pool, "test", time.Second), Accounts: users, Sessions: a.sessions, Legal: consent, Profile: profile.New(pool),
+		Weather:  weather.New(pool, forecasts, log),
 		Wardrobe: wardrobe.New(pool, a.images, log), Media: a.media, Images: a.images, Now: o.now,
 		Uploads: wardrobe.NewUploads(wardrobe.UploadsConfig{
 			Pool: pool, Images: a.images, Processor: a.processor, Limiter: limiter, Keys: idempotency.New(pool), Log: log,

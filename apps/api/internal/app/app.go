@@ -40,6 +40,7 @@ import (
 	"lookly/internal/session"
 	"lookly/internal/storage"
 	"lookly/internal/wardrobe"
+	"lookly/internal/weather"
 )
 
 // version is stamped at build time: -ldflags "-X lookly/internal/app.version=<v>".
@@ -115,6 +116,7 @@ func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger, images storage
 		Legal:    consent,
 		Profile:  profile.New(pool),
 		Wardrobe: wardrobe.New(pool, images, log),
+		Weather:  weather.New(pool, weatherProvider(cfg), log),
 		Uploads: wardrobe.NewUploads(wardrobe.UploadsConfig{
 			Pool: pool, Images: images, Processor: imaging.NewProcessor(picturesAtOnce), Limiter: limiter,
 			Keys: idempotency.New(pool), Log: log,
@@ -127,6 +129,14 @@ func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger, images storage
 	return httpapi.New(server, log, &httpapi.Gate{
 		Tokens: tokens, Sessions: sessions, Consent: consent, Users: users, TrustProxy: cfg.TrustProxy, HTTPSOnly: cfg.CookieSecure,
 	}), nil
+}
+
+// weatherProvider is who the configuration says is asked for the weather.
+func weatherProvider(cfg config.Config) weather.Provider {
+	if cfg.WeatherProvider == config.WeatherMock {
+		return weather.Mock{}
+	}
+	return weather.NewOpenMeteo(weather.OpenMeteoURL, nil)
 }
 
 // storageCheckTimeout bounds the question to the bucket at start.

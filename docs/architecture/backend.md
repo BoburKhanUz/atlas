@@ -110,6 +110,7 @@ before listening. Values that hold credentials are never printed.
 | `SMTP_USER`, `SMTP_PASSWORD` | none | both or neither; the password is used as given and never printed |
 | `MAIL_OUTBOX_DIR` | `./storage/mail-outbox` | for `outbox`: where messages are written as files |
 | `AI_VISION_PROVIDER` | `mock` in development and test; none (required) in production and staging | `mock` only until the real providers (B6); in production and staging the mock also needs `AI_ALLOW_MOCK_IN_PRODUCTION=1` |
+| `WEATHER_PROVIDER` | `open-meteo` | who is asked for the weather: `open-meteo` (the Open-Meteo forecast service) or `mock` (the same demo weather everywhere, labelled as such). `mock` is refused in production and staging; any other value stops the server |
 | `STORAGE_DRIVER` | `local` | `local` or `r2`; never guessed: an `R2_*` setting without it stops the server |
 | `STORAGE_LOCAL_DIR` | none (required for `local`) | absolute path of the directory the images are in (the one the Next.js server writes to); `lookly serve` and `lookly worker` also require that it exists |
 | `R2_ENDPOINT` | none (required for `r2`) | the account's S3 endpoint, an origin: `https://<account id>.r2.cloudflarestorage.com`; plain http only for a test server on the same machine, never in production or staging |

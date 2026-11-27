@@ -1463,6 +1463,26 @@ type WardrobeUploadResponse struct {
 	Item      WardrobeItem `json:"item"`
 }
 
+// WeatherResponse defines model for WeatherResponse.
+type WeatherResponse struct {
+	Weather struct {
+		Cached         bool    `json:"cached"`
+		Condition      string  `json:"condition"`
+		ConditionLabel string  `json:"conditionLabel"`
+		FeelsLike      float64 `json:"feelsLike"`
+
+		// FetchedAt ISO 8601, UTC
+		FetchedAt                time.Time `json:"fetchedAt"`
+		Humidity                 float64   `json:"humidity"`
+		PrecipitationAmount      float64   `json:"precipitationAmount"`
+		PrecipitationProbability float64   `json:"precipitationProbability"`
+		Source                   string    `json:"source"`
+		Temperature              float64   `json:"temperature"`
+		UvIndex                  float64   `json:"uvIndex"`
+		WindSpeed                float64   `json:"windSpeed"`
+	} `json:"weather"`
+}
+
 // WebAuthResponse Web mode: tokens are only in HttpOnly cookies
 type WebAuthResponse struct {
 	User SessionUser `json:"user"`
@@ -1527,6 +1547,12 @@ type CreateWardrobeItemMultipartBody struct {
 type CreateWardrobeItemParams struct {
 	// IdempotencyKey Makes retries safe for 24 h: the same key and payload returns the original result (Idempotent-Replayed: true); a different payload → 409 IDEMPOTENCY_KEY_MISMATCH; still processing → 409 IDEMPOTENCY_IN_PROGRESS with Retry-After.
 	IdempotencyKey *string `json:"Idempotency-Key,omitempty"`
+}
+
+// GetCurrentWeatherParams defines parameters for GetCurrentWeather.
+type GetCurrentWeatherParams struct {
+	Lat float64 `form:"lat" json:"lat"`
+	Lon float64 `form:"lon" json:"lon"`
 }
 
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
@@ -1677,6 +1703,9 @@ type ServerInterface interface {
 	// UpdateWardrobeItem Correct detected attributes (recorded in correctionLog)
 	// (PATCH /api/v1/wardrobe/items/{id})
 	UpdateWardrobeItem(w http.ResponseWriter, r *http.Request, id string)
+	// GetCurrentWeather Current weather (cached 30 min per ~1 km cell)
+	// (GET /api/v1/weather/current)
+	GetCurrentWeather(w http.ResponseWriter, r *http.Request, params GetCurrentWeatherParams)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -2156,6 +2185,52 @@ func (siw *ServerInterfaceWrapper) UpdateWardrobeItem(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
+// GetCurrentWeather operation middleware
+func (siw *ServerInterfaceWrapper) GetCurrentWeather(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetCurrentWeatherParams
+
+	// ------------- Required query parameter "lat" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "lat", r.URL.Query(), &params.Lat, runtime.BindQueryParameterOptions{Type: "number", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "lat"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "lat", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "lon" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "lon", r.URL.Query(), &params.Lon, runtime.BindQueryParameterOptions{Type: "number", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "lon"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "lon", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCurrentWeather(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -2294,6 +2369,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/wardrobe/items/{id}", wrapper.DeleteWardrobeItem)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/wardrobe/items/{id}", wrapper.GetWardrobeItem)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/v1/wardrobe/items/{id}", wrapper.UpdateWardrobeItem)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/weather/current", wrapper.GetCurrentWeather)
 
 	return m
 }
@@ -4025,6 +4101,84 @@ func (response UpdateWardrobeItem500JSONResponse) VisitUpdateWardrobeItemRespons
 	return err
 }
 
+type GetCurrentWeatherRequestObject struct {
+	Params GetCurrentWeatherParams
+}
+
+type GetCurrentWeatherResponseObject interface {
+	VisitGetCurrentWeatherResponse(w http.ResponseWriter) error
+}
+
+type GetCurrentWeather200JSONResponse WeatherResponse
+
+func (response GetCurrentWeather200JSONResponse) VisitGetCurrentWeatherResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCurrentWeather400JSONResponse ErrorResponse
+
+func (response GetCurrentWeather400JSONResponse) VisitGetCurrentWeatherResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCurrentWeather401JSONResponse ErrorResponse
+
+func (response GetCurrentWeather401JSONResponse) VisitGetCurrentWeatherResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCurrentWeather403JSONResponse ErrorResponse
+
+func (response GetCurrentWeather403JSONResponse) VisitGetCurrentWeatherResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCurrentWeather500JSONResponse ErrorResponse
+
+func (response GetCurrentWeather500JSONResponse) VisitGetCurrentWeatherResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// GetHealth Liveness and database check
@@ -4081,6 +4235,9 @@ type StrictServerInterface interface {
 	// UpdateWardrobeItem Correct detected attributes (recorded in correctionLog)
 	// (PATCH /api/v1/wardrobe/items/{id})
 	UpdateWardrobeItem(ctx context.Context, request UpdateWardrobeItemRequestObject) (UpdateWardrobeItemResponseObject, error)
+	// GetCurrentWeather Current weather (cached 30 min per ~1 km cell)
+	// (GET /api/v1/weather/current)
+	GetCurrentWeather(ctx context.Context, request GetCurrentWeatherRequestObject) (GetCurrentWeatherResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -4641,6 +4798,32 @@ func (sh *strictHandler) UpdateWardrobeItem(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateWardrobeItemResponseObject); ok {
 		if err := validResponse.VisitUpdateWardrobeItemResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCurrentWeather operation middleware
+func (sh *strictHandler) GetCurrentWeather(w http.ResponseWriter, r *http.Request, params GetCurrentWeatherParams) {
+	var request GetCurrentWeatherRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCurrentWeather(ctx, request.(GetCurrentWeatherRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCurrentWeather")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCurrentWeatherResponseObject); ok {
+		if err := validResponse.VisitGetCurrentWeatherResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

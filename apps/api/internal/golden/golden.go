@@ -642,3 +642,43 @@ func LoadOutfitValidation(t testing.TB) OutfitValidation {
 	}
 	return o
 }
+
+// Weather is testdata/golden/weather.json (apps/web/scripts/golden-weather.ts):
+// what the Next.js Open-Meteo provider makes of complete answers taken at
+// local hour 00, the address it asks, and toFixed(2) on coordinates.
+type Weather struct {
+	GeneratedBy  string `json:"generatedBy"`
+	SourceCommit string `json:"sourceCommit"`
+	Note         string `json:"note"`
+	Answers      []struct {
+		Name    string          `json:"name"`
+		Body    string          `json:"body"`
+		Weather json.RawMessage `json:"weather"`
+	} `json:"answers"`
+	Fixed []struct {
+		Value string `json:"value"`
+		Fixed string `json:"fixed"`
+	} `json:"fixed"`
+	Addresses []struct {
+		Lat       string `json:"lat"`
+		Lon       string `json:"lon"`
+		Origin    string `json:"origin"`
+		Path      string `json:"path"`
+		Latitude  string `json:"latitude"`
+		Longitude string `json:"longitude"`
+		Current   string `json:"current"`
+		Hourly    string `json:"hourly"`
+		Timezone  string `json:"timezone"`
+	} `json:"addresses"`
+}
+
+// LoadWeather reads testdata/golden/weather.json; unknown fields fail.
+func LoadWeather(t testing.TB) Weather {
+	t.Helper()
+	var w Weather
+	load(t, "weather.json", &w)
+	if len(w.Answers) == 0 || len(w.Fixed) == 0 || len(w.Addresses) == 0 {
+		t.Fatal("weather.json: a section is empty")
+	}
+	return w
+}

@@ -16,7 +16,7 @@ import (
 // cutover (B7).
 var notYetImplemented = []string{
 	"analyzeColorProfile", "deleteColorProfile", "deleteOutfit", "generateOutfits",
-	"getColorProfile", "getConversation", "getCurrentWeather", "getOpenApiDocument", "getOutfit",
+	"getColorProfile", "getConversation", "getOpenApiDocument", "getOutfit",
 	"listConversations", "listOutfits", "reportClientErrors",
 	"saveOutfit", "sendOutfitFeedback",
 	"stylistChat", "updateOutfit",

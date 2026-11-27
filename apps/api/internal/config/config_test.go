@@ -340,3 +340,54 @@ func TestPrintingTheConfigNeverShowsASecret(t *testing.T) {
 		t.Errorf("log value lacks the environment: %s", b.String())
 	}
 }
+
+func TestTheWeatherProvider(t *testing.T) {
+	t.Parallel()
+	// The real service unless the mock is named; the mock nowhere it would
+	// be shown to users as their weather.
+	for _, c := range []struct {
+		env, value string
+		want       string // "" = refused
+	}{
+		{"production", "<unset>", config.WeatherOpenMeteo},
+		{"production", "open-meteo", config.WeatherOpenMeteo},
+		{"production", "Open-Meteo", config.WeatherOpenMeteo},
+		{"production", "mock", ""},
+		{"production", "MOCK", ""},
+		{"production", "yandex", ""},
+		{"production", " ", config.WeatherOpenMeteo}, // blank is unset, as for every variable
+		{"staging", "<unset>", config.WeatherOpenMeteo},
+		{"staging", "mock", ""},
+		{"development", "<unset>", config.WeatherOpenMeteo},
+		{"development", "mock", config.WeatherMock},
+		{"development", "Mock", config.WeatherMock},
+		{"development", "open-meteo", config.WeatherOpenMeteo},
+		{"development", "none", ""},
+		{"test", "mock", config.WeatherMock},
+		{"test", "openmeteo", ""},
+	} {
+		changes := map[string]string{"LOOKLY_ENV": c.env, "WEATHER_PROVIDER": c.value}
+		if c.env == "development" || c.env == "test" {
+			changes["AI_ALLOW_MOCK_IN_PRODUCTION"] = "<unset>"
+		}
+		got, err := config.Load(env(with(changes)))
+		switch {
+		case c.want == "" && (err == nil || !strings.Contains(err.Error(), "WEATHER_PROVIDER")):
+			t.Errorf("%s with WEATHER_PROVIDER %q: provider %q, err %v; want a refusal that names the variable", c.env, c.value, got.WeatherProvider, err)
+		case c.want != "" && (err != nil || got.WeatherProvider != c.want):
+			t.Errorf("%s with WEATHER_PROVIDER %q: provider %q, err %v; want %q", c.env, c.value, got.WeatherProvider, err, c.want)
+		}
+	}
+	// The acknowledgement of the mock AI does not let the mock weather in.
+	_, err := config.Load(env(with(map[string]string{"WEATHER_PROVIDER": "mock", "AI_ALLOW_MOCK_IN_PRODUCTION": "1"})))
+	if err == nil || !strings.Contains(err.Error(), "WEATHER_PROVIDER") {
+		t.Errorf("production with the mock weather and the AI acknowledgement: %v", err)
+	}
+	c, err := config.Load(env(with(map[string]string{"LOOKLY_ENV": "development", "WEATHER_PROVIDER": "mock"})))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if text := fmt.Sprintf("%v %+v", c, c.LogValue()); !strings.Contains(text, "WeatherProvider:mock") || !strings.Contains(text, "weatherProvider=mock") {
+		t.Errorf("the weather provider is not in the printed configuration: %s", text)
+	}
+}
