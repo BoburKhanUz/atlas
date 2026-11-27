@@ -157,13 +157,13 @@ const lower = (s: string) => s.charAt(0).toLocaleLowerCase('uz') + s.slice(1)
  * the owner has replaced (docs/ai/catalog-terminology-*.md). Interim: they
  * move into the catalog itself once both clients and the evaluator follow it.
  */
-const APPROVED_COLOR_NAMES: Readonly<Record<string, string>> = {
+export const APPROVED_COLOR_NAMES: Readonly<Record<string, string>> = {
   navy: 'To‘q ko‘k',
   teal: 'Ko‘k-yashil',
   rust: 'Zang rang',
   brown: 'Jigarrang',
 }
-const APPROVED_SUBCATEGORY_NAMES: Readonly<Record<string, string>> = {
+export const APPROVED_SUBCATEGORY_NAMES: Readonly<Record<string, string>> = {
   knit: 'Sviter',
   loafers: 'Lofer tufli',
   windbreaker: 'Shamol kurtkasi',
@@ -174,7 +174,7 @@ const APPROVED_SUBCATEGORY_NAMES: Readonly<Record<string, string>> = {
   sandals: 'Sandal',
   clutch: 'Klatch',
 }
-const APPROVED_CATEGORY_NAMES: Readonly<Record<string, string>> = {
+export const APPROVED_CATEGORY_NAMES: Readonly<Record<string, string>> = {
   shirt: 'Ko‘ylak',
   dress: 'Ko‘ylak (ayol)',
 }

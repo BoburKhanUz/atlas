@@ -1,0 +1,495 @@
+{
+ "version": "outfit-engine-v2",
+ "categorySlot": {
+  "shirt": "top",
+  "pants": "bottom",
+  "dress": "dress",
+  "outerwear": "outerwear",
+  "shoes": "footwear",
+  "bag": "accessory",
+  "accessory": "accessory"
+ },
+ "temperatureBands": [
+  {
+   "band": "very_cold",
+   "from": null
+  },
+  {
+   "band": "cold",
+   "from": 3
+  },
+  {
+   "band": "mild",
+   "from": 12
+  },
+  {
+   "band": "warm",
+   "from": 19
+  },
+  {
+   "band": "hot",
+   "from": 27
+  }
+ ],
+ "targetWarmth": {
+  "very_cold": {
+   "min": 7,
+   "max": 99
+  },
+  "cold": {
+   "min": 5,
+   "max": 8
+  },
+  "mild": {
+   "min": 3,
+   "max": 6
+  },
+  "warm": {
+   "min": 2,
+   "max": 4
+  },
+  "hot": {
+   "min": 0,
+   "max": 3
+  }
+ },
+ "rainLikelyPct": 60,
+ "rainPossiblePct": 30,
+ "windyKmh": 30,
+ "strongWindKmh": 50,
+ "highUv": 6,
+ "subcategoryWarmth": {
+  "coat": 3,
+  "jacket": 2,
+  "blazer": 1,
+  "windbreaker": 1,
+  "knit": 2,
+  "oxford_shirt": 1,
+  "blouse": 1,
+  "polo": 1,
+  "tshirt": 0,
+  "jeans": 1,
+  "chinos": 1,
+  "trousers": 1,
+  "shorts": 0,
+  "casual_dress": 1,
+  "evening_dress": 1,
+  "midi_dress": 1,
+  "boots": 2,
+  "sneakers": 1,
+  "loafers": 1,
+  "oxford_shoes": 1,
+  "sandals": 0
+ },
+ "categoryWarmth": {
+  "shirt": 1,
+  "pants": 1,
+  "dress": 1,
+  "outerwear": 2,
+  "shoes": 1
+ },
+ "materialWarmth": {
+  "wool": 1,
+  "cashmere": 1,
+  "knit": 1,
+  "linen": -1,
+  "silk": -1
+ },
+ "sleeveWarmth": {
+  "long": 0,
+  "three_quarter": 0,
+  "short": -1,
+  "sleeveless": -1
+ },
+ "protectiveOuterwear": [
+  "coat",
+  "jacket",
+  "windbreaker"
+ ],
+ "wetFootwear": [
+  "boots",
+  "sneakers"
+ ],
+ "snowFootwear": [
+  "boots"
+ ],
+ "wetSensitiveMaterials": [
+  "suede",
+  "silk",
+  "linen"
+ ],
+ "formalityOrder": [
+  "casual",
+  "smart_casual",
+  "formal",
+  "black_tie"
+ ],
+ "occasionFormality": {
+  "work": [
+   "smart_casual",
+   "formal"
+  ],
+  "wedding": [
+   "formal",
+   "black_tie",
+   "smart_casual"
+  ],
+  "date": [
+   "smart_casual",
+   "casual",
+   "formal"
+  ],
+  "travel": [
+   "casual",
+   "smart_casual"
+  ],
+  "casual": [
+   "casual",
+   "smart_casual"
+  ],
+  "other": [
+   "casual",
+   "smart_casual",
+   "formal"
+  ]
+ },
+ "dressyOccasions": [
+  "work",
+  "wedding"
+ ],
+ "offOccasionStyles": {
+  "work": [
+   "sporty",
+   "streetwear"
+  ],
+  "wedding": [
+   "sporty",
+   "streetwear"
+  ]
+ },
+ "styleFormality": {
+  "formal": "formal",
+  "classic": "smart_casual",
+  "preppy": "smart_casual",
+  "minimal": "smart_casual",
+  "smart_casual": "smart_casual",
+  "casual": "casual",
+  "streetwear": "casual",
+  "sporty": "casual",
+  "bohemian": "casual"
+ },
+ "subcategoryFormality": {
+  "oxford_shoes": "formal",
+  "loafers": "smart_casual",
+  "boots": "smart_casual",
+  "sneakers": "casual",
+  "sandals": "casual",
+  "blazer": "formal",
+  "evening_dress": "formal",
+  "tshirt": "casual",
+  "shorts": "casual"
+ },
+ "styleFamilies": [
+  [
+   "casual",
+   "sporty",
+   "streetwear"
+  ],
+  [
+   "smart_casual",
+   "minimal",
+   "classic",
+   "preppy"
+  ],
+  [
+   "formal",
+   "classic",
+   "minimal"
+  ],
+  [
+   "bohemian",
+   "casual"
+  ],
+  [
+   "casual",
+   "smart_casual"
+  ]
+ ],
+ "weights": {
+  "occasion": 0.22,
+  "weather": 0.22,
+  "color": 0.16,
+  "profile": 0.08,
+  "style": 0.1,
+  "layering": 0.1,
+  "preference": 0.08,
+  "feedback": 0.04
+ },
+ "slotWeight": {
+  "top": 1,
+  "dress": 1.6,
+  "bottom": 1,
+  "outerwear": 0.9,
+  "footwear": 0.6,
+  "accessory": 0
+ },
+ "slotArea": {
+  "top": 0.3,
+  "bottom": 0.3,
+  "dress": 0.6,
+  "outerwear": 0.35,
+  "footwear": 0.1,
+  "accessory": 0.05
+ },
+ "profileSlotWeight": {
+  "top": 1,
+  "dress": 1,
+  "outerwear": 0.8,
+  "bottom": 0.3,
+  "footwear": 0,
+  "accessory": 0
+ },
+ "profileMinConfidence": 0.25,
+ "legacyProfileConfidence": 0.3,
+ "undertoneMinConfidence": 0.4,
+ "slotLimits": {
+  "top": 12,
+  "bottom": 10,
+  "dress": 8,
+  "outerwear": 4,
+  "footwear": 6
+ },
+ "maxCandidates": 5000,
+ "poolSize": 9,
+ "maxItemRepeat": 2,
+ "maxTopN": 5,
+ "accessoryMinScore": 65,
+ "reasonLabels": [
+  {
+   "code": "weather",
+   "label": "Ob-havoga mos"
+  },
+  {
+   "code": "warm_layers",
+   "label": "Issiq qatlamli"
+  },
+  {
+   "code": "rain_ready",
+   "label": "Yomg‘irga tayyor"
+  },
+  {
+   "code": "snow_ready",
+   "label": "Qorga mos poyabzal"
+  },
+  {
+   "code": "wind_ready",
+   "label": "Shamoldan himoya"
+  },
+  {
+   "code": "occasion",
+   "label": "Tadbirga mos"
+  },
+  {
+   "code": "color_harmony",
+   "label": "Ranglar uyg‘un"
+  },
+  {
+   "code": "neutral_balance",
+   "label": "Neytral asos"
+  },
+  {
+   "code": "color_profile",
+   "label": "Rang profilingizga mos"
+  },
+  {
+   "code": "style_match",
+   "label": "Uslub bir xil"
+  },
+  {
+   "code": "preference",
+   "label": "Didingizga mos"
+  }
+ ],
+ "rolesForSlot": {
+  "top": [
+   "top"
+  ],
+  "bottom": [
+   "bottom"
+  ],
+  "dress": [
+   "top",
+   "dress"
+  ],
+  "outerwear": [
+   "top",
+   "outerwear"
+  ],
+  "footwear": [
+   "shoes",
+   "footwear"
+  ],
+  "accessory": [
+   "accessory"
+  ]
+ },
+ "saveRoles": [
+  "top",
+  "bottom",
+  "shoes",
+  "accessory",
+  "dress",
+  "outerwear",
+  "footwear"
+ ],
+ "seasonalPalettes": {
+  "spring": {
+   "recommended": [
+    "cream",
+    "light_blue",
+    "khaki",
+    "mustard",
+    "tan",
+    "beige",
+    "olive",
+    "orange"
+   ],
+   "neutral": [
+    "cream",
+    "beige",
+    "tan",
+    "ivory"
+   ],
+   "caution": [
+    "black",
+    "navy",
+    "burgundy",
+    "purple"
+   ]
+  },
+  "summer": {
+   "recommended": [
+    "white",
+    "light_blue",
+    "pink",
+    "gray",
+    "navy",
+    "cream",
+    "ivory",
+    "blue"
+   ],
+   "neutral": [
+    "gray",
+    "cream",
+    "ivory",
+    "white"
+   ],
+   "caution": [
+    "orange",
+    "mustard",
+    "rust",
+    "olive"
+   ]
+  },
+  "autumn": {
+   "recommended": [
+    "beige",
+    "brown",
+    "olive",
+    "mustard",
+    "rust",
+    "burgundy",
+    "tan",
+    "khaki"
+   ],
+   "neutral": [
+    "beige",
+    "tan",
+    "brown",
+    "cream"
+   ],
+   "caution": [
+    "white",
+    "light_blue",
+    "pink",
+    "gray"
+   ]
+  },
+  "winter": {
+   "recommended": [
+    "white",
+    "black",
+    "navy",
+    "burgundy",
+    "red",
+    "teal",
+    "gray",
+    "blue"
+   ],
+   "neutral": [
+    "black",
+    "gray",
+    "navy",
+    "white"
+   ],
+   "caution": [
+    "beige",
+    "cream",
+    "tan",
+    "mustard"
+   ]
+  }
+ },
+ "bandLabel": {
+  "very_cold": "juda sovuq",
+  "cold": "sovuq",
+  "mild": "salqin",
+  "warm": "iliq",
+  "hot": "issiq"
+ },
+ "occasionPhrase": {
+  "work": "ishga",
+  "wedding": "to‘yga",
+  "date": "uchrashuvga",
+  "travel": "sayohatga",
+  "casual": "kundalik kiyinishga",
+  "other": null
+ },
+ "approvedColorNames": {
+  "navy": "To‘q ko‘k",
+  "teal": "Ko‘k-yashil",
+  "rust": "Zang rang",
+  "brown": "Jigarrang"
+ },
+ "approvedSubcategoryNames": {
+  "knit": "Sviter",
+  "loafers": "Lofer tufli",
+  "windbreaker": "Shamol kurtkasi",
+  "crossbody": "Ko‘ndalang tasmali sumka",
+  "belt": "Kamar",
+  "oxford_shoes": "Oksford tufli",
+  "trousers": "Klassik shim",
+  "sandals": "Sandal",
+  "clutch": "Klatch"
+ },
+ "approvedCategoryNames": {
+  "shirt": "Ko‘ylak",
+  "dress": "Ko‘ylak (ayol)"
+ },
+ "problemMessages": {
+  "empty_wardrobe": "Garderobingiz bo‘sh. Avval kiyim qo‘shing — keyin sizga mos obrazlarni tavsiya qilamiz.",
+  "no_footwear": "Outfit uchun oyoq kiyim kerak. Garderobingizga kamida bitta oyoq kiyim qo‘shing.",
+  "no_main_pieces": "Outfit tuzish uchun yetarli kiyim yo‘q: ustki va pastki kiyim (yoki ko‘ylak-ayol) hamda oyoq kiyim qo‘shing.",
+  "nothing_suitable": "Garderobingizdagi kiyimlar bugungi ob-havo yoki tadbirga mos kelmadi. Boshqa kiyimlar qo‘shib ko‘ring."
+ },
+ "compositionMessages": {
+  "duplicate_item": "Bitta kiyim outfitda ikki marta bo‘lishi mumkin emas",
+  "unknown_category": "Kiyim turi outfit uchun mos emas",
+  "missing_footwear": "Outfitda oyoq kiyim bo‘lishi kerak",
+  "multiple_footwear": "Outfitda bitta oyoq kiyim bo‘lishi kerak",
+  "missing_main": "Outfitda ustki va pastki kiyim yoki ko‘ylak (ayol) bo‘lishi kerak",
+  "dress_with_top_or_bottom": "Ko‘ylak (ayol) boshqa ustki yoki pastki kiyim bilan birga saqlanmaydi",
+  "multiple_primary": "Har bir asosiy qismdan (ustki, pastki, ko‘ylak, ustki kiyim) bittadan bo‘lishi kerak",
+  "too_many_accessories": "Aksessuarlar juda ko‘p"
+ }
+}

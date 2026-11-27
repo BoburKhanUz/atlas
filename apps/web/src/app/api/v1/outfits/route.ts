@@ -5,7 +5,8 @@ import { requireAuth, unauthorized } from '@/lib/api-helpers'
 import { ApiError, withApi, parseJson, validate } from '@/server/http'
 import { OutfitListQuery, OutfitSaveRequest } from '@/server/schemas/requests'
 import { CATEGORY_SLOT } from '@/lib/ai/outfit-config'
-import { ROLES_FOR_SLOT, SAVE_ROLES, validateComposition, type CompositionError } from '@/lib/ai/outfit-engine'
+import { ROLES_FOR_SLOT, SAVE_ROLES, validateComposition } from '@/lib/ai/outfit-engine'
+import { COMPOSITION_MESSAGES } from '@/lib/outfits/messages'
 
 export const runtime = 'nodejs'
 
@@ -73,17 +74,6 @@ export const GET = withApi(async (req) => {
 
   return NextResponse.json({ outfits: out })
 })
-
-const COMPOSITION_MESSAGES: Record<CompositionError, string> = {
-  duplicate_item: 'Bitta kiyim outfitda ikki marta bo‘lishi mumkin emas',
-  unknown_category: 'Kiyim turi outfit uchun mos emas',
-  missing_footwear: 'Outfitda oyoq kiyim bo‘lishi kerak',
-  multiple_footwear: 'Outfitda bitta oyoq kiyim bo‘lishi kerak',
-  missing_main: 'Outfitda ustki va pastki kiyim yoki ko‘ylak (ayol) bo‘lishi kerak',
-  dress_with_top_or_bottom: 'Ko‘ylak (ayol) boshqa ustki yoki pastki kiyim bilan birga saqlanmaydi',
-  multiple_primary: 'Har bir asosiy qismdan (ustki, pastki, ko‘ylak, ustki kiyim) bittadan bo‘lishi kerak',
-  too_many_accessories: 'Aksessuarlar juda ko‘p',
-}
 
 // POST /api/v1/outfits — persist a generated outfit (after user clicked Save
 // or after generation). Spec section 12, 17. Phase 4.4: the items must form a

@@ -5,7 +5,8 @@ import { withApi, parseJson } from '@/server/http'
 import { log } from '@/server/log'
 import { OutfitGenerateRequest } from '@/server/schemas/requests'
 import { getWeatherProvider } from '@/lib/weather/provider'
-import { generateOutfitResult, outfitKey, slotOf, type GenerateProblem, type WardrobeItemSummary, type WeatherSnapshot } from '@/lib/ai/outfit-engine'
+import { generateOutfitResult, outfitKey, slotOf, type WardrobeItemSummary, type WeatherSnapshot } from '@/lib/ai/outfit-engine'
+import { PROBLEM_MESSAGES } from '@/lib/outfits/messages'
 import { rerankAndExplain } from '@/lib/ai/outfit-intelligence'
 import { presentPrimaryImage } from '@/lib/storage/media'
 
@@ -13,14 +14,6 @@ export const runtime = 'nodejs'
 export const maxDuration = 60
 
 const FEEDBACK_DAYS = 30
-
-/** Why no outfit could be made, for the user. */
-const PROBLEM_MESSAGES: Record<GenerateProblem, string> = {
-  empty_wardrobe: 'Garderobingiz bo‘sh. Avval kiyim qo‘shing — keyin sizga mos obrazlarni tavsiya qilamiz.',
-  no_footwear: 'Outfit uchun oyoq kiyim kerak. Garderobingizga kamida bitta oyoq kiyim qo‘shing.',
-  no_main_pieces: 'Outfit tuzish uchun yetarli kiyim yo‘q: ustki va pastki kiyim (yoki ko‘ylak-ayol) hamda oyoq kiyim qo‘shing.',
-  nothing_suitable: 'Garderobingizdagi kiyimlar bugungi ob-havo yoki tadbirga mos kelmadi. Boshqa kiyimlar qo‘shib ko‘ring.',
-}
 
 const json = <T>(raw: string, fallback: T): T => {
   try {
