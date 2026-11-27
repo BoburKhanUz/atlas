@@ -179,6 +179,22 @@ func TestWhatTheEngineIsGivenOfTheDatabase(t *testing.T) {
 		t.Errorf("a new user:\n got %+v\nwant %+v", fresh, empty)
 	}
 
+	// Broken lists of the preferences and of the colour profile are logged by row and column too.
+	logs.Reset()
+	exec(`UPDATE "UserPreferences" SET "favoriteColors" = 'x' WHERE "userId" = 'u-me'`)
+	exec(`UPDATE "ColorProfile" SET "cautionColors" = '{}' WHERE "id" = 'cp-me'`)
+	if broken, err := s.load(ctx, store.New(pool), "u-me"); err != nil || len(broken.profile.FavoriteColors) != 0 || len(broken.colors.CautionColors) != 0 {
+		t.Errorf("broken lists: %+v, %v", broken, err)
+	}
+	for _, line := range []string{`"preferences":"pr-me","column":"favoriteColors"`, `"colorProfile":"cp-me","column":"cautionColors"`, `"item":"w-odd","column":"season"`} {
+		if !strings.Contains(logs.String(), line) {
+			t.Errorf("the log lacks %s: %s", line, logs.String())
+		}
+	}
+	if strings.Count(logs.String(), "\n") != 3 {
+		t.Errorf("the log: %s", logs.String())
+	}
+
 	// A colour profile of another user that the profile points to is not used.
 	exec(`UPDATE "ColorProfile" SET "userId" = 'u-other' WHERE "id" = 'cp-me'`)
 	if again, err := s.load(ctx, store.New(pool), "u-me"); err != nil || again.colors != nil {

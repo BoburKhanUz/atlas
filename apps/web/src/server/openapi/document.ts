@@ -70,7 +70,7 @@ function nameOf(schema: ZodType, named: Record<string, ZodType>): string {
 
 /** Errors every operation of a kind can return, on top of its specific ones. */
 export function errorCodesFor(op: Operation): ErrorCode[] {
-  const codes = new Set<ErrorCode>(op.errors)
+  const codes = new Set<ErrorCode>([...op.errors, ...(op.goOnlyErrors ?? [])])
   codes.add('INTERNAL')
   if (op.auth === 'required') codes.add('UNAUTHORIZED')
   if (op.auth === 'required' && !op.consentExempt) codes.add('CONSENT_REQUIRED')

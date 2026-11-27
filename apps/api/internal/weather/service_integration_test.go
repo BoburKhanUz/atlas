@@ -467,9 +467,12 @@ func TestAPanicInAQuestionIsItsError(t *testing.T) {
 func TestTheProviderIsAskedOnlySoOften(t *testing.T) {
 	t.Parallel()
 	w := newWorld(t)
-	// The numbers the owner was told (docs/plan/B5.md).
+	// The numbers the owner was told (docs/plan/B5.md), and the time limits.
 	if weather.AskPerUser.Limit != 30 || weather.AskShared.Limit != 300 || weather.AskPerUser.Window != time.Hour || weather.AskShared.Window != time.Hour {
 		t.Fatalf("the limits are %+v and %+v", weather.AskPerUser, weather.AskShared)
+	}
+	if weather.OpenMeteoTimeout != 5*time.Second || weather.DefaultAskBudget != 10*time.Second {
+		t.Fatalf("the time limits are %v and %v", weather.OpenMeteoTimeout, weather.DefaultAskBudget)
 	}
 	ask := func(user string, cell int) (weather.Report, error) {
 		return w.service.Current(context.Background(), user, float64(cell)/100, 10)
@@ -521,5 +524,73 @@ func TestTheProviderIsAskedOnlySoOften(t *testing.T) {
 	// The cache still answers everyone (the cell the walker asked for this hour).
 	if got, err := ask("u-late", 5000); err != nil || !got.Cached {
 		t.Fatalf("a cached cell when the provider may not be asked: %+v, %v", got, err)
+	}
+}
+
+// What is counted is the questions to the provider, not the requests: many
+// requests at once for one new cell cost their user one question, and a
+// request that waited for another user's refused question asks its own.
+func TestOnlyQuestionsToTheProviderAreCounted(t *testing.T) {
+	t.Parallel()
+	w := newWorld(t)
+	arrived, release := make(chan struct{}, 64), make(chan struct{})
+	w.provider.set(func(p *fakeProvider) { p.arrived, p.release = arrived, release })
+	const callers = 40 // more than a user's hour allows
+	failures := make(chan error, callers)
+	for range callers {
+		go func() {
+			_, err := w.service.Current(context.Background(), "u-burst", 41.31, 69.24)
+			failures <- err
+		}()
+	}
+	<-arrived
+	close(release)
+	for range callers {
+		if err := <-failures; err != nil {
+			t.Fatalf("a request of the burst: %v", err)
+		}
+	}
+	w.provider.set(func(p *fakeProvider) { p.arrived, p.release = nil, nil })
+	// The burst cost one question: 29 new cells are left to the user, not none.
+	for cell := 1; cell < weather.AskPerUser.Limit; cell++ {
+		if _, err := w.service.Current(context.Background(), "u-burst", float64(cell), 10); err != nil {
+			t.Fatalf("new cell %d after the burst: %v", cell, err)
+		}
+	}
+	var limited *weather.LimitedError
+	if _, err := w.service.Current(context.Background(), "u-burst", 50, 10); !errors.As(err, &limited) {
+		t.Fatalf("the 31st question: %v", err)
+	}
+	if asked := w.provider.questions(); len(asked) != weather.AskPerUser.Limit {
+		t.Fatalf("asked %d times", len(asked))
+	}
+
+	// The user who may not ask starts a question for a new cell and is
+	// refused; another user who asks for the same cell meanwhile is answered.
+	answers := make(chan error, 2)
+	for _, user := range []string{"u-burst", "u-fresh"} {
+		go func() {
+			_, err := w.service.Current(context.Background(), user, 60, 10)
+			answers <- err
+		}()
+	}
+	refused, answered := 0, 0
+	for range 2 {
+		switch err := <-answers; {
+		case err == nil:
+			answered++
+		case errors.As(err, &limited):
+			refused++
+		default:
+			t.Fatal(err)
+		}
+	}
+	// Whoever came first: the fresh user is answered; the other is refused,
+	// or found the fresh user's answer in the cache.
+	if answered < 1 || answered+refused != 2 {
+		t.Fatalf("%d answered, %d refused", answered, refused)
+	}
+	if got, err := w.service.Current(context.Background(), "u-fresh", 60, 10); err != nil || !got.Cached {
+		t.Fatalf("the fresh user's cell: %+v, %v", got, err)
 	}
 }

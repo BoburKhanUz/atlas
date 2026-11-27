@@ -44,6 +44,9 @@ func wearer(t *testing.T, o apiOptions) (*api, mobileSession, string) {
 	t.Helper()
 	a := newAPI(t, o)
 	dbtest.SetClock(t, a.pool, outfitT0)
+	// Sessions are issued on the database's clock; the gate checks their
+	// tokens against the same moment, whenever the test runs.
+	a.gate.Now = func() time.Time { return outfitT0 }
 	m := a.mobileRegister(nil)
 	user := a.userID(m.email)
 	for _, row := range closet() {

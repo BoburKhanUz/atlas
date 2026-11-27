@@ -36,7 +36,12 @@ var (
 
 // LimitedError: the provider may not be asked again yet, for this user or
 // for anyone; RetryAfter says how long.
-type LimitedError struct{ RetryAfter time.Duration }
+type LimitedError struct {
+	RetryAfter time.Duration
+	// user is whose question was refused: a request that waited for
+	// another user's question asks its own.
+	user string
+}
 
 func (e *LimitedError) Error() string { return "weather: too many questions to the provider" }
 
@@ -83,9 +88,10 @@ func New(pool *pgxpool.Pool, provider Provider, limiter Limiter, log *slog.Logge
 // Current is the weather at a place for a user: the cell's cached weather
 // while it is fresh, else the provider's, which is then cached. The
 // provider gets the cell, never the coordinates as they came. A question
-// to the provider is counted against the user and against everyone
-// (*LimitedError when there have been too many). A provider's failure is
-// the error; nothing is cached of it.
+// to the provider is counted against the user who caused it and against
+// everyone (*LimitedError when there have been too many); requests that
+// wait for a question under way, and what the cache answers, cost nothing.
+// A provider's failure is the error; nothing is cached of it.
 func (s *Service) Current(ctx context.Context, userID string, lat, lon float64) (Report, error) {
 	cell := CellOf(lat, lon)
 	if current, ok, err := s.cached(ctx, cell); err != nil {
@@ -93,34 +99,33 @@ func (s *Service) Current(ctx context.Context, userID string, lat, lon float64) 
 	} else if ok {
 		return Report{Current: current, Cached: true}, nil
 	}
-	allowed, err := s.limiter.Take(ctx, AskPerUser.For(userID), AskShared.For("everyone"))
-	if err != nil {
-		return Report{}, fmt.Errorf("weather: count the question: %w", err)
-	}
-	if !allowed.Allowed {
-		return Report{}, &LimitedError{RetryAfter: allowed.RetryAfter}
-	}
-	asked := s.asking.DoChan(cell.Key(), func() (report any, err error) {
-		// The question outlives the request that started it: others wait
-		// for its answer. It runs on a goroutine of its own, where a panic
-		// would end the process: it becomes this question's error.
-		defer func() {
-			if r := recover(); r != nil {
-				report, err = nil, fmt.Errorf("weather: the question panicked: %v", r)
+	for {
+		asked := s.asking.DoChan(cell.Key(), func() (report any, err error) {
+			// The question outlives the request that started it: others
+			// wait for its answer. It runs on a goroutine of its own, where
+			// a panic would end the process: it becomes this question's error.
+			defer func() {
+				if r := recover(); r != nil {
+					report, err = nil, fmt.Errorf("weather: the question panicked: %v", r)
+				}
+			}()
+			ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), s.askBudget)
+			defer cancel()
+			return s.ask(ctx, userID, cell)
+		})
+		select {
+		case answer := <-asked:
+			var limited *LimitedError
+			if errors.As(answer.Err, &limited) && limited.user != userID {
+				continue // refused for the user who asked first; this one has their own count
 			}
-		}()
-		ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), s.askBudget)
-		defer cancel()
-		return s.ask(ctx, cell)
-	})
-	select {
-	case answer := <-asked:
-		if answer.Err != nil {
-			return Report{}, answer.Err
+			if answer.Err != nil {
+				return Report{}, answer.Err
+			}
+			return answer.Val.(Report), nil
+		case <-ctx.Done():
+			return Report{}, fmt.Errorf("weather: %w", ctx.Err())
 		}
-		return answer.Val.(Report), nil
-	case <-ctx.Done():
-		return Report{}, fmt.Errorf("weather: %w", ctx.Err())
 	}
 }
 
@@ -143,14 +148,21 @@ func (s *Service) cached(ctx context.Context, cell Cell) (Current, bool, error) 
 	return current, true, nil
 }
 
-// ask asks the provider and caches its answer.
-func (s *Service) ask(ctx context.Context, cell Cell) (Report, error) {
+// ask asks the provider for the user and caches its answer.
+func (s *Service) ask(ctx context.Context, userID string, cell Cell) (Report, error) {
 	// A question that ended between this request's look at the cache and
 	// its turn has stored the answer.
 	if current, ok, err := s.cached(ctx, cell); err != nil {
 		return Report{}, err
 	} else if ok {
 		return Report{Current: current, Cached: true}, nil
+	}
+	allowed, err := s.limiter.Take(ctx, AskPerUser.For(userID), AskShared.For("everyone"))
+	if err != nil {
+		return Report{}, fmt.Errorf("weather: count the question: %w", err)
+	}
+	if !allowed.Allowed {
+		return Report{}, &LimitedError{RetryAfter: allowed.RetryAfter, user: userID}
 	}
 	current, err := s.provider.Current(ctx, cell)
 	if err != nil {
