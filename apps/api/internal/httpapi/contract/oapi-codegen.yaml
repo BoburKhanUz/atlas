@@ -44,3 +44,9 @@ output-options:
     - createWardrobeItem
     - getCurrentWeather
     - generateOutfits
+    - listOutfits
+    - saveOutfit
+    - getOutfit
+    - updateOutfit
+    - deleteOutfit
+    - sendOutfitFeedback

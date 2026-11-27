@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -86,8 +87,8 @@ type routeRule struct {
 	timeout   time.Duration
 	// request judges the request's headers before anything of it is read.
 	request func(*http.Request) *apierr.Error
-	// itemID: the path ends in an id, judged (ItemID) before the query and
-	// the body, as the Next.js routes do.
+	// itemID: the path holds an id ({id} in the route's pattern), judged
+	// (ItemID) before the query and the body, as the Next.js routes do.
 	itemID bool
 	// query judges the query string and rewrites it in canonical form
 	// before the generated decoder reads it.
@@ -130,6 +131,12 @@ var routes = map[string]routeRule{
 	"DELETE /api/v1/wardrobe/items/{id}": {itemID: true},
 	"GET /api/v1/weather/current":        {query: WeatherQuery},
 	"POST /api/v1/outfits/generate":      {body: OutfitGenerateBody},
+	"GET /api/v1/outfits":                {query: OutfitListQuery},
+	"POST /api/v1/outfits":               {body: OutfitSaveBody},
+	"GET /api/v1/outfits/{id}":           {itemID: true},
+	"PATCH /api/v1/outfits/{id}":         {itemID: true, body: OutfitPatchBody},
+	"DELETE /api/v1/outfits/{id}":        {itemID: true},
+	"POST /api/v1/outfits/{id}/feedback": {itemID: true, body: OutfitFeedbackBody},
 }
 
 type identityKey struct{}
@@ -206,10 +213,7 @@ func (g *Gate) middleware(next http.Handler) http.Handler {
 			}
 		}
 		if rule.itemID {
-			// The id is the last path segment. The router has matched it as
-			// one segment, so the escaped path holds it whole.
-			escaped := r.URL.EscapedPath()
-			raw, err := url.PathUnescape(escaped[strings.LastIndexByte(escaped, '/')+1:])
+			raw, err := url.PathUnescape(idSegment(info.route, r.URL.EscapedPath()))
 			if err != nil {
 				WriteError(w, r, apierr.New(apierr.BadRequest))
 				return
@@ -255,6 +259,19 @@ func (g *Gate) middleware(next http.Handler) http.Handler {
 		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r.WithContext(context.WithValue(ctx, requestKey{}, r)))
 	})
+}
+
+// idSegment is the segment of the escaped path that the route's pattern
+// names {id}. The router has matched the path to the pattern segment by
+// segment, so the escaped path holds the id whole.
+func idSegment(route, escapedPath string) string {
+	pattern := strings.Split(route[strings.IndexByte(route, ' ')+1:], "/")
+	path := strings.Split(escapedPath, "/")
+	at := slices.Index(pattern, "{id}")
+	if at < 0 || len(path) != len(pattern) {
+		return "" // no id where the rule says there is one: refused as an empty id
+	}
+	return path[at]
 }
 
 // authenticate finds the caller: the token must verify, name a session, and

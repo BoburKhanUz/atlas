@@ -182,13 +182,37 @@ func (e LegalDocumentId) Valid() bool {
 
 // Defines values for OkResponseOk.
 const (
-	True OkResponseOk = true
+	OkResponseOkTrue OkResponseOk = true
 )
 
 // Valid indicates whether the value is a known member of the OkResponseOk enum.
 func (e OkResponseOk) Valid() bool {
 	switch e {
-	case True:
+	case OkResponseOkTrue:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for OutfitFeedbackRequestFeedback.
+const (
+	Disliked OutfitFeedbackRequestFeedback = "disliked"
+	Liked    OutfitFeedbackRequestFeedback = "liked"
+	Rejected OutfitFeedbackRequestFeedback = "rejected"
+	Saved    OutfitFeedbackRequestFeedback = "saved"
+)
+
+// Valid indicates whether the value is a known member of the OutfitFeedbackRequestFeedback enum.
+func (e OutfitFeedbackRequestFeedback) Valid() bool {
+	switch e {
+	case Disliked:
+		return true
+	case Liked:
+		return true
+	case Rejected:
+		return true
+	case Saved:
 		return true
 	default:
 		return false
@@ -270,6 +294,36 @@ func (e OutfitGenerateResponseOutfitsItemsLayeringRole) Valid() bool {
 	case OutfitGenerateResponseOutfitsItemsLayeringRoleOuterwear:
 		return true
 	case OutfitGenerateResponseOutfitsItemsLayeringRoleTop:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for OutfitSaveRequestOccasion.
+const (
+	OutfitSaveRequestOccasionCasual  OutfitSaveRequestOccasion = "casual"
+	OutfitSaveRequestOccasionDate    OutfitSaveRequestOccasion = "date"
+	OutfitSaveRequestOccasionOther   OutfitSaveRequestOccasion = "other"
+	OutfitSaveRequestOccasionTravel  OutfitSaveRequestOccasion = "travel"
+	OutfitSaveRequestOccasionWedding OutfitSaveRequestOccasion = "wedding"
+	OutfitSaveRequestOccasionWork    OutfitSaveRequestOccasion = "work"
+)
+
+// Valid indicates whether the value is a known member of the OutfitSaveRequestOccasion enum.
+func (e OutfitSaveRequestOccasion) Valid() bool {
+	switch e {
+	case OutfitSaveRequestOccasionCasual:
+		return true
+	case OutfitSaveRequestOccasionDate:
+		return true
+	case OutfitSaveRequestOccasionOther:
+		return true
+	case OutfitSaveRequestOccasionTravel:
+		return true
+	case OutfitSaveRequestOccasionWedding:
+		return true
+	case OutfitSaveRequestOccasionWork:
 		return true
 	default:
 		return false
@@ -1101,6 +1155,30 @@ func (e RegisterParamsXAtlasClient) Valid() bool {
 	}
 }
 
+// Defines values for ListOutfitsParamsSaved.
+const (
+	ListOutfitsParamsSavedFalse ListOutfitsParamsSaved = "false"
+	ListOutfitsParamsSavedN0    ListOutfitsParamsSaved = "0"
+	ListOutfitsParamsSavedN1    ListOutfitsParamsSaved = "1"
+	ListOutfitsParamsSavedTrue  ListOutfitsParamsSaved = "true"
+)
+
+// Valid indicates whether the value is a known member of the ListOutfitsParamsSaved enum.
+func (e ListOutfitsParamsSaved) Valid() bool {
+	switch e {
+	case ListOutfitsParamsSavedFalse:
+		return true
+	case ListOutfitsParamsSavedN0:
+		return true
+	case ListOutfitsParamsSavedN1:
+		return true
+	case ListOutfitsParamsSavedTrue:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ListWardrobeItemsParamsCategory.
 const (
 	ListWardrobeItemsParamsCategoryAccessory ListWardrobeItemsParamsCategory = "accessory"
@@ -1312,6 +1390,67 @@ type OkResponse struct {
 // OkResponseOk defines model for OkResponse.Ok.
 type OkResponseOk bool
 
+// OutfitDetail defines model for OutfitDetail.
+type OutfitDetail struct {
+	// CreatedAt ISO 8601, UTC
+	CreatedAt   time.Time                 `json:"createdAt"`
+	Explanation nullable.Nullable[string] `json:"explanation"`
+	Id          string                    `json:"id"`
+	IsSaved     bool                      `json:"isSaved"`
+	Items       []OutfitDetailItem        `json:"items"`
+	Name        nullable.Nullable[string] `json:"name"`
+	Occasion    nullable.Nullable[string] `json:"occasion"`
+	Reasons     []string                  `json:"reasons"`
+	Score       nullable.Nullable[int]    `json:"score"`
+
+	// UpdatedAt ISO 8601, UTC
+	UpdatedAt       time.Time              `json:"updatedAt"`
+	WeatherSnapshot map[string]interface{} `json:"weatherSnapshot"`
+}
+
+// OutfitDetailItem defines model for OutfitDetailItem.
+type OutfitDetailItem struct {
+	Id   string `json:"id"`
+	Item struct {
+		Category    string                    `json:"category"`
+		Colors      []string                  `json:"colors"`
+		Id          string                    `json:"id"`
+		Images      []ImageObject             `json:"images"`
+		Material    nullable.Nullable[string] `json:"material"`
+		Season      []string                  `json:"season"`
+		Style       nullable.Nullable[string] `json:"style"`
+		Subcategory nullable.Nullable[string] `json:"subcategory"`
+	} `json:"item"`
+	Role           nullable.Nullable[string] `json:"role"`
+	WardrobeItemId string                    `json:"wardrobeItemId"`
+}
+
+// OutfitDetailResponse defines model for OutfitDetailResponse.
+type OutfitDetailResponse struct {
+	Outfit OutfitDetail `json:"outfit"`
+}
+
+// OutfitFeedbackRequest defines model for OutfitFeedbackRequest.
+type OutfitFeedbackRequest struct {
+	Feedback OutfitFeedbackRequestFeedback `json:"feedback"`
+	Note     *string                       `json:"note,omitempty"`
+}
+
+// OutfitFeedbackRequestFeedback defines model for OutfitFeedbackRequest.Feedback.
+type OutfitFeedbackRequestFeedback string
+
+// OutfitFeedbackResponse defines model for OutfitFeedbackResponse.
+type OutfitFeedbackResponse struct {
+	Feedback struct {
+		// CreatedAt ISO 8601, UTC
+		CreatedAt time.Time                 `json:"createdAt"`
+		Feedback  string                    `json:"feedback"`
+		Id        string                    `json:"id"`
+		Note      nullable.Nullable[string] `json:"note"`
+		OutfitId  string                    `json:"outfitId"`
+	} `json:"feedback"`
+}
+
 // OutfitGenerateRequest defines model for OutfitGenerateRequest.
 type OutfitGenerateRequest struct {
 	Lat      nullable.Nullable[float64]                       `json:"lat,omitempty"`
@@ -1396,6 +1535,117 @@ type OutfitGenerateResponseOutfitsContrastLevel string
 
 // OutfitGenerateResponseOutfitsItemsLayeringRole defines model for OutfitGenerateResponse.Outfits.Items.LayeringRole.
 type OutfitGenerateResponseOutfitsItemsLayeringRole string
+
+// OutfitListResponse defines model for OutfitListResponse.
+type OutfitListResponse struct {
+	Outfits []OutfitSummary `json:"outfits"`
+}
+
+// OutfitPatchRequest defines model for OutfitPatchRequest.
+type OutfitPatchRequest struct {
+	IsSaved *bool                     `json:"isSaved,omitempty"`
+	Name    nullable.Nullable[string] `json:"name,omitempty"`
+}
+
+// OutfitPatchResponse defines model for OutfitPatchResponse.
+type OutfitPatchResponse struct {
+	Outfit OutfitRow `json:"outfit"`
+}
+
+// OutfitRow defines model for OutfitRow.
+type OutfitRow struct {
+	// CreatedAt ISO 8601, UTC
+	CreatedAt   time.Time                 `json:"createdAt"`
+	Explanation nullable.Nullable[string] `json:"explanation"`
+	Id          string                    `json:"id"`
+	IsSaved     bool                      `json:"isSaved"`
+	Name        nullable.Nullable[string] `json:"name"`
+	Occasion    nullable.Nullable[string] `json:"occasion"`
+	Score       nullable.Nullable[int]    `json:"score"`
+
+	// UpdatedAt ISO 8601, UTC
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+// OutfitSaveRequest defines model for OutfitSaveRequest.
+type OutfitSaveRequest struct {
+	Explanation nullable.Nullable[string] `json:"explanation,omitempty"`
+	IsSaved     *bool                     `json:"isSaved,omitempty"`
+	Items       []struct {
+		ItemId string `json:"itemId"`
+
+		// Role top, bottom, shoes or accessory (legacy roles), or dress, outerwear, footwear; must match the item category (validated)
+		Role string `json:"role"`
+	} `json:"items"`
+	Name     nullable.Nullable[string]                    `json:"name,omitempty"`
+	Occasion nullable.Nullable[OutfitSaveRequestOccasion] `json:"occasion,omitempty"`
+	Reasons  *[]string                                    `json:"reasons,omitempty"`
+	Score    nullable.Nullable[float64]                   `json:"score,omitempty"`
+	Weather  nullable.Nullable[struct {
+		Condition                string  `json:"condition"`
+		FeelsLike                float64 `json:"feelsLike"`
+		Humidity                 float64 `json:"humidity"`
+		PrecipitationProbability float64 `json:"precipitationProbability"`
+		Temperature              float64 `json:"temperature"`
+		UvIndex                  float64 `json:"uvIndex"`
+		WindSpeed                float64 `json:"windSpeed"`
+	}] `json:"weather,omitempty"`
+}
+
+// OutfitSaveRequestOccasion defines model for OutfitSaveRequest.Occasion.
+type OutfitSaveRequestOccasion string
+
+// OutfitSaveResponse defines model for OutfitSaveResponse.
+type OutfitSaveResponse struct {
+	Outfit struct {
+		// CreatedAt ISO 8601, UTC
+		CreatedAt   time.Time                 `json:"createdAt"`
+		Explanation nullable.Nullable[string] `json:"explanation"`
+		Id          string                    `json:"id"`
+		IsSaved     bool                      `json:"isSaved"`
+		Items       []struct {
+			Id             string                    `json:"id"`
+			Role           nullable.Nullable[string] `json:"role"`
+			WardrobeItemId string                    `json:"wardrobeItemId"`
+		} `json:"items"`
+		Name     nullable.Nullable[string] `json:"name"`
+		Occasion nullable.Nullable[string] `json:"occasion"`
+		Score    nullable.Nullable[int]    `json:"score"`
+
+		// UpdatedAt ISO 8601, UTC
+		UpdatedAt time.Time `json:"updatedAt"`
+	} `json:"outfit"`
+}
+
+// OutfitSummary defines model for OutfitSummary.
+type OutfitSummary struct {
+	// CreatedAt ISO 8601, UTC
+	CreatedAt   time.Time                 `json:"createdAt"`
+	Explanation nullable.Nullable[string] `json:"explanation"`
+	Id          string                    `json:"id"`
+	IsSaved     bool                      `json:"isSaved"`
+	Items       []OutfitSummaryItem       `json:"items"`
+	Name        nullable.Nullable[string] `json:"name"`
+	Occasion    nullable.Nullable[string] `json:"occasion"`
+	Reasons     []string                  `json:"reasons"`
+	Score       nullable.Nullable[int]    `json:"score"`
+
+	// WeatherSnapshot Weather the outfit was generated for ({} when unknown)
+	WeatherSnapshot map[string]interface{} `json:"weatherSnapshot"`
+}
+
+// OutfitSummaryItem defines model for OutfitSummaryItem.
+type OutfitSummaryItem struct {
+	Category    string                         `json:"category"`
+	Colors      []string                       `json:"colors"`
+	Id          string                         `json:"id"`
+	Image       nullable.Nullable[ImageObject] `json:"image"`
+	Material    nullable.Nullable[string]      `json:"material"`
+	Role        nullable.Nullable[string]      `json:"role"`
+	Season      []string                       `json:"season"`
+	Style       nullable.Nullable[string]      `json:"style"`
+	Subcategory nullable.Nullable[string]      `json:"subcategory"`
+}
 
 // PasswordForgotRequest defines model for PasswordForgotRequest.
 type PasswordForgotRequest struct {
@@ -1690,6 +1940,14 @@ type RegisterParams struct {
 // RegisterParamsXAtlasClient defines parameters for Register.
 type RegisterParamsXAtlasClient string
 
+// ListOutfitsParams defines parameters for ListOutfits.
+type ListOutfitsParams struct {
+	Saved *ListOutfitsParamsSaved `form:"saved,omitempty" json:"saved,omitempty"`
+}
+
+// ListOutfitsParamsSaved defines parameters for ListOutfits.
+type ListOutfitsParamsSaved string
+
 // ListWardrobeItemsParams defines parameters for ListWardrobeItems.
 type ListWardrobeItemsParams struct {
 	Category *ListWardrobeItemsParamsCategory `form:"category,omitempty" json:"category,omitempty"`
@@ -1742,8 +2000,17 @@ type RegisterJSONRequestBody = RegisterRequest
 // AcceptLegalDocumentsJSONRequestBody defines body for AcceptLegalDocuments for application/json ContentType.
 type AcceptLegalDocumentsJSONRequestBody = LegalConsentRequest
 
+// SaveOutfitJSONRequestBody defines body for SaveOutfit for application/json ContentType.
+type SaveOutfitJSONRequestBody = OutfitSaveRequest
+
 // GenerateOutfitsJSONRequestBody defines body for GenerateOutfits for application/json ContentType.
 type GenerateOutfitsJSONRequestBody = OutfitGenerateRequest
+
+// UpdateOutfitJSONRequestBody defines body for UpdateOutfit for application/json ContentType.
+type UpdateOutfitJSONRequestBody = OutfitPatchRequest
+
+// SendOutfitFeedbackJSONRequestBody defines body for SendOutfitFeedback for application/json ContentType.
+type SendOutfitFeedbackJSONRequestBody = OutfitFeedbackRequest
 
 // UpdateProfileJSONRequestBody defines body for UpdateProfile for application/json ContentType.
 type UpdateProfileJSONRequestBody = ProfilePatchRequest
@@ -1851,9 +2118,27 @@ type ServerInterface interface {
 	// AcceptLegalDocuments Accept the current legal texts after they changed (ends CONSENT_REQUIRED)
 	// (POST /api/v1/legal/consent)
 	AcceptLegalDocuments(w http.ResponseWriter, r *http.Request)
+	// ListOutfits Recent outfits (50), optionally saved only
+	// (GET /api/v1/outfits)
+	ListOutfits(w http.ResponseWriter, r *http.Request, params ListOutfitsParams)
+	// SaveOutfit Save an outfit made of own wardrobe items
+	// (POST /api/v1/outfits)
+	SaveOutfit(w http.ResponseWriter, r *http.Request)
 	// GenerateOutfits Generate outfit suggestions from the wardrobe: a deterministic engine (hard filters, bounded candidates, scoring, stable order) plus optional AI reranking/explanation that never fails the request (fallback: true). The same wardrobe, context and seed always give the same result; omit seed for the best outfits, send a new seed for another deterministic option.
 	// (POST /api/v1/outfits/generate)
 	GenerateOutfits(w http.ResponseWriter, r *http.Request)
+	// DeleteOutfit Delete an outfit
+	// (DELETE /api/v1/outfits/{id})
+	DeleteOutfit(w http.ResponseWriter, r *http.Request, id string)
+	// GetOutfit One outfit with its items
+	// (GET /api/v1/outfits/{id})
+	GetOutfit(w http.ResponseWriter, r *http.Request, id string)
+	// UpdateOutfit Rename or (un)save an outfit
+	// (PATCH /api/v1/outfits/{id})
+	UpdateOutfit(w http.ResponseWriter, r *http.Request, id string)
+	// SendOutfitFeedback Like, dislike, save or reject an outfit
+	// (POST /api/v1/outfits/{id}/feedback)
+	SendOutfitFeedback(w http.ResponseWriter, r *http.Request, id string)
 	// GetProfile Profile and style preferences
 	// (GET /api/v1/profile)
 	GetProfile(w http.ResponseWriter, r *http.Request)
@@ -2151,11 +2436,162 @@ func (siw *ServerInterfaceWrapper) AcceptLegalDocuments(w http.ResponseWriter, r
 	handler.ServeHTTP(w, r)
 }
 
+// ListOutfits operation middleware
+func (siw *ServerInterfaceWrapper) ListOutfits(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListOutfitsParams
+
+	// ------------- Optional query parameter "saved" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "saved", r.URL.Query(), &params.Saved, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "saved"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "saved", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListOutfits(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SaveOutfit operation middleware
+func (siw *ServerInterfaceWrapper) SaveOutfit(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SaveOutfit(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GenerateOutfits operation middleware
 func (siw *ServerInterfaceWrapper) GenerateOutfits(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GenerateOutfits(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteOutfit operation middleware
+func (siw *ServerInterfaceWrapper) DeleteOutfit(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteOutfit(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetOutfit operation middleware
+func (siw *ServerInterfaceWrapper) GetOutfit(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetOutfit(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateOutfit operation middleware
+func (siw *ServerInterfaceWrapper) UpdateOutfit(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateOutfit(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SendOutfitFeedback operation middleware
+func (siw *ServerInterfaceWrapper) SendOutfitFeedback(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SendOutfitFeedback(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2548,7 +2984,13 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/auth/register", wrapper.Register)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/legal", wrapper.GetLegalDocuments)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/legal/consent", wrapper.AcceptLegalDocuments)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/outfits", wrapper.ListOutfits)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/outfits", wrapper.SaveOutfit)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/outfits/generate", wrapper.GenerateOutfits)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/outfits/{id}", wrapper.DeleteOutfit)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/outfits/{id}", wrapper.GetOutfit)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/v1/outfits/{id}", wrapper.UpdateOutfit)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/outfits/{id}/feedback", wrapper.SendOutfitFeedback)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/profile", wrapper.GetProfile)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/v1/profile", wrapper.UpdateProfile)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/wardrobe/items", wrapper.ListWardrobeItems)
@@ -3533,6 +3975,176 @@ func (response AcceptLegalDocuments500JSONResponse) VisitAcceptLegalDocumentsRes
 	return err
 }
 
+type ListOutfitsRequestObject struct {
+	Params ListOutfitsParams
+}
+
+type ListOutfitsResponseObject interface {
+	VisitListOutfitsResponse(w http.ResponseWriter) error
+}
+
+type ListOutfits200JSONResponse OutfitListResponse
+
+func (response ListOutfits200JSONResponse) VisitListOutfitsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOutfits400JSONResponse ErrorResponse
+
+func (response ListOutfits400JSONResponse) VisitListOutfitsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOutfits401JSONResponse ErrorResponse
+
+func (response ListOutfits401JSONResponse) VisitListOutfitsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOutfits403JSONResponse ErrorResponse
+
+func (response ListOutfits403JSONResponse) VisitListOutfitsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListOutfits500JSONResponse ErrorResponse
+
+func (response ListOutfits500JSONResponse) VisitListOutfitsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveOutfitRequestObject struct {
+	Body *SaveOutfitJSONRequestBody
+}
+
+type SaveOutfitResponseObject interface {
+	VisitSaveOutfitResponse(w http.ResponseWriter) error
+}
+
+type SaveOutfit201JSONResponse OutfitSaveResponse
+
+func (response SaveOutfit201JSONResponse) VisitSaveOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveOutfit400JSONResponse ErrorResponse
+
+func (response SaveOutfit400JSONResponse) VisitSaveOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveOutfit401JSONResponse ErrorResponse
+
+func (response SaveOutfit401JSONResponse) VisitSaveOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveOutfit403JSONResponse ErrorResponse
+
+func (response SaveOutfit403JSONResponse) VisitSaveOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveOutfit413JSONResponse ErrorResponse
+
+func (response SaveOutfit413JSONResponse) VisitSaveOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveOutfit500JSONResponse ErrorResponse
+
+func (response SaveOutfit500JSONResponse) VisitSaveOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GenerateOutfitsRequestObject struct {
 	Body *GenerateOutfitsJSONRequestBody
 }
@@ -3614,6 +4226,404 @@ func (response GenerateOutfits413JSONResponse) VisitGenerateOutfitsResponse(w ht
 type GenerateOutfits500JSONResponse ErrorResponse
 
 func (response GenerateOutfits500JSONResponse) VisitGenerateOutfitsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteOutfitRequestObject struct {
+	Id string `json:"id"`
+}
+
+type DeleteOutfitResponseObject interface {
+	VisitDeleteOutfitResponse(w http.ResponseWriter) error
+}
+
+type DeleteOutfit200JSONResponse OkResponse
+
+func (response DeleteOutfit200JSONResponse) VisitDeleteOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteOutfit400JSONResponse ErrorResponse
+
+func (response DeleteOutfit400JSONResponse) VisitDeleteOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteOutfit401JSONResponse ErrorResponse
+
+func (response DeleteOutfit401JSONResponse) VisitDeleteOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteOutfit403JSONResponse ErrorResponse
+
+func (response DeleteOutfit403JSONResponse) VisitDeleteOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteOutfit404JSONResponse ErrorResponse
+
+func (response DeleteOutfit404JSONResponse) VisitDeleteOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteOutfit500JSONResponse ErrorResponse
+
+func (response DeleteOutfit500JSONResponse) VisitDeleteOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetOutfitRequestObject struct {
+	Id string `json:"id"`
+}
+
+type GetOutfitResponseObject interface {
+	VisitGetOutfitResponse(w http.ResponseWriter) error
+}
+
+type GetOutfit200JSONResponse OutfitDetailResponse
+
+func (response GetOutfit200JSONResponse) VisitGetOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetOutfit400JSONResponse ErrorResponse
+
+func (response GetOutfit400JSONResponse) VisitGetOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetOutfit401JSONResponse ErrorResponse
+
+func (response GetOutfit401JSONResponse) VisitGetOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetOutfit403JSONResponse ErrorResponse
+
+func (response GetOutfit403JSONResponse) VisitGetOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetOutfit404JSONResponse ErrorResponse
+
+func (response GetOutfit404JSONResponse) VisitGetOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetOutfit500JSONResponse ErrorResponse
+
+func (response GetOutfit500JSONResponse) VisitGetOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateOutfitRequestObject struct {
+	Id   string `json:"id"`
+	Body *UpdateOutfitJSONRequestBody
+}
+
+type UpdateOutfitResponseObject interface {
+	VisitUpdateOutfitResponse(w http.ResponseWriter) error
+}
+
+type UpdateOutfit200JSONResponse OutfitPatchResponse
+
+func (response UpdateOutfit200JSONResponse) VisitUpdateOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateOutfit400JSONResponse ErrorResponse
+
+func (response UpdateOutfit400JSONResponse) VisitUpdateOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateOutfit401JSONResponse ErrorResponse
+
+func (response UpdateOutfit401JSONResponse) VisitUpdateOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateOutfit403JSONResponse ErrorResponse
+
+func (response UpdateOutfit403JSONResponse) VisitUpdateOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateOutfit404JSONResponse ErrorResponse
+
+func (response UpdateOutfit404JSONResponse) VisitUpdateOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateOutfit413JSONResponse ErrorResponse
+
+func (response UpdateOutfit413JSONResponse) VisitUpdateOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateOutfit500JSONResponse ErrorResponse
+
+func (response UpdateOutfit500JSONResponse) VisitUpdateOutfitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SendOutfitFeedbackRequestObject struct {
+	Id   string `json:"id"`
+	Body *SendOutfitFeedbackJSONRequestBody
+}
+
+type SendOutfitFeedbackResponseObject interface {
+	VisitSendOutfitFeedbackResponse(w http.ResponseWriter) error
+}
+
+type SendOutfitFeedback201JSONResponse OutfitFeedbackResponse
+
+func (response SendOutfitFeedback201JSONResponse) VisitSendOutfitFeedbackResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SendOutfitFeedback400JSONResponse ErrorResponse
+
+func (response SendOutfitFeedback400JSONResponse) VisitSendOutfitFeedbackResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SendOutfitFeedback401JSONResponse ErrorResponse
+
+func (response SendOutfitFeedback401JSONResponse) VisitSendOutfitFeedbackResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SendOutfitFeedback403JSONResponse ErrorResponse
+
+func (response SendOutfitFeedback403JSONResponse) VisitSendOutfitFeedbackResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SendOutfitFeedback404JSONResponse ErrorResponse
+
+func (response SendOutfitFeedback404JSONResponse) VisitSendOutfitFeedbackResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SendOutfitFeedback413JSONResponse ErrorResponse
+
+func (response SendOutfitFeedback413JSONResponse) VisitSendOutfitFeedbackResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SendOutfitFeedback500JSONResponse ErrorResponse
+
+func (response SendOutfitFeedback500JSONResponse) VisitSendOutfitFeedbackResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -4493,9 +5503,27 @@ type StrictServerInterface interface {
 	// AcceptLegalDocuments Accept the current legal texts after they changed (ends CONSENT_REQUIRED)
 	// (POST /api/v1/legal/consent)
 	AcceptLegalDocuments(ctx context.Context, request AcceptLegalDocumentsRequestObject) (AcceptLegalDocumentsResponseObject, error)
+	// ListOutfits Recent outfits (50), optionally saved only
+	// (GET /api/v1/outfits)
+	ListOutfits(ctx context.Context, request ListOutfitsRequestObject) (ListOutfitsResponseObject, error)
+	// SaveOutfit Save an outfit made of own wardrobe items
+	// (POST /api/v1/outfits)
+	SaveOutfit(ctx context.Context, request SaveOutfitRequestObject) (SaveOutfitResponseObject, error)
 	// GenerateOutfits Generate outfit suggestions from the wardrobe: a deterministic engine (hard filters, bounded candidates, scoring, stable order) plus optional AI reranking/explanation that never fails the request (fallback: true). The same wardrobe, context and seed always give the same result; omit seed for the best outfits, send a new seed for another deterministic option.
 	// (POST /api/v1/outfits/generate)
 	GenerateOutfits(ctx context.Context, request GenerateOutfitsRequestObject) (GenerateOutfitsResponseObject, error)
+	// DeleteOutfit Delete an outfit
+	// (DELETE /api/v1/outfits/{id})
+	DeleteOutfit(ctx context.Context, request DeleteOutfitRequestObject) (DeleteOutfitResponseObject, error)
+	// GetOutfit One outfit with its items
+	// (GET /api/v1/outfits/{id})
+	GetOutfit(ctx context.Context, request GetOutfitRequestObject) (GetOutfitResponseObject, error)
+	// UpdateOutfit Rename or (un)save an outfit
+	// (PATCH /api/v1/outfits/{id})
+	UpdateOutfit(ctx context.Context, request UpdateOutfitRequestObject) (UpdateOutfitResponseObject, error)
+	// SendOutfitFeedback Like, dislike, save or reject an outfit
+	// (POST /api/v1/outfits/{id}/feedback)
+	SendOutfitFeedback(ctx context.Context, request SendOutfitFeedbackRequestObject) (SendOutfitFeedbackResponseObject, error)
 	// GetProfile Profile and style preferences
 	// (GET /api/v1/profile)
 	GetProfile(ctx context.Context, request GetProfileRequestObject) (GetProfileResponseObject, error)
@@ -4888,6 +5916,63 @@ func (sh *strictHandler) AcceptLegalDocuments(w http.ResponseWriter, r *http.Req
 	}
 }
 
+// ListOutfits operation middleware
+func (sh *strictHandler) ListOutfits(w http.ResponseWriter, r *http.Request, params ListOutfitsParams) {
+	var request ListOutfitsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListOutfits(ctx, request.(ListOutfitsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListOutfits")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListOutfitsResponseObject); ok {
+		if err := validResponse.VisitListOutfitsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SaveOutfit operation middleware
+func (sh *strictHandler) SaveOutfit(w http.ResponseWriter, r *http.Request) {
+	var request SaveOutfitRequestObject
+
+	var body SaveOutfitJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SaveOutfit(ctx, request.(SaveOutfitRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SaveOutfit")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SaveOutfitResponseObject); ok {
+		if err := validResponse.VisitSaveOutfitResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GenerateOutfits operation middleware
 func (sh *strictHandler) GenerateOutfits(w http.ResponseWriter, r *http.Request) {
 	var request GenerateOutfitsRequestObject
@@ -4912,6 +5997,124 @@ func (sh *strictHandler) GenerateOutfits(w http.ResponseWriter, r *http.Request)
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GenerateOutfitsResponseObject); ok {
 		if err := validResponse.VisitGenerateOutfitsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteOutfit operation middleware
+func (sh *strictHandler) DeleteOutfit(w http.ResponseWriter, r *http.Request, id string) {
+	var request DeleteOutfitRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteOutfit(ctx, request.(DeleteOutfitRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteOutfit")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteOutfitResponseObject); ok {
+		if err := validResponse.VisitDeleteOutfitResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetOutfit operation middleware
+func (sh *strictHandler) GetOutfit(w http.ResponseWriter, r *http.Request, id string) {
+	var request GetOutfitRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetOutfit(ctx, request.(GetOutfitRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetOutfit")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetOutfitResponseObject); ok {
+		if err := validResponse.VisitGetOutfitResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateOutfit operation middleware
+func (sh *strictHandler) UpdateOutfit(w http.ResponseWriter, r *http.Request, id string) {
+	var request UpdateOutfitRequestObject
+
+	request.Id = id
+
+	var body UpdateOutfitJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateOutfit(ctx, request.(UpdateOutfitRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateOutfit")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateOutfitResponseObject); ok {
+		if err := validResponse.VisitUpdateOutfitResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SendOutfitFeedback operation middleware
+func (sh *strictHandler) SendOutfitFeedback(w http.ResponseWriter, r *http.Request, id string) {
+	var request SendOutfitFeedbackRequestObject
+
+	request.Id = id
+
+	var body SendOutfitFeedbackJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SendOutfitFeedback(ctx, request.(SendOutfitFeedbackRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SendOutfitFeedback")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SendOutfitFeedbackResponseObject); ok {
+		if err := validResponse.VisitSendOutfitFeedbackResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

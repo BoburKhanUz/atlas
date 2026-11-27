@@ -15,11 +15,8 @@ import (
 // oapi-codegen.yaml together with their handlers; the list is empty at the
 // cutover (B7).
 var notYetImplemented = []string{
-	"analyzeColorProfile", "deleteColorProfile", "deleteOutfit",
-	"getColorProfile", "getConversation", "getOpenApiDocument", "getOutfit",
-	"listConversations", "listOutfits", "reportClientErrors",
-	"saveOutfit", "sendOutfitFeedback",
-	"stylistChat", "updateOutfit",
+	"analyzeColorProfile", "deleteColorProfile", "getColorProfile", "getConversation", "getOpenApiDocument",
+	"listConversations", "reportClientErrors", "stylistChat",
 }
 
 // servedByHand are the operations served without generated code, each with

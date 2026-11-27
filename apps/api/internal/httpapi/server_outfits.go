@@ -2,13 +2,19 @@ package httpapi
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"slices"
+	"strconv"
+	"strings"
 
 	"lookly/internal/apierr"
 	"lookly/internal/engine"
 	"lookly/internal/httpapi/contract"
 	"lookly/internal/outfits"
+	"lookly/internal/wardrobe"
 )
 
 // GenerateOutfits: outfits from the caller's wardrobe for the occasion and
@@ -153,4 +159,304 @@ type generatedResponse struct{ body generatedBody }
 
 func (r generatedResponse) VisitGenerateOutfitsResponse(w http.ResponseWriter) error {
 	return writeJSON(w, http.StatusOK, r.body)
+}
+
+// The Next.js routes' messages for an outfit that cannot be saved.
+const (
+	msgItemsNotOwned = "Ba'zi kiyimlar topilmadi yoki sizga tegishli emas"
+	msgUnknownRole   = "Noma’lum rol: %s bo‘lishi kerak"
+	msgWrongRole     = "Rol kiyim turiga mos emas (%s)"
+)
+
+// outfitError maps what the outfit service refuses to the contract's errors.
+func outfitError(err error) error {
+	var role *outfits.RoleError
+	var composition *outfits.CompositionError
+	switch {
+	case errors.Is(err, outfits.ErrNotFound):
+		return apierr.New(apierr.NotFound)
+	case errors.Is(err, outfits.ErrNotOwned):
+		return apierr.With(apierr.Forbidden, msgItemsNotOwned)
+	case errors.As(err, &role):
+		message := fmt.Sprintf(msgWrongRole, strings.Join(role.Allowed, " / "))
+		if role.Unknown {
+			message = fmt.Sprintf(msgUnknownRole, strings.Join(role.Allowed, ", "))
+		}
+		return apierr.Validation(message, apierr.Detail{Path: "items." + strconv.Itoa(role.Index) + ".role", Message: message})
+	case errors.As(err, &composition):
+		message := composition.Problem.Message()
+		return apierr.Validation(message, apierr.Detail{Path: "items", Message: message})
+	}
+	return err
+}
+
+// SaveOutfit: stores an outfit of the caller's items.
+func (s *Server) SaveOutfit(ctx context.Context, request contract.SaveOutfitRequestObject) (contract.SaveOutfitResponseObject, error) {
+	id, ok := identityFrom(ctx)
+	if !ok {
+		return nil, apierr.New(apierr.Unauthorized)
+	}
+	if request.Body == nil {
+		return nil, errors.New("outfit save: the gate's body rule left no body")
+	}
+	body := request.Body
+	in := outfits.SaveRequest{Items: make([]outfits.SaveItem, 0, len(body.Items)), IsSaved: body.IsSaved != nil && *body.IsSaved}
+	for _, item := range body.Items {
+		in.Items = append(in.Items, outfits.SaveItem{ItemID: item.ItemId, Role: item.Role})
+	}
+	if occasion, err := body.Occasion.Get(); err == nil {
+		name := string(occasion)
+		in.Occasion = &name
+	}
+	if w, err := body.Weather.Get(); err == nil {
+		in.Weather = &outfits.WeatherSnapshot{
+			Temperature: w.Temperature, FeelsLike: w.FeelsLike, Condition: w.Condition,
+			PrecipitationProbability: w.PrecipitationProbability, Humidity: w.Humidity, WindSpeed: w.WindSpeed, UVIndex: w.UvIndex,
+		}
+	}
+	if name, err := body.Name.Get(); err == nil {
+		in.Name = &name
+	}
+	if score, err := body.Score.Get(); err == nil {
+		in.Score = &score
+	}
+	if body.Reasons != nil {
+		in.Reasons = *body.Reasons
+	}
+	if explanation, err := body.Explanation.Get(); err == nil {
+		in.Explanation = &explanation
+	}
+	saved, err := s.s.Outfits.Save(ctx, id.UserID, in)
+	if err != nil {
+		return nil, outfitError(err)
+	}
+	answer := savedOutfitBody{outfitRowBody: rowBody(saved.Row), Items: make([]outfitLinkBody, 0, len(saved.Items))}
+	for _, link := range saved.Items {
+		answer.Items = append(answer.Items, outfitLinkBody{ID: link.ID, Role: link.Role, WardrobeItemID: link.WardrobeItemID})
+	}
+	return outfitResponse{http.StatusCreated, map[string]any{"outfit": answer}}, nil
+}
+
+// ListOutfits: the caller's newest outfits, all or the saved ones.
+func (s *Server) ListOutfits(ctx context.Context, request contract.ListOutfitsRequestObject) (contract.ListOutfitsResponseObject, error) {
+	id, ok := identityFrom(ctx)
+	if !ok {
+		return nil, apierr.New(apierr.Unauthorized)
+	}
+	saved := request.Params.Saved
+	stored, err := s.s.Outfits.List(ctx, id.UserID, saved != nil && (*saved == "1" || *saved == "true"))
+	if err != nil {
+		return nil, err
+	}
+	now := s.now()
+	list := make([]outfitSummaryBody, 0, len(stored))
+	for _, outfit := range stored {
+		summary := outfitSummaryBody{
+			ID: outfit.ID, Name: outfit.Name, Occasion: outfit.Occasion, Score: outfit.Score, Reasons: outfit.Reasons,
+			Explanation: outfit.Explanation, IsSaved: outfit.IsSaved, WeatherSnapshot: outfit.Weather,
+			CreatedAt: isoMillis(outfit.CreatedAt), Items: make([]outfitSummaryItemBody, 0, len(outfit.Garments)),
+		}
+		for _, g := range outfit.Garments {
+			item := outfitSummaryItemBody{
+				ID: g.WardrobeItemID, Role: g.Role, Category: g.Category, Subcategory: g.Subcategory, Colors: g.Colors,
+				Style: g.Style, Material: g.Material, Season: g.Season,
+			}
+			// The primary image, or the first when none is marked.
+			if len(g.Images) > 0 {
+				primary := g.Images[0]
+				if i := slices.IndexFunc(g.Images, func(img wardrobe.Image) bool { return img.IsPrimary }); i >= 0 {
+					primary = g.Images[i]
+				}
+				image := s.imageBody(primary, now)
+				item.Image = &image
+			}
+			summary.Items = append(summary.Items, item)
+		}
+		list = append(list, summary)
+	}
+	return outfitResponse{http.StatusOK, map[string]any{"outfits": list}}, nil
+}
+
+// GetOutfit: one outfit of the caller's with its items.
+func (s *Server) GetOutfit(ctx context.Context, request contract.GetOutfitRequestObject) (contract.GetOutfitResponseObject, error) {
+	id, ok := identityFrom(ctx)
+	if !ok {
+		return nil, apierr.New(apierr.Unauthorized)
+	}
+	outfit, err := s.s.Outfits.Get(ctx, id.UserID, itemID(request.Id))
+	if err != nil {
+		return nil, outfitError(err)
+	}
+	now := s.now()
+	detail := outfitDetailBody{
+		outfitRowBody: rowBody(outfit.Row), Reasons: outfit.Reasons, WeatherSnapshot: outfit.Weather,
+		Items: make([]outfitDetailItemBody, 0, len(outfit.Garments)),
+	}
+	for _, g := range outfit.Garments {
+		item := outfitDetailItemBody{ID: g.ID, Role: g.Role, WardrobeItemID: g.WardrobeItemID}
+		item.Item = outfitGarmentBody{
+			ID: g.WardrobeItemID, Category: g.Category, Subcategory: g.Subcategory, Colors: g.Colors, Style: g.Style,
+			Material: g.Material, Season: g.Season, Images: make([]imageBody, 0, len(g.Images)),
+		}
+		for _, img := range g.Images {
+			item.Item.Images = append(item.Item.Images, s.imageBody(img, now))
+		}
+		detail.Items = append(detail.Items, item)
+	}
+	return outfitResponse{http.StatusOK, map[string]any{"outfit": detail}}, nil
+}
+
+// UpdateOutfit: marks an outfit of the caller's saved or not, or names it.
+func (s *Server) UpdateOutfit(ctx context.Context, request contract.UpdateOutfitRequestObject) (contract.UpdateOutfitResponseObject, error) {
+	id, ok := identityFrom(ctx)
+	if !ok {
+		return nil, apierr.New(apierr.Unauthorized)
+	}
+	if request.Body == nil {
+		return nil, errors.New("outfit update: the gate's body rule left no body")
+	}
+	change := outfits.Change{IsSaved: request.Body.IsSaved, SetName: request.Body.Name.IsSpecified()}
+	if name, err := request.Body.Name.Get(); err == nil {
+		change.Name = &name
+	}
+	row, err := s.s.Outfits.Update(ctx, id.UserID, itemID(request.Id), change)
+	if err != nil {
+		return nil, outfitError(err)
+	}
+	return outfitResponse{http.StatusOK, map[string]any{"outfit": rowBody(row)}}, nil
+}
+
+// DeleteOutfit: removes an outfit of the caller's.
+func (s *Server) DeleteOutfit(ctx context.Context, request contract.DeleteOutfitRequestObject) (contract.DeleteOutfitResponseObject, error) {
+	id, ok := identityFrom(ctx)
+	if !ok {
+		return nil, apierr.New(apierr.Unauthorized)
+	}
+	if err := s.s.Outfits.Delete(ctx, id.UserID, itemID(request.Id)); err != nil {
+		return nil, outfitError(err)
+	}
+	return outfitResponse{http.StatusOK, map[string]any{"ok": true}}, nil
+}
+
+// SendOutfitFeedback: the caller's feedback on an outfit of theirs.
+func (s *Server) SendOutfitFeedback(ctx context.Context, request contract.SendOutfitFeedbackRequestObject) (contract.SendOutfitFeedbackResponseObject, error) {
+	id, ok := identityFrom(ctx)
+	if !ok {
+		return nil, apierr.New(apierr.Unauthorized)
+	}
+	if request.Body == nil {
+		return nil, errors.New("outfit feedback: the gate's body rule left no body")
+	}
+	given, err := s.s.Outfits.GiveFeedback(ctx, id.UserID, itemID(request.Id), string(request.Body.Feedback), request.Body.Note)
+	if err != nil {
+		return nil, outfitError(err)
+	}
+	return outfitResponse{http.StatusCreated, map[string]any{"feedback": feedbackBody{
+		ID: given.ID, OutfitID: given.OutfitID, Feedback: given.Feedback, Note: given.Note, CreatedAt: isoMillis(given.CreatedAt),
+	}}}, nil
+}
+
+// outfitRowBody is a stored outfit as the contract's OutfitRow.
+type outfitRowBody struct {
+	ID          string  `json:"id"`
+	Name        *string `json:"name"`
+	Occasion    *string `json:"occasion"`
+	Score       *int32  `json:"score"`
+	Explanation *string `json:"explanation"`
+	IsSaved     bool    `json:"isSaved"`
+	CreatedAt   string  `json:"createdAt"`
+	UpdatedAt   string  `json:"updatedAt"`
+}
+
+func rowBody(row outfits.Row) outfitRowBody {
+	return outfitRowBody{
+		ID: row.ID, Name: row.Name, Occasion: row.Occasion, Score: row.Score, Explanation: row.Explanation, IsSaved: row.IsSaved,
+		CreatedAt: isoMillis(row.CreatedAt), UpdatedAt: isoMillis(row.UpdatedAt),
+	}
+}
+
+type outfitLinkBody struct {
+	ID             string  `json:"id"`
+	Role           *string `json:"role"`
+	WardrobeItemID string  `json:"wardrobeItemId"`
+}
+
+type savedOutfitBody struct {
+	outfitRowBody
+	Items []outfitLinkBody `json:"items"`
+}
+
+type outfitSummaryBody struct {
+	ID              string                  `json:"id"`
+	Name            *string                 `json:"name"`
+	Occasion        *string                 `json:"occasion"`
+	Score           *int32                  `json:"score"`
+	Reasons         []string                `json:"reasons"`
+	Explanation     *string                 `json:"explanation"`
+	IsSaved         bool                    `json:"isSaved"`
+	WeatherSnapshot json.RawMessage         `json:"weatherSnapshot"`
+	CreatedAt       string                  `json:"createdAt"`
+	Items           []outfitSummaryItemBody `json:"items"`
+}
+
+type outfitSummaryItemBody struct {
+	ID          string     `json:"id"`
+	Role        *string    `json:"role"`
+	Category    string     `json:"category"`
+	Subcategory *string    `json:"subcategory"`
+	Colors      []string   `json:"colors"`
+	Style       *string    `json:"style"`
+	Material    *string    `json:"material"`
+	Season      []string   `json:"season"`
+	Image       *imageBody `json:"image"`
+}
+
+type outfitDetailBody struct {
+	outfitRowBody
+	Reasons         []string               `json:"reasons"`
+	WeatherSnapshot json.RawMessage        `json:"weatherSnapshot"`
+	Items           []outfitDetailItemBody `json:"items"`
+}
+
+type outfitDetailItemBody struct {
+	ID             string            `json:"id"`
+	Role           *string           `json:"role"`
+	WardrobeItemID string            `json:"wardrobeItemId"`
+	Item           outfitGarmentBody `json:"item"`
+}
+
+type outfitGarmentBody struct {
+	ID          string      `json:"id"`
+	Category    string      `json:"category"`
+	Subcategory *string     `json:"subcategory"`
+	Colors      []string    `json:"colors"`
+	Style       *string     `json:"style"`
+	Material    *string     `json:"material"`
+	Season      []string    `json:"season"`
+	Images      []imageBody `json:"images"`
+}
+
+type feedbackBody struct {
+	ID        string  `json:"id"`
+	OutfitID  string  `json:"outfitId"`
+	Feedback  string  `json:"feedback"`
+	Note      *string `json:"note"`
+	CreatedAt string  `json:"createdAt"`
+}
+
+// outfitResponse answers the outfit routes: a status and a body.
+type outfitResponse struct {
+	status int
+	body   any
+}
+
+func (r outfitResponse) write(w http.ResponseWriter) error { return writeJSON(w, r.status, r.body) }
+
+func (r outfitResponse) VisitSaveOutfitResponse(w http.ResponseWriter) error   { return r.write(w) }
+func (r outfitResponse) VisitListOutfitsResponse(w http.ResponseWriter) error  { return r.write(w) }
+func (r outfitResponse) VisitGetOutfitResponse(w http.ResponseWriter) error    { return r.write(w) }
+func (r outfitResponse) VisitUpdateOutfitResponse(w http.ResponseWriter) error { return r.write(w) }
+func (r outfitResponse) VisitDeleteOutfitResponse(w http.ResponseWriter) error { return r.write(w) }
+func (r outfitResponse) VisitSendOutfitFeedbackResponse(w http.ResponseWriter) error {
+	return r.write(w)
 }

@@ -39,6 +39,205 @@ func (q *Queries) ColorProfileOfUser(ctx context.Context, userid string) (ColorP
 	return i, err
 }
 
+const deleteOutfit = `-- name: DeleteOutfit :execrows
+DELETE FROM "Outfit" WHERE "id" = $1 AND "userId" = $2
+`
+
+type DeleteOutfitParams struct {
+	ID     string
+	UserId string
+}
+
+// The outfit's items and feedback go with it (foreign keys).
+func (q *Queries) DeleteOutfit(ctx context.Context, arg DeleteOutfitParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteOutfit, arg.ID, arg.UserId)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const garmentsOfOutfits = `-- name: GarmentsOfOutfits :many
+SELECT oi."id", oi."outfitId", oi."wardrobeItemId", oi."role",
+       w."category", w."subcategory", w."colors", w."style", w."material", w."season"
+  FROM "OutfitItem" oi
+  JOIN "Outfit" o ON o."id" = oi."outfitId" AND o."userId" = $1
+  JOIN "WardrobeItem" w ON w."id" = oi."wardrobeItemId" AND w."userId" = $1
+ WHERE oi."outfitId" = ANY($2::text[])
+ ORDER BY oi."outfitId", oi."createdAt", oi."id"
+`
+
+type GarmentsOfOutfitsParams struct {
+	UserID    string
+	OutfitIds []string
+}
+
+type GarmentsOfOutfitsRow struct {
+	ID             string
+	OutfitId       string
+	WardrobeItemId string
+	Role           *string
+	Category       string
+	Subcategory    *string
+	Colors         string
+	Style          *string
+	Material       *string
+	Season         string
+}
+
+// The items of the user's outfits named, each with what is shown of its
+// garment, in the order they were added.
+func (q *Queries) GarmentsOfOutfits(ctx context.Context, arg GarmentsOfOutfitsParams) ([]GarmentsOfOutfitsRow, error) {
+	rows, err := q.db.Query(ctx, garmentsOfOutfits, arg.UserID, arg.OutfitIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GarmentsOfOutfitsRow
+	for rows.Next() {
+		var i GarmentsOfOutfitsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.OutfitId,
+			&i.WardrobeItemId,
+			&i.Role,
+			&i.Category,
+			&i.Subcategory,
+			&i.Colors,
+			&i.Style,
+			&i.Material,
+			&i.Season,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const insertOutfit = `-- name: InsertOutfit :one
+INSERT INTO "Outfit" ("id", "userId", "name", "occasion", "weatherSnapshot", "score", "reasonsJson", "explanation", "isSaved",
+                      "createdAt", "updatedAt")
+VALUES ($1, $2, $3, $4, $5, $6,
+        $7, $8, $9, atlas_now(), atlas_now())
+RETURNING id, "userId", name, occasion, "weatherSnapshot", score, "reasonsJson", explanation, "isSaved", "createdAt", "updatedAt"
+`
+
+type InsertOutfitParams struct {
+	ID              string
+	UserID          string
+	Name            *string
+	Occasion        *string
+	WeatherSnapshot *string
+	Score           *int32
+	ReasonsJson     string
+	Explanation     *string
+	IsSaved         bool
+}
+
+func (q *Queries) InsertOutfit(ctx context.Context, arg InsertOutfitParams) (Outfit, error) {
+	row := q.db.QueryRow(ctx, insertOutfit,
+		arg.ID,
+		arg.UserID,
+		arg.Name,
+		arg.Occasion,
+		arg.WeatherSnapshot,
+		arg.Score,
+		arg.ReasonsJson,
+		arg.Explanation,
+		arg.IsSaved,
+	)
+	var i Outfit
+	err := row.Scan(
+		&i.ID,
+		&i.UserId,
+		&i.Name,
+		&i.Occasion,
+		&i.WeatherSnapshot,
+		&i.Score,
+		&i.ReasonsJson,
+		&i.Explanation,
+		&i.IsSaved,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const insertOutfitFeedback = `-- name: InsertOutfitFeedback :one
+INSERT INTO "OutfitFeedback" ("id", "userId", "outfitId", "feedback", "note", "createdAt")
+VALUES ($1, $2, $3, $4, $5, atlas_now())
+RETURNING id, "userId", "outfitId", feedback, note, "createdAt"
+`
+
+type InsertOutfitFeedbackParams struct {
+	ID       string
+	UserID   string
+	OutfitID string
+	Feedback string
+	Note     *string
+}
+
+func (q *Queries) InsertOutfitFeedback(ctx context.Context, arg InsertOutfitFeedbackParams) (OutfitFeedback, error) {
+	row := q.db.QueryRow(ctx, insertOutfitFeedback,
+		arg.ID,
+		arg.UserID,
+		arg.OutfitID,
+		arg.Feedback,
+		arg.Note,
+	)
+	var i OutfitFeedback
+	err := row.Scan(
+		&i.ID,
+		&i.UserId,
+		&i.OutfitId,
+		&i.Feedback,
+		&i.Note,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const insertOutfitItem = `-- name: InsertOutfitItem :one
+INSERT INTO "OutfitItem" ("id", "outfitId", "wardrobeItemId", "role", "createdAt")
+VALUES ($1, $2, $3, $4,
+        atlas_now() + $5::int * interval '1 millisecond')
+RETURNING id, "outfitId", "wardrobeItemId", role, "createdAt"
+`
+
+type InsertOutfitItemParams struct {
+	ID             string
+	OutfitID       string
+	WardrobeItemID string
+	Role           *string
+	Place          int32
+}
+
+// The items of an outfit are read in the order of their times: each is a
+// millisecond after the one before (ids made here do not sort by time, as
+// Prisma's did).
+func (q *Queries) InsertOutfitItem(ctx context.Context, arg InsertOutfitItemParams) (OutfitItem, error) {
+	row := q.db.QueryRow(ctx, insertOutfitItem,
+		arg.ID,
+		arg.OutfitID,
+		arg.WardrobeItemID,
+		arg.Role,
+		arg.Place,
+	)
+	var i OutfitItem
+	err := row.Scan(
+		&i.ID,
+		&i.OutfitId,
+		&i.WardrobeItemId,
+		&i.Role,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const itemsOfOutfits = `-- name: ItemsOfOutfits :many
 SELECT oi."outfitId", w."id" AS item_id, w."category"
   FROM "OutfitItem" oi
@@ -80,6 +279,145 @@ func (q *Queries) ItemsOfOutfits(ctx context.Context, arg ItemsOfOutfitsParams) 
 	return items, nil
 }
 
+const listOutfits = `-- name: ListOutfits :many
+SELECT id, "userId", name, occasion, "weatherSnapshot", score, "reasonsJson", explanation, "isSaved", "createdAt", "updatedAt" FROM "Outfit"
+ WHERE "userId" = $1 AND (NOT $2::boolean OR "isSaved")
+ ORDER BY "createdAt" DESC, "id" DESC LIMIT $3
+`
+
+type ListOutfitsParams struct {
+	UserID    string
+	SavedOnly bool
+	RowLimit  int32
+}
+
+// The user's newest outfits, all or the saved ones.
+func (q *Queries) ListOutfits(ctx context.Context, arg ListOutfitsParams) ([]Outfit, error) {
+	rows, err := q.db.Query(ctx, listOutfits, arg.UserID, arg.SavedOnly, arg.RowLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Outfit
+	for rows.Next() {
+		var i Outfit
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserId,
+			&i.Name,
+			&i.Occasion,
+			&i.WeatherSnapshot,
+			&i.Score,
+			&i.ReasonsJson,
+			&i.Explanation,
+			&i.IsSaved,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const lockItemsForOutfit = `-- name: LockItemsForOutfit :many
+SELECT "id", "category" FROM "WardrobeItem"
+ WHERE "id" = ANY($1::text[]) AND "userId" = $2 FOR SHARE
+`
+
+type LockItemsForOutfitParams struct {
+	Ids    []string
+	UserID string
+}
+
+type LockItemsForOutfitRow struct {
+	ID       string
+	Category string
+}
+
+// The user's items named, with their categories; they cannot be removed
+// until the transaction ends (an outfit is being made of them).
+func (q *Queries) LockItemsForOutfit(ctx context.Context, arg LockItemsForOutfitParams) ([]LockItemsForOutfitRow, error) {
+	rows, err := q.db.Query(ctx, lockItemsForOutfit, arg.Ids, arg.UserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []LockItemsForOutfitRow
+	for rows.Next() {
+		var i LockItemsForOutfitRow
+		if err := rows.Scan(&i.ID, &i.Category); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const lockOutfitOfUser = `-- name: LockOutfitOfUser :one
+SELECT id, "userId", name, occasion, "weatherSnapshot", score, "reasonsJson", explanation, "isSaved", "createdAt", "updatedAt" FROM "Outfit" WHERE "id" = $1 AND "userId" = $2 FOR UPDATE
+`
+
+type LockOutfitOfUserParams struct {
+	ID     string
+	UserId string
+}
+
+// The outfit, locked until the transaction ends.
+func (q *Queries) LockOutfitOfUser(ctx context.Context, arg LockOutfitOfUserParams) (Outfit, error) {
+	row := q.db.QueryRow(ctx, lockOutfitOfUser, arg.ID, arg.UserId)
+	var i Outfit
+	err := row.Scan(
+		&i.ID,
+		&i.UserId,
+		&i.Name,
+		&i.Occasion,
+		&i.WeatherSnapshot,
+		&i.Score,
+		&i.ReasonsJson,
+		&i.Explanation,
+		&i.IsSaved,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const outfitOfUser = `-- name: OutfitOfUser :one
+SELECT id, "userId", name, occasion, "weatherSnapshot", score, "reasonsJson", explanation, "isSaved", "createdAt", "updatedAt" FROM "Outfit" WHERE "id" = $1 AND "userId" = $2
+`
+
+type OutfitOfUserParams struct {
+	ID     string
+	UserId string
+}
+
+func (q *Queries) OutfitOfUser(ctx context.Context, arg OutfitOfUserParams) (Outfit, error) {
+	row := q.db.QueryRow(ctx, outfitOfUser, arg.ID, arg.UserId)
+	var i Outfit
+	err := row.Scan(
+		&i.ID,
+		&i.UserId,
+		&i.Name,
+		&i.Occasion,
+		&i.WeatherSnapshot,
+		&i.Score,
+		&i.ReasonsJson,
+		&i.Explanation,
+		&i.IsSaved,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const recentOutfitFeedback = `-- name: RecentOutfitFeedback :many
 SELECT DISTINCT f."outfitId", f."feedback" FROM "OutfitFeedback" f
  WHERE f."userId" = $1 AND f."createdAt" >= atlas_now() - $2::int * interval '1 day'
@@ -116,6 +454,67 @@ func (q *Queries) RecentOutfitFeedback(ctx context.Context, arg RecentOutfitFeed
 		return nil, err
 	}
 	return items, nil
+}
+
+const setOutfitSaved = `-- name: SetOutfitSaved :exec
+UPDATE "Outfit" SET "isSaved" = $1, "updatedAt" = atlas_now()
+ WHERE "id" = $2 AND "userId" = $3
+`
+
+type SetOutfitSavedParams struct {
+	IsSaved bool
+	ID      string
+	UserID  string
+}
+
+func (q *Queries) SetOutfitSaved(ctx context.Context, arg SetOutfitSavedParams) error {
+	_, err := q.db.Exec(ctx, setOutfitSaved, arg.IsSaved, arg.ID, arg.UserID)
+	return err
+}
+
+const updateOutfit = `-- name: UpdateOutfit :one
+UPDATE "Outfit"
+   SET "isSaved"   = COALESCE($1::boolean, "isSaved"),
+       "name"      = CASE WHEN $2::boolean THEN $3 ELSE "name" END,
+       "updatedAt" = atlas_now()
+ WHERE "id" = $4 AND "userId" = $5
+RETURNING id, "userId", name, occasion, "weatherSnapshot", score, "reasonsJson", explanation, "isSaved", "createdAt", "updatedAt"
+`
+
+type UpdateOutfitParams struct {
+	IsSaved *bool
+	SetName bool
+	Name    *string
+	ID      string
+	UserID  string
+}
+
+// Changes what is given: is_saved when it is not NULL, the name (to a text
+// or to NULL) when set_name is true. The row's updatedAt moves either way,
+// as Prisma moved it.
+func (q *Queries) UpdateOutfit(ctx context.Context, arg UpdateOutfitParams) (Outfit, error) {
+	row := q.db.QueryRow(ctx, updateOutfit,
+		arg.IsSaved,
+		arg.SetName,
+		arg.Name,
+		arg.ID,
+		arg.UserID,
+	)
+	var i Outfit
+	err := row.Scan(
+		&i.ID,
+		&i.UserId,
+		&i.Name,
+		&i.Occasion,
+		&i.WeatherSnapshot,
+		&i.Score,
+		&i.ReasonsJson,
+		&i.Explanation,
+		&i.IsSaved,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const wardrobeForOutfits = `-- name: WardrobeForOutfits :many
