@@ -873,3 +873,74 @@ func LoadAIProviders(t testing.TB) AIProviders {
 	}
 	return p
 }
+
+// AIMonitoring is testdata/golden/ai-monitoring.json
+// (apps/web/scripts/golden-ai-monitoring.ts): what the Next.js AI code makes
+// of a monitoring event, a user id in the rollout, a moment of the quota day.
+type AIMonitoring struct {
+	GeneratedBy   string         `json:"generatedBy"`
+	SourceCommit  string         `json:"sourceCommit"`
+	Note          string         `json:"note"`
+	SchemaVersion int            `json:"schemaVersion"`
+	Limits        map[string]int `json:"limits"`
+	// Sanitized: an event as a caller passes it and what may be emitted
+	// (null: not an event). In an input, {"number": "NaN"} stands for a
+	// number JSON cannot hold and {"undefined": true} for a missing value.
+	Sanitized []struct {
+		Name   string                     `json:"name"`
+		Input  map[string]json.RawMessage `json:"input"`
+		Output json.RawMessage            `json:"output"`
+	} `json:"sanitized"`
+	// Helpers: a typed record and the event it becomes.
+	Helpers []struct {
+		Name string `json:"name"`
+		Call string `json:"call"` // request | quota
+		Args struct {
+			Feature   string   `json:"feature"`
+			Provider  string   `json:"provider"`
+			Model     string   `json:"model"`
+			Outcome   string   `json:"outcome"`
+			Reason    string   `json:"reason"`
+			Action    string   `json:"action"`
+			Corrected *bool    `json:"corrected"`
+			Billable  bool     `json:"billable"`
+			LatencyMs *float64 `json:"latencyMs"`
+		} `json:"args"`
+		Event map[string]any `json:"event"`
+	} `json:"helpers"`
+	Users []struct {
+		ID     string `json:"id"`
+		Bucket int    `json:"bucket"`
+		Digest string `json:"digest"`
+	} `json:"users"`
+	Decisions []struct {
+		ID      string `json:"id"`
+		Rollout struct {
+			Name      string   `json:"name"`
+			Stylist   bool     `json:"stylist"`
+			Vision    bool     `json:"vision"`
+			Outfit    bool     `json:"outfit"`
+			Percent   int      `json:"percent"`
+			Allowlist []string `json:"allowlist"`
+		} `json:"rollout"`
+		Feature  string `json:"feature"`
+		Eligible bool   `json:"eligible"`
+		Reason   string `json:"reason"`
+	} `json:"decisions"`
+	Moments []struct {
+		At                  time.Time `json:"at"`
+		Day                 string    `json:"day"`
+		SecondsUntilNextDay int       `json:"secondsUntilNextDay"`
+	} `json:"moments"`
+}
+
+// LoadAIMonitoring reads the AI monitoring vectors.
+func LoadAIMonitoring(t testing.TB) AIMonitoring {
+	t.Helper()
+	var m AIMonitoring
+	load(t, "ai-monitoring.json", &m)
+	if len(m.Sanitized) == 0 || len(m.Helpers) == 0 || len(m.Users) == 0 || len(m.Decisions) == 0 || len(m.Moments) == 0 || len(m.Limits) == 0 {
+		t.Fatal("ai-monitoring.json: a section is empty")
+	}
+	return m
+}

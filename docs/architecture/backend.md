@@ -514,6 +514,36 @@ memory.
   database dump cannot be tested against guesses without the server's secret.
 - Ended windows are removed by the hourly cleanup.
 
+## AI
+
+Stage B6, under way: the parts below exist; the features that use them arrive slice
+by slice (`docs/plan/B6.md`).
+
+- **Providers** (`internal/ai`): `Client` gives a feature its text or vision provider
+  from the settings (Gemini, OpenAI or the mock), with one retry, a deadline per call
+  and one record per call for the monitoring. Errors are typed (`ai.Error` with a
+  `Kind`); a key never appears in an error or a log line. What the adapters send is
+  held to the Next.js adapters by golden request bodies
+  (`testdata/golden/ai-providers.json`).
+- **Quotas** (`internal/quota`): a user's calls per feature and day (stylist 50,
+  garment analysis 50, outfit explanation 30, colour analysis 10), counted in
+  `AiUsage` by one statement that cannot pass the limit however many requests arrive
+  at once (tested with 80 against 50). The day is the calendar day in Tashkent
+  (UTC+5) on the database clock. `Charge` answers with the time until the next day
+  for `Retry-After`; `Refund` gives a unit back to the day it was taken from, never
+  below zero, and is made even when the request has ended.
+- **Rollout** (`ai.Eligible`): a feature's switch, then the allowlist (SHA-256 digests
+  of user ids, never the ids), then the user's stable bucket (0 to 99) against the
+  percentage. The buckets and digests are the Next.js server's
+  (`testdata/golden/ai-monitoring.json`), so a user keeps their place across the
+  cutover.
+- **Monitoring** (`ai.Monitor`): the events `ai.call`, `ai.request` and `ai.quota`,
+  one JSON log line each, the event's name as the message. Every event passes a
+  whitelist per event: only known fields of the right kind, and a text only when it is
+  a short lowercase code, so that no prompt, answer, address or id can be written even
+  when a caller passes one by mistake. `apps/web/scripts/ai-monitor.ts` aggregates
+  the lines.
+
 ## Process
 
 - `lookly serve` validates the configuration, opens the pgx pool (lazily: the server

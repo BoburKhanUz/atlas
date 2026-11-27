@@ -1,0 +1,6715 @@
+{
+ "generatedBy": "apps/web/scripts/golden-ai-monitoring.ts",
+ "sourceCommit": "784d6f2e2d2b9e720b0ba89ef55e459ea828b4f5",
+ "note": "The monitoring events, the rollout and the quota day of the Next.js AI code.",
+ "schemaVersion": 2,
+ "limits": {
+  "stylist_chat": 50,
+  "clothing_analysis": 50,
+  "color_analysis": 10,
+  "outfit_explanation": 30
+ },
+ "sanitized": [
+  {
+   "name": "a call, every field",
+   "input": {
+    "event": "ai.call",
+    "feature": "stylist_chat",
+    "provider": "gemini",
+    "model": "gemini-2.5-flash",
+    "outcome": "ok",
+    "success": true,
+    "latencyMs": 812,
+    "attempts": 1,
+    "retried": false,
+    "retry": "none",
+    "usageInput": 1234,
+    "usageOutput": 321,
+    "usageTotal": 1555,
+    "costUsd": 0.001173,
+    "environment": "production",
+    "schemaVersion": 2
+   },
+   "output": {
+    "event": "ai.call",
+    "feature": "stylist_chat",
+    "provider": "gemini",
+    "model": "gemini-2.5-flash",
+    "outcome": "ok",
+    "success": true,
+    "latencyMs": 812,
+    "attempts": 1,
+    "retried": false,
+    "retry": "none",
+    "usageInput": 1234,
+    "usageOutput": 321,
+    "usageTotal": 1555,
+    "costUsd": 0.001173,
+    "environment": "production",
+    "schemaVersion": 2
+   }
+  },
+  {
+   "name": "a failed call",
+   "input": {
+    "event": "ai.call",
+    "feature": "clothing_analysis",
+    "provider": "openai",
+    "model": "gpt-5.4-mini",
+    "outcome": "rate_limited",
+    "success": false,
+    "errorCode": "rate_limited",
+    "httpStatus": 429,
+    "latencyMs": 120,
+    "attempts": 2,
+    "retried": true,
+    "retry": "failed"
+   },
+   "output": {
+    "event": "ai.call",
+    "feature": "clothing_analysis",
+    "provider": "openai",
+    "model": "gpt-5.4-mini",
+    "outcome": "rate_limited",
+    "success": false,
+    "errorCode": "rate_limited",
+    "httpStatus": 429,
+    "latencyMs": 120,
+    "attempts": 2,
+    "retried": true,
+    "retry": "failed"
+   }
+  },
+  {
+   "name": "a request",
+   "input": {
+    "event": "ai.request",
+    "feature": "outfit_explanation",
+    "provider": "gemini",
+    "model": "m",
+    "outcome": "fallback",
+    "reason": "quota_exceeded",
+    "corrected": false,
+    "billable": false,
+    "latencyMs": 3
+   },
+   "output": {
+    "event": "ai.request",
+    "feature": "outfit_explanation",
+    "provider": "gemini",
+    "model": "m",
+    "outcome": "fallback",
+    "reason": "quota_exceeded",
+    "corrected": false,
+    "billable": false,
+    "latencyMs": 3
+   }
+  },
+  {
+   "name": "a quota decision",
+   "input": {
+    "event": "ai.quota",
+    "feature": "stylist_chat",
+    "provider": "gemini",
+    "action": "refunded",
+    "reason": "provider_error"
+   },
+   "output": {
+    "event": "ai.quota",
+    "feature": "stylist_chat",
+    "provider": "gemini",
+    "action": "refunded",
+    "reason": "provider_error"
+   }
+  },
+  {
+   "name": "unknown fields are dropped",
+   "input": {
+    "event": "ai.call",
+    "feature": "stylist_chat",
+    "userId": "cmabc",
+    "prompt": "Salom",
+    "answer": "x",
+    "itemId": "W1",
+    "message": "text",
+    "conversationId": "c1"
+   },
+   "output": {
+    "event": "ai.call",
+    "feature": "stylist_chat"
+   }
+  },
+  {
+   "name": "fields of another event are dropped",
+   "input": {
+    "event": "ai.quota",
+    "feature": "stylist_chat",
+    "latencyMs": 5,
+    "model": "m",
+    "outcome": "ok",
+    "billable": true
+   },
+   "output": {
+    "event": "ai.quota",
+    "feature": "stylist_chat"
+   }
+  },
+  {
+   "name": "a sentence where a code belongs",
+   "input": {
+    "event": "ai.request",
+    "feature": "stylist_chat",
+    "reason": "the user asked about a red dress",
+    "outcome": "ok"
+   },
+   "output": {
+    "event": "ai.request",
+    "feature": "stylist_chat",
+    "outcome": "ok"
+   }
+  },
+  {
+   "name": "a code with capitals",
+   "input": {
+    "event": "ai.request",
+    "feature": "Stylist_Chat",
+    "provider": "Gemini",
+    "outcome": "OK"
+   },
+   "output": {
+    "event": "ai.request"
+   }
+  },
+  {
+   "name": "a code of 64 characters",
+   "input": {
+    "event": "ai.request",
+    "reason": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+   },
+   "output": {
+    "event": "ai.request",
+    "reason": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+   }
+  },
+  {
+   "name": "a code of 65 characters",
+   "input": {
+    "event": "ai.request",
+    "reason": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+   },
+   "output": {
+    "event": "ai.request"
+   }
+  },
+  {
+   "name": "a code that starts with a dot",
+   "input": {
+    "event": "ai.request",
+    "reason": ".hidden"
+   },
+   "output": {
+    "event": "ai.request"
+   }
+  },
+  {
+   "name": "codes with dots, colons and dashes",
+   "input": {
+    "event": "ai.request",
+    "reason": "http.429:rate-limited_x"
+   },
+   "output": {
+    "event": "ai.request",
+    "reason": "http.429:rate-limited_x"
+   }
+  },
+  {
+   "name": "an empty code",
+   "input": {
+    "event": "ai.request",
+    "reason": ""
+   },
+   "output": {
+    "event": "ai.request"
+   }
+  },
+  {
+   "name": "a code with an email",
+   "input": {
+    "event": "ai.request",
+    "reason": "user@example.uz"
+   },
+   "output": {
+    "event": "ai.request"
+   }
+  },
+  {
+   "name": "a code with a URL",
+   "input": {
+    "event": "ai.request",
+    "reason": "https://example.uz/x"
+   },
+   "output": {
+    "event": "ai.request"
+   }
+  },
+  {
+   "name": "a model id",
+   "input": {
+    "event": "ai.call",
+    "model": "ft:gpt-5.4_Mini:Org-1"
+   },
+   "output": {
+    "event": "ai.call",
+    "model": "ft:gpt-5.4_Mini:Org-1"
+   }
+  },
+  {
+   "name": "a model id with a space",
+   "input": {
+    "event": "ai.call",
+    "model": "gpt 5"
+   },
+   "output": {
+    "event": "ai.call"
+   }
+  },
+  {
+   "name": "a model id of 100 characters",
+   "input": {
+    "event": "ai.call",
+    "model": "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"
+   },
+   "output": {
+    "event": "ai.call",
+    "model": "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"
+   }
+  },
+  {
+   "name": "a model id of 101 characters",
+   "input": {
+    "event": "ai.call",
+    "model": "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"
+   },
+   "output": {
+    "event": "ai.call"
+   }
+  },
+  {
+   "name": "numbers are rounded to a millionth",
+   "input": {
+    "event": "ai.call",
+    "costUsd": 0.0000014999,
+    "latencyMs": 12.3456789,
+    "usageInput": 10.5
+   },
+   "output": {
+    "event": "ai.call",
+    "latencyMs": 12.345679,
+    "usageInput": 10.5,
+    "costUsd": 0.000001
+   }
+  },
+  {
+   "name": "a number that rounds up at the half",
+   "input": {
+    "event": "ai.call",
+    "costUsd": 5e-7,
+    "latencyMs": 0.0000015
+   },
+   "output": {
+    "event": "ai.call",
+    "latencyMs": 0.000002,
+    "costUsd": 0.000001
+   }
+  },
+  {
+   "name": "negative, infinite and non-numbers are dropped",
+   "input": {
+    "event": "ai.call",
+    "latencyMs": -1,
+    "attempts": {
+     "number": "Infinity"
+    },
+    "usageInput": {
+     "number": "NaN"
+    },
+    "usageOutput": "5",
+    "httpStatus": null,
+    "costUsd": {
+     "undefined": true
+    }
+   },
+   "output": {
+    "event": "ai.call"
+   }
+  },
+  {
+   "name": "zero stays",
+   "input": {
+    "event": "ai.call",
+    "latencyMs": 0,
+    "attempts": 0,
+    "costUsd": 0
+   },
+   "output": {
+    "event": "ai.call",
+    "latencyMs": 0,
+    "attempts": 0,
+    "costUsd": 0
+   }
+  },
+  {
+   "name": "booleans must be booleans",
+   "input": {
+    "event": "ai.call",
+    "success": "true",
+    "retried": 1
+   },
+   "output": {
+    "event": "ai.call"
+   }
+  },
+  {
+   "name": "a boolean where a code belongs",
+   "input": {
+    "event": "ai.request",
+    "outcome": true,
+    "corrected": "no",
+    "billable": false
+   },
+   "output": {
+    "event": "ai.request",
+    "billable": false
+   }
+  },
+  {
+   "name": "an event we do not know",
+   "input": {
+    "event": "ai.secret",
+    "feature": "stylist_chat"
+   },
+   "output": null
+  },
+  {
+   "name": "schema version and environment",
+   "input": {
+    "event": "ai.quota",
+    "environment": "staging",
+    "schemaVersion": 2
+   },
+   "output": {
+    "event": "ai.quota",
+    "environment": "staging",
+    "schemaVersion": 2
+   }
+  },
+  {
+   "name": "an environment that is no code",
+   "input": {
+    "event": "ai.quota",
+    "environment": "Production East"
+   },
+   "output": {
+    "event": "ai.quota"
+   }
+  }
+ ],
+ "helpers": [
+  {
+   "name": "a request with a latency that rounds",
+   "call": "request",
+   "args": {
+    "feature": "stylist_chat",
+    "provider": "gemini",
+    "model": "m",
+    "outcome": "ok",
+    "corrected": true,
+    "billable": true,
+    "latencyMs": 1234.5
+   },
+   "event": {
+    "event": "ai.request",
+    "feature": "stylist_chat",
+    "provider": "gemini",
+    "model": "m",
+    "outcome": "ok",
+    "corrected": true,
+    "billable": true,
+    "latencyMs": 1235,
+    "environment": "unknown",
+    "schemaVersion": 2
+   }
+  },
+  {
+   "name": "a request with a negative latency",
+   "call": "request",
+   "args": {
+    "feature": "clothing_analysis",
+    "provider": "openai",
+    "outcome": "image_rejected",
+    "reason": "undecodable",
+    "billable": false,
+    "latencyMs": -4
+   },
+   "event": {
+    "event": "ai.request",
+    "feature": "clothing_analysis",
+    "provider": "openai",
+    "outcome": "image_rejected",
+    "reason": "undecodable",
+    "billable": false,
+    "latencyMs": 0,
+    "environment": "unknown",
+    "schemaVersion": 2
+   }
+  },
+  {
+   "name": "a request that needed no correction",
+   "call": "request",
+   "args": {
+    "feature": "stylist_chat",
+    "provider": "openai",
+    "model": "gpt-5.4-mini",
+    "outcome": "ok",
+    "corrected": false,
+    "billable": true,
+    "latencyMs": 0.4
+   },
+   "event": {
+    "event": "ai.request",
+    "feature": "stylist_chat",
+    "provider": "openai",
+    "model": "gpt-5.4-mini",
+    "outcome": "ok",
+    "corrected": false,
+    "billable": true,
+    "latencyMs": 0,
+    "environment": "unknown",
+    "schemaVersion": 2
+   }
+  },
+  {
+   "name": "a request without a latency",
+   "call": "request",
+   "args": {
+    "feature": "outfit_explanation",
+    "provider": "mock",
+    "outcome": "disabled",
+    "reason": "feature_disabled",
+    "billable": false
+   },
+   "event": {
+    "event": "ai.request",
+    "feature": "outfit_explanation",
+    "provider": "mock",
+    "outcome": "disabled",
+    "reason": "feature_disabled",
+    "billable": false,
+    "environment": "unknown",
+    "schemaVersion": 2
+   }
+  },
+  {
+   "name": "a quota charge",
+   "call": "quota",
+   "args": {
+    "feature": "stylist_chat",
+    "provider": "gemini",
+    "action": "charged"
+   },
+   "event": {
+    "event": "ai.quota",
+    "feature": "stylist_chat",
+    "provider": "gemini",
+    "action": "charged",
+    "environment": "unknown",
+    "schemaVersion": 2
+   }
+  },
+  {
+   "name": "a quota refund with its reason",
+   "call": "quota",
+   "args": {
+    "feature": "clothing_analysis",
+    "provider": "openai",
+    "action": "refunded",
+    "reason": "invalid_output"
+   },
+   "event": {
+    "event": "ai.quota",
+    "feature": "clothing_analysis",
+    "provider": "openai",
+    "action": "refunded",
+    "reason": "invalid_output",
+    "environment": "unknown",
+    "schemaVersion": 2
+   }
+  }
+ ],
+ "users": [
+  {
+   "id": "cmabc123",
+   "bucket": 60,
+   "digest": "2fd49faf9b502d1a4bc84d3516d381bbd80ebcd186654fb52063cb91370fcd50"
+  },
+  {
+   "id": "cmabc124",
+   "bucket": 50,
+   "digest": "9b990a60b55c620e903f75c307476a3e236dd6826cd94d024a031c18b853c64a"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "bucket": 57,
+   "digest": "a3ac33c4fedb90b65057a9fb79654be42afd54afb7b070f77412cfabbd4c60d3"
+  },
+  {
+   "id": "",
+   "bucket": 80,
+   "digest": "e12387f211677a35a02b5262594acbdd1f79672de443d3a40ac53e10b0d42d68"
+  },
+  {
+   "id": "a",
+   "bucket": 78,
+   "digest": "86d0a39631f82d341cd1a0d55a93a4f67eee39da024a0adba2b51820236c851d"
+  },
+  {
+   "id": "user with spaces",
+   "bucket": 94,
+   "digest": "21d7f581a8072df189b927844f3f1347d8878dd020958962bb51f668e5c70c3f"
+  },
+  {
+   "id": "Ўзбек",
+   "bucket": 62,
+   "digest": "2a9e466a1a84f5135c49f91b080ea817c89a577a9f573e828e8d1529b76f8ecb"
+  },
+  {
+   "id": "👗",
+   "bucket": 23,
+   "digest": "dc001bf08f62a42719af2e4ca19d0fc3e7c9096ebcb0c96ef09b29c5d47574a5"
+  },
+  {
+   "id": "cm0user0",
+   "bucket": 25,
+   "digest": "03151f38e8f8fcf5408d7989be85df3494afe7a6c2bf017c94c328d97bafbd58"
+  },
+  {
+   "id": "cm63zuser1",
+   "bucket": 70,
+   "digest": "c21dbef4cf52a94929ec5fb489c40404efb00eda05040b5d2a3e8049552a2e43"
+  },
+  {
+   "id": "cmc7yuser2",
+   "bucket": 71,
+   "digest": "4af89401a968064d14cad0ffe64028e3a2d9af6431f15006ef4d1ac7005c16ed"
+  },
+  {
+   "id": "cmibxuser3",
+   "bucket": 28,
+   "digest": "c51e79f0fda98cf7473c69b7ec1b9bfbde6d190fcecf019205d1a6084e61451e"
+  },
+  {
+   "id": "cmofwuser4",
+   "bucket": 73,
+   "digest": "4395966c0a4a2985bfba4f60611864c3553f4e7917207e7ea0102ccc2de699cf"
+  },
+  {
+   "id": "cmujvuser5",
+   "bucket": 80,
+   "digest": "b8c17082ea3145fea0bd12dc85099d5e0f9b209222128bcd312f539787fcd896"
+  },
+  {
+   "id": "cm10nuuser6",
+   "bucket": 3,
+   "digest": "bee19f77894dff7602a8b4d861a0340a07feee8e8ad1c26de8f0b75d4e21595d"
+  },
+  {
+   "id": "cm16rtuser7",
+   "bucket": 1,
+   "digest": "16641908e931477a0b222c11d9b138fd2890f6ed54a9a6fe4921c073810e2b65"
+  },
+  {
+   "id": "cm1cvsuser8",
+   "bucket": 80,
+   "digest": "7adb507722dfee06e6bee01ba5fb0db570ca15bd10211bd6f18365711ede5586"
+  },
+  {
+   "id": "cm1izruser9",
+   "bucket": 2,
+   "digest": "d89c8aec56f7c8e425b584ddf639cc5e7dace71fcfab7f70e2c6b2903860894d"
+  },
+  {
+   "id": "cm1p3quser10",
+   "bucket": 43,
+   "digest": "d8ad2d152a9137bc82449b4d795e197936603e7b07cd35ab4b1752f50923c7fb"
+  },
+  {
+   "id": "cm1v7puser11",
+   "bucket": 65,
+   "digest": "ac6184672dd5a66e6d7399405b5d7365daf827a9f311ed1b70af389e61487ee7"
+  },
+  {
+   "id": "cm21bouser12",
+   "bucket": 80,
+   "digest": "e4b55ab87e06ca1b2a72ba666ed39c00233b0497d179d9afbe845d7b9b72798e"
+  },
+  {
+   "id": "cm27fnuser13",
+   "bucket": 34,
+   "digest": "0bb1bf6908fecfe28c295eafb8c1b176cc0aea56c0dffbfa4fcdcedc07ed9170"
+  },
+  {
+   "id": "cm2djmuser14",
+   "bucket": 23,
+   "digest": "5beb7a13e47e5696c2a28425045809d7f640bf9b102622a652551698ab674bc2"
+  },
+  {
+   "id": "cm2jnluser15",
+   "bucket": 89,
+   "digest": "60505b141aa119bd6f6f93d39b09fb6d8b089083b225cf3b907172a92ddee493"
+  },
+  {
+   "id": "cm2prkuser16",
+   "bucket": 76,
+   "digest": "1782a9705392e479c93fd5ea41643fcbef6c4edff7f520b5a5a706c62c1a6c9b"
+  },
+  {
+   "id": "cm2vvjuser17",
+   "bucket": 93,
+   "digest": "2e2084b6626e2b3e0eaf64b9af38353bb7b043b066b245082286c9927090de2a"
+  },
+  {
+   "id": "cm31ziuser18",
+   "bucket": 12,
+   "digest": "73a4f93f0246b28a7a07785fe729ddaae6aa0fef12cefa4a6475525fea692fd8"
+  },
+  {
+   "id": "cm383huser19",
+   "bucket": 61,
+   "digest": "da62d4e2f16c44fe0854204ae0bfccc945d9d92e0f80b1413f594669f83f7a55"
+  },
+  {
+   "id": "cm3e7guser20",
+   "bucket": 79,
+   "digest": "2e70673d8ef5fb50a6323a658b81ea921da358a085b37e7c02eb133b6e00854e"
+  },
+  {
+   "id": "cm3kbfuser21",
+   "bucket": 78,
+   "digest": "4bef0e9fef45026828672d76424a44a6b8af9c66e0ab640af51d215055acbc13"
+  },
+  {
+   "id": "cm3qfeuser22",
+   "bucket": 15,
+   "digest": "7f9bcb2160ae1fbecf5a0c8ad10996a89b5855a846e3bdbc812825067d6bba2d"
+  },
+  {
+   "id": "cm3wjduser23",
+   "bucket": 69,
+   "digest": "829ce9947cddc642e16d8698e8a16e49b0e08c60dc6ced20cd8af67a96fb4714"
+  },
+  {
+   "id": "cm42ncuser24",
+   "bucket": 28,
+   "digest": "d05ab53df50782104cbd06ef2859b773ca33a394246c5ff7515c32d8ea215d22"
+  },
+  {
+   "id": "cm48rbuser25",
+   "bucket": 49,
+   "digest": "82b934d185a408b7bc932cddc3015925bfbde197eed82931fec96fd5e69de59e"
+  },
+  {
+   "id": "cm4evauser26",
+   "bucket": 28,
+   "digest": "f06b9dcfe4fcf0c7fb269fe2c9356bfe0c9e37fcf2c444d7b2e244a8f6ad680c"
+  },
+  {
+   "id": "cm4kz9user27",
+   "bucket": 35,
+   "digest": "90ae36d41be2d0059bd3442b7ea93c71c3102be07de4ee2834c0adc21579e2cf"
+  },
+  {
+   "id": "cm4r38user28",
+   "bucket": 88,
+   "digest": "3ca0a2addacfad4bfbe43c4d7db658ffd42c3515f0779cc89ee384e0395d0b81"
+  },
+  {
+   "id": "cm4x77user29",
+   "bucket": 83,
+   "digest": "5933c50132c6ef08e2351b94a22434921fcec8d8e38feb56b370d6c326970b72"
+  },
+  {
+   "id": "cm53b6user30",
+   "bucket": 24,
+   "digest": "335034e0dbc829aa14a37f0bb9cbe3388e1a40b24aa972687c52f6572691f0d7"
+  },
+  {
+   "id": "cm59f5user31",
+   "bucket": 46,
+   "digest": "e6444ca6ed0c1fe3a10ec5976692619e34fc56c649fc84f9b413dd73aa9c9bb5"
+  },
+  {
+   "id": "cm5fj4user32",
+   "bucket": 27,
+   "digest": "151f6c29136fa9e6087689cf0ef7bac6e4725f4956edd4cf5ed796ba2f04f9b4"
+  },
+  {
+   "id": "cm5ln3user33",
+   "bucket": 11,
+   "digest": "ebd452943772f5666e0debba5b733166b21974354c75f83e7cb0808e570e00cf"
+  },
+  {
+   "id": "cm5rr2user34",
+   "bucket": 34,
+   "digest": "ea024e82488a4f4133f9d4cfcba4c777fe6a3a33e1ac10bd169d9d94566ed4a0"
+  },
+  {
+   "id": "cm5xv1user35",
+   "bucket": 69,
+   "digest": "5a7acc48190a9586d212c86e741bd08221bc01e3147be223a1e349d323410983"
+  },
+  {
+   "id": "cm63z0user36",
+   "bucket": 59,
+   "digest": "019aa6fc44d1fe886b79dbf01ffd4df0859d2a291e14f685207e4a9cdc5871c6"
+  },
+  {
+   "id": "cm6a2zuser37",
+   "bucket": 4,
+   "digest": "77e76ed4a9117c6f4809307e4c7c8e0342f5e6ce4469685a8788f87a7c780563"
+  },
+  {
+   "id": "cm6g6yuser38",
+   "bucket": 94,
+   "digest": "dbdf88ceefa2433fa88bb062a7118f47c73b718867e65c1d6557f84348e8f8fe"
+  },
+  {
+   "id": "cm6maxuser39",
+   "bucket": 87,
+   "digest": "3013618ec206d68314099467137f4dd50e8a3793fd5d7fcb614f52790bd183bc"
+  },
+  {
+   "id": "cm6sewuser40",
+   "bucket": 47,
+   "digest": "3e73b62f687d7eac170e694191d26b0128dcf25612f31f88fd8e4a8ad3e4ba48"
+  },
+  {
+   "id": "cm6yivuser41",
+   "bucket": 75,
+   "digest": "7ff0a5f0c98481cd248b28b2c19318d6fe1e21920c28242a459cab0bbb3e6d3d"
+  },
+  {
+   "id": "cm74muuser42",
+   "bucket": 73,
+   "digest": "48ba204d5bd6a5b94776068419f916d8656f1fc08c087fe42b730d7aa5bc0594"
+  },
+  {
+   "id": "cm7aqtuser43",
+   "bucket": 84,
+   "digest": "3edf76491c489837184067c4dd1074b34f60558413fba073c08339544e7a5725"
+  },
+  {
+   "id": "cm7gususer44",
+   "bucket": 95,
+   "digest": "ca56a1a5fa38e623bfc3eebf02c013aa8f853d41b2d783b362a225a7dee812f3"
+  },
+  {
+   "id": "cm7myruser45",
+   "bucket": 68,
+   "digest": "5efdf4138ec92c80d6886b1a3874b9e9a5f264b5de47f3bdf983eacaa4482d04"
+  },
+  {
+   "id": "cm7t2quser46",
+   "bucket": 4,
+   "digest": "9f570181b1e235538d96f5bf1e8e57b6e7c2f73ed42670245b202fde6d55883a"
+  },
+  {
+   "id": "cm7z6puser47",
+   "bucket": 13,
+   "digest": "8ade21cb88f7bf27059e9df1b3246eb44e8a13670c1c5368406e0812c622f9f1"
+  },
+  {
+   "id": "cm85aouser48",
+   "bucket": 27,
+   "digest": "9d61e399cb366cffc019abec4c6bbaa148df0b93c9d4c30a1dc6a53ce95c3d81"
+  },
+  {
+   "id": "cm8benuser49",
+   "bucket": 75,
+   "digest": "f802a09622b04db712c801af43dab666ff30bfc2bf836f900b01e9ede8045f9e"
+  },
+  {
+   "id": "cm8himuser50",
+   "bucket": 97,
+   "digest": "e91de2ec6fcd4b3477b7780e1e7941cf65281ff804feea51526fb2b25df06922"
+  },
+  {
+   "id": "cm8nmluser51",
+   "bucket": 76,
+   "digest": "42b7fa07ef6308c4bcde535f9be5d57ae4c24c1662bc651150978582be1e886b"
+  },
+  {
+   "id": "cm8tqkuser52",
+   "bucket": 2,
+   "digest": "02e86b801a3489026cbe11c648f952db7fa7c179efcadee15ae66a3a59a43c40"
+  },
+  {
+   "id": "cm8zujuser53",
+   "bucket": 63,
+   "digest": "245ae658fad6af00681e98ad28815ce0027c28669775de24f0d9d2bf50bcc492"
+  },
+  {
+   "id": "cm95yiuser54",
+   "bucket": 92,
+   "digest": "55f50f32efc60c89dfea8c0a056de517d1c7aa57c208cc292fce74081070f03e"
+  },
+  {
+   "id": "cm9c2huser55",
+   "bucket": 93,
+   "digest": "671a341144c9108e393830683f9a710740d6d0a5349c2d6118483661f65e55ba"
+  },
+  {
+   "id": "cm9i6guser56",
+   "bucket": 30,
+   "digest": "ae206451040772b77cfbda0ade0fbb1b98095e75aed6dcd9390fa2449847fa41"
+  },
+  {
+   "id": "cm9oafuser57",
+   "bucket": 98,
+   "digest": "ee2cd253a09ff44270b9561c29491a38cbc34827352efd2f533079e16da103ab"
+  },
+  {
+   "id": "cm9ueeuser58",
+   "bucket": 53,
+   "digest": "0c431ab4635e1085cd004f50ff728ac13fbf027a979073938a478ea294299fe4"
+  },
+  {
+   "id": "cma0iduser59",
+   "bucket": 45,
+   "digest": "a1c8fe5bb481a82406e14a92c59d676fa35ba70ba40ac28efb657068e6871800"
+  }
+ ],
+ "decisions": [
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "2fd49faf9b502d1a4bc84d3516d381bbd80ebcd186654fb52063cb91370fcd50"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "2fd49faf9b502d1a4bc84d3516d381bbd80ebcd186654fb52063cb91370fcd50"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "2fd49faf9b502d1a4bc84d3516d381bbd80ebcd186654fb52063cb91370fcd50"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "0e1997489bec4461daf73db95a8de7d990f7ef5ae1a57d314dba597890938510"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "0e1997489bec4461daf73db95a8de7d990f7ef5ae1a57d314dba597890938510"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "0e1997489bec4461daf73db95a8de7d990f7ef5ae1a57d314dba597890938510"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "2fd49faf9b502d1a4bc84d3516d381bbd80ebcd186654fb52063cb91370fcd50"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "2fd49faf9b502d1a4bc84d3516d381bbd80ebcd186654fb52063cb91370fcd50"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "2fd49faf9b502d1a4bc84d3516d381bbd80ebcd186654fb52063cb91370fcd50"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmabc123",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "9b990a60b55c620e903f75c307476a3e236dd6826cd94d024a031c18b853c64a"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "9b990a60b55c620e903f75c307476a3e236dd6826cd94d024a031c18b853c64a"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "9b990a60b55c620e903f75c307476a3e236dd6826cd94d024a031c18b853c64a"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "af0093d7672f72a172c9c1db0c9ffc3aa83082dbf5de0a91569d710dff03be3a"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "af0093d7672f72a172c9c1db0c9ffc3aa83082dbf5de0a91569d710dff03be3a"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "af0093d7672f72a172c9c1db0c9ffc3aa83082dbf5de0a91569d710dff03be3a"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "9b990a60b55c620e903f75c307476a3e236dd6826cd94d024a031c18b853c64a"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "9b990a60b55c620e903f75c307476a3e236dd6826cd94d024a031c18b853c64a"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "9b990a60b55c620e903f75c307476a3e236dd6826cd94d024a031c18b853c64a"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmabc124",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "a3ac33c4fedb90b65057a9fb79654be42afd54afb7b070f77412cfabbd4c60d3"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "a3ac33c4fedb90b65057a9fb79654be42afd54afb7b070f77412cfabbd4c60d3"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "a3ac33c4fedb90b65057a9fb79654be42afd54afb7b070f77412cfabbd4c60d3"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "15a7c8ba871139e24cdef1497bab7028ade4c07840565746dc4d5fa34c2807ea"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "15a7c8ba871139e24cdef1497bab7028ade4c07840565746dc4d5fa34c2807ea"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "15a7c8ba871139e24cdef1497bab7028ade4c07840565746dc4d5fa34c2807ea"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "a3ac33c4fedb90b65057a9fb79654be42afd54afb7b070f77412cfabbd4c60d3"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "a3ac33c4fedb90b65057a9fb79654be42afd54afb7b070f77412cfabbd4c60d3"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "a3ac33c4fedb90b65057a9fb79654be42afd54afb7b070f77412cfabbd4c60d3"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cxxxxxxxxxxxxxxxxxxxxxxxx",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "e12387f211677a35a02b5262594acbdd1f79672de443d3a40ac53e10b0d42d68"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "e12387f211677a35a02b5262594acbdd1f79672de443d3a40ac53e10b0d42d68"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "e12387f211677a35a02b5262594acbdd1f79672de443d3a40ac53e10b0d42d68"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "b55631a539d344f0b4227e848ebc4233daaf0aebf26440f5d4b3eed317f749e7"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "b55631a539d344f0b4227e848ebc4233daaf0aebf26440f5d4b3eed317f749e7"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "b55631a539d344f0b4227e848ebc4233daaf0aebf26440f5d4b3eed317f749e7"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "e12387f211677a35a02b5262594acbdd1f79672de443d3a40ac53e10b0d42d68"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "e12387f211677a35a02b5262594acbdd1f79672de443d3a40ac53e10b0d42d68"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "e12387f211677a35a02b5262594acbdd1f79672de443d3a40ac53e10b0d42d68"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "86d0a39631f82d341cd1a0d55a93a4f67eee39da024a0adba2b51820236c851d"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "86d0a39631f82d341cd1a0d55a93a4f67eee39da024a0adba2b51820236c851d"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "86d0a39631f82d341cd1a0d55a93a4f67eee39da024a0adba2b51820236c851d"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "fb2637a1d095f4aa6876646e79cb44e5c4af0d950c349628ec8331c3eacaf778"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "fb2637a1d095f4aa6876646e79cb44e5c4af0d950c349628ec8331c3eacaf778"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "fb2637a1d095f4aa6876646e79cb44e5c4af0d950c349628ec8331c3eacaf778"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "86d0a39631f82d341cd1a0d55a93a4f67eee39da024a0adba2b51820236c851d"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "86d0a39631f82d341cd1a0d55a93a4f67eee39da024a0adba2b51820236c851d"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "86d0a39631f82d341cd1a0d55a93a4f67eee39da024a0adba2b51820236c851d"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "a",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "21d7f581a8072df189b927844f3f1347d8878dd020958962bb51f668e5c70c3f"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "21d7f581a8072df189b927844f3f1347d8878dd020958962bb51f668e5c70c3f"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "21d7f581a8072df189b927844f3f1347d8878dd020958962bb51f668e5c70c3f"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "af34ab0b1d9bdb754340e96984c4472f281dccec4f77cdb1458593d75d7db858"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "af34ab0b1d9bdb754340e96984c4472f281dccec4f77cdb1458593d75d7db858"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "af34ab0b1d9bdb754340e96984c4472f281dccec4f77cdb1458593d75d7db858"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "21d7f581a8072df189b927844f3f1347d8878dd020958962bb51f668e5c70c3f"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "21d7f581a8072df189b927844f3f1347d8878dd020958962bb51f668e5c70c3f"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "21d7f581a8072df189b927844f3f1347d8878dd020958962bb51f668e5c70c3f"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "user with spaces",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "2a9e466a1a84f5135c49f91b080ea817c89a577a9f573e828e8d1529b76f8ecb"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "2a9e466a1a84f5135c49f91b080ea817c89a577a9f573e828e8d1529b76f8ecb"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "2a9e466a1a84f5135c49f91b080ea817c89a577a9f573e828e8d1529b76f8ecb"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "b8e07d7981e563c272e866c7f3fb5c5b63538bd266099b1ab7578cbeeba53a0e"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "b8e07d7981e563c272e866c7f3fb5c5b63538bd266099b1ab7578cbeeba53a0e"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "b8e07d7981e563c272e866c7f3fb5c5b63538bd266099b1ab7578cbeeba53a0e"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "2a9e466a1a84f5135c49f91b080ea817c89a577a9f573e828e8d1529b76f8ecb"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "2a9e466a1a84f5135c49f91b080ea817c89a577a9f573e828e8d1529b76f8ecb"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "2a9e466a1a84f5135c49f91b080ea817c89a577a9f573e828e8d1529b76f8ecb"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "Ўзбек",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "dc001bf08f62a42719af2e4ca19d0fc3e7c9096ebcb0c96ef09b29c5d47574a5"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "dc001bf08f62a42719af2e4ca19d0fc3e7c9096ebcb0c96ef09b29c5d47574a5"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "dc001bf08f62a42719af2e4ca19d0fc3e7c9096ebcb0c96ef09b29c5d47574a5"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "4ba141be768aaac7490569c53262977a85ca88472afe0be06d277f42be776abc"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "4ba141be768aaac7490569c53262977a85ca88472afe0be06d277f42be776abc"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "4ba141be768aaac7490569c53262977a85ca88472afe0be06d277f42be776abc"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "dc001bf08f62a42719af2e4ca19d0fc3e7c9096ebcb0c96ef09b29c5d47574a5"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "dc001bf08f62a42719af2e4ca19d0fc3e7c9096ebcb0c96ef09b29c5d47574a5"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "dc001bf08f62a42719af2e4ca19d0fc3e7c9096ebcb0c96ef09b29c5d47574a5"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "👗",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "03151f38e8f8fcf5408d7989be85df3494afe7a6c2bf017c94c328d97bafbd58"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "03151f38e8f8fcf5408d7989be85df3494afe7a6c2bf017c94c328d97bafbd58"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "03151f38e8f8fcf5408d7989be85df3494afe7a6c2bf017c94c328d97bafbd58"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "1461be2ec363df43b1a7efea1cacc3de8f6b6fdf9308b79e04968bf57160b567"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "1461be2ec363df43b1a7efea1cacc3de8f6b6fdf9308b79e04968bf57160b567"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "1461be2ec363df43b1a7efea1cacc3de8f6b6fdf9308b79e04968bf57160b567"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "03151f38e8f8fcf5408d7989be85df3494afe7a6c2bf017c94c328d97bafbd58"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "03151f38e8f8fcf5408d7989be85df3494afe7a6c2bf017c94c328d97bafbd58"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "03151f38e8f8fcf5408d7989be85df3494afe7a6c2bf017c94c328d97bafbd58"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cm0user0",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "c21dbef4cf52a94929ec5fb489c40404efb00eda05040b5d2a3e8049552a2e43"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "c21dbef4cf52a94929ec5fb489c40404efb00eda05040b5d2a3e8049552a2e43"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "c21dbef4cf52a94929ec5fb489c40404efb00eda05040b5d2a3e8049552a2e43"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "3826a4c1ecac2c6bd8fa5eeb952d1c5f19eb6881404638b192fec00e2f169caa"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "3826a4c1ecac2c6bd8fa5eeb952d1c5f19eb6881404638b192fec00e2f169caa"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "3826a4c1ecac2c6bd8fa5eeb952d1c5f19eb6881404638b192fec00e2f169caa"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "c21dbef4cf52a94929ec5fb489c40404efb00eda05040b5d2a3e8049552a2e43"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "c21dbef4cf52a94929ec5fb489c40404efb00eda05040b5d2a3e8049552a2e43"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "c21dbef4cf52a94929ec5fb489c40404efb00eda05040b5d2a3e8049552a2e43"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cm63zuser1",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "4af89401a968064d14cad0ffe64028e3a2d9af6431f15006ef4d1ac7005c16ed"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "4af89401a968064d14cad0ffe64028e3a2d9af6431f15006ef4d1ac7005c16ed"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "4af89401a968064d14cad0ffe64028e3a2d9af6431f15006ef4d1ac7005c16ed"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "90387ad63fae5f701a72bdb7ece1baec673c78862391ca3f03cb41fb929a9630"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "90387ad63fae5f701a72bdb7ece1baec673c78862391ca3f03cb41fb929a9630"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "90387ad63fae5f701a72bdb7ece1baec673c78862391ca3f03cb41fb929a9630"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "4af89401a968064d14cad0ffe64028e3a2d9af6431f15006ef4d1ac7005c16ed"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "4af89401a968064d14cad0ffe64028e3a2d9af6431f15006ef4d1ac7005c16ed"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "4af89401a968064d14cad0ffe64028e3a2d9af6431f15006ef4d1ac7005c16ed"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmc7yuser2",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "everything on, 100 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "everything on, 0 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "50 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 50,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "1 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 1,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "99 %",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 99,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "c51e79f0fda98cf7473c69b7ec1b9bfbde6d190fcecf019205d1a6084e61451e"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "c51e79f0fda98cf7473c69b7ec1b9bfbde6d190fcecf019205d1a6084e61451e"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "0 %, this user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "c51e79f0fda98cf7473c69b7ec1b9bfbde6d190fcecf019205d1a6084e61451e"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "4c2670819548eeb255e69f71321cc21ea3228ee0e333d8f737b9e510021da2fe"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "4c2670819548eeb255e69f71321cc21ea3228ee0e333d8f737b9e510021da2fe"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "0 %, another user allowlisted",
+    "stylist": true,
+    "vision": true,
+    "outfit": true,
+    "percent": 0,
+    "allowlist": [
+     "4c2670819548eeb255e69f71321cc21ea3228ee0e333d8f737b9e510021da2fe"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "rollout_not_selected"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "c51e79f0fda98cf7473c69b7ec1b9bfbde6d190fcecf019205d1a6084e61451e"
+    ]
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "c51e79f0fda98cf7473c69b7ec1b9bfbde6d190fcecf019205d1a6084e61451e"
+    ]
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "the stylist off, this user allowlisted, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": [
+     "c51e79f0fda98cf7473c69b7ec1b9bfbde6d190fcecf019205d1a6084e61451e"
+    ]
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "allowlisted"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "only the stylist on, 100 %",
+    "stylist": true,
+    "vision": false,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": true,
+   "reason": "rollout_selected"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "only the garment analysis on, 100 %",
+    "stylist": false,
+    "vision": true,
+    "outfit": false,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "stylist_chat",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "clothing_analysis",
+   "eligible": false,
+   "reason": "feature_disabled"
+  },
+  {
+   "id": "cmibxuser3",
+   "rollout": {
+    "name": "only the outfit explanation on, 100 %",
+    "stylist": false,
+    "vision": false,
+    "outfit": true,
+    "percent": 100,
+    "allowlist": []
+   },
+   "feature": "outfit_explanation",
+   "eligible": true,
+   "reason": "rollout_selected"
+  }
+ ],
+ "moments": [
+  {
+   "at": "2026-11-27T00:00:00.000Z",
+   "day": "2026-11-27",
+   "secondsUntilNextDay": 68400
+  },
+  {
+   "at": "2026-11-27T18:59:59.000Z",
+   "day": "2026-11-27",
+   "secondsUntilNextDay": 1
+  },
+  {
+   "at": "2026-11-27T18:59:59.001Z",
+   "day": "2026-11-27",
+   "secondsUntilNextDay": 1
+  },
+  {
+   "at": "2026-11-27T18:59:59.999Z",
+   "day": "2026-11-27",
+   "secondsUntilNextDay": 1
+  },
+  {
+   "at": "2026-11-27T19:00:00.000Z",
+   "day": "2026-11-28",
+   "secondsUntilNextDay": 86400
+  },
+  {
+   "at": "2026-11-27T19:00:00.001Z",
+   "day": "2026-11-28",
+   "secondsUntilNextDay": 86400
+  },
+  {
+   "at": "2026-11-27T12:34:56.789Z",
+   "day": "2026-11-27",
+   "secondsUntilNextDay": 23104
+  },
+  {
+   "at": "2026-12-31T19:00:00.000Z",
+   "day": "2027-01-01",
+   "secondsUntilNextDay": 86400
+  },
+  {
+   "at": "2026-12-31T18:59:59.500Z",
+   "day": "2026-12-31",
+   "secondsUntilNextDay": 1
+  },
+  {
+   "at": "2028-02-28T19:00:00.000Z",
+   "day": "2028-02-29",
+   "secondsUntilNextDay": 86400
+  },
+  {
+   "at": "2028-02-29T19:00:00.000Z",
+   "day": "2028-03-01",
+   "secondsUntilNextDay": 86400
+  },
+  {
+   "at": "2026-03-28T20:30:00.000Z",
+   "day": "2026-03-29",
+   "secondsUntilNextDay": 81000
+  }
+ ]
+}

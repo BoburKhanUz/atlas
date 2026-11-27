@@ -40,3 +40,9 @@ func (c *Client) WithoutWaits(now func() time.Time) *Client {
 	}
 	return c
 }
+
+// At makes the monitor's clock the one given (a test's).
+func (m *Monitor) At(now time.Time) *Monitor {
+	m.now = func() time.Time { return now }
+	return m
+}
