@@ -1220,6 +1220,40 @@ type AuthResponse struct {
 	union json.RawMessage
 }
 
+// ConversationListResponse defines model for ConversationListResponse.
+type ConversationListResponse struct {
+	Conversations []struct {
+		Id          string                    `json:"id"`
+		LastMessage nullable.Nullable[string] `json:"lastMessage"`
+		LastRole    nullable.Nullable[string] `json:"lastRole"`
+		Title       nullable.Nullable[string] `json:"title"`
+
+		// UpdatedAt ISO 8601, UTC
+		UpdatedAt time.Time `json:"updatedAt"`
+	} `json:"conversations"`
+}
+
+// ConversationResponse defines model for ConversationResponse.
+type ConversationResponse struct {
+	Conversation struct {
+		// CreatedAt ISO 8601, UTC
+		CreatedAt time.Time `json:"createdAt"`
+		Id        string    `json:"id"`
+		Messages  []struct {
+			Content string `json:"content"`
+
+			// CreatedAt ISO 8601, UTC
+			CreatedAt time.Time `json:"createdAt"`
+			Id        string    `json:"id"`
+			Role      string    `json:"role"`
+		} `json:"messages"`
+		Title nullable.Nullable[string] `json:"title"`
+
+		// UpdatedAt ISO 8601, UTC
+		UpdatedAt time.Time `json:"updatedAt"`
+	} `json:"conversation"`
+}
+
 // CorrectionLogEntry defines model for CorrectionLogEntry.
 type CorrectionLogEntry struct {
 	// At ISO 8601, UTC
@@ -1780,6 +1814,40 @@ type SessionUser struct {
 	Name  nullable.Nullable[string] `json:"name"`
 }
 
+// StylistChatRequest defines model for StylistChatRequest.
+type StylistChatRequest struct {
+	ConversationId nullable.Nullable[string] `json:"conversationId,omitempty"`
+
+	// Event Occasion the user typed (free text, trimmed; an occasion id or label is also used by the outfit engine)
+	Event nullable.Nullable[string] `json:"event,omitempty"`
+
+	// Message Trimmed; 1–2000 characters
+	Message string `json:"message"`
+	Weather nullable.Nullable[struct {
+		Condition                *string  `json:"condition,omitempty"`
+		FeelsLike                *float64 `json:"feelsLike,omitempty"`
+		Humidity                 *float64 `json:"humidity,omitempty"`
+		PrecipitationProbability *float64 `json:"precipitationProbability,omitempty"`
+		Temperature              *float64 `json:"temperature,omitempty"`
+		UvIndex                  *float64 `json:"uvIndex,omitempty"`
+		WindSpeed                *float64 `json:"windSpeed,omitempty"`
+	}] `json:"weather,omitempty"`
+}
+
+// StylistChatResponse defines model for StylistChatResponse.
+type StylistChatResponse struct {
+	// AssistantMessage The stylist answer; wardrobe items are named in plain words (no internal references or ids)
+	AssistantMessage string `json:"assistantMessage"`
+	ContextSummary   struct {
+		EventProvided bool `json:"eventProvided"`
+
+		// WardrobeItemCount Wardrobe items given to the stylist for this answer (at most 40)
+		WardrobeItemCount int  `json:"wardrobeItemCount"`
+		WeatherProvided   bool `json:"weatherProvided"`
+	} `json:"contextSummary"`
+	ConversationId string `json:"conversationId"`
+}
+
 // WardrobeItem defines model for WardrobeItem.
 type WardrobeItem struct {
 	Category      string               `json:"category"`
@@ -1948,6 +2016,12 @@ type ListOutfitsParams struct {
 // ListOutfitsParamsSaved defines parameters for ListOutfits.
 type ListOutfitsParamsSaved string
 
+// StylistChatParams defines parameters for StylistChat.
+type StylistChatParams struct {
+	// IdempotencyKey Makes retries safe for 24 h: the same key and payload returns the original result (Idempotent-Replayed: true); a different payload → 409 IDEMPOTENCY_KEY_MISMATCH; still processing → 409 IDEMPOTENCY_IN_PROGRESS with Retry-After.
+	IdempotencyKey *string `json:"Idempotency-Key,omitempty"`
+}
+
 // ListWardrobeItemsParams defines parameters for ListWardrobeItems.
 type ListWardrobeItemsParams struct {
 	Category *ListWardrobeItemsParamsCategory `form:"category,omitempty" json:"category,omitempty"`
@@ -2014,6 +2088,9 @@ type SendOutfitFeedbackJSONRequestBody = OutfitFeedbackRequest
 
 // UpdateProfileJSONRequestBody defines body for UpdateProfile for application/json ContentType.
 type UpdateProfileJSONRequestBody = ProfilePatchRequest
+
+// StylistChatJSONRequestBody defines body for StylistChat for application/json ContentType.
+type StylistChatJSONRequestBody = StylistChatRequest
 
 // CreateWardrobeItemMultipartRequestBody defines body for CreateWardrobeItem for multipart/form-data ContentType.
 type CreateWardrobeItemMultipartRequestBody CreateWardrobeItemMultipartBody
@@ -2145,6 +2222,15 @@ type ServerInterface interface {
 	// UpdateProfile Update name, profile fields or preferences
 	// (PATCH /api/v1/profile)
 	UpdateProfile(w http.ResponseWriter, r *http.Request)
+	// StylistChat Send a message to the AI stylist. The user message and the answer are stored together, only when the turn succeeds: any error (incl. 503 AI_UNAVAILABLE and 429 AI_QUOTA_EXCEEDED) stores nothing. An unknown or foreign conversationId is 404 (never a new conversation).
+	// (POST /api/v1/stylist/chat)
+	StylistChat(w http.ResponseWriter, r *http.Request, params StylistChatParams)
+	// ListConversations Recent stylist conversations (50)
+	// (GET /api/v1/stylist/conversations)
+	ListConversations(w http.ResponseWriter, r *http.Request)
+	// GetConversation A conversation with its messages
+	// (GET /api/v1/stylist/conversations/{id})
+	GetConversation(w http.ResponseWriter, r *http.Request, id string)
 	// ListWardrobeItems Wardrobe items, newest first (cursor pagination)
 	// (GET /api/v1/wardrobe/items)
 	ListWardrobeItems(w http.ResponseWriter, r *http.Request, params ListWardrobeItemsParams)
@@ -2629,6 +2715,87 @@ func (siw *ServerInterfaceWrapper) UpdateProfile(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
+// StylistChat operation middleware
+func (siw *ServerInterfaceWrapper) StylistChat(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params StylistChatParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey string
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.StylistChat(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListConversations operation middleware
+func (siw *ServerInterfaceWrapper) ListConversations(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListConversations(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetConversation operation middleware
+func (siw *ServerInterfaceWrapper) GetConversation(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetConversation(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListWardrobeItems operation middleware
 func (siw *ServerInterfaceWrapper) ListWardrobeItems(w http.ResponseWriter, r *http.Request) {
 
@@ -2993,6 +3160,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/outfits/{id}/feedback", wrapper.SendOutfitFeedback)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/profile", wrapper.GetProfile)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/v1/profile", wrapper.UpdateProfile)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/stylist/chat", wrapper.StylistChat)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/stylist/conversations", wrapper.ListConversations)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/stylist/conversations/{id}", wrapper.GetConversation)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/wardrobe/items", wrapper.ListWardrobeItems)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/wardrobe/items", wrapper.CreateWardrobeItem)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/wardrobe/items/{id}", wrapper.DeleteWardrobeItem)
@@ -4828,6 +4998,350 @@ func (response UpdateProfile500JSONResponse) VisitUpdateProfileResponse(w http.R
 	return err
 }
 
+type StylistChatRequestObject struct {
+	Params StylistChatParams
+	Body   *StylistChatJSONRequestBody
+}
+
+type StylistChatResponseObject interface {
+	VisitStylistChatResponse(w http.ResponseWriter) error
+}
+
+type StylistChat200ResponseHeaders struct {
+	IdempotentReplayed *string
+}
+
+type StylistChat200JSONResponse struct {
+	Body    StylistChatResponse
+	Headers StylistChat200ResponseHeaders
+}
+
+func (response StylistChat200JSONResponse) VisitStylistChatResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.IdempotentReplayed != nil {
+		w.Header().Set("Idempotent-Replayed", fmt.Sprint(*response.Headers.IdempotentReplayed))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StylistChat400JSONResponse ErrorResponse
+
+func (response StylistChat400JSONResponse) VisitStylistChatResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StylistChat401JSONResponse ErrorResponse
+
+func (response StylistChat401JSONResponse) VisitStylistChatResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StylistChat403JSONResponse ErrorResponse
+
+func (response StylistChat403JSONResponse) VisitStylistChatResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StylistChat404JSONResponse ErrorResponse
+
+func (response StylistChat404JSONResponse) VisitStylistChatResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StylistChat409ResponseHeaders struct {
+	RetryAfter *string
+}
+
+type StylistChat409JSONResponse struct {
+	Body    ErrorResponse
+	Headers StylistChat409ResponseHeaders
+}
+
+func (response StylistChat409JSONResponse) VisitStylistChatResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StylistChat413JSONResponse ErrorResponse
+
+func (response StylistChat413JSONResponse) VisitStylistChatResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StylistChat429ResponseHeaders struct {
+	RetryAfter *string
+}
+
+type StylistChat429JSONResponse struct {
+	Body    ErrorResponse
+	Headers StylistChat429ResponseHeaders
+}
+
+func (response StylistChat429JSONResponse) VisitStylistChatResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StylistChat500JSONResponse ErrorResponse
+
+func (response StylistChat500JSONResponse) VisitStylistChatResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StylistChat503ResponseHeaders struct {
+	RetryAfter *string
+}
+
+type StylistChat503JSONResponse struct {
+	Body    ErrorResponse
+	Headers StylistChat503ResponseHeaders
+}
+
+func (response StylistChat503JSONResponse) VisitStylistChatResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListConversationsRequestObject struct {
+}
+
+type ListConversationsResponseObject interface {
+	VisitListConversationsResponse(w http.ResponseWriter) error
+}
+
+type ListConversations200JSONResponse ConversationListResponse
+
+func (response ListConversations200JSONResponse) VisitListConversationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListConversations401JSONResponse ErrorResponse
+
+func (response ListConversations401JSONResponse) VisitListConversationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListConversations403JSONResponse ErrorResponse
+
+func (response ListConversations403JSONResponse) VisitListConversationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListConversations500JSONResponse ErrorResponse
+
+func (response ListConversations500JSONResponse) VisitListConversationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetConversationRequestObject struct {
+	Id string `json:"id"`
+}
+
+type GetConversationResponseObject interface {
+	VisitGetConversationResponse(w http.ResponseWriter) error
+}
+
+type GetConversation200JSONResponse ConversationResponse
+
+func (response GetConversation200JSONResponse) VisitGetConversationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetConversation400JSONResponse ErrorResponse
+
+func (response GetConversation400JSONResponse) VisitGetConversationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetConversation401JSONResponse ErrorResponse
+
+func (response GetConversation401JSONResponse) VisitGetConversationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetConversation403JSONResponse ErrorResponse
+
+func (response GetConversation403JSONResponse) VisitGetConversationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetConversation404JSONResponse ErrorResponse
+
+func (response GetConversation404JSONResponse) VisitGetConversationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetConversation500JSONResponse ErrorResponse
+
+func (response GetConversation500JSONResponse) VisitGetConversationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListWardrobeItemsRequestObject struct {
 	Params ListWardrobeItemsParams
 }
@@ -5578,6 +6092,15 @@ type StrictServerInterface interface {
 	// UpdateProfile Update name, profile fields or preferences
 	// (PATCH /api/v1/profile)
 	UpdateProfile(ctx context.Context, request UpdateProfileRequestObject) (UpdateProfileResponseObject, error)
+	// StylistChat Send a message to the AI stylist. The user message and the answer are stored together, only when the turn succeeds: any error (incl. 503 AI_UNAVAILABLE and 429 AI_QUOTA_EXCEEDED) stores nothing. An unknown or foreign conversationId is 404 (never a new conversation).
+	// (POST /api/v1/stylist/chat)
+	StylistChat(ctx context.Context, request StylistChatRequestObject) (StylistChatResponseObject, error)
+	// ListConversations Recent stylist conversations (50)
+	// (GET /api/v1/stylist/conversations)
+	ListConversations(ctx context.Context, request ListConversationsRequestObject) (ListConversationsResponseObject, error)
+	// GetConversation A conversation with its messages
+	// (GET /api/v1/stylist/conversations/{id})
+	GetConversation(ctx context.Context, request GetConversationRequestObject) (GetConversationResponseObject, error)
 	// ListWardrobeItems Wardrobe items, newest first (cursor pagination)
 	// (GET /api/v1/wardrobe/items)
 	ListWardrobeItems(ctx context.Context, request ListWardrobeItemsRequestObject) (ListWardrobeItemsResponseObject, error)
@@ -6218,6 +6741,89 @@ func (sh *strictHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateProfileResponseObject); ok {
 		if err := validResponse.VisitUpdateProfileResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// StylistChat operation middleware
+func (sh *strictHandler) StylistChat(w http.ResponseWriter, r *http.Request, params StylistChatParams) {
+	var request StylistChatRequestObject
+
+	request.Params = params
+
+	var body StylistChatJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.StylistChat(ctx, request.(StylistChatRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "StylistChat")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(StylistChatResponseObject); ok {
+		if err := validResponse.VisitStylistChatResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListConversations operation middleware
+func (sh *strictHandler) ListConversations(w http.ResponseWriter, r *http.Request) {
+	var request ListConversationsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListConversations(ctx, request.(ListConversationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListConversations")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListConversationsResponseObject); ok {
+		if err := validResponse.VisitListConversationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetConversation operation middleware
+func (sh *strictHandler) GetConversation(w http.ResponseWriter, r *http.Request, id string) {
+	var request GetConversationRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetConversation(ctx, request.(GetConversationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetConversation")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetConversationResponseObject); ok {
+		if err := validResponse.VisitGetConversationResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -14,5 +14,3 @@ type Tx = func(ctx context.Context, pool *pgxpool.Pool, options pgx.TxOptions, f
 // failures of a transaction that no database at hand produces on demand
 // (an answer lost after the commit).
 func (u *Uploads) SetTx(run Tx) { u.inTx = run }
-
-var JSNumberText = jsNumberText

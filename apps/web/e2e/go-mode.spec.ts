@@ -19,9 +19,9 @@ test.describe('Go mode routing', () => {
     expect(register.headers()['x-e2e-backend']).toBe('go')
 
     // The cookies Go set authenticate a Next.js route …
-    const conversations = await request.get('/api/v1/stylist/conversations')
-    expect(conversations.status()).toBe(200)
-    expect(conversations.headers()['x-e2e-backend']).toBe('next')
+    const colorProfile = await request.get('/api/v1/color-profile')
+    expect(colorProfile.status()).toBe(200)
+    expect(colorProfile.headers()['x-e2e-backend']).toBe('next')
     // … and Go's own.
     const me = await request.get('/api/v1/auth/me')
     expect(me.status()).toBe(200)
@@ -332,8 +332,8 @@ test.describe('Go mode routing', () => {
     await page.goto('/wardrobe')
     await expect(page).toHaveURL(/\/wardrobe$/)
     expect(await cookie('atlas_rt')).not.toBe(rt2)
-    const conversations = await page.request.get('/api/v1/stylist/conversations')
-    expect(conversations.status()).toBe(200)
-    expect(conversations.headers()['x-e2e-backend']).toBe('next')
+    const colorProfile = await page.request.get('/api/v1/color-profile')
+    expect(colorProfile.status()).toBe(200)
+    expect(colorProfile.headers()['x-e2e-backend']).toBe('next')
   })
 })

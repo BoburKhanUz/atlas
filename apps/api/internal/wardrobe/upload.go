@@ -7,8 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"math"
-	"strconv"
 	"strings"
 	"time"
 
@@ -474,7 +472,7 @@ func confidencesText(confidence map[string]float64, order []string) string {
 		if written > 0 {
 			b.WriteByte(',')
 		}
-		b.WriteString(jsonText(name) + ":" + jsNumberText(value))
+		b.WriteString(jsonText(name) + ":" + platform.JSNumberText(value))
 		written++
 	}
 	if written != len(confidence) {
@@ -482,21 +480,6 @@ func confidencesText(confidence map[string]float64, order []string) string {
 	}
 	b.WriteByte('}')
 	return b.String()
-}
-
-// jsNumberText is a number as JavaScript's JSON.stringify writes it: plain
-// digits from 1e-6 to below 1e21, else the shortest exponent form (1e-7,
-// 1e+21). The values here are confidences, finite.
-func jsNumberText(v float64) string {
-	if v == 0 {
-		return "0"
-	}
-	if a := math.Abs(v); a >= 1e-6 && a < 1e21 {
-		return strconv.FormatFloat(v, 'f', -1, 64)
-	}
-	mantissa, exponent, _ := strings.Cut(strconv.FormatFloat(v, 'e', -1, 64), "e")
-	sign, digits := exponent[:1], strings.TrimLeft(exponent[1:], "0")
-	return mantissa + "e" + sign + digits
 }
 
 func ptr[T any](v T) *T { return &v }

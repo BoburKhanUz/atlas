@@ -43,13 +43,16 @@ const GO_ROUTES = new Set([
   'POST /api/v1/outfits/generate',
   'GET /api/v1/outfits',
   'POST /api/v1/outfits',
+  'POST /api/v1/stylist/chat',
+  'GET /api/v1/stylist/conversations',
 ])
 
-/** The operations with a parameter in the path: one item of the wardrobe, one outfit and its feedback, and every image. */
+/** The operations with a parameter in the path: one item of the wardrobe, one outfit and its feedback, one conversation, and every image. */
 const GO_PATTERNS = [
   { methods: ['GET', 'PATCH', 'DELETE'], path: /^\/api\/v1\/wardrobe\/items\/[^/]+$/ },
   { methods: ['GET', 'PATCH', 'DELETE'], path: /^\/api\/v1\/outfits\/[^/]+$/ },
   { methods: ['POST'], path: /^\/api\/v1\/outfits\/[^/]+\/feedback$/ },
+  { methods: ['GET'], path: /^\/api\/v1\/stylist\/conversations\/[^/]+$/ },
   { methods: ['GET', 'HEAD'], path: /^\/api\/v1\/media\/.+/ },
 ]
 

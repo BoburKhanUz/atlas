@@ -24,9 +24,11 @@ import (
 	"lookly/internal/ai"
 	"lookly/internal/config"
 	"lookly/internal/config/configtest"
+	"lookly/internal/idempotency"
 	"lookly/internal/imaging"
 	"lookly/internal/outfits"
 	"lookly/internal/quota"
+	"lookly/internal/stylist"
 	"lookly/internal/vision"
 	"lookly/internal/wardrobe"
 )
@@ -77,6 +79,16 @@ func newRanker(t *testing.T, pool *pgxpool.Pool, log *slog.Logger, settings *con
 	cfg, client, quotas, monitor := aiParts(t, pool, log, settings, at)
 	return outfits.NewRanker(outfits.RankerConfig{
 		Client: client, Quotas: quotas, Monitor: monitor, Route: cfg.Outfit, Rollout: cfg.Rollout, Log: log, Budget: budget, Attempt: attempt,
+	})
+}
+
+// newStylist is the stylist chat of a test server; deadline replaces its
+// time limit when not zero.
+func newStylist(t *testing.T, pool *pgxpool.Pool, keys *idempotency.Service, log *slog.Logger, settings *config.AI, at ai.Addresses, deadline time.Duration) *stylist.Service {
+	t.Helper()
+	cfg, client, quotas, monitor := aiParts(t, pool, log, settings, at)
+	return stylist.New(stylist.Config{
+		Pool: pool, Keys: keys, Client: client, Quotas: quotas, Monitor: monitor, Route: cfg.Stylist, Rollout: cfg.Rollout, Log: log, Deadline: deadline,
 	})
 }
 

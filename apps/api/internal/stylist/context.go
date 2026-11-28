@@ -1,7 +1,6 @@
 package stylist
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"slices"
@@ -461,42 +460,9 @@ func firstUnits(s string, n int) string {
 func Messages(context string, history []Message, message string, occasionText *string) []Message {
 	occasion := "null"
 	if occasionText != nil {
-		occasion = jsString(*occasionText)
+		occasion = platform.JSONString(*occasionText)
 	}
 	out := []Message{{Role: "system", Content: SystemPrompt}, {Role: "system", Content: ContextPreamble + "\n" + context}}
 	out = append(out, history...)
-	return append(out, Message{Role: "user", Content: `{"message":` + jsString(message) + `,"occasion":` + occasion + `}`})
-}
-
-// jsString is a string as JSON.stringify writes it: only ", \ and control
-// characters escaped (Go's encoder also escapes <, >, &, U+2028 and U+2029).
-func jsString(s string) string {
-	var b bytes.Buffer
-	b.WriteByte('"')
-	for _, r := range s {
-		switch r {
-		case '"':
-			b.WriteString(`\"`)
-		case '\\':
-			b.WriteString(`\\`)
-		case '\b':
-			b.WriteString(`\b`)
-		case '\f':
-			b.WriteString(`\f`)
-		case '\n':
-			b.WriteString(`\n`)
-		case '\r':
-			b.WriteString(`\r`)
-		case '\t':
-			b.WriteString(`\t`)
-		default:
-			if r < 0x20 {
-				fmt.Fprintf(&b, `\u%04x`, r)
-			} else {
-				b.WriteRune(r)
-			}
-		}
-	}
-	b.WriteByte('"')
-	return b.String()
+	return append(out, Message{Role: "user", Content: `{"message":` + platform.JSONString(message) + `,"occasion":` + occasion + `}`})
 }

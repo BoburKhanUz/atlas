@@ -42,6 +42,7 @@ import (
 	"lookly/internal/ratelimit"
 	"lookly/internal/session"
 	"lookly/internal/storage"
+	"lookly/internal/stylist"
 	"lookly/internal/vision"
 	"lookly/internal/wardrobe"
 	"lookly/internal/weather"
@@ -123,6 +124,7 @@ func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger, images storage
 		return nil, fmt.Errorf("AI providers: %w", err)
 	}
 	pictures := imaging.NewProcessor(picturesAtOnce)
+	keys := idempotency.New(pool)
 	server := httpapi.NewServer(httpapi.Services{
 		Health:   health.New(pool, version, healthPingTimeout),
 		Accounts: users,
@@ -135,10 +137,13 @@ func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger, images storage
 			Client: models, Quotas: quotas, Monitor: monitor, Route: cfg.AI.Outfit, Rollout: cfg.AI.Rollout, Log: log,
 		}), log),
 		Uploads: wardrobe.NewUploads(wardrobe.UploadsConfig{
-			Pool: pool, Images: images, Processor: pictures, Limiter: limiter, Keys: idempotency.New(pool), Log: log,
+			Pool: pool, Images: images, Processor: pictures, Limiter: limiter, Keys: keys, Log: log,
 			Analyzer: vision.NewAnalyzer(vision.AnalyzerConfig{
 				Client: models, Quotas: quotas, Pictures: pictures, Monitor: monitor, Settings: cfg.AI.Vision, Rollout: cfg.AI.Rollout, Log: log,
 			}),
+		}),
+		Stylist: stylist.New(stylist.Config{
+			Pool: pool, Keys: keys, Client: models, Quotas: quotas, Monitor: monitor, Route: cfg.AI.Stylist, Rollout: cfg.AI.Rollout, Log: log,
 		}),
 		Media:        media.NewSigner(cfg.MediaSigningSecret, cfg.MediaURLTTL, cfg.PublicBaseURL),
 		Images:       images,
@@ -389,10 +394,6 @@ func open(ctx context.Context, getenv func(string) (string, bool), stdout, stder
 		fmt.Fprintln(stderr, err)
 		return config.Config{}, nil, nil, exitUsage
 	}
-	if role := aiNotServedYet(cfg.AI); role != "" {
-		fmt.Fprintf(stderr, "%s names a real AI provider, which this build cannot serve yet (stage B6 is under way: docs/plan/B6.md); use the mock\n", role)
-		return config.Config{}, nil, nil, exitUsage
-	}
 	// The WebP encoder must be the one this project ships (ADR 0009).
 	if err := imaging.CheckEncoder(); err != nil {
 		fmt.Fprintln(stderr, err)
@@ -405,21 +406,6 @@ func open(ctx context.Context, getenv func(string) (string, bool), stdout, stder
 		return config.Config{}, nil, nil, exitUsage
 	}
 	return cfg, log, pool, 0
-}
-
-// aiNotServedYet names the setting of the first AI role that is configured
-// for a real provider while this build has only the mock for it; "" when
-// there is none. Stage B6 takes the roles out of here one by one: a server
-// told to use a real provider must not quietly answer with the mock.
-func aiNotServedYet(ai config.AI) string {
-	for _, role := range []struct{ variable, provider string }{
-		{ai.Stylist.Source + "_PROVIDER", ai.Stylist.Provider},
-	} {
-		if role.provider != config.AIMock {
-			return role.variable
-		}
-	}
-	return ""
 }
 
 // reachable checks the database before a command that needs it from the

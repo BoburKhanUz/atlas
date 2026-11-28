@@ -399,42 +399,16 @@ func TestServeInProductionRefusesWritesFromAnHTTPOrigin(t *testing.T) {
 	})
 }
 
-// While stage B6 is under way the server has the AI settings before it has
-// the AI: a real provider configured for a role this build cannot serve yet
-// stops the server, instead of being quietly served by the mock.
-func TestServeRefusesARealAIProviderItCannotServeYet(t *testing.T) {
-	t.Parallel()
-	for name, vars := range map[string]map[string]string{
-		"text":    {"AI_LLM_PROVIDER": "openai", "AI_LLM_MODEL": "gpt-test", "OPENAI_API_KEY": "fake-key-not-printed"},
-		"stylist": {"AI_STYLIST_PROVIDER": "gemini", "AI_STYLIST_MODEL": "gemini-test", "GEMINI_API_KEY": "fake-key-not-printed"},
-	} {
-		addr := freeAddr(t)
-		all := configtest.Env(map[string]string{"LOOKLY_ENV": "development", "LOOKLY_HTTP_ADDR": addr, "DATABASE_URL": "postgresql://u@127.0.0.1:1/x"})
-		for k, v := range vars {
-			all[k] = v
-		}
-		for _, command := range []string{"serve", "worker"} {
-			var stderr bytes.Buffer
-			code := app.Run(context.Background(), []string{command}, env(all), &bytes.Buffer{}, &stderr)
-			if code != 2 || !strings.Contains(stderr.String(), "real AI provider") || strings.Contains(stderr.String(), "fake-key") {
-				t.Errorf("%s, %s: exit %d, stderr %q", name, command, code, stderr.String())
-			}
-		}
-		if c, err := net.DialTimeout("tcp", addr, 100*time.Millisecond); err == nil {
-			c.Close()
-			t.Errorf("%s: something listens on the address", name)
-		}
-	}
-}
-
-// The garment analysis (B6.4) and the outfit ranking (B6.5) are served by
-// a real provider: the setting no longer stops the server (the worker
-// below stops for the unreachable database, not for the provider).
+// Every AI role is served by a real provider (stage B6): the setting does
+// not stop the server (the worker below stops for the unreachable
+// database, not for the provider), and the key is never printed.
 func TestARealProviderOfAServedRoleIsServed(t *testing.T) {
 	t.Parallel()
 	for name, vars := range map[string]map[string]string{
-		"vision": {"AI_VISION_PROVIDER": "openai", "AI_VISION_MODEL": "gpt-vision-test", "OPENAI_API_KEY": "fake-key-not-printed"},
-		"outfit": {"AI_OUTFIT_PROVIDER": "openai", "AI_OUTFIT_MODEL": "gpt-test", "OPENAI_API_KEY": "fake-key-not-printed"},
+		"vision":  {"AI_VISION_PROVIDER": "openai", "AI_VISION_MODEL": "gpt-vision-test", "OPENAI_API_KEY": "fake-key-not-printed"},
+		"outfit":  {"AI_OUTFIT_PROVIDER": "openai", "AI_OUTFIT_MODEL": "gpt-test", "OPENAI_API_KEY": "fake-key-not-printed"},
+		"text":    {"AI_LLM_PROVIDER": "openai", "AI_LLM_MODEL": "gpt-test", "OPENAI_API_KEY": "fake-key-not-printed"},
+		"stylist": {"AI_STYLIST_PROVIDER": "gemini", "AI_STYLIST_MODEL": "gemini-test", "GEMINI_API_KEY": "fake-key-not-printed"},
 	} {
 		all := configtest.Env(map[string]string{"LOOKLY_ENV": "development", "DATABASE_URL": "postgresql://u@127.0.0.1:1/x"})
 		for k, v := range vars {

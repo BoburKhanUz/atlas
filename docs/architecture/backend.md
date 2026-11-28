@@ -109,7 +109,7 @@ before listening. Values that hold credentials are never printed.
 | `SMTP_SECURE` | on for port 465, off otherwise | `1`/`true` (TLS from the first byte) or `0`/`false` (STARTTLS, required unless the host is `localhost`, `127.0.0.1` or `::1`) |
 | `SMTP_USER`, `SMTP_PASSWORD` | none | both or neither; the password is used as given and never printed |
 | `MAIL_OUTBOX_DIR` | `./storage/mail-outbox` | for `outbox`: where messages are written as files |
-| `AI_*`, `GEMINI_API_KEY`, `OPENAI_API_KEY` | as in the Next.js server | the AI providers, models, timeouts, prices, the rollout switches, percentage and allowlist: the Next.js server's variables, read by its rules (`internal/config/ai.go`; the variables are listed in `docs/ai/provider-architecture.md` and `docs/ai/rollout.md`; golden vectors `testdata/golden/ai-config.json`). `NODE_ENV=production` there is `production` or `staging` here: no provider may be left unset, and a mock needs `AI_ALLOW_MOCK_IN_PRODUCTION=1`. Keys are never printed or logged. While stage B6 is under way, a real provider for the stylist, which the server cannot serve yet, stops it (`aiNotServedYet` in `internal/app`); the garment analysis is served since B6.4 and the outfit ranking since B6.5 |
+| `AI_*`, `GEMINI_API_KEY`, `OPENAI_API_KEY` | as in the Next.js server | the AI providers, models, timeouts, prices, the rollout switches, percentage and allowlist: the Next.js server's variables, read by its rules (`internal/config/ai.go`; the variables are listed in `docs/ai/provider-architecture.md` and `docs/ai/rollout.md`; golden vectors `testdata/golden/ai-config.json`). `NODE_ENV=production` there is `production` or `staging` here: no provider may be left unset, and a mock needs `AI_ALLOW_MOCK_IN_PRODUCTION=1`. Keys are never printed or logged. Every role is served by the provider it names (the garment analysis since B6.4, the outfit ranking since B6.5, the stylist since B6.6) |
 | `WEATHER_PROVIDER` | `open-meteo` | who is asked for the weather: `open-meteo` (the Open-Meteo forecast service) or `mock` (the same demo weather everywhere, labelled as such). `mock` is refused in production and staging; any other value stops the server |
 | `STORAGE_DRIVER` | `local` | `local` or `r2`; never guessed: an `R2_*` setting without it stops the server |
 | `STORAGE_LOCAL_DIR` | none (required for `local`) | absolute path of the directory the images are in (the one the Next.js server writes to); `lookly serve` and `lookly worker` also require that it exists |
@@ -555,6 +555,21 @@ by slice (`docs/plan/B6.md`).
   (no English catalog words, no Cyrillic). Any failure, the mock, the rollout or the
   day's quota (30) gives the engine's own order and explanations: generation never
   fails because of it. `fallback` in the answer says which.
+- **Stylist chat** (`stylist.Service`, `POST /api/v1/stylist/chat`): the conversation's
+  owner (else 404, never a new one), the `Idempotency-Key` (judged after the body;
+  claimed before any AI work; the hash is the Next.js `jsonRequestHash`), a bounded
+  context (at most 40 items as W1…Wn with catalog values only, never ids or stored free
+  text; the engine's top 3 candidates for the event's occasion and a complete weather;
+  the preferences; the colour profile's summary; the last 12 meaningful messages), the
+  rollout (off: `AI_UNAVAILABLE` without a call), the mock (labelled "Demo rejim:", no
+  quota) or the day's quota (50) and the provider with the prompt of version v2. The
+  answer is validated and its references checked; unknown references get one
+  correction, malformed output none; 50 s for the whole turn. References become item
+  names. The user's message and the answer are stored in one transaction that also
+  completes the key; any failure stores nothing, gives the call back and releases the
+  key (`AI_UNAVAILABLE` 503 with `Retry-After: 15`, `AI_QUOTA_EXCEEDED` 429 to the
+  next Tashkent midnight). The list shows the 50 latest changed conversations with
+  their last message; a conversation shows its newest 1000 messages, oldest first.
 - **Monitoring** (`ai.Monitor`): the events `ai.call`, `ai.request` and `ai.quota`,
   one JSON log line each, the event's name as the message. Every event passes a
   whitelist per event: only known fields of the right kind, and a text only when it is

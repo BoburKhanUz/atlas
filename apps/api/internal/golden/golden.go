@@ -1290,6 +1290,17 @@ type Stylist struct {
 		Messages       []StylistMessage `json:"messages"`
 		HistoryName    string           `json:"historyName"`
 	} `json:"contexts"`
+	// Requests are what the chat route makes of valid request bodies.
+	Requests []struct {
+		Name            string  `json:"name"`
+		Body            string  `json:"body"`
+		Hash            string  `json:"hash"`
+		Event           *string `json:"event"`
+		Metadata        string  `json:"metadata"`
+		Title           string  `json:"title"`
+		CompleteWeather bool    `json:"completeWeather"`
+		Occasion        *string `json:"occasion"`
+	} `json:"requests"`
 }
 
 // LoadStylist reads the stylist vectors.
@@ -1297,7 +1308,7 @@ func LoadStylist(t testing.TB) Stylist {
 	t.Helper()
 	var s Stylist
 	load(t, "stylist.json", &s)
-	if len(s.Interpreted) == 0 || len(s.Resolved) == 0 || len(s.Contexts) == 0 || len(s.History) == 0 || len(s.Occasions) == 0 || len(s.Names) == 0 {
+	if len(s.Interpreted) == 0 || len(s.Resolved) == 0 || len(s.Contexts) == 0 || len(s.History) == 0 || len(s.Occasions) == 0 || len(s.Names) == 0 || len(s.Requests) == 0 {
 		t.Fatal("stylist.json: a section is empty")
 	}
 	return s

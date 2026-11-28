@@ -50,3 +50,6 @@ output-options:
     - updateOutfit
     - deleteOutfit
     - sendOutfitFeedback
+    - stylistChat
+    - listConversations
+    - getConversation

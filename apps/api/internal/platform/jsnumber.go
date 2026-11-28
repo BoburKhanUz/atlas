@@ -1,6 +1,7 @@
 package platform
 
 import (
+	"fmt"
 	"math"
 	"math/big"
 	"regexp"
@@ -59,4 +60,53 @@ func JSNumber(s string) float64 {
 	}
 	f, _ := strconv.ParseFloat(s, 64) // out of range: ±Inf, with an error
 	return f
+}
+
+// JSNumberText is a finite number as JavaScript's JSON.stringify writes it:
+// plain digits from 1e-6 to below 1e21, else the shortest exponent form
+// (1e-7, 1e+21); -0 is 0.
+func JSNumberText(v float64) string {
+	if v == 0 {
+		return "0"
+	}
+	if a := math.Abs(v); a >= 1e-6 && a < 1e21 {
+		return strconv.FormatFloat(v, 'f', -1, 64)
+	}
+	mantissa, exponent, _ := strings.Cut(strconv.FormatFloat(v, 'e', -1, 64), "e")
+	sign, digits := exponent[:1], strings.TrimLeft(exponent[1:], "0")
+	return mantissa + "e" + sign + digits
+}
+
+// JSONString is a string as JavaScript's JSON.stringify writes it: only the
+// quote, the backslash and the control characters below U+0020 are escaped
+// (Go's encoder also escapes <, >, &, U+2028 and U+2029).
+func JSONString(s string) string {
+	var b strings.Builder
+	b.WriteByte('"')
+	for _, r := range s {
+		switch r {
+		case '"':
+			b.WriteString(`\"`)
+		case '\\':
+			b.WriteString(`\\`)
+		case '\b':
+			b.WriteString(`\b`)
+		case '\f':
+			b.WriteString(`\f`)
+		case '\n':
+			b.WriteString(`\n`)
+		case '\r':
+			b.WriteString(`\r`)
+		case '\t':
+			b.WriteString(`\t`)
+		default:
+			if r < 0x20 {
+				fmt.Fprintf(&b, `\u%04x`, r)
+			} else {
+				b.WriteRune(r)
+			}
+		}
+	}
+	b.WriteByte('"')
+	return b.String()
 }

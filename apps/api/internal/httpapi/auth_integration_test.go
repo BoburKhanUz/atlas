@@ -147,6 +147,8 @@ type apiOptions struct {
 	// rankingBudget and rankingAttempt replace the outfit ranking's time
 	// limits when not zero.
 	rankingBudget, rankingAttempt time.Duration
+	// stylistDeadline replaces the stylist's time limit when not zero.
+	stylistDeadline time.Duration
 }
 
 // api is the server on its own database.
@@ -239,13 +241,15 @@ func newAPI(t *testing.T, o apiOptions) *api {
 	}
 	weatherService := weather.New(pool, forecasts, limiter, log)
 	a.analyzer = newAnalyzer(t, pool, a.processor, log, o.ai, o.aiAt)
+	keys := idempotency.New(pool)
 	server := httpapi.NewServer(httpapi.Services{
 		Health: health.New(pool, "test", time.Second), Accounts: users, Sessions: a.sessions, Legal: consent, Profile: profile.New(pool),
 		Weather: weatherService, Outfits: outfits.New(pool, weatherService, limiter, newRanker(t, pool, log, o.ai, o.aiAt, o.rankingBudget, o.rankingAttempt), log),
 		Wardrobe: wardrobe.New(pool, a.images, log), Media: a.media, Images: a.images, Now: o.now,
 		Uploads: wardrobe.NewUploads(wardrobe.UploadsConfig{
-			Pool: pool, Images: a.images, Processor: a.processor, Analyzer: a.analyzer, Limiter: limiter, Keys: idempotency.New(pool), Log: log,
+			Pool: pool, Images: a.images, Processor: a.processor, Analyzer: a.analyzer, Limiter: limiter, Keys: keys, Log: log,
 		}),
+		Stylist:      newStylist(t, pool, keys, log, o.ai, o.aiAt, o.stylistDeadline),
 		CookieSecure: o.cookieSecure, TrustProxy: o.trustProxy,
 	})
 	a.gate = &httpapi.Gate{Tokens: a.tokens, Sessions: a.sessions, Consent: consent, Users: users, TrustProxy: o.trustProxy, HTTPSOnly: o.cookieSecure}

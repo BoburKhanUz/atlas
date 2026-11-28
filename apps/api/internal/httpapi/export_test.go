@@ -93,3 +93,6 @@ func (i *InFlight) Users() int {
 	defer i.f.mu.Unlock()
 	return len(i.f.perUser)
 }
+
+// ChatRequest is the turn a judged chat body asks for.
+var ChatRequest = chatRequest

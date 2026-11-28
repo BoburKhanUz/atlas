@@ -18,6 +18,7 @@ import (
 	"lookly/internal/profile"
 	"lookly/internal/session"
 	"lookly/internal/storage"
+	"lookly/internal/stylist"
 	"lookly/internal/wardrobe"
 	"lookly/internal/weather"
 )
@@ -34,6 +35,7 @@ type Services struct {
 	Uploads  *wardrobe.Uploads
 	Weather  *weather.Service
 	Outfits  *outfits.Service
+	Stylist  *stylist.Service
 	// Media signs and checks the image links; Images holds the images.
 	Media  *media.Signer
 	Images storage.Store

@@ -166,14 +166,14 @@ func MultipartHash(file []byte, filename string, fields map[string]string) strin
 		if i > 0 {
 			entries.WriteByte(',')
 		}
-		entries.WriteString("[" + jsString(name) + "," + jsString(fields[name]) + "]")
+		entries.WriteString("[" + platform.JSONString(name) + "," + platform.JSONString(fields[name]) + "]")
 	}
 	entries.WriteByte(']')
 
 	h := sha256.New()
 	h.Write([]byte("v1\n"))
 	h.Write([]byte(hex.EncodeToString(fileHash[:]) + "\n"))
-	h.Write([]byte(jsString(filename) + "\n"))
+	h.Write([]byte(platform.JSONString(filename) + "\n"))
 	h.Write([]byte(entries.String()))
 	return hex.EncodeToString(h.Sum(nil))
 }
@@ -181,38 +181,4 @@ func MultipartHash(file []byte, filename string, fields map[string]string) strin
 // compareUTF16 orders strings as JavaScript's < does: by UTF-16 code units.
 func compareUTF16(a, b string) int {
 	return slices.Compare(utf16.Encode([]rune(a)), utf16.Encode([]rune(b)))
-}
-
-// jsString is a string as JavaScript's JSON.stringify writes it: only the
-// quote, the backslash and the control characters below U+0020 are escaped.
-// (Go's encoder also escapes <, >, &, U+2028 and U+2029.)
-func jsString(s string) string {
-	var b strings.Builder
-	b.WriteByte('"')
-	for _, r := range s {
-		switch r {
-		case '"':
-			b.WriteString(`\"`)
-		case '\\':
-			b.WriteString(`\\`)
-		case '\b':
-			b.WriteString(`\b`)
-		case '\f':
-			b.WriteString(`\f`)
-		case '\n':
-			b.WriteString(`\n`)
-		case '\r':
-			b.WriteString(`\r`)
-		case '\t':
-			b.WriteString(`\t`)
-		default:
-			if r < 0x20 {
-				fmt.Fprintf(&b, `\u%04x`, r)
-			} else {
-				b.WriteRune(r)
-			}
-		}
-	}
-	b.WriteByte('"')
-	return b.String()
 }

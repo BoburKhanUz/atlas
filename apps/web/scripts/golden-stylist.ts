@@ -4,7 +4,9 @@
  * occasion lookup of src/server/schemas/catalog.ts): the prompt and schema,
  * what is made of an answer, how references become item names, the mock,
  * the correction, the history, and the context of seeded wardrobes with the
- * engine's candidates (the Go test runs its own engine on the same inputs).
+ * engine's candidates (the Go test runs its own engine on the same inputs),
+ * and what the chat route makes of a request (src/app/api/v1/stylist/chat/
+ * route.ts): its Idempotency-Key hash, the stored texts, the weather used.
  *
  *   bun scripts/golden-stylist.ts ../api/testdata/golden/stylist.json
  */
@@ -22,6 +24,9 @@ import {
 } from '../src/lib/ai/stylist-context'
 import { STYLIST_DEADLINE_MS, stylistCorrectionMessages } from '../src/lib/ai/stylist-service'
 import { occasionFromEvent } from '../src/server/schemas/catalog'
+import { StylistChatRequest } from '../src/server/schemas/requests'
+import { jsonRequestHash } from '../src/server/idempotency'
+import { isCompleteWeather } from '../src/lib/ai/recommendation'
 import type { Occasion } from '../src/lib/ai/color-theory'
 
 function mulberry32(seed: number) {
@@ -315,7 +320,46 @@ function pushContext(name: string, c: { items: WardrobeRow[]; weather?: WeatherS
   pushContext('control characters in the message', { ...plain, items: closet, message: 'a\b\f\n\r\t\u0001\u001f"\\ \u2028 < > & \u007f', occasionText: 'To‘y\u0000' })
 }
 
-const all = { interpreted, parsed, names, resolved, mocks, corrections, history, occasions, contexts }
+// What the chat route makes of a valid request body (given as JSON text,
+// so that -0 and 1e21 reach the parser as written).
+const requests: unknown[] = []
+{
+  const full = '"temperature":21.5,"feelsLike":20,"condition":"clear","precipitationProbability":10,"humidity":40,"windSpeed":12,"uvIndex":5'
+  for (const [name, body] of [
+    ['message only', '{"message":"Bugun nima kiyay?"}'],
+    ['trimmed message, conversation and event', '{"message":"  Salom  ","conversationId":" c1 ","event":"  To‘y  "}'],
+    ['explicit nulls', '{"message":"Salom","conversationId":null,"weather":null,"event":null}'],
+    ['an empty event', '{"message":"Salom","event":""}'],
+    ['a blank event', '{"message":"Salom","event":"   "}'],
+    ['an event that is an occasion', '{"message":"Salom","event":"ish"}'],
+    ['an event that is an occasion id', '{"message":"Salom","event":"date"}'],
+    ['complete weather', `{"message":"Salom","weather":{${full}}}`],
+    ['complete weather out of order', '{"message":"Salom","weather":{"uvIndex":5,"windSpeed":12,"humidity":40,"precipitationProbability":10,"condition":" clear ","feelsLike":20,"temperature":21.5}}'],
+    ['partial weather', '{"message":"Salom","weather":{"temperature":-0,"condition":"rain"}}'],
+    ['empty weather', '{"message":"Salom","weather":{}}'],
+    ['a condition JSON escapes', '{"message":"Salom","weather":{"condition":"qor \\"yog‘adi\\" \\\\ <b>"}}'],
+    ['numbers of every spelling', '{"message":"Salom","weather":{"temperature":1e1,"feelsLike":-0.0,"condition":"x","precipitationProbability":0.30000000000000004,"humidity":1e-7,"windSpeed":12.3456e1,"uvIndex":1e-6}}'],
+    ['characters JSON escapes differently', '{"message":"<b>&</b> \\u2028 \\u0001 \\" \\\\ 😀 ўзбек","event":"<i>&"}'],
+    ['a long message', JSON.stringify({ message: 'ab'.repeat(40) + '😀'.repeat(5) })],
+    ['a pair at the title\'s end', JSON.stringify({ message: 'a'.repeat(59) + '😀' + 'b' })],
+    ['every member', `{"event":"Ish","weather":{${full}},"conversationId":"conv_1","message":"Nima kiyay?"}`],
+  ] as const) {
+    const parsed = StylistChatRequest.parse(JSON.parse(body))
+    const { message, conversationId, weather } = parsed
+    const event = parsed.event ? parsed.event : null
+    requests.push({
+      name, body,
+      hash: jsonRequestHash({ message, conversationId: conversationId ?? null, weather: weather ?? null, event }),
+      event,
+      metadata: JSON.stringify({ weather: weather ?? null, event }),
+      title: message.slice(0, 60),
+      completeWeather: isCompleteWeather(weather),
+      occasion: occasionFromEvent(event) ?? null,
+    })
+  }
+}
+
+const all = { interpreted, parsed, names, resolved, mocks, corrections, history, occasions, contexts, requests }
 writeFileSync(
   process.argv[2],
   JSON.stringify(
