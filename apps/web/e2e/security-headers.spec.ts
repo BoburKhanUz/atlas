@@ -1,7 +1,7 @@
 import { expect, test } from './fixtures'
 
-// The pages' headers are set in next.config.ts; HSTS and the API's are added
-// by Caddy and the Go server (deploy/Caddyfile, apps/api).
+// The pages' headers are set in next.config.ts; HSTS is Caddy's (B7.7) and the
+// API's are the Go server's (apps/api).
 test.describe('security headers of the pages', () => {
   test('nosniff, no framing, referrer policy, no x-powered-by', async ({ request }) => {
     for (const path of ['/', '/privacy', '/terms', '/reset-password']) {
@@ -13,7 +13,9 @@ test.describe('security headers of the pages', () => {
       expect(headers['content-security-policy'], path).toBe("frame-ancestors 'none'")
       expect(headers['x-powered-by'], path).toBeUndefined()
     }
-    expect((await request.get('/')).headers()['referrer-policy']).toBe('strict-origin-when-cross-origin')
+    for (const path of ['/', '/privacy', '/terms']) {
+      expect((await request.get(path)).headers()['referrer-policy'], path).toBe('strict-origin-when-cross-origin')
+    }
   })
 
   test('the reset page sends no referrer at all', async ({ request }) => {

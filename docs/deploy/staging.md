@@ -1,5 +1,9 @@
 # Staging server runbook
 
+> **Out of date since B7.6.** This runbook describes the Next.js server and Prisma,
+> which are removed. B7.7 rewrites it for the Go stack (`lookly migrate`, `serve`,
+> `worker`, the website, Caddy), and the staging smoke returns with B7.8 (`docs/plan/B7.md`).
+
 Status: **not provisioned yet.** The stack was rehearsed locally on 2026-10-17 with these files (`ATLAS_DOMAIN=localhost`, Caddy's internal certificate, mock AI): migrations, HTTPS, the smoke test below in mock mode, the mobile sign-in and upload flow, password reset over SMTP with STARTTLS, and backup and restore. This runbook sets up one staging server with the existing Docker image: PostgreSQL 16, the one-shot migration, the web app and Caddy for HTTPS. The staging contract and the smoke test are in [`docs/ai/staging.md`](../ai/staging.md); the app's variables are described in [`.env.example`](../../.env.example), and `ATLAS_DOMAIN` is used only by the overlay and Caddy.
 
 Files:
@@ -127,5 +131,5 @@ Rehearsed on a local copy of this stack on 2026-10-17: after a backup, a new acc
 ## Before production (not covered here)
 
 - **Hosting location.** Uzbekistan's Law on Personal Data, Article 27-1 (added by law ZRU-666 of 14 January 2021, in force since 15 April 2021), requires personal data of Uzbek citizens to be stored on technical means physically located in Uzbekistan and registered in the State Register of personal databases ([Mondaq summary](https://mondaq.com/data-protection/1197754/the-law-on-personal-data-has-been-amended)). The production host, and the clothing photos and texts sent to the AI providers abroad, need legal review.
-- **Legal texts.** The privacy policy and terms of use are in the app as drafts (`apps/web/src/lib/legal/documents.ts`, `LEGAL_DRAFT`): public at `/privacy` and `/terms`, in the mobile app, and registration records the accepted version and the 18+ confirmation (the Gemini API terms forbid apps likely to be accessed by people under 18). Counsel fills the `[placeholders]` and approves them; then `LEGAL_DRAFT` becomes false, `LEGAL_VERSION` changes and `LEGAL_CONSENT_MIN_VERSION` is raised to it (a test requires that once the texts are final), so every existing account accepts the approved texts once: the web app and the mobile app show them for acceptance, and the API answers `CONSENT_REQUIRED` until then.
+- **Legal texts.** The privacy policy and terms of use are in the app as drafts (`apps/web/src/lib/legal/documents.ts`, `LEGAL_DRAFT`): public at `/privacy` and `/terms`, in the mobile app, and registration records the accepted version and the 18+ confirmation (the Gemini API terms forbid apps likely to be accessed by people under 18). Counsel fills the `[placeholders]` and approves them; then `LEGAL_DRAFT` becomes false, `LEGAL_VERSION` (and Go's `legal.Version`) changes and Go's `legal.MinConsentVersion` is raised to it (a Go test requires that once the texts are final), so every existing account accepts the approved texts once: the web app and the mobile app show them for acceptance, and the API answers `CONSENT_REQUIRED` until then.
 - The release signing key, off-server backups and log monitoring ([`docs/ai/monitoring.md`](../ai/monitoring.md)).

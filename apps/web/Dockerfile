@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # Lookly web (Next.js standalone): the landing page, the legal pages and the
 # page an e-mailed reset link opens. No database, no secrets; the API is the Go
-# server's (deploy/Caddyfile sends /api/* there). Build context: apps/web
+# server's (Caddy is to send /api/* there, B7.7). Build context: apps/web
 
 # ── deps + build ─────────────────────────────────────────────────────────────
 FROM oven/bun:1.3-debian AS builder

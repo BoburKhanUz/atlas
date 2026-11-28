@@ -443,8 +443,8 @@ the cutover (`docs/plan/B2.md`).
 
 - **Golden vectors** (`apps/api/testdata/golden/auth.json`) are inputs and outputs
   recorded from the real TypeScript functions by `apps/web/scripts/golden-auth.ts`
-  (`bun scripts/golden-auth.ts ../api/testdata/golden/auth.json` in `apps/web`). The Go
-  tests load every record. A mismatch is investigated, never regenerated away. The
+  (removed in B7.6 with the TypeScript backend; git history at e57764f): a fixed record
+  now. The Go tests load every record. A mismatch is investigated, never regenerated away. The
   vectors use fixed test secrets that exist nowhere else; `.gitleaks.toml` exempts that
   directory, and only it, from the secret scan.
 - **Access token**: JWT, HS256, issuer `ai-fashion-stylist`, claims `sub`, `email`,
@@ -740,27 +740,17 @@ migrations. Prisma changed the schema until then; its migrations are kept as tes
   - builds the binary.
 
   The `docker` job builds the image.
-- **E2E in Go mode** (CI job `e2e`, second run): the whole browser suite runs again
-  with the whole API answered by Go (every operation of the contract since B6.10).
-  `apps/web/e2e/go-front.mjs`, a test-only proxy, stands in front of a Next.js server
-  and a Go server on one database and the same secrets, and sends everything under
-  `/api/` to Go and the pages to Next.js. `apps/web/e2e/go-worker.mjs` runs
-  `lookly migrate river` and the Go worker, which writes the reset mails to the same
-  outbox directory the specs read. In this arrangement every session is started by Go
-  (sign-in is Go's); Next.js reads them and rotates them on page loads. Each answer is
-  marked with the server that gave it, and `go-mode.spec.ts` checks the routing, so a
-  misrouted run cannot pass. It also checks the other direction step by step: Next.js
-  rotates a session, then Go serves a grace replay from the ciphertext Next.js stored
-  and rotates the row Next.js wrote, and Next.js goes on from Go's. For the weather and
-  the outfit routes it asks both servers the same things directly, on the same data, and
-  compares the answers member by member (they may differ in link signatures, in the ids
-  and times of rows each made, and in the image dimensions of the outfit list). This
-  arrangement is never deployed: production switches
-  in one step (ADR 0002). Locally:
+- **E2E** (CI job `e2e`, all against Go since B7.6): the browser suite
+  (`apps/web/playwright.config.ts`) runs the website's production build with the Go
+  server and worker behind `apps/web/e2e/go-front.mjs`, a test-only proxy that sends
+  everything under `/api/` to Go and the pages to Next.js, as Caddy is to do;
+  `apps/web/e2e/go-worker.mjs` runs `lookly migrate river` and the worker, which writes
+  the reset mails to the outbox the specs read. The API journeys
+  (`apps/web/playwright.api.config.ts`) drive the Go server as the phone does, every
+  answer checked against the contract. Until B7.6 the browser suite also ran a "Go
+  mode" against the Next.js server, comparing both (git history at e57764f). Locally:
 
   ```bash
   cd apps/api && go build -tags nodynamic -o /tmp/lookly-e2e ./cmd/lookly
-  cd ../web && E2E_GO=1 E2E_GO_BINARY=/tmp/lookly-e2e e2e/run-local.sh \
-    auth.spec.ts session.spec.ts session-recovery.spec.ts go-mode.spec.ts \
-    password-reset.spec.ts reconsent.spec.ts navigation-responsive.spec.ts
+  cd ../web && E2E_GO_BINARY=/tmp/lookly-e2e e2e/run-local.sh
   ```

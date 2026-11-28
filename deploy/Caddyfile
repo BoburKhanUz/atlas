@@ -1,3 +1,5 @@
+# Out of date since B7.6 (the Next.js API and Prisma are removed); B7.7 rewrites this
+# for the Go server (docs/plan/B7.md).
 # HTTPS for the ATLAS API (deploy/compose.server.yml). Caddy obtains and renews
 # the certificate for ATLAS_DOMAIN automatically: the domain's DNS A record must
 # point at this server and ports 80 and 443 must be reachable. HSTS is set

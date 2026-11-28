@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
+import { PINNED_AI_ENV } from './e2e/ai-env'
 import { randomBytes } from 'node:crypto'
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -28,14 +29,13 @@ const go = {
   JWT_SECRET: process.env.JWT_SECRET || randomBytes(32).toString('hex'),
   MEDIA_SIGNING_SECRET: process.env.MEDIA_SIGNING_SECRET || randomBytes(32).toString('hex'),
   SESSION_ENC_KEY: process.env.SESSION_ENC_KEY || randomBytes(32).toString('base64'),
-  STORAGE_LOCAL_DIR: process.env.STORAGE_LOCAL_DIR || mkdtempSync(path.join(tmpdir(), 'lookly-e2e-storage-')),
+  STORAGE_LOCAL_DIR: (process.env.STORAGE_LOCAL_DIR ||= mkdtempSync(path.join(tmpdir(), 'lookly-e2e-storage-'))),
   // E-mail is never sent from an e2e run: files only, whatever SMTP_* the shell holds.
   MAIL_TRANSPORT: 'outbox',
   MAIL_OUTBOX_DIR,
   COOKIE_SECURE: '0', // plain http
   WEATHER_PROVIDER: 'mock',
-  OPENAI_API_KEY: '',
-  GEMINI_API_KEY: '',
+  ...PINNED_AI_ENV,
 }
 
 const quiet = { reuseExistingServer: !process.env.CI, stdout: 'ignore' as const, stderr: 'pipe' as const }
@@ -57,7 +57,7 @@ export default defineConfig({
       command: 'node .next/standalone/server.js',
       url: `http://127.0.0.1:${PORT + 10}/`,
       timeout: 90_000,
-      env: { HOSTNAME: '127.0.0.1', PORT: String(PORT + 10), NODE_ENV: 'production', NEXT_TELEMETRY_DISABLED: '1' },
+      env: { ...PINNED_AI_ENV, HOSTNAME: '127.0.0.1', PORT: String(PORT + 10), NODE_ENV: 'production', NEXT_TELEMETRY_DISABLED: '1' },
       ...quiet,
     },
     { command: `"${BINARY}" serve`, url: `http://127.0.0.1:${PORT + 20}/api/health`, timeout: 60_000, env: { ...go, LOOKLY_HTTP_ADDR: `127.0.0.1:${PORT + 20}` }, ...quiet },
@@ -66,7 +66,7 @@ export default defineConfig({
       command: 'node e2e/go-front.mjs',
       url: `http://127.0.0.1:${PORT}/api/health`,
       timeout: 90_000,
-      env: { FRONT_PORT: String(PORT), NEXT_PORT: String(PORT + 10), GO_PORT: String(PORT + 20) },
+      env: { ...PINNED_AI_ENV, FRONT_PORT: String(PORT), NEXT_PORT: String(PORT + 10), GO_PORT: String(PORT + 20) },
       ...quiet,
     },
   ],

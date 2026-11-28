@@ -1,5 +1,9 @@
 # Session-families cutover and rollback
 
+> **Historical.** This was the runbook for a Phase 2 database on the Next.js server and
+> Prisma, both removed in B7.6 (git history at e57764f; no such database exists). Today
+> `lookly migrate` makes or continues the schema (`docs/plan/B7.md`, B7.3).
+
 Migrations `20261006000100_media_variants`, `20261006000200_idempotency_keys`
 and `20261006000300_session_families` ship together with the new session
 protocol. The cutover is **stop-the-world**: the old (Phase 2) build and the

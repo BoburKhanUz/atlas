@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto'
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { PINNED_AI_ENV } from './e2e/ai-env'
 
 /**
  * The API journey suite (docs/plan/B7.md, B7.2): the Go server and its worker on
@@ -33,9 +34,7 @@ const env = {
   MAIL_OUTBOX_DIR: process.env.E2E_API_OUTBOX,
   COOKIE_SECURE: '0',
   WEATHER_PROVIDER: 'mock',
-  // The test environment's AI is the mock; no key reaches the server.
-  OPENAI_API_KEY: '',
-  GEMINI_API_KEY: '',
+  ...PINNED_AI_ENV,
 }
 
 export default defineConfig({

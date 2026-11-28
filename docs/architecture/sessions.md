@@ -120,18 +120,13 @@ closed (`SESSION_RACE`).
 
 ## Operations
 
-`bun scripts/session-cleanup.ts` (dry run; `--apply` to change data; `--json`):
-clears ciphertexts older than 60 s, deletes rotated sessions and whole
-families revoked or expired more than 30 days ago, and expired password reset
-links. A deleted old token then reads as `INVALID_TOKEN` instead of
-`REFRESH_REUSED`. The Go worker (`lookly worker`, stage B1) applies the same rules
-hourly once it is deployed (with the cutover, B7); see `docs/architecture/backend.md`.
-
-`bun scripts/session-cleanup.ts --preflight-families` — read-only, run
-against the Phase 2 database before the cutover (`docs/database/cutover.md`):
-predicts the families and anomalies the migration will create. Exit 2 =
-anomalies (those families are revoked at the cutover), 3 = duplicate links
-(the migration would fail).
+The Go worker (`lookly worker`) runs the cleanup hourly and once at every start
+(`internal/maintenance`, `internal/jobs`): it clears ciphertexts older than 60 s,
+deletes rotated sessions and whole families revoked or expired more than 30 days ago,
+and expired password reset links. A deleted old token then reads as `INVALID_TOKEN`
+instead of `REFRESH_REUSED`; see `docs/architecture/backend.md`. The TypeScript
+`scripts/session-cleanup.ts` and its pre-cutover family check went with the Next.js
+server in B7.6 (git history at e57764f).
 
 ## Tests
 

@@ -1,5 +1,9 @@
 # Mobile-ready backend (after Phase 2)
 
+> **Historical.** The change set on the Next.js server, which B7.6 removed (git history
+> at e57764f). The behaviour lives on in the Go server (`apps/api`) with the same
+> contract; the test commands below no longer exist.
+
 ATLAS is primarily a native mobile app; the Next.js app is the backend plus a
 web reference client. This change set makes the backend ready for the mobile
 client without changing the product scope. Details: `sessions.md`,

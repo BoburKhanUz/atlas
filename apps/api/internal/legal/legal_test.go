@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"regexp"
+	"strings"
 	"testing"
 
 	"lookly/internal/contracttest"
@@ -133,4 +134,40 @@ func FuzzCompare(f *testing.F) {
 			t.Fatalf("both %q and %q count as consent, yet they cannot be compared", a, b)
 		}
 	})
+}
+
+// versionsProblem is what is wrong with a pair of configured versions, or "".
+func versionsProblem(version, minimum string) string {
+	order, ok := legal.Compare(minimum, version)
+	switch {
+	case !ok:
+		return "malformed"
+	case order > 0:
+		return "the minimum is newer than the current texts: nobody could accept it"
+	case !strings.HasSuffix(version, "-draft") && strings.HasSuffix(minimum, "-draft"):
+		return "the texts are final, yet consent to a draft still counts"
+	}
+	return ""
+}
+
+func TestTheConfiguredVersionsAreConsistent(t *testing.T) {
+	t.Parallel()
+	if p := versionsProblem(legal.Version, legal.MinConsentVersion); p != "" {
+		t.Fatalf("Version %q, MinConsentVersion %q: %s", legal.Version, legal.MinConsentVersion, p)
+	}
+	for _, c := range []struct {
+		version, minimum string
+		bad              bool
+	}{
+		{"2026-11-24.1-draft", "2026-10-17.2-draft", false},
+		{"2026-11-24.1", "2026-11-24.1", false},
+		{"2026-11-24.1", "2026-10-17.2", false},
+		{"2026-11-24.1", "2026-10-17.2-draft", true}, // final texts, draft consent still counts
+		{"2026-11-24.1-draft", "2026-11-25.1-draft", true},
+		{"2026-11-24.1", "2026-11-24", true},
+	} {
+		if got := versionsProblem(c.version, c.minimum) != ""; got != c.bad {
+			t.Errorf("versionsProblem(%q, %q) bad = %v, want %v", c.version, c.minimum, got, c.bad)
+		}
+	}
 }

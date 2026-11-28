@@ -56,11 +56,36 @@ test.describe('the page an e-mailed reset link opens', () => {
     await expect(page.getByRole('main').getByRole('alert')).toContainText('Havola yaroqsiz')
   })
 
-  test('mismatched passwords are caught before any request', async ({ page }) => {
-    await page.goto('/reset-password?token=not-a-real-token')
-    await page.getByLabel('Yangi parol').fill(NEW_PASSWORD)
-    await page.getByLabel('Parolni takrorlang').fill(`${NEW_PASSWORD}x`)
+  for (const [what, password, confirm, message] of [
+    ['mismatched passwords', NEW_PASSWORD, `${NEW_PASSWORD}x`, 'Parollar bir xil emas.'],
+    ['a password under 8 characters', 'qisqa1', 'qisqa1', 'Parol kamida 8 belgi bo‘lishi kerak.'],
+  ] as const) {
+    test(`caught on the page, in Uzbek, before any request: ${what}`, async ({ page }) => {
+      let sent = 0
+      page.on('request', (r) => {
+        if (r.url().endsWith('/api/v1/auth/password/reset')) sent++
+      })
+      await page.goto(`/reset-password?token=${'a'.repeat(43)}`)
+      await page.getByLabel('Yangi parol').fill(password)
+      await page.getByLabel('Parolni takrorlang').fill(confirm)
+      await page.getByRole('button', { name: 'Parolni saqlash' }).click()
+      await expect(page.getByRole('main').getByRole('alert')).toHaveText(message)
+      expect(sent).toBe(0)
+    })
+  }
+
+  test("a refusal from the server other than a dead link is shown in the server's words", async ({ page }) => {
+    await page.goto(`/reset-password?token=${'a'.repeat(43)}`)
+    const tooLong = 'a'.repeat(73) // over bcrypt's 72 bytes: the server refuses it
+    await page.getByLabel('Yangi parol').fill(tooLong)
+    await page.getByLabel('Parolni takrorlang').fill(tooLong)
+    const answer = page.waitForResponse((r) => r.url().endsWith('/api/v1/auth/password/reset'))
     await page.getByRole('button', { name: 'Parolni saqlash' }).click()
-    await expect(page.getByRole('main').getByRole('alert')).toHaveText('Parollar bir xil emas.')
+    const res = await answer
+    expect(res.status()).toBe(400)
+    const body = (await res.json()) as { error: string; code: string }
+    expect(body.code).not.toBe('RESET_TOKEN_INVALID')
+    await expect(page.getByRole('main').getByRole('alert')).toHaveText(body.error)
+    await expect(page.getByLabel('Yangi parol')).toBeVisible() // the form stays for another try
   })
 })

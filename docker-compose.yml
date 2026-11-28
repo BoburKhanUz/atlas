@@ -1,3 +1,5 @@
+# Out of date since B7.6 (the Next.js API and Prisma are removed); B7.7 rewrites this
+# for the Go server (docs/plan/B7.md).
 # ATLAS local development stack.
 #   cp .env.example .env   # then fill in the secrets
 #   docker compose up --build

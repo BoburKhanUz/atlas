@@ -13,8 +13,8 @@ import (
 )
 
 // Outbox writes each message as a JSON file into Dir, in the format the
-// Next.js server writes (apps/web/src/server/mail.ts): development and the
-// e2e tests read the links from there. Nothing is sent.
+// Next.js server wrote (until B7.6): development and the e2e tests read the
+// links from there. Nothing is sent.
 type Outbox struct {
 	Dir  string
 	From netmail.Address

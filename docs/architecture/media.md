@@ -51,11 +51,11 @@ Optional header on the upload (8–128 chars `[A-Za-z0-9_-]`), per user, 24 h:
 | claim older than 5 min (crashed request) | taken over; the original request can no longer complete (its transaction rolls back) |
 | original item deleted meanwhile | 404 |
 
-## Scripts (manual, dry run by default)
+## Sweep
 
-- `bun scripts/storage-sweep.ts [--apply] [--json] [--min-age-minutes=60]` —
-  deletes files no image row references (e.g. display files left behind by a
-  Phase 2 rollback). Recent files are kept (an upload writes files before its
-  row commits); unknown file names are reported, never deleted.
-- `bun scripts/backfill-display-variants.ts [--apply] [--json]` — creates
-  missing display variants; re-runnable.
+The Go worker sweeps stored files hourly and once at every start
+(`internal/wardrobe/sweep.go`, `internal/jobs`): it deletes files no image row
+references, keeps recent ones (an upload writes files before its row commits) and never
+deletes a file name it does not recognise. The TypeScript scripts (`storage-sweep.ts`,
+`backfill-display-variants.ts`) went with the Next.js server in B7.6 (git history at
+e57764f); every image the Go server stores has its display variant.

@@ -28,6 +28,10 @@ Origin: the source was imported from a Z.ai-generated export in a single clean i
 
 ## Quick start (Docker Compose)
 
+> **Out of date since B7.6:** Compose still starts the removed Next.js API and Prisma.
+> B7.7 rewrites it for the Go server (`docs/plan/B7.md`); until then use the local
+> development steps below.
+
 ```bash
 cp .env.example .env
 # Generate two different secrets (>= 32 chars) and put them in .env as

@@ -3,8 +3,8 @@
 // versions still count. The texts themselves and the consent endpoint are
 // stage B3.
 //
-// Until the cutover (B7) the constants and the comparison equal the
-// TypeScript ones (apps/web/src/lib/legal/version.ts); tests keep them so.
+// The rule is this server's alone since B7.6. The website shows the texts
+// under Version (apps/web/src/lib/legal/version.ts); a test keeps the two equal.
 package legal
 
 import (
@@ -19,7 +19,10 @@ const (
 
 	// MinConsentVersion is the oldest accepted version that still counts. A
 	// user whose consents are all older must accept the current texts
-	// before using the app.
+	// before using the app. Raise it to Version when a change needs new
+	// consent (a new use of data, a new provider, new terms); leave it for
+	// wording fixes. Once the texts are final it is no draft (a test holds
+	// that).
 	MinConsentVersion = "2026-10-17.2-draft"
 )
 

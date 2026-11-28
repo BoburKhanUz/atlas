@@ -19,9 +19,10 @@ describe("the harness's protocol", () => {
   })
 
   it("reads the catalog Go embeds: every subcategory under a known category, ids unique, colours with a hex", () => {
-    const go = JSON.parse(readFileSync(path.resolve(__dirname, '../../../api/internal/catalog/catalog.json'), 'utf8')) as { categories: Array<{ id: string }>; colors: Array<{ id: string }> }
-    expect(local.CATEGORIES.map((c) => c.id)).toEqual(go.categories.map((c) => c.id))
-    expect(local.COLORS.map((c) => c.id)).toEqual(go.colors.map((c) => c.id))
+    // catalog.ts reads the file next to the Go package that embeds it, so the harness scores with what Go serves.
+    const goSource = readFileSync(path.resolve(__dirname, '../../../api/internal/catalog/catalog.go'), 'utf8')
+    expect(goSource).toMatch(/^\/\/go:embed catalog\.json$/m)
+    expect(local.CATEGORIES.length).toBeGreaterThan(0)
     expect(Object.keys(local.SUBCATEGORIES).sort()).toEqual(local.CATEGORIES.map((c) => c.id).sort())
     for (const list of [local.CATEGORIES, local.COLORS, local.PATTERNS, local.MATERIALS, local.STYLES, local.SEASONS, local.OCCASIONS, ...Object.values(local.SUBCATEGORIES)]) {
       expect(new Set(list.map((e) => e.id)).size).toBe(list.length)

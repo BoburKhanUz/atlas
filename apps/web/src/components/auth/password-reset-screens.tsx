@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { api, ApiError } from '@/lib/api-client'
+import { ApiError, postJson } from '@/lib/api-client'
 import { routes } from '@/lib/routes'
 
 const MIN_PASSWORD = 8
@@ -66,7 +66,7 @@ export function ResetPasswordScreen() {
     }
     setBusy(true)
     try {
-      await api('/api/v1/auth/password/reset', { method: 'POST', body: { token, password } })
+      await postJson('/api/v1/auth/password/reset', { token, password })
       // The link is spent: keep it out of the history.
       window.history.replaceState(null, '', '/reset-password')
       setDone(true)
@@ -108,7 +108,8 @@ export function ResetPasswordScreen() {
 
   return (
     <Card title={t('resetTitle')} description={t('resetDescription')}>
-      <form onSubmit={submit} className="space-y-4">
+      {/* noValidate: the checks below say what is wrong in Uzbek; the browser's own would block them. */}
+      <form onSubmit={submit} noValidate className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="password" className="text-sm font-medium">
             {t('newPasswordLabel')}

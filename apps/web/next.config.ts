@@ -4,8 +4,8 @@ import pkg from "./package.json";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
-// Sent with every page. The API is the Go server's (deploy/Caddyfile sends
-// /api/* there); HSTS is added by Caddy, where HTTPS ends: local http
+// Sent with every page. The API is the Go server's (Caddy is to send /api/*
+// there, B7.7); HSTS is added by Caddy, where HTTPS ends: local http
 // development must not get it.
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },

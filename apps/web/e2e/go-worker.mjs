@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Test-only launcher of the Go worker for the "Go mode" of the e2e suite
-// (docs/plan/B3.md). It creates the job queue's tables (`lookly migrate
+// Test-only launcher of the Go worker for the browser and API suites
+// (playwright.config.ts, playwright.api.config.ts). It creates the job queue's tables (`lookly migrate
 // river`), runs `lookly worker` and answers on WORKER_PORT, so that
 // Playwright (which waits for a URL) knows the worker was started. The
 // worker does what the Go server queues: it makes password reset links and

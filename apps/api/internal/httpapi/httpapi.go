@@ -115,9 +115,9 @@ func Wrap(next http.Handler, log *slog.Logger) http.Handler {
 	return wrap(next, log, func(*http.Request) budget { return budget{body: DefaultBodyLimit, timeout: RequestTimeout} })
 }
 
-// securityHeaders sets what the Next.js server sends with every response
-// (apps/web/next.config.ts): no type sniffing, no framing, a restrained
-// referrer. A media path gets no content security policy here: an image
+// securityHeaders sets what the Next.js server sent with every response
+// (and the website's pages still do, apps/web/next.config.ts): no type
+// sniffing, no framing, a restrained referrer. A media path gets no content security policy here: an image
 // sets its own, stricter one (and "frame-ancestors" must not replace it).
 // Strict-Transport-Security is the reverse proxy's, where HTTPS ends.
 func securityHeaders(h http.Header, r *http.Request) {

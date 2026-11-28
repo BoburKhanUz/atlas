@@ -2,17 +2,12 @@ import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { routes } from '@/lib/routes'
 
-export function NotFoundView({ fullScreen = false }: { fullScreen?: boolean }) {
+/** The page for any unmatched URL (src/app/not-found.tsx). */
+export function NotFoundView() {
   const t = useTranslations('errors')
   const tCommon = useTranslations('common')
   return (
-    <div
-      className={
-        fullScreen
-          ? 'min-h-screen flex items-center justify-center px-6 bg-background'
-          : 'px-5 pt-24 pb-6 flex justify-center'
-      }
-    >
+    <div className="min-h-screen flex items-center justify-center px-6 bg-background">
       <div className="surface-card p-8 text-center max-w-sm w-full">
         <p className="text-4xl font-semibold text-primary mb-3">404</p>
         <h1 className="font-semibold text-foreground mb-1.5">{t('notFoundTitle')}</h1>

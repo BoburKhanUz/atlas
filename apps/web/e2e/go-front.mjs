@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// Test-only front proxy of the browser suite: what Caddy does in production
-// (deploy/Caddyfile): everything under /api/ to the Go server, the pages to
-// the web app. Never deployed.
+// Test-only front proxy of the browser suite: what Caddy is to do in the
+// deployment (deploy/Caddyfile, rewritten in B7.7): everything under /api/ to
+// the Go server, the pages to the web app. Never deployed.
 //
 //   FRONT_PORT=3100 NEXT_PORT=3110 GO_PORT=3120 node e2e/go-front.mjs
 import http from 'node:http'
@@ -27,7 +27,9 @@ const server = http.createServer((req, res) => {
       answer.pipe(res)
     },
   )
-  upstream.on('error', () => {
+  upstream.on('error', (err) => {
+    // Playwright shows this process's stderr: the cause of a failed test's 502.
+    console.error(`go-front: ${req.method} ${path} -> ${servedByGo(path) ? 'go' : 'next'}: ${err.message}`)
     if (!res.headersSent) res.writeHead(502)
     res.end()
   })
