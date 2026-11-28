@@ -7,6 +7,8 @@
 # PostgreSQL image, which has tar; the Go image has no shell. With
 # STORAGE_DRIVER=r2 the volume is empty and the images live in the bucket.
 set -eu
+# The dump holds every account (password hashes included): readable by this user only.
+umask 077
 cd "$(dirname "$0")/.."
 dir="deploy/backups/$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$dir"

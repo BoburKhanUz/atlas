@@ -37,7 +37,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Open http://localhost:3000. Compose starts PostgreSQL 16, runs `lookly migrate` once, then the Go API, its worker, the website and Caddy, which sends `/api/*` to Go and everything else to the website. Images and the reset e-mails live in Docker volumes; only Caddy's port is published, on 127.0.0.1. `python3 -I deploy/check-stack.py` checks a running stack through Caddy (CI runs it on every push). A server adds `deploy/compose.server.yml` for HTTPS: [`docs/deploy/staging.md`](docs/deploy/staging.md).
+Open http://localhost:3000. Compose starts PostgreSQL 16, runs `lookly migrate` once, then the Go API, its worker, the website and Caddy, which sends `/api/*` to Go and everything else to the website. Images and the reset e-mails live in Docker volumes; Caddy's port and, for local tools, PostgreSQL's are published, on 127.0.0.1 only (a server publishes 80 and 443 alone). `python3 -I -B deploy/check-stack.py` checks a running stack through Caddy (CI runs it on every push). A server adds `deploy/compose.server.yml` for HTTPS: [`docs/deploy/staging.md`](docs/deploy/staging.md).
 
 ## Local development (without Docker)
 
@@ -85,14 +85,15 @@ Locally `.env` (from [`.env.example`](.env.example)); on a server `deploy/server
 
 - Never commit `.env`, databases or user photos. Secrets must be distinct, >= 32 chars; old default secrets are rejected. JWTs are verified as HS256 only.
 - Uploads are private (not under `public/`) and served through HMAC-signed, expiring URLs. These are bearer URLs until they expire. Each upload is stored as a metadata-free master (never served), a 1600 px display WebP (`url`) and a 400 px thumbnail WebP; HEIC must be converted by the client (415). `Idempotency-Key` makes upload retries safe. See `docs/architecture/media.md`.
-- Sessions: a 15-minute access JWT and an opaque refresh token stored only as a SHA-256 hash, rotated on every refresh, grouped per login into a session family with a 90-day absolute limit. A rotated token presented again within 60 s gets the same new token (concurrent or retried requests); later, it revokes that family. The web app keeps both tokens in HttpOnly, SameSite=Lax cookies; the mobile app (`X-Atlas-Client: mobile`) receives them in JSON and uses `Authorization: Bearer`. Cross-origin state-changing requests with session cookies are rejected (403). See `docs/architecture/sessions.md`.
+- Sessions: a 15-minute access JWT and an opaque refresh token stored only as a SHA-256 hash, rotated on every refresh, grouped per login into a session family with a 90-day absolute limit. A rotated token presented again within 60 s gets the same new token (concurrent or retried requests); later, it revokes that family. The mobile app (`X-Atlas-Client: mobile`) receives both tokens in JSON and uses `Authorization: Bearer`; a browser client (the admin panel, W2) keeps them in HttpOnly, SameSite=Lax cookies. Cross-origin state-changing requests with session cookies are rejected (403). See `docs/architecture/sessions.md`.
 - Sign-in, registration, password reset and the AI are rate limited in PostgreSQL (shared by every process), per account and, behind Caddy, per client address; the AI also has daily quotas in Tashkent time.
 - Deleting an item removes its files; deleting an account removes its data at once and its images through the worker (`docs/architecture/media.md`).
-- This repo is private during development. See the known risks in `docs/architecture/phase-1-changes.md`.
+- This repo is private during development. The security reviews of each stage are in `docs/plan/` (the `lookly-security` gate); `docs/architecture/phase-1-changes.md` and `phase-2-changes.md` are the history of the Next.js server.
 
 ## Documentation
 
-- [Phase 1 changes and remaining risks](docs/architecture/phase-1-changes.md)
-- [Phase 2 changes (app foundation)](docs/architecture/phase-2-changes.md)
+- [Stages and their reviews](docs/plan/README.md)
+- [The Go backend](docs/architecture/backend.md)
+- [Phase 1](docs/architecture/phase-1-changes.md) and [Phase 2](docs/architecture/phase-2-changes.md) changes (history: the Next.js server)
 - [AI provider design and evaluation proposal](docs/ai/provider-evaluation.md)
 - [Z.ai worklog (history)](docs/history/zai-worklog.md)

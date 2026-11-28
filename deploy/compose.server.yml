@@ -27,10 +27,13 @@ services:
     restart: unless-stopped
     logging: *logging
     environment:
-      # staging or production (deploy/server.env); never development here.
+      # staging or production (deploy/server.env); deploy/compose.sh refuses
+      # any other value.
       LOOKLY_ENV: ${LOOKLY_ENV:?Set LOOKLY_ENV in deploy/server.env (staging or production)}
       # Absolute image URLs and reset links for the phone app.
       PUBLIC_BASE_URL: https://${ATLAS_DOMAIN:?Set ATLAS_DOMAIN in deploy/server.env}
+      # A server never runs the mock AI, whatever server.env says.
+      AI_ALLOW_MOCK_IN_PRODUCTION: ""
 
   worker:
     restart: unless-stopped
@@ -38,6 +41,7 @@ services:
     environment:
       LOOKLY_ENV: ${LOOKLY_ENV:?Set LOOKLY_ENV in deploy/server.env (staging or production)}
       PUBLIC_BASE_URL: https://${ATLAS_DOMAIN:?Set ATLAS_DOMAIN in deploy/server.env}
+      AI_ALLOW_MOCK_IN_PRODUCTION: ""
 
   web:
     restart: unless-stopped

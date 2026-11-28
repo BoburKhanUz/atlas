@@ -167,7 +167,7 @@ jobs:
       - name: Start the stack and check it through Caddy
         run: |
           docker compose -p ci --env-file "$RUNNER_TEMP/ci.env" up -d --no-build --wait
-          python3 -I deploy/check-stack.py http://127.0.0.1:3000 --outbox-volume ci_mail-outbox
+          python3 -I -B deploy/check-stack.py http://127.0.0.1:3000 --outbox-volume ci_mail-outbox
       - name: Logs of the stack
         if: failure()
         run: docker compose -p ci --env-file "$RUNNER_TEMP/ci.env" logs --no-color --tail 200
@@ -177,9 +177,9 @@ jobs:
       - name: Validate the server overlay (deploy/) and its Caddyfile
         run: |
           # Same throwaway values plus a server's settings; nothing is stored.
-          { cat "$RUNNER_TEMP/ci.env"; echo "ATLAS_DOMAIN=staging-api.example.com"; echo "LOOKLY_ENV=staging"; } > "$RUNNER_TEMP/server.env"
+          { cat "$RUNNER_TEMP/ci.env"; echo "ATLAS_DOMAIN=staging.example.com"; echo "LOOKLY_ENV=staging"; } > "$RUNNER_TEMP/server.env"
           docker compose -f docker-compose.yml -f deploy/compose.server.yml --env-file "$RUNNER_TEMP/server.env" config --quiet
-          docker run --rm -e SITE_ADDRESS=staging-api.example.com -v "$PWD/deploy/Caddyfile:/etc/caddy/Caddyfile:ro" \
+          docker run --rm -e SITE_ADDRESS=staging.example.com -v "$PWD/deploy/Caddyfile:/etc/caddy/Caddyfile:ro" \
             caddy:2.11-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
 
   secret-scan:

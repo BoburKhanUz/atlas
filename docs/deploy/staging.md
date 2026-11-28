@@ -11,16 +11,16 @@ Files:
 | `deploy/compose.server.yml` | Overlay on `docker-compose.yml`: Caddy on ports 80/443 for `ATLAS_DOMAIN`, no database port on the host, `LOOKLY_ENV` required, `PUBLIC_BASE_URL` from the domain, restart policies, log rotation (5 × 10 MB per container) |
 | `deploy/Caddyfile` | The routing, and HTTPS for `ATLAS_DOMAIN`: Caddy obtains and renews the certificate and sends HSTS (the apps set their other security headers) |
 | `deploy/server.env.example` | Settings template with the AI configuration (OpenAI only, owner decision 2026-11-27); copied to `deploy/server.env` (git-ignored) on the server |
-| `deploy/compose.sh` | `docker compose` with the base file, the overlay and `deploy/server.env` |
-| `deploy/check-stack.py` | Checks a running stack through Caddy: routing, security headers, sign-up, an upload and its signed image, a reset request; it creates and deletes one test account |
-| `deploy/backup.sh` | Database dump and images archive into `deploy/backups/<UTC time>/` (git-ignored) |
+| `deploy/compose.sh` | `docker compose` with the base file, the overlay and `deploy/server.env`; refuses a `LOOKLY_ENV` other than `staging` or `production` and stamps the images with the checked-out commit (shown by `/api/health`) |
+| `deploy/check-stack.py` | Checks a running stack through Caddy: routing, security headers, sign-up, an upload and its signed image, a reset request; it creates and deletes one test account, and refuses an address other than this machine without `--remote` |
+| `deploy/backup.sh` | Database dump and images archive into `deploy/backups/<UTC time>/` (git-ignored, readable by the owner of the files only) |
 
 ## What the owner provides
 
 | Item | Requirement |
 |---|---|
 | Server | Ubuntu 24.04 or 26.04 LTS, public IPv4, SSH key login. Estimate: 2 vCPU, 4 GB RAM (the images are built on the server), 40 GB disk |
-| Domain | A host name such as `staging-api.<your domain>` with a DNS **A** record pointing at the server |
+| Domain | A host name such as `staging.<your domain>` with a DNS **A** record pointing at the server; it serves the website and the API (`/api/*`), as `lookly.uz` will |
 | AI key | `OPENAI_API_KEY` (text and clothing photos) from a billing-enabled account with a spending limit or budget alert set at the provider. Production does not use Gemini (owner decision 2026-11-27: its terms forbid apps likely to be used by people under 18) |
 | Data | Staging holds test accounts and test images only ([`docs/ai/staging.md`](../ai/staging.md)) |
 
@@ -77,10 +77,10 @@ Order: PostgreSQL starts; `migrate` makes or continues the schema and exits; the
 ## 4. Check it (from a development machine)
 
 ```bash
-python3 -I deploy/check-stack.py https://<ATLAS_DOMAIN>
+python3 -I -B deploy/check-stack.py https://<ATLAS_DOMAIN> --remote
 ```
 
-It needs no key and makes no AI call when the stack's AI is switched off; with the AI on, its one upload is one clothing analysis (one billable request). The smoke with real providers (the stylist, the outfit explanation, the colour profile) comes back with B7.8 ([`docs/ai/staging.md`](../ai/staging.md)).
+It holds no key. With the stack's AI on (the template's staging settings), its one upload is one paid clothing analysis: run it with the owner's approval (CLAUDE.md rule 4). Never against production: it creates (and deletes) a test account. On a server the reset mail is sent or disabled, not written to a volume, so the worker is not checked here: `deploy/compose.sh logs worker` shows its jobs. The smoke with real providers (the stylist, the outfit explanation, the colour profile) comes back with B7.8 ([`docs/ai/staging.md`](../ai/staging.md)).
 
 ## 5. Phone build against staging
 
@@ -102,7 +102,7 @@ git pull
 deploy/compose.sh up -d --build --wait
 ```
 
-`migrate` runs again before the API and the worker restart; requests fail for the seconds the API restarts. Rate limits and the job queue are in PostgreSQL, so nothing is lost on a restart.
+`migrate` runs again before the API and the worker restart; each gets 25 s to finish what it is doing, and requests fail for the seconds the API restarts. Rate limits and the job queue are in PostgreSQL, so nothing is lost on a restart. The worker has no health check: Compose restarts it when it exits, and its log shows failing jobs (`deploy/compose.sh logs worker`).
 
 ## 7. Backups and restore
 

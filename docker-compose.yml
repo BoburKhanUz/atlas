@@ -9,6 +9,10 @@
 x-lookly-env: &lookly-env
   LOOKLY_ENV: ${LOOKLY_ENV:-development}
   LOOKLY_LOG_LEVEL: ${LOOKLY_LOG_LEVEL:-info}
+  # Time to finish what is running on a stop (default 20s; stop_grace_period
+  # below gives each container 5 s more before Docker kills it).
+  LOOKLY_SHUTDOWN_GRACE: ${LOOKLY_SHUTDOWN_GRACE:-}
+  LOOKLY_DB_MAX_CONNS: ${LOOKLY_DB_MAX_CONNS:-}
   DATABASE_URL: postgresql://${POSTGRES_USER:-atlas}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-atlas}?sslmode=disable
   JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
   MEDIA_SIGNING_SECRET: ${MEDIA_SIGNING_SECRET:?Set MEDIA_SIGNING_SECRET in .env}
@@ -24,6 +28,7 @@ x-lookly-env: &lookly-env
   # Images: the uploads volume (local) or a Cloudflare R2 bucket (r2).
   STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
   STORAGE_LOCAL_DIR: /data/uploads
+  STORAGE_SWEEP_MAX_REMOVALS: ${STORAGE_SWEEP_MAX_REMOVALS:-}
   R2_ENDPOINT: ${R2_ENDPOINT:-}
   R2_REGION: ${R2_REGION:-}
   R2_BUCKET: ${R2_BUCKET:-}
@@ -112,6 +117,7 @@ services:
     environment:
       <<: *lookly-env
       LOOKLY_HTTP_ADDR: ":8080"
+    stop_grace_period: 25s
     volumes:
       - uploads:/data/uploads
       - mail-outbox:/data/mail-outbox
@@ -126,6 +132,7 @@ services:
     image: lookly-api
     command: ["worker"]
     environment: *lookly-env
+    stop_grace_period: 25s
     volumes:
       - uploads:/data/uploads
       - mail-outbox:/data/mail-outbox

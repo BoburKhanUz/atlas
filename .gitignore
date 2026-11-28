@@ -30,3 +30,6 @@ apps/web/public/uploads/
 # Server deployment (deploy/): filled-in settings and backups stay on the server
 /deploy/server.env
 /deploy/backups/
+
+# Python bytecode (deploy/check-stack.py, scripts)
+__pycache__/

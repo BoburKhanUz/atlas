@@ -66,8 +66,9 @@ client ─► Wrap (middleware) ─► routed (404 for unknown routes) ─► ga
   server's own read and write deadlines move with it.
 - **Security headers**: every answer carries `X-Content-Type-Options: nosniff`,
   `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin` and
-  `Content-Security-Policy: frame-ancestors 'none'`, as the Next.js server sends them
-  (`apps/web/next.config.ts`). A media path gets no policy from the middleware: an
+  `Content-Security-Policy: frame-ancestors 'none'`, as the Next.js server sent them
+  (and the website still does, `apps/web/next.config.ts`); `deploy/check-stack.py`
+  checks them through Caddy. A media path gets no policy from the middleware: an
   image sets `default-src 'none'`. `Strict-Transport-Security` is the reverse proxy's.
 - **Request id**: a single client `X-Request-Id` matching `[A-Za-z0-9-]{8,64}` is kept,
   otherwise (missing, malformed or sent more than once, as the Next.js API) a random UUID
@@ -627,16 +628,20 @@ by slice (`docs/plan/B6.md`).
   version}` or 503 `{status: degraded, database: unreachable, version}`, `Cache-Control:
   no-store`. This is the Next.js behaviour.
 - The version is stamped at build time (`-ldflags -X lookly/internal/app.version=…`,
-  the image's `--build-arg VERSION`); `dev` otherwise. The deployment must pass it (the
-  Next.js server read `APP_VERSION`).
+  the image's `--build-arg VERSION`); `dev` otherwise. `deploy/compose.sh` passes the
+  checked-out commit (`LOOKLY_VERSION`); a plain `docker compose` build is `dev`.
 
-## Deployment notes for B7
+## Deployment notes
+
+The stack and its runbook: `docker-compose.yml`, `deploy/`, `docs/deploy/staging.md`.
 
 - goose keeps its version table (`goose_db_version`) in `public`, beside Prisma's
   `_prisma_migrations` on a database Prisma made (B7.3: kept, so the database still
   shows where it came from; no table of the application is changed by the recording).
 - `lookly worker` has no health check of its own: if River loses the database, it logs
-  errors but keeps running. Monitor its logs (or add a probe) when it is deployed.
+  errors but keeps running. Compose restarts it when it exits; watch its log
+  (`deploy/compose.sh logs worker`) until a log monitor exists (B7.8 brings the AI
+  monitor; a probe for the worker is not planned yet).
 - Deploy order: `lookly migrate` before `serve` and `worker`. The worker needs the
   storage volume mounted at `STORAGE_LOCAL_DIR` (read-write), the mail settings and
   `PUBLIC_BASE_URL`; the server needs the same mail settings (it answers 503 on a reset
@@ -656,16 +661,12 @@ by slice (`docs/plan/B6.md`).
   domain (owner). Send the first message on staging with the owner's approval; nothing
   here was verified against a real provider. The privacy policy names the provider.
 
-- Docker stops a container after 10 s by default; `LOOKLY_SHUTDOWN_GRACE` is 20 s. The
-  service's compose entry needs `stop_grace_period` of at least the grace plus 5 s
-  (25 s), or the grace period never applies.
-- `DATABASE_URL` is shared with Prisma. Prisma-only URL options (`schema`,
-  `connection_limit`, `pgbouncer`) pass this check, but PostgreSQL refuses them when pgx
-  forwards them. Health then shows 503. Check the production URL at the cutover.
-- The Next.js server adds security headers to API answers too (`X-Content-Type-Options`,
-  `Referrer-Policy`, `X-Frame-Options`; `e2e/security-headers.spec.ts`). The Go server
-  sets none yet: at the cutover they come from Go or from the reverse proxy, and that
-  spec runs against the result.
+- Docker stops a container after 10 s by default; `LOOKLY_SHUTDOWN_GRACE` is 20 s, so
+  the API and the worker have `stop_grace_period: 25s` in `docker-compose.yml` (keep it
+  at the grace plus 5 s if the grace changes).
+- `DATABASE_URL` is pgx's: URL options pgx does not know (Prisma's `schema`,
+  `connection_limit`, `pgbouncer`) pass the check, but PostgreSQL refuses them when pgx
+  forwards them, and health then shows 503.
 - The runtime base image is pinned by digest. The build image
   (`golang:1.26.11-bookworm`) is pinned by tag only: Docker Hub rate-limited the digest
   lookup in the B0 session. Pin it by digest before the first production image.
@@ -739,11 +740,13 @@ migrations. Prisma changed the schema until then; its migrations are kept as tes
     a libwebp of the machine; ADR 0009);
   - builds the binary.
 
-  The `docker` job builds the image.
+  The `docker` job builds the images, starts the whole stack of `docker-compose.yml`,
+  runs `deploy/check-stack.py` through Caddy and validates the server overlay and the
+  Caddyfile.
 - **E2E** (CI job `e2e`, all against Go since B7.6): the browser suite
   (`apps/web/playwright.config.ts`) runs the website's production build with the Go
   server and worker behind `apps/web/e2e/go-front.mjs`, a test-only proxy that sends
-  everything under `/api/` to Go and the pages to Next.js, as Caddy is to do;
+  everything under `/api/` to Go and the pages to Next.js, as Caddy does;
   `apps/web/e2e/go-worker.mjs` runs `lookly migrate river` and the worker, which writes
   the reset mails to the outbox the specs read. The API journeys
   (`apps/web/playwright.api.config.ts`) drive the Go server as the phone does, every

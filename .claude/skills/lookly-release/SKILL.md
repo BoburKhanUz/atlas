@@ -23,8 +23,10 @@ changing storage each need the owner's go-ahead for that release (CLAUDE.md rule
 
 ## Server (VPS)
 
-1. Deploy the commit to **staging** (same compose files, separate database, mock AI).
-2. Run migrations; run the Playwright smoke suite against staging; open the app on a phone
+1. Deploy the commit to **staging** (same compose files, separate database and server
+   settings; `deploy/compose.sh up -d --build --wait` runs `lookly migrate` first).
+2. Run `deploy/check-stack.py --remote` against staging (one paid analysis when its AI is
+   on: owner approval) and the AI smoke (`docs/ai/staging.md`); open the app on a phone
    against staging.
 3. With the owner's go-ahead: back up production (`deploy/backup.sh` covers the database
    and local uploads; R2 objects need their own versioning or copy) and move the backup,

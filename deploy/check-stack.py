@@ -4,17 +4,23 @@ browser reach it: the routing (/api/* to Go, the rest to the website), the secur
 headers on both, and one journey that needs every part (the database and its
 schema, the image volume, the worker).
 
-  python3 -I deploy/check-stack.py [base URL] [--outbox-volume NAME]
+  python3 -I deploy/check-stack.py [base URL] [--outbox-volume NAME] [--remote]
 
 The base URL defaults to http://127.0.0.1:3000 (docker-compose.yml). With
 --outbox-volume (a development stack, whose reset mails are files in that volume)
-it also waits for the worker to write the reset mail. Standard library only; it
-prints what it checked and exits 1 at the first failure. It creates one test
-account and one wardrobe item on the stack: never point it at production.
+it also waits for the worker to write the reset mail; without it the worker is
+not checked. Standard library only; it prints what it checked and exits 1 at the
+first failure.
+
+It creates one test account with one wardrobe item and deletes it again (also
+after a failure, when it can). An address other than this machine needs
+--remote: never point it at production, and on a stack whose AI is switched on
+its one upload is one paid clothing analysis (owner approval, CLAUDE.md rule 4).
 """
 
 import json
 import os
+import urllib.parse
 import subprocess
 import sys
 import time
@@ -79,13 +85,24 @@ def outbox_files(volume):
 def main(argv):
     base = "http://127.0.0.1:3000"
     volume = None
+    remote = False
     args = list(argv)
     while args:
         a = args.pop(0)
         if a == "--outbox-volume":
+            if not args:
+                raise Failed("--outbox-volume needs a volume name")
             volume = args.pop(0)
+        elif a == "--remote":
+            remote = True
+        elif a.startswith("-"):
+            raise Failed(f"unknown option {a}")
         else:
             base = a.rstrip("/")
+    host = urllib.parse.urlsplit(base).hostname
+    if host not in ("127.0.0.1", "localhost", "::1") and not remote:
+        raise Failed(f"{base} is not this machine: it would get a test account (and, with its AI on, a paid "
+                     "analysis); pass --remote to go ahead, and never for production")
 
     # The API, through Caddy, answered by Go.
     status, hdrs, body = request(base, "GET", "/api/health")
@@ -93,6 +110,8 @@ def main(argv):
     expect(bool(hdrs.get("x-request-id")), "GET /api/health: answered by Go (X-Request-Id)")
     headers_of("GET /api/health", hdrs)
     expect(hdrs.get("referrer-policy") == "strict-origin-when-cross-origin", "GET /api/health: Referrer-Policy")
+    status, _, body = request(base, "GET", "/api")
+    expect(status == 404 and "code" in json.loads(body), "GET /api: Go's 404 envelope (the bare prefix goes to Go too)")
     status, hdrs, body = request(base, "GET", "/api/v1/no-such-route")
     expect(status == 404 and "code" in json.loads(body) and bool(hdrs.get("x-request-id")),
            "GET /api/v1/no-such-route: Go's 404 envelope, not the website's page")
@@ -119,6 +138,18 @@ def main(argv):
         "acceptedLegalVersion": version, "ageConfirmed": True})
     expect(status == 201, f"POST /api/v1/auth/register: 201 (got {status})")
     token = json.loads(body)["accessToken"]
+    try:
+        journey(base, volume, email, token)
+    finally:
+        status, _, _ = request(base, "DELETE", "/api/v1/account", headers={**MOBILE, "Authorization": f"Bearer {token}"})
+        expect(status == 200, f"DELETE /api/v1/account: the test account removed (got {status})")
+        status, _, _ = request(base, "POST", "/api/v1/auth/login", headers=MOBILE,
+                               body={"email": email, "password": "stack-Check-Passw0rd!"})
+        expect(status == 401, "the deleted account can no longer sign in")
+    print("stack check passed")
+
+
+def journey(base, volume, email, token):
     with open(PICTURE, "rb") as f:
         data, ctype = multipart("file", "black-coat.png", "image/png", f.read())
     status, _, body = request(base, "POST", "/api/v1/wardrobe/items", raw=data, content_type=ctype,
@@ -137,9 +168,6 @@ def main(argv):
         while time.time() < deadline and not (set(outbox_files(volume)) - before):
             time.sleep(1)
         expect(bool(set(outbox_files(volume)) - before), "the worker wrote the reset mail to the outbox")
-    status, _, _ = request(base, "DELETE", "/api/v1/account", headers={**MOBILE, "Authorization": f"Bearer {token}"})
-    expect(status == 200, f"DELETE /api/v1/account: the test account removed (got {status})")
-    print("stack check passed")
 
 
 if __name__ == "__main__":
