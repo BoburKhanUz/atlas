@@ -21,6 +21,63 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for ClientErrorReportKind.
+const (
+	AndroidAnr    ClientErrorReportKind = "android_anr"
+	AndroidJava   ClientErrorReportKind = "android_java"
+	AndroidNative ClientErrorReportKind = "android_native"
+	Dart          ClientErrorReportKind = "dart"
+	Flutter       ClientErrorReportKind = "flutter"
+	React         ClientErrorReportKind = "react"
+	WebError      ClientErrorReportKind = "web_error"
+	WebRejection  ClientErrorReportKind = "web_rejection"
+)
+
+// Valid indicates whether the value is a known member of the ClientErrorReportKind enum.
+func (e ClientErrorReportKind) Valid() bool {
+	switch e {
+	case AndroidAnr:
+		return true
+	case AndroidJava:
+		return true
+	case AndroidNative:
+		return true
+	case Dart:
+		return true
+	case Flutter:
+		return true
+	case React:
+		return true
+	case WebError:
+		return true
+	case WebRejection:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ClientErrorReportPlatform.
+const (
+	Android ClientErrorReportPlatform = "android"
+	Ios     ClientErrorReportPlatform = "ios"
+	Web     ClientErrorReportPlatform = "web"
+)
+
+// Valid indicates whether the value is a known member of the ClientErrorReportPlatform enum.
+func (e ClientErrorReportPlatform) Valid() bool {
+	switch e {
+	case Android:
+		return true
+	case Ios:
+		return true
+	case Web:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ColorProfileResponse0Status.
 const (
 	NotAnalyzed ColorProfileResponse0Status = "not_analyzed"
@@ -1250,6 +1307,40 @@ type AuthResponse struct {
 	union json.RawMessage
 }
 
+// ClientErrorReport defines model for ClientErrorReport.
+type ClientErrorReport struct {
+	// AppVersion App version and build, e.g. 0.1.0+1 (web: the build id)
+	AppVersion string `json:"appVersion"`
+	ErrorType  string `json:"errorType"`
+	Fatal      *bool  `json:"fatal,omitempty"`
+
+	// Kind flutter: a framework error; dart: an uncaught async error; android_*: a Java/Kotlin exception, a native crash or an ANR that ended the Android app (sent at its next start); web_*: window error / unhandled rejection; react: an error boundary
+	Kind ClientErrorReportKind `json:"kind"`
+
+	// Message Scrubbed by the app: no user text, e-mail addresses, tokens or URL queries
+	Message string `json:"message"`
+
+	// OccurredAt Device clock
+	OccurredAt *time.Time                `json:"occurredAt,omitempty"`
+	OsVersion  *string                   `json:"osVersion,omitempty"`
+	Platform   ClientErrorReportPlatform `json:"platform"`
+
+	// Route Screen path with ids replaced by :id
+	Route *string `json:"route,omitempty"`
+	Stack *string `json:"stack,omitempty"`
+}
+
+// ClientErrorReportKind flutter: a framework error; dart: an uncaught async error; android_*: a Java/Kotlin exception, a native crash or an ANR that ended the Android app (sent at its next start); web_*: window error / unhandled rejection; react: an error boundary
+type ClientErrorReportKind string
+
+// ClientErrorReportPlatform defines model for ClientErrorReport.Platform.
+type ClientErrorReportPlatform string
+
+// ClientErrorsRequest defines model for ClientErrorsRequest.
+type ClientErrorsRequest struct {
+	Reports []ClientErrorReport `json:"reports"`
+}
+
 // ColorAnalysisResponse defines model for ColorAnalysisResponse.
 type ColorAnalysisResponse struct {
 	ColorProfile struct {
@@ -2172,6 +2263,9 @@ type RefreshSessionJSONRequestBody = MobileRefreshRequest
 // RegisterJSONRequestBody defines body for Register for application/json ContentType.
 type RegisterJSONRequestBody = RegisterRequest
 
+// ReportClientErrorsJSONRequestBody defines body for ReportClientErrors for application/json ContentType.
+type ReportClientErrorsJSONRequestBody = ClientErrorsRequest
+
 // AnalyzeColorProfileMultipartRequestBody defines body for AnalyzeColorProfile for multipart/form-data ContentType.
 type AnalyzeColorProfileMultipartRequestBody AnalyzeColorProfileMultipartBody
 
@@ -2355,6 +2449,9 @@ type ServerInterface interface {
 	// Register Create an account and sign in (web: cookies; mobile: tokens in the body)
 	// (POST /api/v1/auth/register)
 	Register(w http.ResponseWriter, r *http.Request, params RegisterParams)
+	// ReportClientErrors Error reports from the apps (crash monitoring): scrubbed and written to the server log, never stored
+	// (POST /api/v1/client-errors)
+	ReportClientErrors(w http.ResponseWriter, r *http.Request)
 	// DeleteColorProfile Delete the colour profile and the selfie-derived skin tone, undertone, hair and eye colour (idempotent; selfies are never stored)
 	// (DELETE /api/v1/color-profile)
 	DeleteColorProfile(w http.ResponseWriter, r *http.Request)
@@ -2370,6 +2467,9 @@ type ServerInterface interface {
 	// AcceptLegalDocuments Accept the current legal texts after they changed (ends CONSENT_REQUIRED)
 	// (POST /api/v1/legal/consent)
 	AcceptLegalDocuments(w http.ResponseWriter, r *http.Request)
+	// GetOpenApiDocument This OpenAPI document
+	// (GET /api/v1/openapi.json)
+	GetOpenApiDocument(w http.ResponseWriter, r *http.Request)
 	// ListOutfits Recent outfits (50), optionally saved only
 	// (GET /api/v1/outfits)
 	ListOutfits(w http.ResponseWriter, r *http.Request, params ListOutfitsParams)
@@ -2669,6 +2769,20 @@ func (siw *ServerInterfaceWrapper) Register(w http.ResponseWriter, r *http.Reque
 	handler.ServeHTTP(w, r)
 }
 
+// ReportClientErrors operation middleware
+func (siw *ServerInterfaceWrapper) ReportClientErrors(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReportClientErrors(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // DeleteColorProfile operation middleware
 func (siw *ServerInterfaceWrapper) DeleteColorProfile(w http.ResponseWriter, r *http.Request) {
 
@@ -2730,6 +2844,20 @@ func (siw *ServerInterfaceWrapper) AcceptLegalDocuments(w http.ResponseWriter, r
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AcceptLegalDocuments(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetOpenApiDocument operation middleware
+func (siw *ServerInterfaceWrapper) GetOpenApiDocument(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetOpenApiDocument(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3366,11 +3494,13 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/auth/password/reset", wrapper.ResetPassword)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/auth/refresh", wrapper.RefreshSession)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/auth/register", wrapper.Register)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/client-errors", wrapper.ReportClientErrors)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/color-profile", wrapper.DeleteColorProfile)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/color-profile", wrapper.GetColorProfile)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/color-profile/analyze", wrapper.AnalyzeColorProfile)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/legal", wrapper.GetLegalDocuments)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/legal/consent", wrapper.AcceptLegalDocuments)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/openapi.json", wrapper.GetOpenApiDocument)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/outfits", wrapper.ListOutfits)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/outfits", wrapper.SaveOutfit)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/outfits/generate", wrapper.GenerateOutfits)
@@ -4238,6 +4368,94 @@ func (response Register500JSONResponse) VisitRegisterResponse(w http.ResponseWri
 	return err
 }
 
+type ReportClientErrorsRequestObject struct {
+	Body *ReportClientErrorsJSONRequestBody
+}
+
+type ReportClientErrorsResponseObject interface {
+	VisitReportClientErrorsResponse(w http.ResponseWriter) error
+}
+
+type ReportClientErrors200JSONResponse OkResponse
+
+func (response ReportClientErrors200JSONResponse) VisitReportClientErrorsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReportClientErrors400JSONResponse ErrorResponse
+
+func (response ReportClientErrors400JSONResponse) VisitReportClientErrorsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReportClientErrors413JSONResponse ErrorResponse
+
+func (response ReportClientErrors413JSONResponse) VisitReportClientErrorsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReportClientErrors429ResponseHeaders struct {
+	RetryAfter *string
+}
+
+type ReportClientErrors429JSONResponse struct {
+	Body    ErrorResponse
+	Headers ReportClientErrors429ResponseHeaders
+}
+
+func (response ReportClientErrors429JSONResponse) VisitReportClientErrorsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReportClientErrors500JSONResponse ErrorResponse
+
+func (response ReportClientErrors500JSONResponse) VisitReportClientErrorsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type DeleteColorProfileRequestObject struct {
 }
 
@@ -4622,6 +4840,41 @@ func (response AcceptLegalDocuments413JSONResponse) VisitAcceptLegalDocumentsRes
 type AcceptLegalDocuments500JSONResponse ErrorResponse
 
 func (response AcceptLegalDocuments500JSONResponse) VisitAcceptLegalDocumentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetOpenApiDocumentRequestObject struct {
+}
+
+type GetOpenApiDocumentResponseObject interface {
+	VisitGetOpenApiDocumentResponse(w http.ResponseWriter) error
+}
+
+type GetOpenApiDocument200JSONResponse map[string]interface{}
+
+func (response GetOpenApiDocument200JSONResponse) VisitGetOpenApiDocumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetOpenApiDocument500JSONResponse ErrorResponse
+
+func (response GetOpenApiDocument500JSONResponse) VisitGetOpenApiDocumentResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -6547,6 +6800,9 @@ type StrictServerInterface interface {
 	// Register Create an account and sign in (web: cookies; mobile: tokens in the body)
 	// (POST /api/v1/auth/register)
 	Register(ctx context.Context, request RegisterRequestObject) (RegisterResponseObject, error)
+	// ReportClientErrors Error reports from the apps (crash monitoring): scrubbed and written to the server log, never stored
+	// (POST /api/v1/client-errors)
+	ReportClientErrors(ctx context.Context, request ReportClientErrorsRequestObject) (ReportClientErrorsResponseObject, error)
 	// DeleteColorProfile Delete the colour profile and the selfie-derived skin tone, undertone, hair and eye colour (idempotent; selfies are never stored)
 	// (DELETE /api/v1/color-profile)
 	DeleteColorProfile(ctx context.Context, request DeleteColorProfileRequestObject) (DeleteColorProfileResponseObject, error)
@@ -6562,6 +6818,9 @@ type StrictServerInterface interface {
 	// AcceptLegalDocuments Accept the current legal texts after they changed (ends CONSENT_REQUIRED)
 	// (POST /api/v1/legal/consent)
 	AcceptLegalDocuments(ctx context.Context, request AcceptLegalDocumentsRequestObject) (AcceptLegalDocumentsResponseObject, error)
+	// GetOpenApiDocument This OpenAPI document
+	// (GET /api/v1/openapi.json)
+	GetOpenApiDocument(ctx context.Context, request GetOpenApiDocumentRequestObject) (GetOpenApiDocumentResponseObject, error)
 	// ListOutfits Recent outfits (50), optionally saved only
 	// (GET /api/v1/outfits)
 	ListOutfits(ctx context.Context, request ListOutfitsRequestObject) (ListOutfitsResponseObject, error)
@@ -6929,6 +7188,37 @@ func (sh *strictHandler) Register(w http.ResponseWriter, r *http.Request, params
 	}
 }
 
+// ReportClientErrors operation middleware
+func (sh *strictHandler) ReportClientErrors(w http.ResponseWriter, r *http.Request) {
+	var request ReportClientErrorsRequestObject
+
+	var body ReportClientErrorsJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReportClientErrors(ctx, request.(ReportClientErrorsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReportClientErrors")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReportClientErrorsResponseObject); ok {
+		if err := validResponse.VisitReportClientErrorsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // DeleteColorProfile operation middleware
 func (sh *strictHandler) DeleteColorProfile(w http.ResponseWriter, r *http.Request) {
 	var request DeleteColorProfileRequestObject
@@ -7056,6 +7346,30 @@ func (sh *strictHandler) AcceptLegalDocuments(w http.ResponseWriter, r *http.Req
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(AcceptLegalDocumentsResponseObject); ok {
 		if err := validResponse.VisitAcceptLegalDocumentsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetOpenApiDocument operation middleware
+func (sh *strictHandler) GetOpenApiDocument(w http.ResponseWriter, r *http.Request) {
+	var request GetOpenApiDocumentRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetOpenApiDocument(ctx, request.(GetOpenApiDocumentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetOpenApiDocument")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetOpenApiDocumentResponseObject); ok {
+		if err := validResponse.VisitGetOpenApiDocumentResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

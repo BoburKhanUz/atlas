@@ -1,0 +1,2410 @@
+{
+ "generatedBy": "apps/web/scripts/golden-client-errors.ts",
+ "sourceCommit": "f365769eea9883282066c5eb5aa7f66c0d9f752f",
+ "note": "POST /api/v1/client-errors as the Next.js route judges a body, and the fields it logs for each report (scrubbed, then redacted).",
+ "logMessage": "client error",
+ "redactedSample": "Bearer [REDACTED]",
+ "requests": [
+  {
+   "name": "an empty body",
+   "body": "",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "reports",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "not JSON",
+   "body": "{reports",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "JSON null",
+   "body": "null",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "a JSON array",
+   "body": "[]",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "an empty object",
+   "body": "{}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "reports",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "one report",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "every member",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"osVersion\":\"Android 14 (API 34)\",\"fatal\":true,\"stack\":\"#0 main (package:atlas/main.dart:10:5)\",\"route\":\"/wardrobe/item/cm0abcdefghijklmnop12\",\"occurredAt\":\"2026-11-28T07:00:00.000Z\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "osVersion": "Android 14 (API 34)",
+     "kind": "flutter",
+     "fatal": true,
+     "errorType": "StateError",
+     "message": "Bad state: no element",
+     "stack": "#0 main (package:atlas/main.dart:10:5)",
+     "route": "/wardrobe/item/:id",
+     "occurredAt": "2026-11-28T07:00:00.000Z"
+    }
+   ]
+  },
+  {
+   "name": "members that are not known",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"extra\":1,\"userId\":\"u1\"}],\"other\":true}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "reports null",
+   "body": "{\"reports\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan null",
+   "details": [
+    {
+     "path": "reports",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "reports a number",
+   "body": "{\"reports\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "reports",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "reports true",
+   "body": "{\"reports\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "reports",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "reports a string",
+   "body": "{\"reports\":\"text\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan string",
+   "details": [
+    {
+     "path": "reports",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "reports an object",
+   "body": "{\"reports\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan object",
+   "details": [
+    {
+     "path": "reports",
+     "message": "Noto‘g‘ri kirish: kutilgan massiv, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "no reports",
+   "body": "{\"reports\":[]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan array >=1 element bo‘lishi kerak",
+   "details": [
+    {
+     "path": "reports",
+     "message": "Juda kichik: kutilgan array >=1 element bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "ten reports",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    },
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    },
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    },
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    },
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    },
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    },
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    },
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    },
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    },
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "eleven reports",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan array <=10 element bo‘lishi kerak",
+   "details": [
+    {
+     "path": "reports",
+     "message": "Juda katta: kutilgan array <=10 element bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a report that is not an object",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"},\"x\",null]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string",
+   "details": [
+    {
+     "path": "reports.1",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string"
+    },
+    {
+     "path": "reports.2",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "without platform",
+   "body": "{\"reports\":[{\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"osVersion\":\"Android 14 (API 34)\",\"fatal\":true,\"stack\":\"#0 main (package:atlas/main.dart:10:5)\",\"route\":\"/wardrobe/item/cm0abcdefghijklmnop12\",\"occurredAt\":\"2026-11-28T07:00:00.000Z\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"android\"|\"ios\"|\"web\"",
+   "details": [
+    {
+     "path": "reports.0.platform",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"android\"|\"ios\"|\"web\""
+    }
+   ]
+  },
+  {
+   "name": "without appVersion",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"osVersion\":\"Android 14 (API 34)\",\"fatal\":true,\"stack\":\"#0 main (package:atlas/main.dart:10:5)\",\"route\":\"/wardrobe/item/cm0abcdefghijklmnop12\",\"occurredAt\":\"2026-11-28T07:00:00.000Z\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "reports.0.appVersion",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "without kind",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"osVersion\":\"Android 14 (API 34)\",\"fatal\":true,\"stack\":\"#0 main (package:atlas/main.dart:10:5)\",\"route\":\"/wardrobe/item/cm0abcdefghijklmnop12\",\"occurredAt\":\"2026-11-28T07:00:00.000Z\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"flutter\"|\"dart\"|\"android_java\"|\"android_native\"|\"android_anr\"|\"web_error\"|\"web_rejection\"|\"react\"",
+   "details": [
+    {
+     "path": "reports.0.kind",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"flutter\"|\"dart\"|\"android_java\"|\"android_native\"|\"android_anr\"|\"web_error\"|\"web_rejection\"|\"react\""
+    }
+   ]
+  },
+  {
+   "name": "without errorType",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"message\":\"Bad state: no element\",\"osVersion\":\"Android 14 (API 34)\",\"fatal\":true,\"stack\":\"#0 main (package:atlas/main.dart:10:5)\",\"route\":\"/wardrobe/item/cm0abcdefghijklmnop12\",\"occurredAt\":\"2026-11-28T07:00:00.000Z\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "reports.0.errorType",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "without message",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"osVersion\":\"Android 14 (API 34)\",\"fatal\":true,\"stack\":\"#0 main (package:atlas/main.dart:10:5)\",\"route\":\"/wardrobe/item/cm0abcdefghijklmnop12\",\"occurredAt\":\"2026-11-28T07:00:00.000Z\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "reports.0.message",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "without optional osVersion",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"fatal\":true,\"stack\":\"#0 main (package:atlas/main.dart:10:5)\",\"route\":\"/wardrobe/item/cm0abcdefghijklmnop12\",\"occurredAt\":\"2026-11-28T07:00:00.000Z\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": true,
+     "errorType": "StateError",
+     "message": "Bad state: no element",
+     "stack": "#0 main (package:atlas/main.dart:10:5)",
+     "route": "/wardrobe/item/:id",
+     "occurredAt": "2026-11-28T07:00:00.000Z"
+    }
+   ]
+  },
+  {
+   "name": "without optional fatal",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"osVersion\":\"Android 14 (API 34)\",\"stack\":\"#0 main (package:atlas/main.dart:10:5)\",\"route\":\"/wardrobe/item/cm0abcdefghijklmnop12\",\"occurredAt\":\"2026-11-28T07:00:00.000Z\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "osVersion": "Android 14 (API 34)",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element",
+     "stack": "#0 main (package:atlas/main.dart:10:5)",
+     "route": "/wardrobe/item/:id",
+     "occurredAt": "2026-11-28T07:00:00.000Z"
+    }
+   ]
+  },
+  {
+   "name": "without optional stack",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"osVersion\":\"Android 14 (API 34)\",\"fatal\":true,\"route\":\"/wardrobe/item/cm0abcdefghijklmnop12\",\"occurredAt\":\"2026-11-28T07:00:00.000Z\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "osVersion": "Android 14 (API 34)",
+     "kind": "flutter",
+     "fatal": true,
+     "errorType": "StateError",
+     "message": "Bad state: no element",
+     "route": "/wardrobe/item/:id",
+     "occurredAt": "2026-11-28T07:00:00.000Z"
+    }
+   ]
+  },
+  {
+   "name": "without optional route",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"osVersion\":\"Android 14 (API 34)\",\"fatal\":true,\"stack\":\"#0 main (package:atlas/main.dart:10:5)\",\"occurredAt\":\"2026-11-28T07:00:00.000Z\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "osVersion": "Android 14 (API 34)",
+     "kind": "flutter",
+     "fatal": true,
+     "errorType": "StateError",
+     "message": "Bad state: no element",
+     "stack": "#0 main (package:atlas/main.dart:10:5)",
+     "occurredAt": "2026-11-28T07:00:00.000Z"
+    }
+   ]
+  },
+  {
+   "name": "without optional occurredAt",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"osVersion\":\"Android 14 (API 34)\",\"fatal\":true,\"stack\":\"#0 main (package:atlas/main.dart:10:5)\",\"route\":\"/wardrobe/item/cm0abcdefghijklmnop12\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "osVersion": "Android 14 (API 34)",
+     "kind": "flutter",
+     "fatal": true,
+     "errorType": "StateError",
+     "message": "Bad state: no element",
+     "stack": "#0 main (package:atlas/main.dart:10:5)",
+     "route": "/wardrobe/item/:id"
+    }
+   ]
+  },
+  {
+   "name": "platform android",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "platform ios",
+   "body": "{\"reports\":[{\"platform\":\"ios\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "ios",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "platform web",
+   "body": "{\"reports\":[{\"platform\":\"web\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "web",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "platform windows",
+   "body": "{\"reports\":[{\"platform\":\"windows\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"android\"|\"ios\"|\"web\"",
+   "details": [
+    {
+     "path": "reports.0.platform",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"android\"|\"ios\"|\"web\""
+    }
+   ]
+  },
+  {
+   "name": "platform Android",
+   "body": "{\"reports\":[{\"platform\":\"Android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"android\"|\"ios\"|\"web\"",
+   "details": [
+    {
+     "path": "reports.0.platform",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"android\"|\"ios\"|\"web\""
+    }
+   ]
+  },
+  {
+   "name": "platform empty",
+   "body": "{\"reports\":[{\"platform\":\"\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"android\"|\"ios\"|\"web\"",
+   "details": [
+    {
+     "path": "reports.0.platform",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"android\"|\"ios\"|\"web\""
+    }
+   ]
+  },
+  {
+   "name": "kind flutter",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "kind dart",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"dart\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "dart",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "kind android_java",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"android_java\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "android_java",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "kind android_native",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"android_native\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "android_native",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "kind android_anr",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"android_anr\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "android_anr",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "kind web_error",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"web_error\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "web_error",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "kind web_rejection",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"web_rejection\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "web_rejection",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "kind react",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"react\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "react",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "kind native",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"native\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"flutter\"|\"dart\"|\"android_java\"|\"android_native\"|\"android_anr\"|\"web_error\"|\"web_rejection\"|\"react\"",
+   "details": [
+    {
+     "path": "reports.0.kind",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"flutter\"|\"dart\"|\"android_java\"|\"android_native\"|\"android_anr\"|\"web_error\"|\"web_rejection\"|\"react\""
+    }
+   ]
+  },
+  {
+   "name": "kind empty",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"flutter\"|\"dart\"|\"android_java\"|\"android_native\"|\"android_anr\"|\"web_error\"|\"web_rejection\"|\"react\"",
+   "details": [
+    {
+     "path": "reports.0.kind",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"flutter\"|\"dart\"|\"android_java\"|\"android_native\"|\"android_anr\"|\"web_error\"|\"web_rejection\"|\"react\""
+    }
+   ]
+  },
+  {
+   "name": "platform null",
+   "body": "{\"reports\":[{\"platform\":null,\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"android\"|\"ios\"|\"web\"",
+   "details": [
+    {
+     "path": "reports.0.platform",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"android\"|\"ios\"|\"web\""
+    }
+   ]
+  },
+  {
+   "name": "appVersion null",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":null,\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "reports.0.appVersion",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "osVersion null",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"osVersion\":null}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "reports.0.osVersion",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "kind null",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":null,\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"flutter\"|\"dart\"|\"android_java\"|\"android_native\"|\"android_anr\"|\"web_error\"|\"web_rejection\"|\"react\"",
+   "details": [
+    {
+     "path": "reports.0.kind",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"flutter\"|\"dart\"|\"android_java\"|\"android_native\"|\"android_anr\"|\"web_error\"|\"web_rejection\"|\"react\""
+    }
+   ]
+  },
+  {
+   "name": "errorType null",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":null,\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "reports.0.errorType",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "message null",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":null}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "reports.0.message",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "stack null",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"stack\":null}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "reports.0.stack",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "route null",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"route\":null}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "reports.0.route",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt null",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":null}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "reports.0.occurredAt",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "platform a number",
+   "body": "{\"reports\":[{\"platform\":7,\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"android\"|\"ios\"|\"web\"",
+   "details": [
+    {
+     "path": "reports.0.platform",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"android\"|\"ios\"|\"web\""
+    }
+   ]
+  },
+  {
+   "name": "appVersion a number",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":7,\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "reports.0.appVersion",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "osVersion a number",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"osVersion\":7}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "reports.0.osVersion",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "kind a number",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":7,\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"flutter\"|\"dart\"|\"android_java\"|\"android_native\"|\"android_anr\"|\"web_error\"|\"web_rejection\"|\"react\"",
+   "details": [
+    {
+     "path": "reports.0.kind",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"flutter\"|\"dart\"|\"android_java\"|\"android_native\"|\"android_anr\"|\"web_error\"|\"web_rejection\"|\"react\""
+    }
+   ]
+  },
+  {
+   "name": "errorType a number",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":7,\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "reports.0.errorType",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "message a number",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":7}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "reports.0.message",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "stack a number",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"stack\":7}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "reports.0.stack",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "route a number",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"route\":7}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "reports.0.route",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt a number",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":7}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "reports.0.occurredAt",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "platform true",
+   "body": "{\"reports\":[{\"platform\":true,\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"android\"|\"ios\"|\"web\"",
+   "details": [
+    {
+     "path": "reports.0.platform",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"android\"|\"ios\"|\"web\""
+    }
+   ]
+  },
+  {
+   "name": "appVersion true",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":true,\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "reports.0.appVersion",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "osVersion true",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"osVersion\":true}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "reports.0.osVersion",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "kind true",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":true,\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"flutter\"|\"dart\"|\"android_java\"|\"android_native\"|\"android_anr\"|\"web_error\"|\"web_rejection\"|\"react\"",
+   "details": [
+    {
+     "path": "reports.0.kind",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"flutter\"|\"dart\"|\"android_java\"|\"android_native\"|\"android_anr\"|\"web_error\"|\"web_rejection\"|\"react\""
+    }
+   ]
+  },
+  {
+   "name": "errorType true",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":true,\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "reports.0.errorType",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "message true",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":true}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "reports.0.message",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "stack true",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"stack\":true}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "reports.0.stack",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "route true",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"route\":true}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "reports.0.route",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt true",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":true}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "reports.0.occurredAt",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "platform an array",
+   "body": "{\"reports\":[{\"platform\":[\"x\"],\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"android\"|\"ios\"|\"web\"",
+   "details": [
+    {
+     "path": "reports.0.platform",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"android\"|\"ios\"|\"web\""
+    }
+   ]
+  },
+  {
+   "name": "appVersion an array",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":[\"x\"],\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "reports.0.appVersion",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "osVersion an array",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"osVersion\":[\"x\"]}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "reports.0.osVersion",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "kind an array",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":[\"x\"],\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"flutter\"|\"dart\"|\"android_java\"|\"android_native\"|\"android_anr\"|\"web_error\"|\"web_rejection\"|\"react\"",
+   "details": [
+    {
+     "path": "reports.0.kind",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"flutter\"|\"dart\"|\"android_java\"|\"android_native\"|\"android_anr\"|\"web_error\"|\"web_rejection\"|\"react\""
+    }
+   ]
+  },
+  {
+   "name": "errorType an array",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":[\"x\"],\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "reports.0.errorType",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "message an array",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":[\"x\"]}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "reports.0.message",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "stack an array",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"stack\":[\"x\"]}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "reports.0.stack",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "route an array",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"route\":[\"x\"]}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "reports.0.route",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt an array",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":[\"x\"]}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "reports.0.occurredAt",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "platform an object",
+   "body": "{\"reports\":[{\"platform\":{\"a\":1},\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"android\"|\"ios\"|\"web\"",
+   "details": [
+    {
+     "path": "reports.0.platform",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"android\"|\"ios\"|\"web\""
+    }
+   ]
+  },
+  {
+   "name": "appVersion an object",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":{\"a\":1},\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "reports.0.appVersion",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "osVersion an object",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"osVersion\":{\"a\":1}}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "reports.0.osVersion",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "kind an object",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":{\"a\":1},\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"flutter\"|\"dart\"|\"android_java\"|\"android_native\"|\"android_anr\"|\"web_error\"|\"web_rejection\"|\"react\"",
+   "details": [
+    {
+     "path": "reports.0.kind",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"flutter\"|\"dart\"|\"android_java\"|\"android_native\"|\"android_anr\"|\"web_error\"|\"web_rejection\"|\"react\""
+    }
+   ]
+  },
+  {
+   "name": "errorType an object",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":{\"a\":1},\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "reports.0.errorType",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "message an object",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":{\"a\":1}}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "reports.0.message",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "stack an object",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"stack\":{\"a\":1}}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "reports.0.stack",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "route an object",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"route\":{\"a\":1}}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "reports.0.route",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt an object",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":{\"a\":1}}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "reports.0.occurredAt",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "fatal null",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"fatal\":null}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan null",
+   "details": [
+    {
+     "path": "reports.0.fatal",
+     "message": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "fatal a number",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"fatal\":7}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "reports.0.fatal",
+     "message": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "fatal a string",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"fatal\":\"text\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan string",
+   "details": [
+    {
+     "path": "reports.0.fatal",
+     "message": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "fatal an array",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"fatal\":[\"x\"]}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "reports.0.fatal",
+     "message": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "fatal an object",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"fatal\":{\"a\":1}}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan object",
+   "details": [
+    {
+     "path": "reports.0.fatal",
+     "message": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "fatal false",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"fatal\":false}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "appVersion empty",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "reports.0.appVersion",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "appVersion at 40",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "appVersion past 40",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=40 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "reports.0.appVersion",
+     "message": "Juda katta: kutilgan string <=40 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "appVersion at 40 in pairs",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "appVersion past 40 in pairs",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀a\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=40 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "reports.0.appVersion",
+     "message": "Juda katta: kutilgan string <=40 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "appVersion white space",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\" \",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": " ",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "osVersion empty",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"osVersion\":\"\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "osVersion": "",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "osVersion at 120",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"osVersion\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "osVersion": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "osVersion past 120",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"osVersion\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=120 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "reports.0.osVersion",
+     "message": "Juda katta: kutilgan string <=120 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "osVersion at 120 in pairs",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"osVersion\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "osVersion": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "osVersion past 120 in pairs",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"osVersion\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀a\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=120 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "reports.0.osVersion",
+     "message": "Juda katta: kutilgan string <=120 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "errorType empty",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "reports.0.errorType",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "errorType at 200",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"message\":\"Bad state: no element\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "[REDACTED]",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "errorType past 200",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=200 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "reports.0.errorType",
+     "message": "Juda katta: kutilgan string <=200 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "errorType at 200 in pairs",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"message\":\"Bad state: no element\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "errorType past 200 in pairs",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀a\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=200 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "reports.0.errorType",
+     "message": "Juda katta: kutilgan string <=200 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "errorType white space",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\" \",\"message\":\"Bad state: no element\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": " ",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "message empty",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": ""
+    }
+   ]
+  },
+  {
+   "name": "message at 1000",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "[REDACTED]"
+    }
+   ]
+  },
+  {
+   "name": "message past 1000",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=1000 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "reports.0.message",
+     "message": "Juda katta: kutilgan string <=1000 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "message at 1000 in pairs",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+    }
+   ]
+  },
+  {
+   "name": "message past 1000 in pairs",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀a\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=1000 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "reports.0.message",
+     "message": "Juda katta: kutilgan string <=1000 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "stack empty",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"stack\":\"\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "stack at 4000",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"stack\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element",
+     "stack": "[REDACTED]"
+    }
+   ]
+  },
+  {
+   "name": "stack past 4000",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"stack\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=4000 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "reports.0.stack",
+     "message": "Juda katta: kutilgan string <=4000 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "stack at 4000 in pairs",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"stack\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element",
+     "stack": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+    }
+   ]
+  },
+  {
+   "name": "stack past 4000 in pairs",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"stack\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀a\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=4000 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "reports.0.stack",
+     "message": "Juda katta: kutilgan string <=4000 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "route empty",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"route\":\"\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "route at 200",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"route\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element",
+     "route": ":id"
+    }
+   ]
+  },
+  {
+   "name": "route past 200",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"route\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=200 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "reports.0.route",
+     "message": "Juda katta: kutilgan string <=200 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "route at 200 in pairs",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"route\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element",
+     "route": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+    }
+   ]
+  },
+  {
+   "name": "route past 200 in pairs",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"route\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀a\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=200 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "reports.0.route",
+     "message": "Juda katta: kutilgan string <=200 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt 2026-11-28T07:00:00Z",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":\"2026-11-28T07:00:00Z\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element",
+     "occurredAt": "2026-11-28T07:00:00Z"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt 2026-11-28T07:00:00.1Z",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":\"2026-11-28T07:00:00.1Z\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element",
+     "occurredAt": "2026-11-28T07:00:00.1Z"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt 2026-11-28T07:00:00.123456789Z",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":\"2026-11-28T07:00:00.123456789Z\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element",
+     "occurredAt": "2026-11-28T07:00:00.123456789Z"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt 2026-11-28T07:00Z",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":\"2026-11-28T07:00Z\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element",
+     "occurredAt": "2026-11-28T07:00Z"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt 2026-11-28T07Z",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":\"2026-11-28T07Z\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri ISO sana va vaqti",
+   "details": [
+    {
+     "path": "reports.0.occurredAt",
+     "message": "Noto‘g‘ri ISO sana va vaqti"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt 2026-11-28T07:00:00+05:00",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":\"2026-11-28T07:00:00+05:00\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri ISO sana va vaqti",
+   "details": [
+    {
+     "path": "reports.0.occurredAt",
+     "message": "Noto‘g‘ri ISO sana va vaqti"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt 2026-11-28T07:00:00",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":\"2026-11-28T07:00:00\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri ISO sana va vaqti",
+   "details": [
+    {
+     "path": "reports.0.occurredAt",
+     "message": "Noto‘g‘ri ISO sana va vaqti"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt 2026-11-28 07:00:00Z",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":\"2026-11-28 07:00:00Z\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri ISO sana va vaqti",
+   "details": [
+    {
+     "path": "reports.0.occurredAt",
+     "message": "Noto‘g‘ri ISO sana va vaqti"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt 2026-11-28",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":\"2026-11-28\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri ISO sana va vaqti",
+   "details": [
+    {
+     "path": "reports.0.occurredAt",
+     "message": "Noto‘g‘ri ISO sana va vaqti"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt 2026-02-29T00:00:00Z",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":\"2026-02-29T00:00:00Z\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri ISO sana va vaqti",
+   "details": [
+    {
+     "path": "reports.0.occurredAt",
+     "message": "Noto‘g‘ri ISO sana va vaqti"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt 2024-02-29T00:00:00Z",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":\"2024-02-29T00:00:00Z\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element",
+     "occurredAt": "2024-02-29T00:00:00Z"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt 2000-02-29T00:00:00Z",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":\"2000-02-29T00:00:00Z\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element",
+     "occurredAt": "2000-02-29T00:00:00Z"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt 1900-02-29T00:00:00Z",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":\"1900-02-29T00:00:00Z\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri ISO sana va vaqti",
+   "details": [
+    {
+     "path": "reports.0.occurredAt",
+     "message": "Noto‘g‘ri ISO sana va vaqti"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt 2026-04-31T00:00:00Z",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":\"2026-04-31T00:00:00Z\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri ISO sana va vaqti",
+   "details": [
+    {
+     "path": "reports.0.occurredAt",
+     "message": "Noto‘g‘ri ISO sana va vaqti"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt 2026-13-01T00:00:00Z",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":\"2026-13-01T00:00:00Z\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri ISO sana va vaqti",
+   "details": [
+    {
+     "path": "reports.0.occurredAt",
+     "message": "Noto‘g‘ri ISO sana va vaqti"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt 2026-11-28T24:00:00Z",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":\"2026-11-28T24:00:00Z\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri ISO sana va vaqti",
+   "details": [
+    {
+     "path": "reports.0.occurredAt",
+     "message": "Noto‘g‘ri ISO sana va vaqti"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt 2026-11-28T23:60:00Z",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":\"2026-11-28T23:60:00Z\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri ISO sana va vaqti",
+   "details": [
+    {
+     "path": "reports.0.occurredAt",
+     "message": "Noto‘g‘ri ISO sana va vaqti"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt 2026-11-28T23:59:60Z",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":\"2026-11-28T23:59:60Z\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri ISO sana va vaqti",
+   "details": [
+    {
+     "path": "reports.0.occurredAt",
+     "message": "Noto‘g‘ri ISO sana va vaqti"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt 2026-11-28t07:00:00z",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":\"2026-11-28t07:00:00z\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri ISO sana va vaqti",
+   "details": [
+    {
+     "path": "reports.0.occurredAt",
+     "message": "Noto‘g‘ri ISO sana va vaqti"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt +2026-11-28T07:00:00Z",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":\"+2026-11-28T07:00:00Z\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri ISO sana va vaqti",
+   "details": [
+    {
+     "path": "reports.0.occurredAt",
+     "message": "Noto‘g‘ri ISO sana va vaqti"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt 20261128T070000Z",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":\"20261128T070000Z\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri ISO sana va vaqti",
+   "details": [
+    {
+     "path": "reports.0.occurredAt",
+     "message": "Noto‘g‘ri ISO sana va vaqti"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt 2026-11-28T07:00:00.Z",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":\"2026-11-28T07:00:00.Z\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri ISO sana va vaqti",
+   "details": [
+    {
+     "path": "reports.0.occurredAt",
+     "message": "Noto‘g‘ri ISO sana va vaqti"
+    }
+   ]
+  },
+  {
+   "name": "occurredAt  2026-11-28T07:00:00Z",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\",\"occurredAt\":\" 2026-11-28T07:00:00Z\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri ISO sana va vaqti",
+   "details": [
+    {
+     "path": "reports.0.occurredAt",
+     "message": "Noto‘g‘ri ISO sana va vaqti"
+    }
+   ]
+  },
+  {
+   "name": "every error at once",
+   "body": "{\"reports\":[{\"platform\":\"x\",\"kind\":\"y\",\"appVersion\":\"\",\"errorType\":7,\"message\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"fatal\":\"yes\",\"occurredAt\":\"now\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"android\"|\"ios\"|\"web\"",
+   "details": [
+    {
+     "path": "reports.0.platform",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"android\"|\"ios\"|\"web\""
+    },
+    {
+     "path": "reports.0.appVersion",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    },
+    {
+     "path": "reports.0.kind",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"flutter\"|\"dart\"|\"android_java\"|\"android_native\"|\"android_anr\"|\"web_error\"|\"web_rejection\"|\"react\""
+    },
+    {
+     "path": "reports.0.fatal",
+     "message": "Noto‘g‘ri kirish: kutilgan boolean, qabul qilingan string"
+    },
+    {
+     "path": "reports.0.errorType",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    },
+    {
+     "path": "reports.0.message",
+     "message": "Juda katta: kutilgan string <=1000 belgi bo‘lishi kerak"
+    },
+    {
+     "path": "reports.0.occurredAt",
+     "message": "Noto‘g‘ri ISO sana va vaqti"
+    }
+   ]
+  },
+  {
+   "name": "two reports wrong",
+   "body": "{\"reports\":[{\"platform\":\"x\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"y\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"android\"|\"ios\"|\"web\"",
+   "details": [
+    {
+     "path": "reports.0.platform",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"android\"|\"ios\"|\"web\""
+    },
+    {
+     "path": "reports.1.kind",
+     "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"flutter\"|\"dart\"|\"android_java\"|\"android_native\"|\"android_anr\"|\"web_error\"|\"web_rejection\"|\"react\""
+    }
+   ]
+  },
+  {
+   "name": "a duplicate member",
+   "body": "{\"reports\":[],\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"StateError\",\"message\":\"Bad state: no element\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "StateError",
+     "message": "Bad state: no element"
+    }
+   ]
+  },
+  {
+   "name": "texts to scrub",
+   "body": "{\"reports\":[{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"HttpException: Bearer abc.DEF-123_xyz~+/=\",\"message\":\"GET https://api.lookly.uz/v1/items?sig=abc&exp=9 failed for aziza.k+1@mail.example.uz\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"JWT eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1MSJ9abcdef.c2lnbmF0dXJlLXZhbHVlLWhlcmU\",\"message\":\"token Rk9PQkFSQkFaUVVYMTIzNDU2Nzg5MDEyMzQ1Njc4OTA= and short abc123\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"E\",\"message\":\"bearer lower x, BEARER UPPER y\",\"stack\":\"#0 at http://h.uz/a?b=c#frag (file:///lib/x.dart:1)\\n#1 /data/app/~~longpathsegmentlongpathsegmentAAAA==/base.apk\"},{\"platform\":\"android\",\"appVersion\":\"1.0 Bearer tokenvalue\",\"kind\":\"flutter\",\"errorType\":\"E\",\"message\":\"\",\"route\":\"/stylist/conversations/cm0abcdefghijklmnop12?tab=1#top\",\"osVersion\":\"iOS 17.1 user@example.com\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"E\",\"message\":\"x\",\"route\":\"/outfits/short/a-b_c-d-e-f-g-h-i-j/0123456789abcdef\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"E\",\"message\":\"see ?sig=raw&exp=1 and &sig=z here\",\"route\":\"no-slash-route\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"E\",\"message\":\"ünïcödé@exämple.uz and a@b.c and a@b.co\",\"route\":\"/\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"E\",\"message\":\"https://x.uz/p?q=1 https://y.uz/p?\\\"quoted\\\" https://z.uz?q=<a>\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"E\",\"message\":\"bearer abc~def/ghi+j=k and BeArEr x~y\",\"route\":\"/stylist/conversations/cm0abcdefghijklmnop12#frag\"},{\"platform\":\"android\",\"appVersion\":\"0.1.0+1\",\"kind\":\"flutter\",\"errorType\":\"E\",\"message\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC\",\"route\":\"/a/abcdefghijklmno/abcdefghijklmnop#x?y\"}]}",
+   "ok": true,
+   "logged": [
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "HttpException: Bearer [REDACTED]",
+     "message": "GET https://api.lookly.uz/v1/items?[REDACTED] failed for [REDACTED_EMAIL]"
+    },
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "JWT [REDACTED_JWT]",
+     "message": "token [REDACTED] and short abc123"
+    },
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "E",
+     "message": "Bearer [REDACTED] x, Bearer [REDACTED] y",
+     "stack": "#0 at http://h.uz/a?[REDACTED]#frag (file:///lib/x.dart:1)\n#1 /data/app/~~[REDACTED]/base.apk"
+    },
+    {
+     "platform": "android",
+     "appVersion": "1.0 Bearer [REDACTED]",
+     "osVersion": "iOS 17.1 [REDACTED_EMAIL]",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "E",
+     "message": "",
+     "route": "/stylist/conversations/:id"
+    },
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "E",
+     "message": "x",
+     "route": "/outfits/short/:id/:id"
+    },
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "E",
+     "message": "see ?sig=[REDACTED]&exp=[REDACTED] and &sig=[REDACTED] here",
+     "route": "no-slash-route"
+    },
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "E",
+     "message": "ünïcödé@exämple.uz and a@b.c and [REDACTED_EMAIL]",
+     "route": "/"
+    },
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "E",
+     "message": "https://x.uz/p?[REDACTED] https://y.uz/p?[REDACTED]\"quoted\" https://z.uz?[REDACTED]<a>"
+    },
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "E",
+     "message": "Bearer [REDACTED] and Bearer [REDACTED]",
+     "route": "/stylist/conversations/:id"
+    },
+    {
+     "platform": "android",
+     "appVersion": "0.1.0+1",
+     "kind": "flutter",
+     "fatal": false,
+     "errorType": "E",
+     "message": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA [REDACTED] [REDACTED]",
+     "route": "/a/abcdefghijklmno/:id"
+    }
+   ]
+  }
+ ]
+}

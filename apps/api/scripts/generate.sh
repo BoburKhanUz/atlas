@@ -8,11 +8,12 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 sqlc_version=v1.31.1
-generated=(internal/httpapi/contract/contract.gen.go internal/store)
+generated=(internal/httpapi/contract/contract.gen.go internal/httpapi/contract/openapi.json internal/store)
 
 # Every step ends in "|| return 1": the function is called from an `if`, where
 # bash ignores `set -e` for the whole function body.
 generate() {
+  cp ../../docs/api/openapi.json internal/httpapi/contract/openapi.json || return 1
   (cd internal/httpapi/contract && go generate ./...) || return 1
   # sqlc never deletes the file of a removed query file: start clean. Only
   # files sqlc generated are removed; hand-written ones (doc.go) stay.

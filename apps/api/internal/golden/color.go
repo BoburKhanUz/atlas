@@ -275,3 +275,30 @@ func (c Color) Canvas(t testing.TB, name string) ColorCanvas {
 	t.Fatalf("color.json: no canvas %q", name)
 	return ColorCanvas{}
 }
+
+// ClientErrors is testdata/golden/client-errors.json
+// (apps/web/scripts/golden-client-errors.ts): POST /api/v1/client-errors's
+// request rules, and the fields logged for each report.
+type ClientErrors struct {
+	GeneratedBy    string `json:"generatedBy"`
+	SourceCommit   string `json:"sourceCommit"`
+	Note           string `json:"note"`
+	LogMessage     string `json:"logMessage"`
+	RedactedSample string `json:"redactedSample"`
+	Requests       []struct {
+		ValidationCase
+		Logged []map[string]any `json:"logged"`
+	} `json:"requests"`
+}
+
+// LoadClientErrors reads testdata/golden/client-errors.json; unknown fields
+// fail.
+func LoadClientErrors(t testing.TB) ClientErrors {
+	t.Helper()
+	var c ClientErrors
+	load(t, "client-errors.json", &c)
+	if len(c.Requests) == 0 {
+		t.Fatal("client-errors.json: no requests")
+	}
+	return c
+}

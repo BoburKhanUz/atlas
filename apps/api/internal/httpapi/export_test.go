@@ -96,3 +96,6 @@ func (i *InFlight) Users() int {
 
 // ChatRequest is the turn a judged chat body asks for.
 var ChatRequest = chatRequest
+
+// ClientReports are the reports of a judged client errors body.
+var ClientReports = clientReports

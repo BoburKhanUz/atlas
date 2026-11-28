@@ -160,7 +160,7 @@ Suggested windows: 15 minutes for error, timeout and availability; 1 hour for p9
 
 ## Client errors (crash monitoring)
 
-Our own crash monitoring, no third party: the mobile app (`lib/core/logging/crash_reporter.dart`: Flutter framework errors and uncaught Dart errors; on Android also the crashes outside Dart, below) and the web pages (`src/lib/client-errors.ts`: uncaught errors, unhandled rejections, error boundaries) send reports to `POST /api/v1/client-errors`. The server writes one `client error` line (level `error`) per report and stores nothing.
+Our own crash monitoring, no third party: the mobile app (`lib/core/logging/crash_reporter.dart`: Flutter framework errors and uncaught Dart errors; on Android also the crashes outside Dart, below) and the web pages (`src/lib/client-errors.ts`: uncaught errors, unhandled rejections, error boundaries) send reports to `POST /api/v1/client-errors`. The server writes one `client error` line (level `error`; the Go server writes `ERROR`) per report and stores nothing.
 
 | Field | Content |
 |---|---|

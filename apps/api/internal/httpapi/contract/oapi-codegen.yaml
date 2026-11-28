@@ -56,3 +56,5 @@ output-options:
     - analyzeColorProfile
     - getColorProfile
     - deleteColorProfile
+    - reportClientErrors
+    - getOpenApiDocument

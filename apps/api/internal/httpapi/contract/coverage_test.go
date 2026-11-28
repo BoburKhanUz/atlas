@@ -14,9 +14,7 @@ import (
 // serve yet. Each stage moves its operations from here into
 // oapi-codegen.yaml together with their handlers; the list is empty at the
 // cutover (B7).
-var notYetImplemented = []string{
-	"getOpenApiDocument", "reportClientErrors",
-}
+var notYetImplemented = []string{}
 
 // servedByHand are the operations served without generated code, each with
 // its reason.

@@ -143,6 +143,8 @@ var routes = map[string]routeRule{
 	"POST /api/v1/color-profile/analyze":     {request: FormHeaders, bodyLimit: UploadBodyLimit, timeout: SelfieTimeout},
 	"GET /api/v1/color-profile":              {},
 	"DELETE /api/v1/color-profile":           {},
+	"POST /api/v1/client-errors":             {access: public, body: ClientErrorsBody},
+	"GET /api/v1/openapi.json":               {access: public},
 }
 
 type identityKey struct{}

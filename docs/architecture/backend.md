@@ -579,6 +579,13 @@ by slice (`docs/plan/B6.md`).
   tone, undertone, hair and eye colour, in one transaction. Refusals:
   `PHOTO_QUALITY_TOO_LOW` (with the reason), `SKIN_NOT_VISIBLE`, `INVALID_IMAGE`,
   `IMAGE_DIMENSIONS`. DELETE removes the profile and those values.
+- **Client error reports** (`clienterrors.Service`, `POST /api/v1/client-errors`, no
+  session): 1 to 10 reports per request, each one `client error` line in the log at
+  level ERROR, its texts scrubbed (e-mail addresses, Bearer values, JWTs, URL queries,
+  long opaque values; ids in the route as `:id`) and redacted again as the Next.js log
+  did; nothing is stored. Limits: 30 requests in 10 minutes per address (when the
+  address is known), 300 for everyone. `GET /api/v1/openapi.json` serves the contract
+  as it is (a copy in `internal/httpapi/contract`, kept by `scripts/generate.sh`).
 - **Monitoring** (`ai.Monitor`): the events `ai.call`, `ai.request` and `ai.quota`,
   one JSON log line each, the event's name as the message. Every event passes a
   whitelist per event: only known fields of the right kind, and a text only when it is

@@ -33,6 +33,7 @@ import (
 	"lookly/internal/ai"
 	"lookly/internal/apierr"
 	"lookly/internal/auth"
+	"lookly/internal/clienterrors"
 	"lookly/internal/color"
 	"lookly/internal/config"
 	"lookly/internal/contracttest"
@@ -252,6 +253,7 @@ func newAPI(t *testing.T, o apiOptions) *api {
 		}),
 		Stylist:      newStylist(t, pool, keys, log, o.ai, o.aiAt, o.stylistDeadline),
 		Colors:       color.NewService(pool, a.processor, ai.NewMonitor(log, "test"), log),
+		Reports:      clienterrors.NewService(limiter, log),
 		CookieSecure: o.cookieSecure, TrustProxy: o.trustProxy,
 	})
 	a.gate = &httpapi.Gate{Tokens: a.tokens, Sessions: a.sessions, Consent: consent, Users: users, TrustProxy: o.trustProxy, HTTPSOnly: o.cookieSecure}
@@ -368,6 +370,9 @@ func (a *api) do(c call) answer {
 	wantCache := ""
 	if _, tokens := out.body["refreshToken"]; tokens {
 		wantCache = "no-store"
+	}
+	if c.path == "/api/v1/openapi.json" && w.Code == http.StatusOK {
+		wantCache = "public, max-age=300" // the contract may be cached a while
 	}
 	if got := w.Header().Get("Cache-Control"); got != wantCache {
 		a.t.Errorf("%s %s (%d): Cache-Control %q, want %q", c.method, c.path, w.Code, got, wantCache)
