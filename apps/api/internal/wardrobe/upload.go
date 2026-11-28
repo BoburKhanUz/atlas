@@ -345,6 +345,10 @@ func (u *Uploads) create(ctx context.Context, up Upload, claim *idempotency.Clai
 	if err != nil {
 		return Created{}, undo, err
 	}
+	if analysis.GiveBack != nil {
+		// No item, no charge (the Next.js route kept it).
+		undos = append(undos, func(ctx context.Context, _ error) { analysis.GiveBack(ctx, "upload_failed") })
+	}
 	detection := analysis.Detection
 	order := vision.ConfidenceKeys
 	if analysis.Provider == vision.MockProvider {

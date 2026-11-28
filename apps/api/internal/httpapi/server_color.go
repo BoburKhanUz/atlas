@@ -16,6 +16,8 @@ const (
 	msgNotAnImageType   = "Faqat JPG, PNG yoki WEBP qo‘llab-quvvatlanadi"
 	msgSelfieTooLarge   = "Rasm 8 MB dan oshmasligi kerak"
 	msgColorNotAnalyzed = "Rang tahlilisi hali amalga oshirilmadi. Selfie yuklang."
+	// The day's analyses (a Go-only answer: the Next.js route had no limit).
+	msgColorQuota       = "Bugungi rang tahlili limiti tugadi. Limit Toshkent vaqti bilan yarim tunda yangilanadi."
 	colorStatusAnalyzed = "analyzed"
 	colorStatusNotYet   = "not_analyzed"
 )
@@ -92,7 +94,12 @@ func (s *Server) AnalyzeColorProfile(ctx context.Context, request contract.Analy
 
 func colorError(err error) error {
 	var quality *color.PhotoQualityError
+	var used *color.QuotaError
 	switch {
+	case errors.As(err, &used):
+		e := apierr.With(apierr.AiQuotaExceeded, msgColorQuota)
+		e.RetryAfter = used.RetryAfter
+		return e
 	case errors.As(err, &quality):
 		e := apierr.With(apierr.PhotoQualityTooLow, qualityMessages[quality.Reason])
 		e.Details = []apierr.Detail{{Path: "reason", Message: string(quality.Reason)}}

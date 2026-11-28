@@ -111,6 +111,10 @@ type Analysis struct {
 	// RawConfidences are the model's own confidences, unchanged (nil for
 	// the mock).
 	RawConfidences map[string]float64
+	// GiveBack returns the day's unit the analysis was charged, when what
+	// it was made for fails after it (the item could not be stored); nil
+	// when nothing was charged. Called at most once.
+	GiveBack func(ctx context.Context, reason string)
 }
 
 // Analyze analyses a picture. The refusals are *Failure; imaging.ErrBusy
@@ -194,15 +198,10 @@ func (a *Analyzer) withProvider(ctx context.Context, r Request, provider string)
 
 	// 4. The provider (its time limit and the one safe retry are the
 	// client's).
-	tokens := MaxOutputTokens
-	result, err := a.c.Client.AnalyzeImage(ctx, ai.ClothingAnalysis, ai.VisionRequest{
-		Image: picture.JPEG, MimeType: "image/jpeg", MaxSide: settings.MaxSide, Instruction: Instruction,
-		JSONSchema: &ai.Schema{Name: "garment_analysis", Schema: Schema}, MaxOutputTokens: &tokens,
-		Options: ai.VisionOptions{
-			GeminiMediaResolution: settings.GeminiMediaResolution, GeminiThinkingLevel: settings.GeminiThinkingLevel,
-			OpenAIDetail: settings.OpenAIDetail,
-		},
-	})
+	result, err := a.c.Client.AnalyzeImage(ctx, ai.ClothingAnalysis, GarmentRequest(picture, settings.MaxSide, ai.VisionOptions{
+		GeminiMediaResolution: settings.GeminiMediaResolution, GeminiThinkingLevel: settings.GeminiThinkingLevel,
+		OpenAIDetail: settings.OpenAIDetail,
+	}))
 	if err != nil {
 		var providerErr *ai.Error
 		if !errors.As(err, &providerErr) {
@@ -238,7 +237,7 @@ func (a *Analyzer) withProvider(ctx context.Context, r Request, provider string)
 
 	// 6. The colour check: the pixels may only lower the colour's confidence.
 	attributes := interpretation.Attributes
-	check := a.checkColor(picture, attributes.Colors)
+	check := CheckColor(picture, attributes.Colors)
 	a.c.Log.InfoContext(ctx, "ai.vision.result", "provider", provider, "model", model, "version", AnalysisVersion, "colorVerdict", check.Verdict)
 	request("ok", "", true)
 
@@ -250,13 +249,20 @@ func (a *Analyzer) withProvider(ctx context.Context, r Request, provider string)
 			Confidence: PresentConfidences(interpretation.RawConfidence, check.ConfidenceCap),
 		},
 		Provider: provider, Model: model, Version: AnalysisVersion, RawConfidences: interpretation.RawConfidence,
+		GiveBack: func(ctx context.Context, reason string) { a.c.Quotas.Refund(ctx, charge, reason) },
 	}, nil
 }
 
-// checkColor checks the primary colour against the prepared picture's
-// centre; a centre that cannot be read is weak support.
-func (a *Analyzer) checkColor(picture imaging.VisionInput, colors []string) ColorCheck {
-	return CheckColor(picture, colors)
+// GarmentRequest is what the model is asked about a prepared picture: the
+// versioned instruction, the strict schema, the token limit and the
+// provider's picture settings. The time limit is the client's (the
+// evaluation sets its own).
+func GarmentRequest(picture imaging.VisionInput, maxSide int, options ai.VisionOptions) ai.VisionRequest {
+	tokens := MaxOutputTokens
+	return ai.VisionRequest{
+		Image: picture.JPEG, MimeType: "image/jpeg", MaxSide: maxSide, Instruction: Instruction,
+		JSONSchema: &ai.Schema{Name: "garment_analysis", Schema: Schema}, MaxOutputTokens: &tokens, Options: options,
+	}
 }
 
 // CheckColor is the colour check of a prepared picture: the primary colour

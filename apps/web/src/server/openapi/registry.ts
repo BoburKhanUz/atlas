@@ -162,6 +162,8 @@ export const OPERATIONS: Operation[] = [
     multipart: { fields: { file: { description: 'Selfie (JPEG, PNG, WebP), ≤ 8 MB, shortest side ≥ 256 px', binary: true, required: true } } },
     success: [{ status: 200, description: 'Colour profile', schema: Res.ColorAnalysisResponse }],
     errors: ['BAD_REQUEST', 'INVALID_IMAGE', 'IMAGE_DIMENSIONS', 'PHOTO_QUALITY_TOO_LOW', 'SKIN_NOT_VISIBLE', 'ANALYSIS_UNAVAILABLE'],
+    // The Go backend allows 10 analyses a day per user (the color_analysis quota, docs/plan/B6.md); this server has no such limit.
+    goOnlyErrors: ['AI_QUOTA_EXCEEDED'],
   },
   // ─── Wardrobe ─────────────────────────────────────────────────────────────
   {

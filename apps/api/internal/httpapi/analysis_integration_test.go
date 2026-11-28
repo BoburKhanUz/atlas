@@ -333,6 +333,25 @@ func TestAProviderThatFailsIsAnsweredAIUnavailableAndCostsNothing(t *testing.T) 
 	}
 }
 
+// An analysis that was made, but whose item could not be stored, is given
+// back: the user has nothing to show for it.
+func TestAnAnalysisWhoseItemIsNotStoredCostsNothing(t *testing.T) {
+	t.Parallel()
+	w, p := withProvider(t, nil, says(jeans()))
+	w.exec(`CREATE FUNCTION refuse_images() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'the disk of the database is full'; END $$`)
+	w.exec(`CREATE TRIGGER refuse_images BEFORE INSERT ON "WardrobeImage" FOR EACH ROW EXECUTE FUNCTION refuse_images()`)
+	got := w.send(garmentPhoto(t), "vision-key-0040")
+	if got.status != http.StatusInternalServerError || got.body["code"] != "INTERNAL" {
+		t.Fatalf("%d %v", got.status, got.body)
+	}
+	if len(p.asked()) != 1 || w.analysesToday() != 0 {
+		t.Errorf("asked %d times, %d counted", len(p.asked()), w.analysesToday())
+	}
+	if quotas := w.events(ai.EventQuota); len(quotas) != 2 || quotas[1]["action"] != "refunded" || quotas[1]["reason"] != "upload_failed" {
+		t.Errorf("quota events: %v", quotas)
+	}
+}
+
 func TestAnAnswerThatBreaksTheContractIsNotStored(t *testing.T) {
 	t.Parallel()
 	broken := jeans()

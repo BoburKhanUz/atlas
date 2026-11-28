@@ -9,12 +9,15 @@ import (
 	stdcolor "image/color"
 	"image/png"
 	"net/http"
+	"strconv"
 	"strings"
 	"testing"
 
+	"lookly/internal/ai"
 	"lookly/internal/color"
 	"lookly/internal/golden"
 	"lookly/internal/httpapi"
+	"lookly/internal/quota"
 )
 
 // The colour profile over HTTP with real PostgreSQL: a selfie is a golden
@@ -151,6 +154,14 @@ func TestASelfieBecomesTheColourProfileShownAndDeleted(t *testing.T) {
 	if b := a.do(call{method: http.MethodGet, path: profilePath, mobile: true, bearer: other.accessToken}); b.body["status"] != "not_analyzed" {
 		t.Errorf("the other user sees %s", b.raw)
 	}
+	// Even when the other user's profile points at it (the Next.js route
+	// followed the pointer alone).
+	mine := again.body["colorProfile"].(map[string]any)["id"].(string)
+	a.exec(`INSERT INTO "UserProfile" ("id","userId","colorProfileId","updatedAt") VALUES ('foreign-pointer', $1, $2, now())
+		ON CONFLICT ("userId") DO UPDATE SET "colorProfileId" = $2`, a.userID(other.email), mine)
+	if b := a.do(call{method: http.MethodGet, path: profilePath, mobile: true, bearer: other.accessToken}); b.body["status"] != "not_analyzed" {
+		t.Errorf("a pointer at another user's profile shows it: %s", b.raw)
+	}
 
 	for range 2 { // idempotent
 		gone := a.do(call{method: http.MethodDelete, path: profilePath, mobile: true, bearer: m.accessToken})
@@ -233,5 +244,65 @@ func TestASelfieThatCannotBeAnalysedStoresNothing(t *testing.T) {
 	}
 	if !strings.Contains(a.logs(), `"outcome":"invalid_request"`) || !strings.Contains(a.logs(), `"outcome":"error"`) {
 		t.Errorf("the refusals are not told to the monitoring: %s", a.logs())
+	}
+}
+
+// The day's analyses are limited (the color_analysis quota, 10 a day): a
+// selfie the analysis refuses counts too (it was decoded and analysed); the
+// one after the limit is refused before any work, and changes nothing.
+func TestTheDaysColourAnalysesAreLimited(t *testing.T) {
+	t.Parallel()
+	g := golden.LoadColor(t)
+	a := newAPI(t, apiOptions{})
+	m := a.mobileRegister(nil)
+	user := a.userID(m.email)
+	today := func() int {
+		return query[int](a, `SELECT COALESCE(sum("count"), 0)::int FROM "AiUsage" WHERE "userId" = $1 AND "feature" = 'color_analysis'`, user)
+	}
+	limit, _ := quota.Limit(ai.ColorAnalysis)
+	if limit != 10 {
+		t.Fatalf("the limit is %d", limit)
+	}
+	// Eight of the day's analyses are done (on the database's day in Tashkent).
+	a.exec(`INSERT INTO "AiUsage" ("id","userId","feature","day","count","updatedAt") VALUES ('c1', $1, 'color_analysis', (atlas_now() + interval '5 hours')::date, 8, now())`, user)
+	a.is(a.do(analyzeCall(t, m, filePart("selfie.png", "image/png", selfiePNG(t, g, "largest")))), http.StatusOK, "")
+	a.is(a.do(analyzeCall(t, m, filePart("s.png", "image/png", flat(t, 300, 300, stdcolor.NRGBA{0, 0, 0, 255})))), http.StatusUnprocessableEntity, "PHOTO_QUALITY_TOO_LOW")
+	// Refused before the analysis: not counted.
+	a.is(a.do(analyzeCall(t, m, textPart("note", "x"))), http.StatusBadRequest, "BAD_REQUEST")
+	if n := today(); n != limit {
+		t.Fatalf("%d counted", n)
+	}
+	before := query[string](a, `SELECT "updatedAt"::text FROM "ColorProfile" WHERE "userId" = $1`, user)
+	got := a.do(analyzeCall(t, m, filePart("selfie.png", "image/png", selfiePNG(t, g, "largest"))))
+	a.is(got, http.StatusTooManyRequests, "AI_QUOTA_EXCEEDED")
+	if got.text("error") != "Bugungi rang tahlili limiti tugadi. Limit Toshkent vaqti bilan yarim tunda yangilanadi." {
+		t.Errorf("message %q", got.text("error"))
+	}
+	if s, err := strconv.Atoi(got.header.Get("Retry-After")); err != nil || s < 1 || s > 24*3600 {
+		t.Errorf("Retry-After %q", got.header.Get("Retry-After"))
+	}
+	if after := query[string](a, `SELECT "updatedAt"::text FROM "ColorProfile" WHERE "userId" = $1`, user); after != before || today() != limit {
+		t.Errorf("the refused analysis changed the profile or the count (%d)", today())
+	}
+	if !strings.Contains(a.logs(), `"feature":"color_analysis"`) || !strings.Contains(a.logs(), `"action":"rejected"`) {
+		t.Errorf("the refusal is not told to the monitoring: %s", a.logs())
+	}
+}
+
+// An analysis whose result cannot be stored is given back to the day.
+func TestAColourAnalysisThatIsNotStoredIsNotCounted(t *testing.T) {
+	t.Parallel()
+	g := golden.LoadColor(t)
+	a := newAPI(t, apiOptions{})
+	m := a.mobileRegister(nil)
+	user := a.userID(m.email)
+	a.exec(`CREATE FUNCTION refuse_profiles() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'the disk of the database is full'; END $$`)
+	a.exec(`CREATE TRIGGER refuse_profiles BEFORE INSERT ON "ColorProfile" FOR EACH ROW EXECUTE FUNCTION refuse_profiles()`)
+	a.is(a.do(analyzeCall(t, m, filePart("selfie.png", "image/png", selfiePNG(t, g, "largest")))), http.StatusInternalServerError, "INTERNAL")
+	if n := query[int](a, `SELECT COALESCE(sum("count"), 0)::int FROM "AiUsage" WHERE "userId" = $1`, user); n != 0 {
+		t.Errorf("%d counted", n)
+	}
+	if !strings.Contains(a.logs(), `"action":"refunded"`) || !strings.Contains(a.logs(), `"reason":"internal_error"`) {
+		t.Errorf("the refund is not told to the monitoring: %s", a.logs())
 	}
 }

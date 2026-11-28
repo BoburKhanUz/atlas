@@ -15,6 +15,7 @@ import (
 	"lookly/internal/ai"
 	"lookly/internal/imaging"
 	"lookly/internal/platform"
+	"lookly/internal/quota"
 	"lookly/internal/store"
 )
 
@@ -37,6 +38,19 @@ type Pictures interface {
 	Canvas(ctx context.Context, data []byte) (rgb []byte, width, height int, err error)
 }
 
+// Quotas count the day's analyses (*quota.Service): the color_analysis
+// quota, which the Next.js server defined and never used.
+type Quotas interface {
+	Charge(ctx context.Context, userID string, feature ai.Feature, provider string) (quota.Charge, error)
+	Refund(ctx context.Context, charge quota.Charge, reason string)
+}
+
+// QuotaError: the day's analyses are used up; the next day begins in
+// RetryAfter.
+type QuotaError struct{ RetryAfter time.Duration }
+
+func (e *QuotaError) Error() string { return "color: the day's analyses are used up" }
+
 // CallMonitor is told about each analysis (*ai.Monitor).
 type CallMonitor interface {
 	RecordCall(ctx context.Context, record ai.CallRecord)
@@ -47,12 +61,13 @@ type Service struct {
 	pool     *pgxpool.Pool
 	pictures Pictures
 	monitor  CallMonitor
+	quotas   Quotas
 	log      *slog.Logger
 }
 
 // NewService returns the service.
-func NewService(pool *pgxpool.Pool, pictures Pictures, monitor CallMonitor, log *slog.Logger) *Service {
-	return &Service{pool: pool, pictures: pictures, monitor: monitor, log: log}
+func NewService(pool *pgxpool.Pool, pictures Pictures, monitor CallMonitor, quotas Quotas, log *slog.Logger) *Service {
+	return &Service{pool: pool, pictures: pictures, monitor: monitor, quotas: quotas, log: log}
 }
 
 // Profile is a stored colour profile with what the selfie gave the user
@@ -68,11 +83,30 @@ type Profile struct {
 }
 
 // Analyze analyses a selfie and makes the result the user's colour
-// profile. The refusals: imaging.ErrInvalid, imaging.ErrUnsupported,
-// imaging.ErrDimensions, imaging.ErrBusy, *PhotoQualityError,
-// ErrSkinNotVisible, ErrNoUser. Nothing is stored for any of them, and
-// nothing of the picture is kept.
-func (s *Service) Analyze(ctx context.Context, userID string, file []byte) (Profile, error) {
+// profile. The refusals: *QuotaError, imaging.ErrInvalid,
+// imaging.ErrUnsupported, imaging.ErrDimensions, imaging.ErrBusy,
+// *PhotoQualityError, ErrSkinNotVisible, ErrNoUser. Nothing is stored for
+// any of them, and nothing of the picture is kept. Each analysis counts
+// against the day's, whatever it finds; one that was not made (no
+// processing slot) or not stored is given back.
+func (s *Service) Analyze(ctx context.Context, userID string, file []byte) (profile Profile, err error) {
+	charge, err := s.quotas.Charge(ctx, userID, ai.ColorAnalysis, Provider)
+	if err != nil {
+		return Profile{}, err
+	}
+	if !charge.Allowed {
+		return Profile{}, &QuotaError{RetryAfter: charge.RetryAfter}
+	}
+	defer func() {
+		switch {
+		case errors.Is(err, imaging.ErrBusy):
+			s.quotas.Refund(context.WithoutCancel(ctx), charge, "busy")
+		case errors.Is(err, ErrNoUser):
+			// The account is gone with its counts.
+		case err != nil && !refusedPhoto(err):
+			s.quotas.Refund(context.WithoutCancel(ctx), charge, "internal_error")
+		}
+	}()
 	started := time.Now()
 	record := func(outcome string) {
 		s.monitor.RecordCall(ctx, ai.CallRecord{
@@ -164,6 +198,13 @@ func stringsOf(raw string) []string {
 		}
 	}
 	return out
+}
+
+// refusedPhoto: the analysis ran and refused the picture (it counts).
+func refusedPhoto(err error) bool {
+	var quality *PhotoQualityError
+	return errors.As(err, &quality) || errors.Is(err, ErrSkinNotVisible) ||
+		errors.Is(err, imaging.ErrInvalid) || errors.Is(err, imaging.ErrUnsupported) || errors.Is(err, imaging.ErrDimensions)
 }
 
 // Current is the user's colour profile: the one the user profile points

@@ -48,6 +48,7 @@ import (
 	"lookly/internal/media"
 	"lookly/internal/outfits"
 	"lookly/internal/profile"
+	"lookly/internal/quota"
 	"lookly/internal/ratelimit"
 	"lookly/internal/session"
 	"lookly/internal/storage"
@@ -244,6 +245,7 @@ func newAPI(t *testing.T, o apiOptions) *api {
 	weatherService := weather.New(pool, forecasts, limiter, log)
 	a.analyzer = newAnalyzer(t, pool, a.processor, log, o.ai, o.aiAt)
 	keys := idempotency.New(pool)
+	colorMonitor := ai.NewMonitor(log, "test")
 	server := httpapi.NewServer(httpapi.Services{
 		Health: health.New(pool, "test", time.Second), Accounts: users, Sessions: a.sessions, Legal: consent, Profile: profile.New(pool),
 		Weather: weatherService, Outfits: outfits.New(pool, weatherService, limiter, newRanker(t, pool, log, o.ai, o.aiAt, o.rankingBudget, o.rankingAttempt), log),
@@ -252,7 +254,7 @@ func newAPI(t *testing.T, o apiOptions) *api {
 			Pool: pool, Images: a.images, Processor: a.processor, Analyzer: a.analyzer, Limiter: limiter, Keys: keys, Log: log,
 		}),
 		Stylist:      newStylist(t, pool, keys, log, o.ai, o.aiAt, o.stylistDeadline),
-		Colors:       color.NewService(pool, a.processor, ai.NewMonitor(log, "test"), log),
+		Colors:       color.NewService(pool, a.processor, colorMonitor, quota.New(pool, colorMonitor, log), log),
 		Reports:      clienterrors.NewService(limiter, log),
 		CookieSecure: o.cookieSecure, TrustProxy: o.trustProxy,
 	})

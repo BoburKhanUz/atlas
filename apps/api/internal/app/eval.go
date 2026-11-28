@@ -62,7 +62,7 @@ func RunEval(ctx context.Context, args []string, getenv func(string) (string, bo
 		return refuse("--model is needed")
 	}
 	if *maxCalls < 0 || *timeout <= 0 {
-		return refuse("--max-calls and --timeout must not be negative")
+		return refuse("--max-calls must not be negative, and --timeout must be positive")
 	}
 
 	addresses := ai.DefaultAddresses

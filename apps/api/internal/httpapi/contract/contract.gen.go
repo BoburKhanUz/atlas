@@ -4696,6 +4696,30 @@ func (response AnalyzeColorProfile422JSONResponse) VisitAnalyzeColorProfileRespo
 	return err
 }
 
+type AnalyzeColorProfile429ResponseHeaders struct {
+	RetryAfter *string
+}
+
+type AnalyzeColorProfile429JSONResponse struct {
+	Body    ErrorResponse
+	Headers AnalyzeColorProfile429ResponseHeaders
+}
+
+func (response AnalyzeColorProfile429JSONResponse) VisitAnalyzeColorProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type AnalyzeColorProfile500JSONResponse ErrorResponse
 
 func (response AnalyzeColorProfile500JSONResponse) VisitAnalyzeColorProfileResponse(w http.ResponseWriter) error {

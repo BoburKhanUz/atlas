@@ -154,6 +154,9 @@ export class GoPipeline {
   private readonly child: ChildProcessWithoutNullStreams
   private readonly waiting: Array<{ resolve: (r: GoResult) => void; reject: (e: Error) => void }> = []
   private stderr = ''
+  /** Why the child is gone (it exited, or could not be started): every case after that is refused with it. */
+  private ended: Error | null = null
+  private readonly exited: Promise<void>
 
   constructor(options: GoPipelineOptions) {
     const binary = options.binary ?? process.env.LOOKLY_BINARY
@@ -163,28 +166,41 @@ export class GoPipeline {
     createInterface({ input: this.child.stdout }).on('line', (line) => {
       const next = this.waiting.shift()
       if (!next) return
-      const parsed = JSON.parse(line) as GoResult | { refused: string }
+      let parsed: GoResult | { refused: string }
+      try {
+        parsed = JSON.parse(line) as GoResult | { refused: string }
+      } catch {
+        return next.reject(new Error(`lookly eval wrote a line that is not JSON: ${line.slice(0, 200)}`))
+      }
       if ('refused' in parsed) next.reject(new Error(`lookly eval refused the case: ${parsed.refused}`))
       else next.resolve(parsed)
     })
-    this.child.on('exit', (code) => {
-      for (const w of this.waiting.splice(0)) w.reject(new Error(`lookly eval exited (${code}): ${this.stderr.trim()}`))
+    // A write to a child that is gone fails; the case is refused by end() with the reason.
+    this.child.stdin.on('error', () => {})
+    this.exited = new Promise((resolve) => {
+      const end = (why: string) => {
+        this.ended ??= new Error(`lookly eval ${why}${this.stderr.trim() ? `: ${this.stderr.trim()}` : ''}`)
+        for (const w of this.waiting.splice(0)) w.reject(this.ended)
+        resolve()
+      }
+      // 'close' comes after the output is read: the stderr text is whole.
+      this.child.on('close', (code, signal) => end(signal ? `was stopped (${signal})` : `exited (${code})`))
+      this.child.on('error', (err) => end(`could not be started (${err.message})`))
     })
   }
 
   run(feature: 'stylist' | 'outfit' | 'vision', c: unknown): Promise<GoResult> {
+    if (this.ended) return Promise.reject(this.ended)
     return new Promise((resolve, reject) => {
       this.waiting.push({ resolve, reject })
       this.child.stdin.write(JSON.stringify({ feature, case: c }) + '\n')
     })
   }
 
-  close(): Promise<void> {
-    return new Promise((resolve) => {
-      if (this.child.exitCode !== null) return resolve()
-      this.child.once('exit', () => resolve())
-      this.child.stdin.end()
-    })
+  /** Ends the run: the child reads the end of its input and exits. */
+  async close(): Promise<void> {
+    if (!this.ended) this.child.stdin.end()
+    await this.exited
   }
 }
 

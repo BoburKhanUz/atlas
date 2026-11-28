@@ -150,7 +150,7 @@ func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger, images storage
 		Stylist: stylist.New(stylist.Config{
 			Pool: pool, Keys: keys, Client: models, Quotas: quotas, Monitor: monitor, Route: cfg.AI.Stylist, Rollout: cfg.AI.Rollout, Log: log,
 		}),
-		Colors:       color.NewService(pool, pictures, monitor, log),
+		Colors:       color.NewService(pool, pictures, monitor, quotas, log),
 		Reports:      clienterrors.NewService(limiter, log),
 		Media:        media.NewSigner(cfg.MediaSigningSecret, cfg.MediaURLTTL, cfg.PublicBaseURL),
 		Images:       images,

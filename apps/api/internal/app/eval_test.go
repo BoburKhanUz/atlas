@@ -86,6 +86,7 @@ func TestEvalRefusesWhatItCannotRunSafely(t *testing.T) {
 		{"a stand-in with a user", nil, []string{"--provider=openai", "--model=x", "--base-url=http://u:p@127.0.0.1:9"}, "this machine"},
 		{"an argument too many", nil, []string{"--provider=mock", "extra"}, "usage"},
 		{"a negative cap", nil, []string{"--provider=mock", "--max-calls=-1"}, "negative"},
+		{"no time", nil, []string{"--provider=mock", "--timeout=0s"}, "--timeout must be positive"},
 	} {
 		code, lines, stderr := runEval(t, c.env, "", c.args...)
 		if code != 2 || len(lines) != 0 || !strings.Contains(stderr, c.want) || strings.Contains(stderr, realKey) {

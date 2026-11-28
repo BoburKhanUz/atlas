@@ -103,6 +103,18 @@ describe('the evaluation on the Go pipeline', () => {
     }
   })
 
+  it('a lookly eval that is gone refuses every case with its reason, and closes', async () => {
+    // Go refuses its flags and exits at once: a case sent before and after that.
+    const refused = new GoPipeline({ args: ['--provider=nobody'] })
+    await expect(refused.run('stylist', {})).rejects.toThrow(/exited \(2\)[^]*--provider must be/)
+    await expect(refused.run('stylist', {})).rejects.toThrow(/exited \(2\)/)
+    await refused.close()
+    // No such binary.
+    const missing = new GoPipeline({ args: [], binary: '/nonexistent/lookly' })
+    await expect(missing.run('stylist', {})).rejects.toThrow(/could not be started/)
+    await missing.close()
+  })
+
   it('each provider failure gives the TypeScript record', async () => {
     const kinds: AiErrorKind[] = ['rate_limited', 'auth', 'invalid_request', 'provider_error', 'content_filtered', 'malformed_response', 'network', 'timeout', 'unavailable']
     const failing = (kind: AiErrorKind): LLMProvider => ({

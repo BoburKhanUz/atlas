@@ -8,7 +8,7 @@ Files:
 |---|---|
 | `deploy/compose.server.yml` | Overlay on `docker-compose.yml`: Caddy on ports 80/443, no database or app port on the host, restart policies, log rotation (5 × 10 MB per container), `TRUST_PROXY=1`, `PUBLIC_BASE_URL`, AI price variables |
 | `deploy/Caddyfile` | HTTPS for `ATLAS_DOMAIN`; Caddy obtains and renews the certificate and sends HSTS (the app sets its other security headers in `apps/web/next.config.ts`) |
-| `deploy/server.env.example` | Settings template with the hybrid AI configuration; copied to `deploy/server.env` (git-ignored) on the server |
+| `deploy/server.env.example` | Settings template with the AI configuration (OpenAI only, owner decision 2026-11-27); copied to `deploy/server.env` (git-ignored) on the server |
 | `deploy/compose.sh` | `docker compose` with the base file, the overlay and `deploy/server.env` |
 | `deploy/backup.sh` | Database dump and uploads archive into `deploy/backups/<UTC time>/` (git-ignored) |
 
@@ -18,7 +18,7 @@ Files:
 |---|---|
 | Server | Ubuntu 24.04 or 26.04 LTS, public IPv4, SSH key login. Estimate: 2 vCPU, 4 GB RAM (the image is built on the server), 40 GB disk |
 | Domain | A host name such as `staging-api.<your domain>` with a DNS **A** record pointing at the server |
-| AI keys | `GEMINI_API_KEY` (text) and `OPENAI_API_KEY` (clothing photos) from billing-enabled accounts, each with a spending limit or budget alert set at the provider. Never a Gemini free-tier key: its content may be read by reviewers and used to improve Google's products |
+| AI key | `OPENAI_API_KEY` (text and clothing photos) from a billing-enabled account with a spending limit or budget alert set at the provider. Production does not use Gemini (owner decision 2026-11-27: its terms forbid apps likely to be used by people under 18) |
 | Data | Staging holds test accounts and test images only ([`docs/ai/staging.md`](../ai/staging.md)) |
 
 ## 1. Prepare the server (once)

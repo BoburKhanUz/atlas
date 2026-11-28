@@ -82,7 +82,9 @@ func newTransport() transport {
 }
 
 // encode is JSON.stringify of a request body: Go's encoding without its
-// escaping of <, > and &.
+// escaping of <, > and &. One difference stays, in bytes only: Go writes
+// U+2028 and U+2029 as \u2028 and \u2029 (JSON.stringify writes them as
+// they are); the provider reads the same text (docs/plan/B6.md).
 func encode(body any) ([]byte, error) {
 	var b bytes.Buffer
 	e := json.NewEncoder(&b)

@@ -451,13 +451,11 @@ func (r *Runner) vision(ctx context.Context, c VisionCase) (Result, error) {
 		if r.MaxCalls > 0 && r.Counter.Calls()+2 > r.MaxCalls {
 			return errorOutcome(errCallCap)
 		}
-		tokens := vision.MaxOutputTokens
-		result, err := r.Images.AnalyzeImage(ctx, ai.ClothingAnalysis, ai.VisionRequest{
-			Image: picture.JPEG, MimeType: "image/jpeg", MaxSide: maxSide, Instruction: vision.Instruction,
-			JSONSchema: &ai.Schema{Name: "garment_analysis", Schema: vision.Schema}, MaxOutputTokens: &tokens,
-			Options: ai.VisionOptions{GeminiMediaResolution: c.GeminiMediaResolution, GeminiThinkingLevel: c.GeminiThinkingLevel, OpenAIDetail: c.OpenAIDetail},
-			Timeout: timeout,
-		})
+		// The server's own request; no blur pre-check, as in the harness's
+		// runner: the evaluation scores what the model makes of the picture.
+		request := vision.GarmentRequest(picture, maxSide, ai.VisionOptions{GeminiMediaResolution: c.GeminiMediaResolution, GeminiThinkingLevel: c.GeminiThinkingLevel, OpenAIDetail: c.OpenAIDetail})
+		request.Timeout = timeout
+		result, err := r.Images.AnalyzeImage(ctx, ai.ClothingAnalysis, request)
 		if err != nil {
 			return errorOutcome(err)
 		}

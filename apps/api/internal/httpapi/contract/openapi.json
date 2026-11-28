@@ -4998,6 +4998,27 @@
               "SKIN_NOT_VISIBLE"
             ]
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error. code: AI_QUOTA_EXCEEDED",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying (retryable codes)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "x-error-codes": [
+              "AI_QUOTA_EXCEEDED"
+            ]
+          },
           "500": {
             "content": {
               "application/json": {
