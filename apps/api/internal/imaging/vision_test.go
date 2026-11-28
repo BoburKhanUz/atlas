@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"lookly/internal/imaging"
+	"lookly/internal/visionlimit"
 )
 
 func prepare(t *testing.T, name string, maxSide int) imaging.VisionInput {
@@ -121,12 +122,12 @@ func TestAPictureThatCannotBePreparedIsRefused(t *testing.T) {
 			t.Errorf("%s: %v, want %v", c.name, err, c.want)
 		}
 	}
-	for _, side := range []int{0, -1, imaging.MaxVisionSide + 1} {
+	for _, side := range []int{0, -1, visionlimit.MaxSide + 1} {
 		if _, err := processor.PrepareVision(context.Background(), fixture(t, "gps.jpg"), side); err == nil {
 			t.Errorf("a longest side of %d was accepted", side)
 		}
 	}
-	if _, err := processor.PrepareVision(context.Background(), fixture(t, "gps.jpg"), imaging.MaxVisionSide); err != nil {
+	if _, err := processor.PrepareVision(context.Background(), fixture(t, "gps.jpg"), visionlimit.MaxSide); err != nil {
 		t.Errorf("the largest side: %v", err)
 	}
 }

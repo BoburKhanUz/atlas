@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"lookly/internal/platform"
+	"lookly/internal/visionlimit"
 )
 
 // AI providers (AI_LLM_PROVIDER, AI_VISION_PROVIDER and the per-feature routes).
@@ -147,8 +148,6 @@ const (
 	minAITimeoutMs       = 1_000
 	maxAITimeoutMs       = 55_000
 	defaultVisionMaxSide = 1024
-	minVisionSide        = 256
-	maxVisionSide        = 2048
 	maxAllowlist         = 1000
 )
 
@@ -417,8 +416,8 @@ func loadAI(deployed bool, value func(string) (string, bool)) (AI, *aiRefusal) {
 	vision.MaxSide = defaultVisionMaxSide
 	if raw := get("AI_VISION_MAX_SIDE"); raw != "" {
 		n, err := strconv.Atoi(raw)
-		if !wholeDigit.MatchString(raw) || err != nil || n < minVisionSide || n > maxVisionSide {
-			return AI{}, refuse("AI_VISION_MAX_SIDE", "AI_VISION_MAX_SIDE must be a whole number of pixels between %d and %d", minVisionSide, maxVisionSide)
+		if !wholeDigit.MatchString(raw) || err != nil || n < visionlimit.MinConfiguredSide || n > visionlimit.MaxSide {
+			return AI{}, refuse("AI_VISION_MAX_SIDE", "AI_VISION_MAX_SIDE must be a whole number of pixels between %d and %d", visionlimit.MinConfiguredSide, visionlimit.MaxSide)
 		}
 		vision.MaxSide = n
 	}

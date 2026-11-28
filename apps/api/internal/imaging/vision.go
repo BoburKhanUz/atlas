@@ -11,6 +11,8 @@ import (
 	"image/jpeg"
 
 	xdraw "golang.org/x/image/draw"
+
+	"lookly/internal/visionlimit"
 )
 
 // What a picture becomes for garment analysis by a vision model, as the
@@ -19,11 +21,6 @@ import (
 // (ADR 0009): a picture at the very edge of a threshold can fall on the
 // other side.
 const (
-	// MaxVisionSide is the largest longest side a model is sent.
-	MaxVisionSide = 2048
-	// maxVisionBytes bounds the JPEG sent inline (base64 makes it a third
-	// larger).
-	maxVisionBytes    = 4 << 20
 	visionJPEGQuality = 85
 	// canvasSide bounds the canvas the blur is measured on.
 	canvasSide = 320
@@ -54,11 +51,11 @@ type VisionInput struct {
 }
 
 // PrepareVision prepares a picture for a vision model whose longest side
-// is maxSide (1 to MaxVisionSide). It refuses what Process refuses, and
+// is maxSide (1 to visionlimit.MaxSide). It refuses what Process refuses, and
 // waits for a slot as Process does.
 func (p *Processor) PrepareVision(ctx context.Context, data []byte, maxSide int) (VisionInput, error) {
-	if maxSide < 1 || maxSide > MaxVisionSide {
-		return VisionInput{}, fmt.Errorf("imaging: a vision picture's longest side must be 1 to %d, not %d", MaxVisionSide, maxSide)
+	if maxSide < 1 || maxSide > visionlimit.MaxSide {
+		return VisionInput{}, fmt.Errorf("imaging: a vision picture's longest side must be 1 to %d, not %d", visionlimit.MaxSide, maxSide)
 	}
 	h, err := inspect(data, p.d)
 	if err != nil {
@@ -84,7 +81,7 @@ func (p *Processor) PrepareVision(ctx context.Context, data []byte, maxSide int)
 	if err := jpeg.Encode(&buf, sent, &jpeg.Options{Quality: visionJPEGQuality}); err != nil {
 		return VisionInput{}, fmt.Errorf("imaging: encode the vision picture: %w", err)
 	}
-	if buf.Len() > maxVisionBytes {
+	if buf.Len() > visionlimit.MaxBytes {
 		return VisionInput{}, ErrVisionTooLarge
 	}
 	canvas := flatten(fitInside(upright, canvasSide), canvasBackground)

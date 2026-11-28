@@ -11,6 +11,8 @@ import (
 	"context"
 	"encoding/json"
 	"time"
+
+	"lookly/internal/visionlimit"
 )
 
 // Feature is a product feature that calls AI: for the monitoring and the
@@ -114,12 +116,6 @@ type VisionProvider interface {
 	AnalyzeImage(ctx context.Context, request VisionRequest) (VisionResult, error)
 }
 
-// Limits of what is sent to a vision model.
-const (
-	MaxVisionSide  = 2048
-	MaxVisionBytes = 4 << 20
-)
-
 var visionMimeTypes = map[string]bool{"image/jpeg": true, "image/png": true, "image/webp": true}
 
 // checkVisionRequest refuses a vision request no provider is to be sent.
@@ -130,9 +126,9 @@ func checkVisionRequest(provider string, r VisionRequest) error {
 		problem = "unsupported image type"
 	case len(r.Image) == 0:
 		problem = "empty image"
-	case len(r.Image) > MaxVisionBytes:
+	case len(r.Image) > visionlimit.MaxBytes:
 		problem = "image too large"
-	case r.MaxSide < 1 || r.MaxSide > MaxVisionSide:
+	case r.MaxSide < 1 || r.MaxSide > visionlimit.MaxSide:
 		problem = "maxSide out of range"
 	case isBlank(r.Instruction):
 		problem = "missing instruction"

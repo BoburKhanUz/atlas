@@ -323,6 +323,11 @@ func TestTheRankingStaysWithinItsBudget(t *testing.T) {
 	if w.rankingsToday() != 0 {
 		t.Errorf("%d counted", w.rankingsToday())
 	}
+	// The budget ran out during the retry: the monitoring says so, not that
+	// the provider's call was given up.
+	if requests := w.events(ai.EventRequest); len(requests) != 1 || requests[0]["reason"] != "deadline" {
+		t.Errorf("requests: %v", requests)
+	}
 }
 
 // A colour profile the model may see is in its context.

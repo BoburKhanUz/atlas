@@ -140,9 +140,14 @@ func (r *Ranker) Rank(ctx context.Context, userID string, candidates []engine.Ca
 		{Role: "system", Content: engine.RankingContext(candidates, occasion, wx, profile)},
 		{Role: "user", Content: engine.RankingUserMessage},
 	}
-	// call asks the model; ok is false when too little time is left.
+	// call asks the model; ok is false when too little time is left, of the
+	// budget or of the request, whichever ends first.
 	call := func(msgs []ai.Message) (text string, ok bool, err error) {
-		remaining := deadline.Sub(r.c.Now()).Truncate(time.Millisecond)
+		end := deadline
+		if d, set := ctx.Deadline(); set && d.Before(end) {
+			end = d
+		}
+		remaining := end.Sub(r.c.Now()).Truncate(time.Millisecond)
 		if remaining < minimumAttempt {
 			return "", false, nil
 		}
@@ -152,6 +157,11 @@ func (r *Ranker) Rank(ctx context.Context, userID string, candidates []engine.Ca
 		return result.Text, true, err
 	}
 	failure := func(err error) ([]Ranked, bool) {
+		// The budget or the request's time ran out during the call: that is
+		// the reason, whatever the interrupted attempt reports.
+		if errors.Is(budget.Err(), context.DeadlineExceeded) {
+			return fail("deadline")
+		}
 		var providerErr *ai.Error
 		if errors.As(err, &providerErr) {
 			return fail("provider_" + string(providerErr.Kind))
