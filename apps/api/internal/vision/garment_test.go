@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"lookly/internal/golden"
+	"lookly/internal/imaging"
 	"lookly/internal/vision"
 )
 
@@ -143,12 +144,9 @@ func TestTheCentreOfAPictureIsReadAsTheNextJSServerReadIt(t *testing.T) {
 				t.Fatalf("the centre of an 80×80 picture: %v", crop)
 			}
 			// The centre is exactly the sample's size: no resampling.
-			sample := make([]byte, 0, vision.CentreSampleSide*vision.CentreSampleSide*3)
-			for y := crop.Min.Y; y < crop.Max.Y; y++ {
-				for x := crop.Min.X; x < crop.Max.X; x++ {
-					r, g, bl, _ := img.At(x, y).RGBA()
-					sample = append(sample, byte(r>>8), byte(g>>8), byte(bl>>8))
-				}
+			sample, err := imaging.CentreSample(c.PNG, crop, vision.CentreSampleSide, vision.CentreSampleSide)
+			if err != nil {
+				t.Fatal(err)
 			}
 			if got := vision.ColorShares(sample); !maps.Equal(got, c.Shares) {
 				t.Errorf("shares:\n got %v\nwant %v", got, c.Shares)
