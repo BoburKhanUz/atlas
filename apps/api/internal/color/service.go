@@ -86,11 +86,28 @@ type Profile struct {
 // profile. The refusals: *QuotaError, imaging.ErrInvalid,
 // imaging.ErrUnsupported, imaging.ErrDimensions, imaging.ErrBusy,
 // *PhotoQualityError, ErrSkinNotVisible, ErrNoUser. Nothing is stored for
-// any of them, and nothing of the picture is kept. Each analysis counts
-// against the day's, whatever it finds; one that was not made (no
-// processing slot) or not stored is given back.
+// any of them, and nothing of the picture is kept. A file its header
+// refuses is not counted; each analysis counts against the day's, whatever
+// it finds; one that was not made (no processing slot) or whose result was
+// reported not stored is given back.
 func (s *Service) Analyze(ctx context.Context, userID string, file []byte) (profile Profile, err error) {
+	started := time.Now()
+	record := func(outcome string) {
+		s.monitor.RecordCall(ctx, ai.CallRecord{
+			Feature: ai.ColorAnalysis, Provider: Provider, Model: Version, Outcome: outcome, Latency: time.Since(started), Attempts: 1,
+		})
+	}
+	// What the picture's header says is judged first: a file that is no
+	// picture we take is refused without being counted (as the upload); the
+	// monitoring sees it as the Next.js analysis's failure to read it.
+	if err := imaging.Inspect(file); err != nil {
+		record("error")
+		return Profile{}, err
+	}
 	charge, err := s.quotas.Charge(ctx, userID, ai.ColorAnalysis, Provider)
+	if gone := (*pgconn.PgError)(nil); errors.As(err, &gone) && gone.Code == "23503" {
+		return Profile{}, ErrNoUser // the account was deleted after the gate let the request in
+	}
 	if err != nil {
 		return Profile{}, err
 	}
@@ -101,18 +118,10 @@ func (s *Service) Analyze(ctx context.Context, userID string, file []byte) (prof
 		switch {
 		case errors.Is(err, imaging.ErrBusy):
 			s.quotas.Refund(context.WithoutCancel(ctx), charge, "busy")
-		case errors.Is(err, ErrNoUser):
-			// The account is gone with its counts.
 		case err != nil && !refusedPhoto(err):
 			s.quotas.Refund(context.WithoutCancel(ctx), charge, "internal_error")
 		}
 	}()
-	started := time.Now()
-	record := func(outcome string) {
-		s.monitor.RecordCall(ctx, ai.CallRecord{
-			Feature: ai.ColorAnalysis, Provider: Provider, Model: Version, Outcome: outcome, Latency: time.Since(started), Attempts: 1,
-		})
-	}
 	rgb, width, height, err := s.pictures.Canvas(ctx, file)
 	if errors.Is(err, imaging.ErrBusy) {
 		return Profile{}, err // nothing was analysed
@@ -200,7 +209,7 @@ func stringsOf(raw string) []string {
 	return out
 }
 
-// refusedPhoto: the analysis ran and refused the picture (it counts).
+// refusedPhoto: the picture was decoded and refused (it counts).
 func refusedPhoto(err error) bool {
 	var quality *PhotoQualityError
 	return errors.As(err, &quality) || errors.Is(err, ErrSkinNotVisible) ||

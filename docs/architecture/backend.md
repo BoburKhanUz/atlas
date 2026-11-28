@@ -574,8 +574,9 @@ by slice (`docs/plan/B6.md`).
   or WebP, at most 8 MB, shortest side at least 256) becomes a canvas in memory
   (`imaging.Processor.Canvas`: upright, within 320 pixels, on grey), is analysed by
   `color.AnalyzeCanvas` (color-analysis-v2: deterministic, no model, no network) and
-  dropped; each analysis counts against the day's (`color_analysis`, 10 a day;
-  given back when it was not made or not stored; over it `429 AI_QUOTA_EXCEEDED`); nothing of the picture is stored or logged. The result
+  dropped; each analysis counts against the day's (`color_analysis`, 10 a day; a file
+  its header refuses is not counted; given back when it was not made or not stored;
+  over it `429 AI_QUOTA_EXCEEDED`); nothing of the picture is stored or logged. The result
   replaces the user's one profile and the user profile points at it, with the skin
   tone, undertone, hair and eye colour, in one transaction. Refusals:
   `PHOTO_QUALITY_TOO_LOW` (with the reason), `SKIN_NOT_VISIBLE`, `INVALID_IMAGE`,

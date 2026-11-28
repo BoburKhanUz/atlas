@@ -248,8 +248,9 @@ func TestASelfieThatCannotBeAnalysedStoresNothing(t *testing.T) {
 }
 
 // The day's analyses are limited (the color_analysis quota, 10 a day): a
-// selfie the analysis refuses counts too (it was decoded and analysed); the
-// one after the limit is refused before any work, and changes nothing.
+// selfie the analysis refuses counts too (it was decoded and analysed), a
+// file its header refuses does not; the one after the limit is refused
+// before any work, and changes nothing.
 func TestTheDaysColourAnalysesAreLimited(t *testing.T) {
 	t.Parallel()
 	g := golden.LoadColor(t)
@@ -267,8 +268,10 @@ func TestTheDaysColourAnalysesAreLimited(t *testing.T) {
 	a.exec(`INSERT INTO "AiUsage" ("id","userId","feature","day","count","updatedAt") VALUES ('c1', $1, 'color_analysis', (atlas_now() + interval '5 hours')::date, 8, now())`, user)
 	a.is(a.do(analyzeCall(t, m, filePart("selfie.png", "image/png", selfiePNG(t, g, "largest")))), http.StatusOK, "")
 	a.is(a.do(analyzeCall(t, m, filePart("s.png", "image/png", flat(t, 300, 300, stdcolor.NRGBA{0, 0, 0, 255})))), http.StatusUnprocessableEntity, "PHOTO_QUALITY_TOO_LOW")
-	// Refused before the analysis: not counted.
+	// Refused before the analysis (no file; a file its header refuses): not counted.
 	a.is(a.do(analyzeCall(t, m, textPart("note", "x"))), http.StatusBadRequest, "BAD_REQUEST")
+	a.is(a.do(analyzeCall(t, m, filePart("s.png", "image/png", selfiePNG(t, g, "warm light")))), http.StatusUnprocessableEntity, "IMAGE_DIMENSIONS")
+	a.is(a.do(analyzeCall(t, m, filePart("s.png", "image/png", []byte("not a picture at all")))), http.StatusUnprocessableEntity, "INVALID_IMAGE")
 	if n := today(); n != limit {
 		t.Fatalf("%d counted", n)
 	}
