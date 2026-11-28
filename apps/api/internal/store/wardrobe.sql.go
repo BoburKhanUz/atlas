@@ -43,6 +43,22 @@ func (q *Queries) DeleteWardrobeItem(ctx context.Context, id string) error {
 	return err
 }
 
+const deleteWardrobeItemsOfUser = `-- name: DeleteWardrobeItemsOfUser :execrows
+DELETE FROM "WardrobeItem" WHERE "userId" = $1
+`
+
+// Every item of the user's (the demo seed's --reset); their images and
+// outfit entries go with them (ON DELETE CASCADE). The caller reads their
+// storage keys first (ImageKeysOfUsers) and removes the files after the
+// commit.
+func (q *Queries) DeleteWardrobeItemsOfUser(ctx context.Context, userid string) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteWardrobeItemsOfUser, userid)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const imageKeysOfUsers = `-- name: ImageKeysOfUsers :many
 SELECT img."storageKey", img."displayKey", img."thumbnailKey"
   FROM "WardrobeItem" item

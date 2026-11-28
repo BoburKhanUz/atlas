@@ -58,6 +58,13 @@ RETURNING *;
 -- Its images and outfit entries go with it (ON DELETE CASCADE).
 DELETE FROM "WardrobeItem" WHERE "id" = $1;
 
+-- name: DeleteWardrobeItemsOfUser :execrows
+-- Every item of the user's (the demo seed's --reset); their images and
+-- outfit entries go with them (ON DELETE CASCADE). The caller reads their
+-- storage keys first (ImageKeysOfUsers) and removes the files after the
+-- commit.
+DELETE FROM "WardrobeItem" WHERE "userId" = $1;
+
 -- name: CountWardrobeItemsOfUser :one
 SELECT count(*) FROM "WardrobeItem" WHERE "userId" = $1;
 

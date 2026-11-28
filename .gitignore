@@ -33,3 +33,8 @@ apps/web/public/uploads/
 
 # Python bytecode (deploy/check-stack.py, scripts)
 __pycache__/
+
+# The demo account's photos and filled-in manifest (deploy/demo/README.md):
+# the photos may show real clothes
+/deploy/demo/photos/
+/deploy/demo/manifest.json

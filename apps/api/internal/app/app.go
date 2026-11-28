@@ -3,13 +3,15 @@
 //   - worker: the background jobs (River);
 //   - health: probes a running server (the container's health check: the
 //     image has no shell or curl);
+//   - migrate: makes or continues the schema, then River's tables (ADR 0007);
 //   - migrate river: creates River's tables in their own schema;
+//   - eval: the AI evaluation's cases through this server's pipeline;
 //   - ai-digest, ai-monitor: operator tools (a user id's rollout digest;
 //     the AI dashboard and alerts from log files). They read no
-//     configuration (ai-monitor reads TZ, for local times).
-//
-// Later stages add `eval`; the Go schema migrations get a command at the
-// cutover (B7, ADR 0007).
+//     configuration (ai-monitor reads TZ, for local times);
+//   - demo-seed: the store reviewers' demo account from a manifest and
+//     photos (deploy/demo/README.md), with the server's configuration and
+//     no AI call.
 package app
 
 import (
@@ -58,7 +60,7 @@ import (
 var version = "dev"
 
 const (
-	usage = "usage: lookly serve | worker | health | migrate | migrate river | eval (see lookly eval --help) | ai-digest <user id>... | ai-monitor --input=<log file>... (see docs/ai/monitoring.md)"
+	usage = "usage: lookly serve | worker | health | migrate | migrate river | eval (see lookly eval --help) | ai-digest <user id>... | ai-monitor --input=<log file>... (see docs/ai/monitoring.md) | demo-seed --manifest <file> [--apply] [--reset]"
 
 	// Exit codes: 1 a runtime failure, 2 a usage or configuration error.
 	exitFailure = 1
@@ -92,6 +94,9 @@ func Run(ctx context.Context, args []string, getenv func(string) (string, bool),
 	}
 	if len(args) > 0 && args[0] == "ai-monitor" {
 		return aiMonitor(args[1:], getenv, stdout, stderr)
+	}
+	if len(args) > 0 && args[0] == "demo-seed" {
+		return demoSeed(ctx, args[1:], getenv, stdout, stderr)
 	}
 	switch strings.Join(args, " ") {
 	case "serve":

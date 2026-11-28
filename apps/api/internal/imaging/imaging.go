@@ -37,6 +37,10 @@ var (
 
 // The limits, the Next.js server's (apps/web/src/lib/storage/provider.ts).
 const (
+	// MaxBytes is the largest picture taken, as it is sent (an upload's
+	// file, a demo seed photo).
+	MaxBytes = 8 << 20
+
 	MinSide   = 256
 	MaxSide   = 8000
 	MaxPixels = 40_000_000

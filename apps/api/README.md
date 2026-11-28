@@ -44,11 +44,13 @@ Database, migrations, queries and jobs: `docs/architecture/backend.md#database`.
 
 ## Operator commands
 
-Two tools for the operator; they read no configuration, no database and no network.
+Two tools for the operator that read no configuration, no database and no network,
+and one that writes the demo account with the server's settings.
 
 ```bash
 go run ./cmd/lookly ai-digest <user id> [<user id> ...]    # each id's AI_ROLLOUT_ALLOWLIST digest, one per line
 go run ./cmd/lookly ai-monitor --input=api.log [--from=ISO] [--to=ISO] [--baseline=last-week.log] [--json]
+DEMO_EMAIL=... DEMO_PASSWORD=... go run -tags nodynamic ./cmd/lookly demo-seed --manifest <file> [--apply] [--reset]
 ```
 
 - `ai-digest`: the environment holds digests, never user ids (`docs/ai/rollout.md`).
@@ -56,6 +58,11 @@ go run ./cmd/lookly ai-monitor --input=api.log [--from=ISO] [--to=ISO] [--baseli
   lines (`ai.call`, `ai.request`, `ai.quota`); exit 2 when an alert fires, 0 when none
   does, 1 when a file cannot be read. The thresholds are still the INITIAL ones
   (`docs/ai/monitoring.md`).
+- `demo-seed`: the store reviewers' demo account from a manifest and its photos, no AI
+  call (`deploy/demo/README.md`, including how to run it in the API container). Dry run
+  without `--apply`; `--reset` replaces an existing demo wardrobe. It needs the server's
+  configuration (database, storage) and refuses an invalid one; the password comes from
+  `DEMO_PASSWORD` and is never printed. Exit 0 ok, 1 a failure, 2 usage or configuration.
 
 ## Check
 

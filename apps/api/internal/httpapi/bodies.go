@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -553,15 +552,10 @@ func maxLength(n int, message string) check {
 	}
 }
 
-// The validator's email rule: its pattern is the contract's (LoginRequest
-// and RegisterRequest), split here because Go's regular expressions have no
-// look-ahead: the address does not start with a dot and has no two dots in
-// a row.
-var emailPattern = regexp.MustCompile(`^[A-Za-z0-9_'+\-.]*[A-Za-z0-9_+\-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$`)
-
+// The validator's email rule: the contract's pattern (platform.ValidEmail).
 func email(message string) check {
 	return func(s string) string {
-		if strings.HasPrefix(s, ".") || strings.Contains(s, "..") || !emailPattern.MatchString(s) {
+		if !platform.ValidEmail(s) {
 			return message
 		}
 		return ""
@@ -589,17 +583,8 @@ func kindOf(raw json.RawMessage) string {
 }
 
 // utf16Length is a string's length as JavaScript counts it (the schemas'
-// limits are in those units): a character outside the basic plane is two.
-func utf16Length(s string) int {
-	n := 0
-	for _, r := range s {
-		n++
-		if r > 0xFFFF {
-			n++
-		}
-	}
-	return n
-}
+// limits are in those units).
+func utf16Length(s string) int { return platform.UTF16Length(s) }
 
 // isJSWhiteSpace is what JavaScript's String.prototype.trim removes.
 func isJSWhiteSpace(r rune) bool { return platform.IsJSWhiteSpace(r) }

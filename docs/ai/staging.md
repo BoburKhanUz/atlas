@@ -76,4 +76,4 @@ STAGING_BASE_URL=… STAGING_SMOKE_PROVIDER=real STAGING_SMOKE_REAL_PROVIDER_OPT
 
 ## Demo account
 
-For a demo on staging, `bun scripts/demo-seed.ts` (`apps/web`) creates one account with a prepared wardrobe from photos and a manifest, without any AI call: [`apps/web/demo/README.md`](../../apps/web/demo/README.md). `DEMO_EMAIL` and `DEMO_PASSWORD` come from the environment and are never printed; the photos and the real manifest are git-ignored. Run it with the server's `DATABASE_URL` and storage settings, dry run first, then `--apply` (`--reset` replaces an earlier demo wardrobe).
+For a demo on staging, `lookly demo-seed` creates one account with a prepared wardrobe from photos and a manifest, without any AI call: [`deploy/demo/README.md`](../../deploy/demo/README.md) (it runs in the API container, with the server's settings). `DEMO_EMAIL` and `DEMO_PASSWORD` come from the environment and are never printed; the photos and the real manifest are git-ignored. Dry run first, then `--apply` (`--reset` replaces an earlier demo wardrobe).

@@ -24,7 +24,7 @@ import (
 // picture in it.
 const (
 	UploadBodyLimit = 10 << 20
-	MaxImageBytes   = 8 << 20
+	MaxImageBytes   = imaging.MaxBytes
 	// UploadTimeout is the upload's time: receiving the picture (a phone
 	// on a slow connection), waiting for a processing slot, processing.
 	UploadTimeout = 90 * time.Second
