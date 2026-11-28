@@ -44,6 +44,10 @@ LOOKLY_TEST_DATABASE_URL=... go test -race -tags integration,nodynamic ./...   #
 ```
 
 - Table-driven tests; `t.Parallel()` where the test owns its data.
+- When a change touches files outside `apps/api` (web, mobile, docs), run the Go tests
+  with `-count=1`: Go's test cache does not notice a changed or deleted file outside the
+  module, so a cached "ok" can hide a test that now fails (B7.6). Likewise run the
+  Flutter tests whenever a change touches what they read (`docs/api`, `apps/api`).
 - SQL, transactions and locks are tested against a real PostgreSQL 16 (a throwaway
   database per test package). Never mock the database.
 - Handlers are tested over `httptest` with the real router, middleware and error

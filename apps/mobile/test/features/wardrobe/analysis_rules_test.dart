@@ -102,18 +102,15 @@ void main() {
   });
 
   group('catalogue (decision D: the backend\'s own grouping)', () {
-    test('category → subcategory grouping equals apps/web/src/lib/ai/catalog.ts SUBCATEGORIES exactly', () {
-      final source = File('../web/src/lib/ai/catalog.ts').readAsStringSync();
-      final block = source.substring(source.indexOf('export const SUBCATEGORIES'), source.indexOf('// ─── Colors'));
-      final parsed = <String, List<String>>{};
-      String? current;
-      for (final line in const LineSplitter().convert(block)) {
-        final cat = RegExp(r'^\s{2}(\w+): \[').firstMatch(line);
-        if (cat != null) current = parsed[cat[1]!] == null ? cat[1] : current;
-        if (cat != null) parsed[cat[1]!] = [];
-        final id = RegExp(r"\{ id: '(\w+)'").firstMatch(line);
-        if (id != null && current != null) parsed[current]!.add(id[1]!);
-      }
+    test('category → subcategory grouping equals the Go server\'s catalogue exactly (apps/api/internal/catalog/catalog.json)', () {
+      final catalog =
+          jsonDecode(File('../api/internal/catalog/catalog.json').readAsStringSync()) as Map<String, dynamic>;
+      final parsed = <String, List<String>>{
+        for (final group in (catalog['subcategories'] as List).cast<Map<String, dynamic>>())
+          group['category'] as String: [
+            for (final entry in (group['entries'] as List).cast<Map<String, dynamic>>()) entry['id'] as String,
+          ],
+      };
       expect(parsed, WardrobeCatalog.subcategories);
     });
 

@@ -1,12 +1,10 @@
 package apierr_test
 
 import (
-	"bufio"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
-	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -17,9 +15,9 @@ import (
 
 const contractPath = "../../../../docs/api/openapi.json"
 
-// The Next.js server's message table. Parity holds until the cutover (B7),
-// when that file is deleted together with this test.
-const nodeErrorsPath = "../../../web/src/server/http.ts"
+// The Uzbek messages the Next.js server sent, frozen when it was removed
+// (B7.6): the clients have shown them since, so they change only on purpose.
+const recordedMessagesPath = "../../testdata/golden/error-messages.json"
 
 type contract struct {
 	Paths      map[string]map[string]json.RawMessage `json:"paths"`
@@ -107,41 +105,30 @@ func TestEachCodeHasTheStatusTheContractDocuments(t *testing.T) {
 	}
 }
 
-// The Uzbek messages are the ones the Next.js server sends today.
-func TestMessagesMatchTheNodeServer(t *testing.T) {
+// The Uzbek messages are the ones the Next.js server sent (recorded from its
+// table at e57764f), one for every code.
+func TestMessagesMatchTheRecordedOnes(t *testing.T) {
 	t.Parallel()
-	f, err := os.Open(nodeErrorsPath)
+	raw, err := os.ReadFile(recordedMessagesPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
-	line := regexp.MustCompile(`^\s+([A-Z_]+): '(.*)',$`)
-	node := map[string]string{}
-	in := false
-	s := bufio.NewScanner(f)
-	for s.Scan() {
-		text := s.Text()
-		switch {
-		case strings.HasPrefix(text, "const DEFAULT_MESSAGES"):
-			in = true
-		case in && text == "}":
-			in = false
-		case in:
-			if m := line.FindStringSubmatch(text); m != nil {
-				node[m[1]] = m[2]
-			} else {
-				t.Fatalf("unparsed line in DEFAULT_MESSAGES: %q", text)
-			}
-		}
+	var recorded struct {
+		Messages map[string]string `json:"messages"`
 	}
-	if err := s.Err(); err != nil {
+	if err := json.Unmarshal(raw, &recorded); err != nil {
 		t.Fatal(err)
 	}
-	if len(node) != len(apierr.Codes()) {
-		t.Fatalf("node has %d messages, Go has %d codes", len(node), len(apierr.Codes()))
+	if len(recorded.Messages) != len(apierr.Codes()) {
+		t.Fatalf("the record has %d messages, Go has %d codes", len(recorded.Messages), len(apierr.Codes()))
 	}
 	for _, code := range apierr.Codes() {
-		if got, want := code.Message(), node[string(code)]; got != want {
+		want, ok := recorded.Messages[string(code)]
+		if !ok {
+			t.Errorf("%s: no recorded message", code)
+			continue
+		}
+		if got := code.Message(); got != want {
 			t.Errorf("%s:\n got %q\nwant %q", code, got, want)
 		}
 	}
