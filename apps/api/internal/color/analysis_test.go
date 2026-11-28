@@ -10,8 +10,10 @@ import (
 	"fmt"
 	"image/png"
 	"math"
+	"slices"
 	"testing"
 
+	"lookly/internal/catalog"
 	"lookly/internal/color"
 	"lookly/internal/golden"
 	"lookly/internal/platform"
@@ -299,5 +301,20 @@ func TestTheStepsOfTheAnalysisAreTheNextJSSteps(t *testing.T) {
 	}
 	if len(color.Palettes) != len(g.Palettes) {
 		t.Errorf("palettes %v", color.Palettes)
+	}
+}
+
+// The palettes name catalog colours only: what the Next.js code ensured by
+// filtering each list by the catalog.
+func TestThePalettesAreCatalogColours(t *testing.T) {
+	t.Parallel()
+	for season, p := range color.Palettes {
+		for _, list := range [][]string{p.Recommended, p.Neutral, p.Caution} {
+			for _, id := range list {
+				if !slices.Contains(catalog.Colors, id) {
+					t.Errorf("%s: %q is not a catalog colour", season, id)
+				}
+			}
+		}
 	}
 }

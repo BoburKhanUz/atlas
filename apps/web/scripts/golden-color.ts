@@ -153,6 +153,29 @@ add('one eye hidden', WARM_LIGHT, [{ op: 'rect', x: 130, y: 142, w: 30, h: 18, r
 add('one eye hidden, a spot near the middle', WARM_LIGHT, [{ op: 'rect', x: 130, y: 142, w: 30, h: 18, rgb: [0xf1, 0xc9, 0xa5] }, { op: 'rect', x: 124, y: 146, w: 8, h: 8, rgb: [0x3a, 0x26, 0x18] }])
 add('one eye smaller', WARM_LIGHT, [{ op: 'rect', x: 130, y: 142, w: 30, h: 6, rgb: [0xf1, 0xc9, 0xa5] }, { op: 'rect', x: 130, y: 154, w: 30, h: 6, rgb: [0xf1, 0xc9, 0xa5] }])
 add('eyes off centre', COOL_LIGHT, [{ op: 'rect', x: 130, y: 142, w: 30, h: 18, rgb: [0xf0, 0xcf, 0xc8] }, { op: 'rect', x: 158, y: 146, w: 10, h: 8, rgb: [0x4f, 0x7a, 0xa8] }])
+// Eyes on a face where they are found (the deep one): hidden, smaller,
+// off centre, at different heights.
+type RGB = [number, number, number]
+const DEEP_SKIN: RGB = [0x8d, 0x5a, 0x34]
+add('deep: one eye hidden', WARM_DEEP, [{ op: 'rect', x: 130, y: 142, w: 30, h: 18, rgb: DEEP_SKIN }])
+add('deep: one eye smaller', WARM_DEEP, [{ op: 'rect', x: 130, y: 142, w: 30, h: 7, rgb: DEEP_SKIN }, { op: 'rect', x: 130, y: 153, w: 30, h: 7, rgb: DEEP_SKIN }])
+add('deep: one eye a little smaller', WARM_DEEP, [{ op: 'rect', x: 130, y: 142, w: 30, h: 5, rgb: DEEP_SKIN }])
+add('deep: one eye off centre', WARM_DEEP, [{ op: 'rect', x: 130, y: 142, w: 30, h: 18, rgb: DEEP_SKIN }, { op: 'rect', x: 152, y: 147, w: 9, h: 7, rgb: [0x2e, 0x1d, 0x10] }])
+add('deep: one eye a little off centre', WARM_DEEP, [{ op: 'rect', x: 130, y: 142, w: 30, h: 18, rgb: DEEP_SKIN }, { op: 'rect', x: 146, y: 147, w: 9, h: 7, rgb: [0x2e, 0x1d, 0x10] }])
+for (const offset of [0.03, 0.05, 0.07, 0.09]) add(`deep: eyes at heights apart ${offset}`, { ...WARM_DEEP, eyeOffset: offset })
+for (const offset of [0.04, 0.06]) add(`cool deep: eyes at heights apart ${offset}`, { ...COOL_DEEP, eyeOffset: offset })
+// Hair close to the skin; hair so noisy its lightness spreads.
+for (const hair of ['#e2b994', '#dcb08c', '#e8c09c', '#d4a884']) add(`hair close to the skin ${hair}`, { ...WARM_LIGHT, hair })
+for (const [noise, seed] of [[60, 5], [80, 6], [100, 8]]) add(`very noisy, ${noise}`, WARM_DEEP, [], noise, seed)
+for (const [noise, seed] of [[60, 9], [90, 10]]) add(`very noisy light, ${noise}`, COOL_LIGHT, [], noise, seed)
+// Skin in exactly two cells, under the central share; cells darker or
+// lighter than the ones nearest the centre.
+add('skin in two cells only', { width: 320, height: 320, skin: '#3a6ea5', hair: null, eyes: null }, [{ op: 'rect', x: 104, y: 100, w: 112, h: 30, rgb: [0xf1, 0xc9, 0xa5] }])
+add('skin in two cells, a little more', { width: 320, height: 320, skin: '#3a6ea5', hair: null, eyes: null }, [{ op: 'rect', x: 104, y: 100, w: 112, h: 36, rgb: [0xf1, 0xc9, 0xa5] }])
+for (const [rgb, name] of [[[0xe0, 0xb4, 0x94], 'a little darker'], [[0xd4, 0xa6, 0x84], 'darker'], [[0xc8, 0x98, 0x76], 'much darker']] as Array<[RGB, string]>) {
+  add(`one cell ${name}`, WARM_LIGHT, [{ op: 'rect', x: 78, y: 96, w: 42, h: 64, rgb }])
+  add(`the upper cells ${name}`, WARM_LIGHT, [{ op: 'rect', x: 78, y: 96, w: 84, h: 64, rgb }])
+}
 add('a shadow over half the face', WARM_LIGHT, [{ op: 'scale', num: 100, den: 100 }, { op: 'rect', x: 120, y: 110, w: 90, h: 120, rgb: [0xb8, 0x8a, 0x68] }])
 add('a highlight over a quarter of the face', WARM_DEEP, [{ op: 'rect', x: 70, y: 120, w: 50, h: 60, rgb: [0xc8, 0x90, 0x68] }])
 

@@ -25,7 +25,6 @@ import (
 	"math"
 	"slices"
 
-	"lookly/internal/catalog"
 	"lookly/internal/platform"
 )
 
@@ -576,7 +575,10 @@ func MeasureHair(c Canvas, skin SkinRegion) Feature {
 		}
 	}
 	coverage := float64(len(band)) / float64(max(1, total))
-	if len(band) < 40 || coverage < 0.3 {
+	// (The Next.js code also refuses a coverage under 0.3 here; the
+	// confidence below is never above the coverage, so hairMin, 0.3,
+	// refuses it all the same.)
+	if len(band) < 40 {
 		return Feature{}
 	}
 	sorted := slices.Clone(band)
@@ -897,16 +899,6 @@ var Palettes = map[string]Palette{
 	},
 }
 
-func inCatalog(ids []string) []string {
-	out := []string{}
-	for _, id := range ids {
-		if slices.Contains(catalog.Colors, id) {
-			out = append(out, id)
-		}
-	}
-	return out
-}
-
 // ─── The analysis ───────────────────────────────────────────────────────────
 
 // Analysis is what is stored for audit and calibration: no colour values,
@@ -986,9 +978,11 @@ func AnalyzeCanvas(c Canvas) (Result, error) {
 	if contrast != nil {
 		r.ContrastLevel = &contrast.Level
 	}
+	// Every palette colour is a catalog colour (the Next.js code filtered
+	// them by the catalog; a test holds them to it instead).
 	if decision.Season != nil {
 		p := Palettes[*decision.Season]
-		r.RecommendedColors, r.NeutralColors, r.CautionColors = inCatalog(p.Recommended), inCatalog(p.Neutral), inCatalog(p.Caution)
+		r.RecommendedColors, r.NeutralColors, r.CautionColors = slices.Clone(p.Recommended), slices.Clone(p.Neutral), slices.Clone(p.Caution)
 	}
 	return r, nil
 }
