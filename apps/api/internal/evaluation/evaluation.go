@@ -26,6 +26,7 @@ package evaluation
 import (
 	"bufio"
 	"bytes"
+	"cmp"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -125,6 +126,8 @@ type Runner struct {
 	// TextTimeout is one attempt's time limit for the stylist (the
 	// harness's AI_LLM_TIMEOUT_MS).
 	TextTimeout time.Duration
+	// OutfitTimeout is the outfit ranking's (0: OUTFIT_AI_TIMEOUT_MS).
+	OutfitTimeout time.Duration
 	// VisionDefaults apply where a vision case says nothing.
 	VisionDefaults VisionSettings
 	// Gate, when set, is the clients' AttemptGate: it speaks on this run's
@@ -505,7 +508,7 @@ func (r *Runner) outfit(ctx context.Context, c OutfitCase, dryRun bool) Result {
 	}
 	temperature, tokens := outfitTemperature, outfitMaxTokens
 	calls := textCalls{r: r, feature: ai.OutfitExplanation, request: ai.TextRequest{
-		Temperature: &temperature, MaxOutputTokens: &tokens, Timeout: outfitTimeout,
+		Temperature: &temperature, MaxOutputTokens: &tokens, Timeout: cmp.Or(r.OutfitTimeout, outfitTimeout),
 		JSONSchema: &ai.Schema{Name: "outfit_ranking", Schema: engine.RankingSchema(len(candidates))},
 	}}
 	provider, model := r.Text.TextProviderOf(ai.OutfitExplanation)

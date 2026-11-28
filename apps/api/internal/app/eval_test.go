@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"lookly/internal/app"
 	"lookly/internal/color"
@@ -554,5 +555,30 @@ func TestEvalGateShowsThePictureSize(t *testing.T) {
 		v["maxOutputTokens"] == nil || v["options"].(map[string]any)["openaiDetail"] != "low" || v["instruction"] == "" ||
 		v["schema"].(map[string]any)["name"] != "garment_analysis" {
 		t.Errorf("ask %v", v)
+	}
+}
+
+// An explicit --timeout limits the outfit ranking's attempts as well as the stylist's.
+func TestEvalTimeoutLimitsTheOutfitAttempts(t *testing.T) {
+	t.Parallel()
+	done := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case <-r.Context().Done():
+		case <-done:
+		}
+	}))
+	t.Cleanup(server.Close)
+	t.Cleanup(func() { close(done) }) // first: the never-answered requests end
+	started := time.Now()
+	code, lines, stderr := runEval(t, nil, outfitCase+"\n", "--provider=openai", "--model=m", "--base-url="+server.URL, "--timeout=200ms")
+	if code != 0 || len(lines) != 1 {
+		t.Fatalf("exit %d, %v, %s", code, lines, stderr)
+	}
+	if o := lines[0]["outcome"].(map[string]any); o["kind"] != "error" || o["error"] != "timeout" || lines[0]["calls"] != float64(2) {
+		t.Errorf("result %v", lines[0])
+	}
+	if elapsed := time.Since(started); elapsed > 4*time.Second {
+		t.Errorf("took %v: the outfit's attempts were not limited to 200ms", elapsed)
 	}
 }

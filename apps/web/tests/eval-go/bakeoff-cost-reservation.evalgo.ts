@@ -9,7 +9,7 @@
  */
 import sharp from 'sharp'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { bakeoffMarkdown, buildBakeoff } from '../../../scripts/ai-eval/bakeoff'
+import { bakeoffMarkdown, buildBakeoff } from '../../scripts/ai-eval/bakeoff'
 import {
   costOf,
   estimateTextAttempt,
@@ -20,15 +20,17 @@ import {
   PER_REQUEST_OVERHEAD_TOKENS,
   SCHEMA_BYTES_MULTIPLIER,
   textInputHeuristic,
-} from '../../../scripts/ai-eval/cost-bounds'
-import { CallBudget, CallLedger, configuredPrice, costAccounting, COST_UNAVAILABLE, countedLLM, retryingVision } from '../../../scripts/ai-eval/live-accounting'
-import { runValidation } from '../../../scripts/ai-eval/real-data/validate'
-import { runStylistCase, ScriptedStylist } from '../../../scripts/ai-eval/stylist-eval'
-import { stylistCases } from '../../../scripts/ai-eval/stylist-cases'
+} from '../../scripts/ai-eval/cost-bounds'
+import { CallBudget, CallLedger, configuredPrice, costAccounting, COST_UNAVAILABLE, countedLLM, retryingVision } from '../../scripts/ai-eval/live-accounting'
+import { runValidation } from '../../scripts/ai-eval/real-data/validate'
+import { runStylistCase, ScriptedStylist } from '../../scripts/ai-eval/stylist-eval'
+import { stylistCases } from '../../scripts/ai-eval/stylist-cases'
 import { AiProviderError } from '@/lib/ai/providers/errors'
 import { OpenAIProvider } from '@/lib/ai/providers/openai'
 import type { FetchLike } from '@/lib/ai/providers/http'
 import type { LLMProvider, LLMRequest, VisionRequest } from '@/lib/ai/providers/types'
+
+if (!process.env.LOOKLY_BINARY) throw new Error('LOOKLY_BINARY is not set: build apps/api (go build -tags nodynamic -o <path> ./cmd/lookly) and point it there')
 
 const FAKE = 'fake-key-not-real-cost-01'
 const MODEL = 'gpt-5.4-mini'
@@ -263,7 +265,7 @@ describe('fail closed with a dollar budget', () => {
 
   it('Gemini vision has no documented image bound: refused by the bake-off before any provider is built', async () => {
     const env = { GEMINI_API_KEY: FAKE, AI_EVAL_GEMINI_VISION_MODEL: 'g-vision', AI_VISION_PROVIDER: 'gemini', AI_VISION_MODEL: 'g-vision', AI_VISION_PRICE_INPUT_USD_PER_MTOK: '1', AI_VISION_PRICE_OUTPUT_USD_PER_MTOK: '1' }
-    const { assertCostBudgetable } = await import('../../../scripts/ai-eval/bakeoff')
+    const { assertCostBudgetable } = await import('../../scripts/ai-eval/bakeoff')
     expect(() => assertCostBudgetable({ runs: 1, sections: [{ provider: 'gemini', feature: 'vision', cases: 1, upperBoundCalls: 2 }], upperBoundCalls: 2, maxCalls: 2, maxCostUsd: 1 }, env)).toThrow(/gemini\/vision: no documented image-token bound/)
   })
 
@@ -285,7 +287,7 @@ describe('audit regressions', () => {
   it('a model id that is an inherited object key never gets an image bound (no NaN reservation)', async () => {
     for (const model of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) expect(openaiImageTokens(model, 'high', 64, 64)).toBeNull()
     const env = { OPENAI_API_KEY: FAKE, AI_VISION_PROVIDER: 'openai', AI_VISION_MODEL: 'constructor', AI_EVAL_OPENAI_VISION_MODEL: 'constructor', AI_VISION_PRICE_INPUT_USD_PER_MTOK: '1', AI_VISION_PRICE_OUTPUT_USD_PER_MTOK: '1' }
-    const { assertCostBudgetable } = await import('../../../scripts/ai-eval/bakeoff')
+    const { assertCostBudgetable } = await import('../../scripts/ai-eval/bakeoff')
     expect(() => assertCostBudgetable({ runs: 1, sections: [{ provider: 'openai', feature: 'vision', cases: 1, upperBoundCalls: 2 }], upperBoundCalls: 2, maxCalls: 2, maxCostUsd: 1 }, env)).toThrow(/no documented image-token bound/)
   })
 

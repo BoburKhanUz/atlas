@@ -32,6 +32,7 @@ const evalUsage = `usage: lookly eval --provider=openai|gemini|mock [--model=NAM
   JSON result per line: the AI evaluation harness's runners on this server's pipeline (apps/web/scripts/ai-eval).
   A real provider needs --max-calls (its key comes from OPENAI_API_KEY or GEMINI_API_KEY);
   --base-url sends every request to a stand-in on this machine instead, and no key is read.
+  --timeout is each text attempt's time limit (stylist and outfit); without it, 25s and 15s as the harness's runners.
   --gate asks the harness before every provider attempt ({"ask": ...} out, {"admit": true|false} in) and tells it
   how each one ended ({"attempted": ...}); the harness then sends a case only after the previous result.`
 
@@ -106,6 +107,12 @@ func RunEval(ctx context.Context, args []string, getenv func(string) (string, bo
 		Text: client, Images: client, Pictures: imaging.NewProcessor(1), Counter: counter, MaxCalls: *maxCalls, TextTimeout: *timeout,
 		VisionDefaults: evaluation.VisionSettings{MaxSide: evalVisionMaxSide, Timeout: evalVisionTimeout},
 	}
+	// An explicit --timeout limits the outfit ranking's attempts too.
+	fs.Visit(func(f *flag.Flag) {
+		if f.Name == "timeout" {
+			runner.OutfitTimeout = *timeout
+		}
+	})
 	if *gated {
 		runner.Gate = &evaluation.LineGate{}
 		gatedClient := client.WithGate(runner.Gate)

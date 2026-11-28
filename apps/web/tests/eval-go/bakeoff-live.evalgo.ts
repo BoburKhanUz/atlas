@@ -9,16 +9,18 @@ import { promises as fs } from 'fs'
 import os from 'os'
 import path from 'path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { ALL_SECTIONS, bakeoffMarkdown, buildBakeoff, defaultRuns, NO_SELECTION, NOT_SELECTED, parseSections, planOnly, PROVIDER_DECISION } from '../../../scripts/ai-eval/bakeoff'
-import { CallLedger, CIRCUIT_MAX_CONSECUTIVE, CIRCUIT_MAX_FATAL, configuredPrice, latencyPercentile, MAX_CALLS_PER_CASE, parseMaxCalls, planCalls, retryingVision, visionDatasetIdentity } from '../../../scripts/ai-eval/live-accounting'
-import { outfitCases } from '../../../scripts/ai-eval/outfit-cases'
-import { ScriptedOutfit } from '../../../scripts/ai-eval/outfit-eval'
-import { stylistCases } from '../../../scripts/ai-eval/stylist-cases'
-import { ScriptedStylist } from '../../../scripts/ai-eval/stylist-eval'
-import { renderSynthetic, syntheticVisionItems } from '../../../scripts/ai-eval/synthetic-vision'
+import { ALL_SECTIONS, bakeoffMarkdown, buildBakeoff, defaultRuns, NO_SELECTION, NOT_SELECTED, parseSections, planOnly, PROVIDER_DECISION } from '../../scripts/ai-eval/bakeoff'
+import { CallLedger, CIRCUIT_MAX_CONSECUTIVE, CIRCUIT_MAX_FATAL, configuredPrice, latencyPercentile, MAX_CALLS_PER_CASE, parseMaxCalls, planCalls, retryingVision, visionDatasetIdentity } from '../../scripts/ai-eval/live-accounting'
+import { outfitCases } from '../../scripts/ai-eval/outfit-cases'
+import { ScriptedOutfit } from '../../scripts/ai-eval/outfit-eval'
+import { stylistCases } from '../../scripts/ai-eval/stylist-cases'
+import { ScriptedStylist } from '../../scripts/ai-eval/stylist-eval'
+import { renderSynthetic, syntheticVisionItems } from '../../scripts/ai-eval/synthetic-vision'
 import { CONFIDENCE_KEYS } from '@/lib/ai/garment-analysis'
 import { AiProviderError } from '@/lib/ai/providers/errors'
 import type { LLMProvider, LLMRequest, VisionProvider } from '@/lib/ai/providers/types'
+
+if (!process.env.LOOKLY_BINARY) throw new Error('LOOKLY_BINARY is not set: build apps/api (go build -tags nodynamic -o <path> ./cmd/lookly) and point it there')
 
 const FAKE = 'fake-key-not-real-7f3a9c'
 const noSleep = async () => {}
@@ -106,7 +108,7 @@ describe('NOT_TESTED gating (no credentials needed)', () => {
 describe('live classification and accounting (scripted)', () => {
   it('a healthy provider: TESTED, one attempt per request, no retries, tokens counted, cost only with a configured price', async () => {
     const env = textEnv({ AI_LLM_PROVIDER: 'gemini', AI_LLM_MODEL: 'g-text', AI_LLM_PRICE_INPUT_USD_PER_MTOK: '1', AI_LLM_PRICE_OUTPUT_USD_PER_MTOK: '2' })
-    const r = await buildBakeoff(env, { providers: { llm: () => scriptedLlm() }, sleep: noSleep })
+    const r = await buildBakeoff(env, { providers: { llm: () => scriptedLlm() }})
     const g = r.live[0]
     expect(g.status).toBe('PARTIALLY_TESTED') // no vision model / dataset
     const st = g.accounting.find((a) => a.feature === 'stylist')!
@@ -180,7 +182,7 @@ describe('live classification and accounting (scripted)', () => {
 
   it('a vision section that keeps timing out: each case is a timeout, retried once, then the circuit stops calling', async () => {
     const v = visionAlways(new AiProviderError('timeout', 'v'))
-    const r = await buildBakeoff({ GEMINI_API_KEY: FAKE, AI_EVAL_GEMINI_VISION_MODEL: 'gv' }, { visionDataset: dir, providers: { vision: () => v }, sleep: noSleep })
+    const r = await buildBakeoff({ GEMINI_API_KEY: FAKE, AI_EVAL_GEMINI_VISION_MODEL: 'gv' }, { visionDataset: dir, providers: { vision: () => v }})
     const a = r.live[0].accounting.find((x) => x.feature === 'vision')!
     expect(a).toMatchObject({ cases: 2, requests: 2, attempts: 4, retries: 2, timeouts: 4, caseErrors: { timeout: 2 } })
     expect(a.circuitOpen).toBeNull() // 4 failed attempts: below the consecutive limit
@@ -280,7 +282,7 @@ describe('no provider selection, no secret leakage', () => {
   it('both providers fully TESTED: still NO FINAL PROVIDER SELECTED; no key in the report or the markdown', async () => {
     const env = textEnv({ AI_EVAL_GEMINI_VISION_MODEL: 'gv', AI_EVAL_OPENAI_VISION_MODEL: 'ov' })
     const before = JSON.stringify(env)
-    const r = await buildBakeoff(env, { visionDataset: dir, providers: { llm: () => scriptedLlm(), vision: () => visionAlways() }, sleep: noSleep })
+    const r = await buildBakeoff(env, { visionDataset: dir, providers: { llm: () => scriptedLlm(), vision: () => visionAlways() }})
     expect(r.live.map((l) => l.status)).toEqual(['TESTED', 'TESTED'])
     expect(r.providerDecision).toBe(PROVIDER_DECISION)
     expect(r.recommendation.startsWith(PROVIDER_DECISION)).toBe(true)
@@ -337,7 +339,7 @@ describe('--section selector', () => {
   it('stylist only: zero outfit and zero vision calls; unselected sections are NOT_TESTED (not selected)', async () => {
     const { p, calls } = counting()
     const vision = visionAlways()
-    const rawOutputs: import('../../../scripts/ai-eval/bakeoff').RawOutput[] = []
+    const rawOutputs: import('../../scripts/ai-eval/bakeoff').RawOutput[] = []
     const r = await buildBakeoff({ ...geminiText, AI_EVAL_GEMINI_VISION_MODEL: 'gv' }, { visionDataset: dir, runs: 1, sections: ['stylist'], maxCalls: 68, rawOutputs, providers: { llm: () => p, vision: () => vision } })
     expect(calls).toEqual({ stylist: 17, outfit: 0 })
     expect(vision.calls).toBe(0) // --vision-dataset does not activate vision when it is not selected

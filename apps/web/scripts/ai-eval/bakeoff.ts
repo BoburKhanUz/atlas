@@ -40,19 +40,20 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import { GeminiProvider } from '../../src/lib/ai/providers/gemini'
 import { OpenAIProvider } from '../../src/lib/ai/providers/openai'
-import { arg, assertOutsideRepo, llmProviderFromEnv, type EvalProviderName, type EvalStatus } from './eval-common'
+import { arg, assertOutsideRepo, type EvalProviderName, type EvalStatus } from './eval-common'
+import { openSectionPipeline, STAND_IN_TIMEOUT_MS, withScriptedGo, type GoPipeline } from './go-pipeline'
 import { outfitCases } from './outfit-cases'
-import { runOutfitCase, ScriptedOutfit } from './outfit-eval'
+import { runOutfitCaseGo, ScriptedOutfit } from './outfit-eval'
 import { summarizeOutfit, type OutfitRecord, type OutfitSummary } from './outfit-scoring'
 import { runRobustness, type RobustnessResult } from './robustness'
 import { STYLIST_CASES_VERSION, stylistCases } from './stylist-cases'
-import { runStylistCase, ScriptedStylist, syntheticRubricContext } from './stylist-eval'
+import { runStylistCaseGo, ScriptedStylist, syntheticRubricContext } from './stylist-eval'
 import { precheckRubricSet } from './case-rubric'
 import { summarizeStylist, type StylistRecord, type StylistSummary } from './stylist-scoring'
 import { syntheticVisionItems } from './synthetic-vision'
 import { isBudgetablePrice, isOpenAIPatchModel } from './cost-bounds'
 import { applyVisionRubric } from './eval-rubric'
-import { accountSection, assertCapForLive, DatasetIntegrityError, sha256Hex, assertWithinCap, CallBudget, CallLedger, caseResult, caseSetIdentity, configuredPrice, COST_UNAVAILABLE, costAccounting, type BudgetStopReason, type CostAccounting, countedLLM, latencyStats, parseMaxCalls, parseMaxCost, planCalls, priceSource, retryingVision, visionDatasetIdentity, type CallPlan, type CaseResult, type DatasetIdentity, type LatencyStats, type LiveFeature, type SectionAccounting } from './live-accounting'
+import { accountSection, assertCapForLive, DatasetIntegrityError, sha256Hex, assertWithinCap, CallBudget, CallLedger, caseResult, caseSetIdentity, configuredPrice, COST_UNAVAILABLE, costAccounting, type BudgetStopReason, type CostAccounting, latencyStats, ledgerGate, MAX_CALLS_PER_CASE, parseMaxCalls, parseMaxCost, planCalls, priceSource, visionDatasetIdentity, type CallPlan, type CaseResult, type DatasetIdentity, type LatencyStats, type LiveFeature, type SectionAccounting } from './live-accounting'
 import { evaluateVisionConfig } from './vision-eval'
 import { Dataset, validateExpected, type ConfigSummary, type EvalConfig, type ItemRecord } from './vision-scoring'
 import type { VisionItt } from './vision-itt'
@@ -175,8 +176,6 @@ export interface BakeoffOptions {
   maxCostUsd?: number | null
   /** Clock for the run timestamps; without it the report has none (deterministic). */
   now?: () => Date
-  /** Retry wait (tests pass a no-op). */
-  sleep?: (ms: number) => Promise<void>
   /** Provider factories (tests inject scripted providers; the default builds the real ones). */
   providers?: {
     llm?: (provider: EvalProviderName, model: string, env: Env) => LLMProvider
@@ -458,8 +457,9 @@ async function readLabels(dir: string) {
 }
 
 async function liveRun(env: Env, vision: VisionData | null, opts: BakeoffOptions, budget: CallBudget, guard: IntegrityGuard, run: number): Promise<LiveProvider[]> {
-  const llm = opts.providers?.llm ?? ((provider, model, e) => llmProviderFromEnv(provider, model, e))
-  const visionFactory = opts.providers?.vision ?? realVision
+  // Every section runs on the Go server's pipeline: an injected provider (tests) through the stand-in, a real one
+  // through Go's own adapter. The ledger decides every attempt Go makes (the gate); Go's own cap is a backstop.
+  const backstop = budget.maxCalls === null ? null : budget.maxCalls + MAX_CALLS_PER_CASE.stylist
   const live: LiveProvider[] = []
   const sections = sectionsOf(opts)
   const textSelected = sections.includes('stylist') || sections.includes('outfit')
@@ -476,12 +476,13 @@ async function liveRun(env: Env, vision: VisionData | null, opts: BakeoffOptions
     else {
       const price = configuredPrice(provider, visionModel, 'vision', env)
       const ledger = new CallLedger(budget, price)
-      const p = retryingVision(visionFactory(provider, visionModel!, env), ledger, opts.sleep)
+      const injected = opts.providers?.vision?.(provider, visionModel!, env) ?? null
+      const section = await openSectionPipeline({ provider, model: visionModel!, env, maxCalls: backstop, gate: ledgerGate(ledger, { provider, model: visionModel! }), vision: injected })
       const results = new Map<string, CaseResult>()
       try {
         const { records, summary } = await evaluateVisionConfig(
-          p,
-          bakeoffVisionConfig(provider, visionModel!),
+          section.go,
+          injected ? { ...bakeoffVisionConfig(provider, visionModel!), timeoutMs: STAND_IN_TIMEOUT_MS } : bakeoffVisionConfig(provider, visionModel!),
           vision!.dir,
           vision!.items,
           (r) => {
@@ -504,6 +505,8 @@ async function liveRun(env: Env, vision: VisionData | null, opts: BakeoffOptions
         if (!(err instanceof DatasetIntegrityError)) throw err
         // Stopped mid-section: no quality numbers from a changed dataset; what was spent stays visible.
         visionResult = notTested(provider, visionModel, 'vision', DATASET_INTEGRITY_FAILURE)
+      } finally {
+        await section.close()
       }
       accounting.push(accountSection('vision', ledger, [...results.values()], price, price ? priceSource('vision') : null))
     }
@@ -514,17 +517,22 @@ async function liveRun(env: Env, vision: VisionData | null, opts: BakeoffOptions
       stylist = notTested(provider, model, 'stylist', sections.includes('stylist') ? textReason! : NOT_SELECTED)
       outfit = notTested(provider, model, 'outfit', sections.includes('outfit') ? textReason! : NOT_SELECTED)
     } else {
-      const base = llm(provider, model!, env)
+      const injected = opts.providers?.llm?.(provider, model!, env) ?? null
+      const who = { name: injected?.name ?? provider, model: injected?.model ?? model! }
       const price = configuredPrice(provider, model, 'llm', env)
-      const text = async <R extends StylistRecord | OutfitRecord>(feature: 'stylist' | 'outfit', cases: Array<{ id: string }>, runCase: (p: LLMProvider, c: never) => Promise<R>) => {
+      const text = async <R extends StylistRecord | OutfitRecord>(feature: 'stylist' | 'outfit', cases: Array<{ id: string }>, runCase: (go: GoPipeline, p: { name: string; model: string }, c: never) => Promise<R>) => {
         const ledger = new CallLedger(budget, price)
-        const p = countedLLM(base, ledger)
+        const section = await openSectionPipeline({ provider, model: model!, env, maxCalls: backstop, gate: ledgerGate(ledger, { provider, model: model! }), text: injected })
         const records: R[] = []
         const results: CaseResult[] = []
-        for (const c of cases) {
-          const r = await runCase(p, c as never)
-          records.push(r)
-          results.push(caseResult(r.latencyMs, r.requests, r.outcome, ledger.endCase()))
+        try {
+          for (const c of cases) {
+            const r = await runCase(section.go, who, c as never)
+            records.push(r)
+            results.push(caseResult(r.latencyMs, r.requests, r.outcome, ledger.endCase()))
+          }
+        } finally {
+          await section.close()
         }
         accounting.push(accountSection(feature, ledger, results, price, price ? priceSource('llm') : null))
         records.forEach((r, i) => {
@@ -534,8 +542,8 @@ async function liveRun(env: Env, vision: VisionData | null, opts: BakeoffOptions
         })
         return records
       }
-      stylist = sections.includes('stylist') ? summarizeStylist(await text('stylist', stylistCases(), runStylistCase), 'TESTED') : notTested(provider, model, 'stylist', NOT_SELECTED)
-      outfit = sections.includes('outfit') ? summarizeOutfit(await text('outfit', outfitCases(), runOutfitCase), 'TESTED') : notTested(provider, model, 'outfit', NOT_SELECTED)
+      stylist = sections.includes('stylist') ? summarizeStylist(await text('stylist', stylistCases(), runStylistCaseGo), 'TESTED') : notTested(provider, model, 'stylist', NOT_SELECTED)
+      outfit = sections.includes('outfit') ? summarizeOutfit(await text('outfit', outfitCases(), runOutfitCaseGo), 'TESTED') : notTested(provider, model, 'outfit', NOT_SELECTED)
     }
 
     const features = [visionResult, stylist, outfit].map((f) => withAccountedLatency(f, accounting))
@@ -713,9 +721,18 @@ export async function buildBakeoff(env: Env, opts: BakeoffOptions = {}): Promise
   // Injected (scripted) providers: whatever ran is TEST_ONLY, never a provider result.
   const testOnly = !!(opts.providers?.llm || opts.providers?.vision)
 
-  const s: StylistRecord[] = [], o: OutfitRecord[] = []
-  for (const c of stylistCases()) s.push(await runStylistCase(new ScriptedStylist(), c))
-  for (const c of outfitCases()) o.push(await runOutfitCase(new ScriptedOutfit(), c))
+  // The offline self-test: the scripted providers through the Go pipeline.
+  const scriptedStylist = new ScriptedStylist(), scriptedOutfit = new ScriptedOutfit()
+  const s: StylistRecord[] = await withScriptedGo(scriptedStylist, null, scriptedStylist.model, async (go) => {
+    const out: StylistRecord[] = []
+    for (const c of stylistCases()) out.push(await runStylistCaseGo(go, scriptedStylist, c))
+    return out
+  })
+  const o: OutfitRecord[] = await withScriptedGo(scriptedOutfit, null, scriptedOutfit.model, async (go) => {
+    const out: OutfitRecord[] = []
+    for (const c of outfitCases()) out.push(await runOutfitCaseGo(go, scriptedOutfit, c))
+    return out
+  })
   const robustness = await runRobustness()
   const vision = Dataset.parse({ items: syntheticVisionItems().map(({ id, file, expected }) => ({ id, file, expected })) })
   return {

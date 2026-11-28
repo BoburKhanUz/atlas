@@ -12,13 +12,15 @@ import type { AiErrorKind, LLMProvider, LLMRequest, VisionProvider, VisionReques
 import { outfitCases, type OutfitCase } from './outfit-cases'
 import { ScriptedOutfit } from './outfit-eval'
 import type { OutfitRecord } from './outfit-scoring'
-import { runRobustness, type RobustnessResult, type Runners } from './robustness'
+import { withScriptedGo } from './go-pipeline'
+import { goRunners, runRobustness, type RobustnessResult, type Runners } from './robustness'
+import { runOneGo } from './vision-eval'
 import { preferencesCase, stylistCases } from './stylist-cases'
 import { ScriptedStylist } from './stylist-eval'
 import type { StylistRecord } from './stylist-scoring'
 import { renderSynthetic, syntheticVisionItems } from './synthetic-vision'
 
-/** How one case is run: on the TypeScript pipeline, or through `lookly eval`. */
+/** How one case is run (through `lookly eval`: goOfflinePipeline). */
 export interface OfflinePipeline extends Runners {
   /** A picture analysed with a vision provider (settings as the bake-off's offline section). */
   vision: (p: VisionProvider, bytes: Uint8Array) => Promise<{ outcome: unknown; usage: { inputTokens?: number; outputTokens?: number } }>
@@ -27,6 +29,19 @@ export interface OfflinePipeline extends Runners {
 }
 
 export const VISION_SETTINGS = { label: 'offline', provider: 'openai' as const, model: 'offline', maxSide: 768, openaiDetail: 'low' as const }
+
+/** Every offline scenario through `lookly eval`, each with its scripted provider behind a fresh stand-in. */
+export function goOfflinePipeline(): OfflinePipeline {
+  return {
+    ...goRunners('10s'),
+    // A timeout is the attempt's own time limit on Go: keep it short.
+    withShortTimeout: goRunners('300ms'),
+    vision: (p, bytes) => withScriptedGo(null, p, 'offline', async (go) => {
+      const r = await runOneGo(go, VISION_SETTINGS, bytes)
+      return { outcome: r.outcome, usage: r.usage }
+    }),
+  }
+}
 
 /** What a provider was asked: everything but the time limit (a stand-in does not see it). */
 function recording(p: LLMProvider, usage?: { inputTokens: number; outputTokens: number }) {

@@ -8,7 +8,7 @@ import { promises as fs } from 'fs'
 import os from 'os'
 import path from 'path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { bakeoffMarkdown, buildBakeoff, DATASET_INTEGRITY_FAILURE } from '../../../scripts/ai-eval/bakeoff'
+import { bakeoffMarkdown, buildBakeoff, DATASET_INTEGRITY_FAILURE } from '../../scripts/ai-eval/bakeoff'
 import {
   accountSection,
   assertCapForLive,
@@ -22,16 +22,18 @@ import {
   planCalls,
   retryingVision,
   type CaseResult,
-} from '../../../scripts/ai-eval/live-accounting'
-import { outfitCases } from '../../../scripts/ai-eval/outfit-cases'
-import { runOutfitCase, ScriptedOutfit } from '../../../scripts/ai-eval/outfit-eval'
-import { stylistCases } from '../../../scripts/ai-eval/stylist-cases'
-import { runStylistCase, ScriptedStylist } from '../../../scripts/ai-eval/stylist-eval'
-import { renderSynthetic, syntheticVisionItems } from '../../../scripts/ai-eval/synthetic-vision'
-import { evaluateVisionConfig } from '../../../scripts/ai-eval/vision-eval'
+} from '../../scripts/ai-eval/live-accounting'
+import { outfitCases } from '../../scripts/ai-eval/outfit-cases'
+import { runOutfitCase, ScriptedOutfit } from '../../scripts/ai-eval/outfit-eval'
+import { stylistCases } from '../../scripts/ai-eval/stylist-cases'
+import { runStylistCase, ScriptedStylist } from '../../scripts/ai-eval/stylist-eval'
+import { renderSynthetic, syntheticVisionItems } from '../../scripts/ai-eval/synthetic-vision'
+import { evaluateVisionConfig } from '../../scripts/ai-eval/vision-eval'
 import { CONFIDENCE_KEYS } from '@/lib/ai/garment-analysis'
 import { AiProviderError, type AiErrorKind } from '@/lib/ai/providers/errors'
 import type { LLMProvider, LLMRequest, VisionProvider } from '@/lib/ai/providers/types'
+
+if (!process.env.LOOKLY_BINARY) throw new Error('LOOKLY_BINARY is not set: build apps/api (go build -tags nodynamic -o <path> ./cmd/lookly) and point it there')
 
 const FAKE = 'fake-key-not-real-51acc'
 const noSleep = async () => {}
@@ -424,7 +426,7 @@ describe('dataset integrity', () => {
     }
     try {
       const env = { GEMINI_API_KEY: FAKE, OPENAI_API_KEY: FAKE, AI_EVAL_GEMINI_VISION_MODEL: 'gv', AI_EVAL_OPENAI_VISION_MODEL: 'ov', AI_EVAL_GEMINI_MODEL: 'g', AI_EVAL_OPENAI_MODEL: 'o' }
-      const r = await buildBakeoff(env, { visionDataset: dir, runs: 3, sleep: noSleep, providers: { vision: () => tamper, llm: () => (textBuilt++, llm(['ok'])) } })
+      const r = await buildBakeoff(env, { visionDataset: dir, runs: 3, providers: { vision: () => tamper, llm: () => (textBuilt++, llm(['ok'])) } })
       expect(r.execution.integrity.status).toBe(DATASET_INTEGRITY_FAILURE)
       expect(r.runs ?? [{ run: 1 }]).toHaveLength(1) // runs 2 and 3 never started
       // Each image is re-hashed right before it is sent: the changed image is never sent, nothing after it is called.
@@ -453,7 +455,7 @@ describe('dataset integrity', () => {
       },
     }
     try {
-      const r = await buildBakeoff({ GEMINI_API_KEY: FAKE, AI_EVAL_GEMINI_VISION_MODEL: 'gv', AI_EVAL_GEMINI_MODEL: 'g' }, { visionDataset: dir, sleep: noSleep, providers: { vision: () => v, llm: () => (textBuilt++, llm(['ok'])) } })
+      const r = await buildBakeoff({ GEMINI_API_KEY: FAKE, AI_EVAL_GEMINI_VISION_MODEL: 'gv', AI_EVAL_GEMINI_MODEL: 'g' }, { visionDataset: dir, providers: { vision: () => v, llm: () => (textBuilt++, llm(['ok'])) } })
       expect(r.execution.integrity.status).toBe(DATASET_INTEGRITY_FAILURE)
       expect(textBuilt).toBe(0)
       expect(r.live[0].features.find((f) => f.feature === 'stylist')).toMatchObject({ status: 'NOT_TESTED', reason: DATASET_INTEGRITY_FAILURE })
@@ -463,7 +465,7 @@ describe('dataset integrity', () => {
   })
 
   it('an unchanged dataset passes every check', async () => {
-    const r = await buildBakeoff({ GEMINI_API_KEY: FAKE, AI_EVAL_GEMINI_VISION_MODEL: 'gv' }, { visionDataset: dir, runs: 2, sleep: noSleep, providers: { vision: () => ({ name: 'v', model: 'm', analyzeImage: async () => ({ output: JEANS, metadata: { provider: 'v', model: 'm', usage: {} } }) }) } })
+    const r = await buildBakeoff({ GEMINI_API_KEY: FAKE, AI_EVAL_GEMINI_VISION_MODEL: 'gv' }, { visionDataset: dir, runs: 2, providers: { vision: () => ({ name: 'v', model: 'm', analyzeImage: async () => ({ output: JEANS, metadata: { provider: 'v', model: 'm', usage: {} } }) }) } })
     expect(r.execution.integrity.status).toBe('OK')
     expect(r.execution.integrity.checks).toBeGreaterThanOrEqual(2)
     expect(r.runs).toHaveLength(2)
@@ -476,8 +478,10 @@ describe('provider isolation and secrets', () => {
     const r = await buildBakeoff(env, { providers: { llm: (p) => (p === 'gemini' ? llm([new Error(`upstream said Authorization: Bearer ${FAKE}`)]) : llm(['ok'])) } })
     const g = r.live[0].accounting.find((a) => a.feature === 'stylist')!
     const o = r.live[1].accounting.find((a) => a.feature === 'stylist')!
-    expect(g.attemptErrors).toEqual({ unexpected: CIRCUIT_MAX_CONSECUTIVE }) // not retryable; the consecutive limit opens the circuit
-    expect(g.circuitOpen).toBe('unexpected')
+    // A thrown error that is no provider error is answered 503 by the stand-in: Go reads it as unavailable
+    // (retried once), and the consecutive limit opens the circuit.
+    expect(g.attemptErrors).toEqual({ unavailable: CIRCUIT_MAX_CONSECUTIVE })
+    expect(g.circuitOpen).toBe('unavailable')
     expect([o.attemptErrors, o.circuitOpen, o.successRate]).toEqual([{}, null, 1])
     for (const text of [JSON.stringify(r), bakeoffMarkdown(r)]) {
       expect(text).not.toContain(FAKE)

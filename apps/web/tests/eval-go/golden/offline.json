@@ -1,5 +1,5 @@
 {
- "generatedBy": "apps/web/scripts/ai-eval/golden-offline.ts (the TypeScript pipeline)",
+ "generatedBy": "apps/web/scripts/ai-eval/golden-offline.ts (the Go pipeline, lookly eval)",
  "stylist": [
   {
    "record": {
@@ -13,17 +13,17 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "answer",
      "firstError": null,
+     "kind": "answer",
+     "needsMoreInfo": false,
      "raw": "Bugun [W1], [W2], [W3], [W4] bilan qulay va mos obraz tuzing.",
-     "shown": "Bugun oq futbolka, ko‘k jins, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing.",
      "refs": [
       "W1",
       "W2",
       "W3",
       "W4"
      ],
-     "needsMoreInfo": false
+     "shown": "Bugun oq futbolka, ko‘k jins, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing."
     },
     "checks": {
      "firstValid": true,
@@ -138,10 +138,10 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "answer",
      "firstError": null,
+     "kind": "answer",
+     "needsMoreInfo": false,
      "raw": "Bugun [W1], [W2], [W3], [W4], [W5] bilan qulay va mos obraz tuzing.",
-     "shown": "Bugun oq oksford ko‘ylak, to‘q ko‘k klassik shim, to‘q ko‘k bleyzer, qora oksford tufli, kulrang soat bilan qulay va mos obraz tuzing.",
      "refs": [
       "W1",
       "W2",
@@ -149,7 +149,7 @@
       "W4",
       "W5"
      ],
-     "needsMoreInfo": false
+     "shown": "Bugun oq oksford ko‘ylak, to‘q ko‘k klassik shim, to‘q ko‘k bleyzer, qora oksford tufli, kulrang soat bilan qulay va mos obraz tuzing."
     },
     "checks": {
      "firstValid": true,
@@ -264,10 +264,10 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "answer",
      "firstError": null,
+     "kind": "answer",
+     "needsMoreInfo": false,
      "raw": "Bugun [W1], [W2], [W3], [W4], [W5] bilan qulay va mos obraz tuzing.",
-     "shown": "Bugun oq oksford ko‘ylak, to‘q ko‘k klassik shim, to‘q ko‘k bleyzer, qora oksford tufli, kulrang soat bilan qulay va mos obraz tuzing.",
      "refs": [
       "W1",
       "W2",
@@ -275,7 +275,7 @@
       "W4",
       "W5"
      ],
-     "needsMoreInfo": false
+     "shown": "Bugun oq oksford ko‘ylak, to‘q ko‘k klassik shim, to‘q ko‘k bleyzer, qora oksford tufli, kulrang soat bilan qulay va mos obraz tuzing."
     },
     "checks": {
      "firstValid": true,
@@ -390,10 +390,10 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "answer",
      "firstError": null,
+     "kind": "answer",
+     "needsMoreInfo": false,
      "raw": "Bugun [W1], [W2], [W3], [W4], [W5] bilan qulay va mos obraz tuzing.",
-     "shown": "Bugun oq oksford ko‘ylak, to‘q ko‘k klassik shim, to‘q ko‘k bleyzer, qora oksford tufli, kulrang soat bilan qulay va mos obraz tuzing.",
      "refs": [
       "W1",
       "W2",
@@ -401,7 +401,7 @@
       "W4",
       "W5"
      ],
-     "needsMoreInfo": false
+     "shown": "Bugun oq oksford ko‘ylak, to‘q ko‘k klassik shim, to‘q ko‘k bleyzer, qora oksford tufli, kulrang soat bilan qulay va mos obraz tuzing."
     },
     "checks": {
      "firstValid": true,
@@ -516,10 +516,10 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "answer",
      "firstError": null,
+     "kind": "answer",
+     "needsMoreInfo": false,
      "raw": "Bugun [W1], [W2], [W3], [W4], [W5] bilan qulay va mos obraz tuzing.",
-     "shown": "Bugun oq futbolka, xaki chinos, zaytun shamol kurtkasi, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing.",
      "refs": [
       "W1",
       "W2",
@@ -527,7 +527,7 @@
       "W4",
       "W5"
      ],
-     "needsMoreInfo": false
+     "shown": "Bugun oq futbolka, xaki chinos, zaytun shamol kurtkasi, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing."
     },
     "checks": {
      "firstValid": true,
@@ -642,10 +642,10 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "answer",
      "firstError": null,
+     "kind": "answer",
+     "needsMoreInfo": false,
      "raw": "Bugun [W1], [W2], [W3], [W4], [W5] bilan qulay va mos obraz tuzing.",
-     "shown": "Bugun qora futbolka, ko‘k jins, kulrang palto, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing.",
      "refs": [
       "W1",
       "W2",
@@ -653,7 +653,7 @@
       "W4",
       "W5"
      ],
-     "needsMoreInfo": false
+     "shown": "Bugun qora futbolka, ko‘k jins, kulrang palto, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing."
     },
     "checks": {
      "firstValid": true,
@@ -769,17 +769,17 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "answer",
      "firstError": null,
+     "kind": "answer",
+     "needsMoreInfo": false,
      "raw": "Bugun [W1], [W2], [W3], [W4] bilan qulay va mos obraz tuzing.",
-     "shown": "Bugun oq futbolka, ko‘k jins, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing.",
      "refs": [
       "W1",
       "W2",
       "W3",
       "W4"
      ],
-     "needsMoreInfo": false
+     "shown": "Bugun oq futbolka, ko‘k jins, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing."
     },
     "checks": {
      "firstValid": true,
@@ -894,17 +894,17 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "answer",
      "firstError": null,
+     "kind": "answer",
+     "needsMoreInfo": false,
      "raw": "Bugun [W1], [W2], [W3], [W4] bilan qulay va mos obraz tuzing.",
-     "shown": "Bugun oq futbolka, ko‘k jins, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing.",
      "refs": [
       "W1",
       "W2",
       "W3",
       "W4"
      ],
-     "needsMoreInfo": false
+     "shown": "Bugun oq futbolka, ko‘k jins, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing."
     },
     "checks": {
      "firstValid": true,
@@ -1019,16 +1019,16 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "answer",
      "firstError": null,
+     "kind": "answer",
+     "needsMoreInfo": false,
      "raw": "Bugun [W1], [W2], [W3] bilan qulay va mos obraz tuzing.",
-     "shown": "Bugun oq futbolka, ko‘k jins, oq krossovka bilan qulay va mos obraz tuzing.",
      "refs": [
       "W1",
       "W2",
       "W3"
      ],
-     "needsMoreInfo": false
+     "shown": "Bugun oq futbolka, ko‘k jins, oq krossovka bilan qulay va mos obraz tuzing."
     },
     "checks": {
      "firstValid": true,
@@ -1131,17 +1131,17 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "answer",
      "firstError": null,
+     "kind": "answer",
+     "needsMoreInfo": false,
      "raw": "Bugun [W1], [W2], [W3], [W4] bilan qulay va mos obraz tuzing.",
-     "shown": "Bugun oq futbolka, ko‘k jins, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing.",
      "refs": [
       "W1",
       "W2",
       "W3",
       "W4"
      ],
-     "needsMoreInfo": false
+     "shown": "Bugun oq futbolka, ko‘k jins, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing."
     },
     "checks": {
      "firstValid": true,
@@ -1256,17 +1256,17 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "answer",
      "firstError": null,
+     "kind": "answer",
+     "needsMoreInfo": false,
      "raw": "Bugun [W1], [W2], [W3], [W4] bilan qulay va mos obraz tuzing.",
-     "shown": "Bugun oq futbolka, ko‘k jins, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing.",
      "refs": [
       "W1",
       "W2",
       "W3",
       "W4"
      ],
-     "needsMoreInfo": false
+     "shown": "Bugun oq futbolka, ko‘k jins, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing."
     },
     "checks": {
      "firstValid": true,
@@ -1381,17 +1381,17 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "answer",
      "firstError": null,
+     "kind": "answer",
+     "needsMoreInfo": false,
      "raw": "Bugun [W1], [W2], [W3], [W4] bilan qulay va mos obraz tuzing.",
-     "shown": "Bugun oq futbolka, ko‘k jins, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing.",
      "refs": [
       "W1",
       "W2",
       "W3",
       "W4"
      ],
-     "needsMoreInfo": false
+     "shown": "Bugun oq futbolka, ko‘k jins, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing."
     },
     "checks": {
      "firstValid": true,
@@ -1506,17 +1506,17 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "answer",
      "firstError": null,
+     "kind": "answer",
+     "needsMoreInfo": false,
      "raw": "Bugun [W1], [W2], [W3], [W4] bilan qulay va mos obraz tuzing.",
-     "shown": "Bugun oq futbolka, ko‘k jins, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing.",
      "refs": [
       "W1",
       "W2",
       "W3",
       "W4"
      ],
-     "needsMoreInfo": false
+     "shown": "Bugun oq futbolka, ko‘k jins, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing."
     },
     "checks": {
      "firstValid": true,
@@ -1632,17 +1632,17 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "answer",
      "firstError": null,
+     "kind": "answer",
+     "needsMoreInfo": false,
      "raw": "Bugun [W1], [W2], [W3], [W4] bilan qulay va mos obraz tuzing.",
-     "shown": "Bugun oq futbolka, ko‘k jins, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing.",
      "refs": [
       "W1",
       "W2",
       "W3",
       "W4"
      ],
-     "needsMoreInfo": false
+     "shown": "Bugun oq futbolka, ko‘k jins, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing."
     },
     "checks": {
      "firstValid": true,
@@ -1757,12 +1757,12 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "answer",
      "firstError": null,
+     "kind": "answer",
+     "needsMoreInfo": true,
      "raw": "Garderobingizda hali kiyim yo‘q. Qanday kiyimlaringiz bor?",
-     "shown": "Garderobingizda hali kiyim yo‘q. Qanday kiyimlaringiz bor?",
      "refs": [],
-     "needsMoreInfo": true
+     "shown": "Garderobingizda hali kiyim yo‘q. Qanday kiyimlaringiz bor?"
     },
     "checks": {
      "firstValid": true,
@@ -1859,17 +1859,17 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "answer",
      "firstError": null,
+     "kind": "answer",
+     "needsMoreInfo": false,
      "raw": "Bugun [W1], [W2], [W3], [W4] bilan qulay va mos obraz tuzing.",
-     "shown": "Bugun oq futbolka, ko‘k jins, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing.",
      "refs": [
       "W1",
       "W2",
       "W3",
       "W4"
      ],
-     "needsMoreInfo": false
+     "shown": "Bugun oq futbolka, ko‘k jins, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing."
     },
     "checks": {
      "firstValid": true,
@@ -1985,10 +1985,10 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "answer",
      "firstError": null,
+     "kind": "answer",
+     "needsMoreInfo": false,
      "raw": "Bugun [W1], [W2], [W3], [W4], [W5] bilan qulay va mos obraz tuzing.",
-     "shown": "Bugun oq futbolka, xaki chinos, zaytun shamol kurtkasi, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing.",
      "refs": [
       "W1",
       "W2",
@@ -1996,7 +1996,7 @@
       "W4",
       "W5"
      ],
-     "needsMoreInfo": false
+     "shown": "Bugun oq futbolka, xaki chinos, zaytun shamol kurtkasi, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing."
     },
     "checks": {
      "firstValid": true,
@@ -2114,14 +2114,14 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "ranked",
+     "explanation": "Bu obraz kiyimlari bir-biriga mos va qulay.",
      "firstError": null,
+     "kind": "ranked",
      "ranking": [
       "O1",
       "O2",
       "O3"
-     ],
-     "explanation": "Bu obraz kiyimlari bir-biriga mos va qulay."
+     ]
     },
     "checks": {
      "firstValid": true,
@@ -2227,14 +2227,14 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "ranked",
+     "explanation": "Bu obraz kiyimlari bir-biriga mos va qulay.",
      "firstError": null,
+     "kind": "ranked",
      "ranking": [
       "O1",
       "O2",
       "O3"
-     ],
-     "explanation": "Bu obraz kiyimlari bir-biriga mos va qulay."
+     ]
     },
     "checks": {
      "firstValid": true,
@@ -2340,14 +2340,14 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "ranked",
+     "explanation": "Bu obraz kiyimlari bir-biriga mos va qulay.",
      "firstError": null,
+     "kind": "ranked",
      "ranking": [
       "O1",
       "O2",
       "O3"
-     ],
-     "explanation": "Bu obraz kiyimlari bir-biriga mos va qulay."
+     ]
     },
     "checks": {
      "firstValid": true,
@@ -2453,14 +2453,14 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "ranked",
+     "explanation": "Bu obraz kiyimlari bir-biriga mos va qulay.",
      "firstError": null,
+     "kind": "ranked",
      "ranking": [
       "O1",
       "O2",
       "O3"
-     ],
-     "explanation": "Bu obraz kiyimlari bir-biriga mos va qulay."
+     ]
     },
     "checks": {
      "firstValid": true,
@@ -2566,14 +2566,14 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "ranked",
+     "explanation": "Bu obraz kiyimlari bir-biriga mos va qulay.",
      "firstError": null,
+     "kind": "ranked",
      "ranking": [
       "O1",
       "O2",
       "O3"
-     ],
-     "explanation": "Bu obraz kiyimlari bir-biriga mos va qulay."
+     ]
     },
     "checks": {
      "firstValid": true,
@@ -2680,14 +2680,14 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "ranked",
+     "explanation": "Bu obraz kiyimlari bir-biriga mos va qulay.",
      "firstError": null,
+     "kind": "ranked",
      "ranking": [
       "O1",
       "O2",
       "O3"
-     ],
-     "explanation": "Bu obraz kiyimlari bir-biriga mos va qulay."
+     ]
     },
     "checks": {
      "firstValid": true,
@@ -2793,16 +2793,16 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "ranked",
+     "explanation": "Bu obraz kiyimlari bir-biriga mos va qulay.",
      "firstError": null,
+     "kind": "ranked",
      "ranking": [
       "O1",
       "O2",
       "O3",
       "O4",
       "O5"
-     ],
-     "explanation": "Bu obraz kiyimlari bir-biriga mos va qulay."
+     ]
     },
     "checks": {
      "firstValid": true,
@@ -2913,16 +2913,16 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "ranked",
+     "explanation": "Bu obraz kiyimlari bir-biriga mos va qulay.",
      "firstError": null,
+     "kind": "ranked",
      "ranking": [
       "O1",
       "O2",
       "O3",
       "O4",
       "O5"
-     ],
-     "explanation": "Bu obraz kiyimlari bir-biriga mos va qulay."
+     ]
     },
     "checks": {
      "firstValid": true,
@@ -3033,16 +3033,16 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "ranked",
+     "explanation": "Bu obraz kiyimlari bir-biriga mos va qulay.",
      "firstError": null,
+     "kind": "ranked",
      "ranking": [
       "O1",
       "O2",
       "O3",
       "O4",
       "O5"
-     ],
-     "explanation": "Bu obraz kiyimlari bir-biriga mos va qulay."
+     ]
     },
     "checks": {
      "firstValid": true,
@@ -3152,13 +3152,13 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "ranked",
+     "explanation": "Bu obraz kiyimlari bir-biriga mos va qulay.",
      "firstError": null,
+     "kind": "ranked",
      "ranking": [
       "O1",
       "O2"
-     ],
-     "explanation": "Bu obraz kiyimlari bir-biriga mos va qulay."
+     ]
     },
     "checks": {
      "firstValid": true,
@@ -3262,16 +3262,16 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "ranked",
+     "explanation": "Bu obraz kiyimlari bir-biriga mos va qulay.",
      "firstError": null,
+     "kind": "ranked",
      "ranking": [
       "O1",
       "O2",
       "O3",
       "O4",
       "O5"
-     ],
-     "explanation": "Bu obraz kiyimlari bir-biriga mos va qulay."
+     ]
     },
     "checks": {
      "firstValid": true,
@@ -3383,8 +3383,8 @@
     "calls": 2,
     "requests": 1,
     "outcome": {
-     "kind": "error",
-     "error": "rate_limited"
+     "error": "rate_limited",
+     "kind": "error"
     },
     "checks": {
      "firstValid": false,
@@ -3417,8 +3417,8 @@
     "calls": 2,
     "requests": 1,
     "outcome": {
-     "kind": "error",
-     "error": "rate_limited"
+     "error": "rate_limited",
+     "kind": "error"
     },
     "checks": {
      "firstValid": false,
@@ -3449,8 +3449,8 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "error",
-     "error": "auth"
+     "error": "auth",
+     "kind": "error"
     },
     "checks": {
      "firstValid": false,
@@ -3483,8 +3483,8 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "error",
-     "error": "auth"
+     "error": "auth",
+     "kind": "error"
     },
     "checks": {
      "firstValid": false,
@@ -3515,8 +3515,8 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "error",
-     "error": "invalid_request"
+     "error": "invalid_request",
+     "kind": "error"
     },
     "checks": {
      "firstValid": false,
@@ -3549,8 +3549,8 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "error",
-     "error": "invalid_request"
+     "error": "invalid_request",
+     "kind": "error"
     },
     "checks": {
      "firstValid": false,
@@ -3581,8 +3581,8 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "error",
-     "error": "provider_error"
+     "error": "provider_error",
+     "kind": "error"
     },
     "checks": {
      "firstValid": false,
@@ -3615,8 +3615,8 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "error",
-     "error": "provider_error"
+     "error": "provider_error",
+     "kind": "error"
     },
     "checks": {
      "firstValid": false,
@@ -3647,8 +3647,8 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "error",
-     "error": "content_filtered"
+     "error": "content_filtered",
+     "kind": "error"
     },
     "checks": {
      "firstValid": false,
@@ -3681,8 +3681,8 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "error",
-     "error": "content_filtered"
+     "error": "content_filtered",
+     "kind": "error"
     },
     "checks": {
      "firstValid": false,
@@ -3713,8 +3713,8 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "error",
-     "error": "malformed_response"
+     "error": "malformed_response",
+     "kind": "error"
     },
     "checks": {
      "firstValid": false,
@@ -3747,8 +3747,8 @@
     "calls": 1,
     "requests": 1,
     "outcome": {
-     "kind": "error",
-     "error": "malformed_response"
+     "error": "malformed_response",
+     "kind": "error"
     },
     "checks": {
      "firstValid": false,
@@ -3779,8 +3779,8 @@
     "calls": 2,
     "requests": 1,
     "outcome": {
-     "kind": "error",
-     "error": "network"
+     "error": "network",
+     "kind": "error"
     },
     "checks": {
      "firstValid": false,
@@ -3813,8 +3813,8 @@
     "calls": 2,
     "requests": 1,
     "outcome": {
-     "kind": "error",
-     "error": "network"
+     "error": "network",
+     "kind": "error"
     },
     "checks": {
      "firstValid": false,
@@ -3845,8 +3845,8 @@
     "calls": 2,
     "requests": 1,
     "outcome": {
-     "kind": "error",
-     "error": "timeout"
+     "error": "timeout",
+     "kind": "error"
     },
     "checks": {
      "firstValid": false,
@@ -3879,8 +3879,8 @@
     "calls": 2,
     "requests": 1,
     "outcome": {
-     "kind": "error",
-     "error": "timeout"
+     "error": "timeout",
+     "kind": "error"
     },
     "checks": {
      "firstValid": false,
@@ -3911,8 +3911,8 @@
     "calls": 2,
     "requests": 1,
     "outcome": {
-     "kind": "error",
-     "error": "unavailable"
+     "error": "unavailable",
+     "kind": "error"
     },
     "checks": {
      "firstValid": false,
@@ -3945,8 +3945,8 @@
     "calls": 2,
     "requests": 1,
     "outcome": {
-     "kind": "error",
-     "error": "unavailable"
+     "error": "unavailable",
+     "kind": "error"
     },
     "checks": {
      "firstValid": false,
@@ -3980,15 +3980,15 @@
     "inputTokens": 200,
     "outputTokens": 40,
     "outcome": {
-     "kind": "answer",
      "firstError": "invalid_reference",
+     "kind": "answer",
+     "needsMoreInfo": false,
      "raw": "Bugun [W1] va [W2] kiying.",
-     "shown": "Bugun oq futbolka va ko‘k jins kiying.",
      "refs": [
       "W1",
       "W2"
      ],
-     "needsMoreInfo": false
+     "shown": "Bugun oq futbolka va ko‘k jins kiying."
     },
     "checks": {
      "firstValid": false,
@@ -4178,14 +4178,14 @@
     "calls": 2,
     "requests": 2,
     "outcome": {
-     "kind": "ranked",
+     "explanation": "Bu obraz qulay va sizga mos.",
      "firstError": "unknown_selected",
+     "kind": "ranked",
      "ranking": [
       "O1",
       "O2",
       "O3"
-     ],
-     "explanation": "Bu obraz qulay va sizga mos."
+     ]
     },
     "checks": {
      "firstValid": false,
@@ -4359,17 +4359,17 @@
    "calls": 1,
    "requests": 1,
    "outcome": {
-    "kind": "answer",
     "firstError": null,
+    "kind": "answer",
+    "needsMoreInfo": false,
     "raw": "Bugun [W1], [W2], [W3], [W4] bilan qulay va mos obraz tuzing.",
-    "shown": "Bugun oq futbolka, ko‘k jins, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing.",
     "refs": [
      "W1",
      "W2",
      "W3",
      "W4"
     ],
-    "needsMoreInfo": false
+    "shown": "Bugun oq futbolka, ko‘k jins, oq krossovka, kulrang soat bilan qulay va mos obraz tuzing."
    },
    "checks": {
     "firstValid": true,
@@ -4476,7 +4476,6 @@
   {
    "item": "tshirt_white",
    "outcome": {
-    "kind": "garment",
     "attributes": {
      "category": "shirt",
      "subcategory": "tshirt",
@@ -4494,20 +4493,21 @@
      "gender": "unisex",
      "formality": "casual"
     },
+    "colorVerdict": "supported",
+    "kind": "garment",
     "rawConfidence": {
      "category": 0.9,
-     "subcategory": 0.8,
      "color": 0.9,
-     "pattern": 0.8,
-     "material": 0.6,
-     "sleeveLength": 0.8,
      "fit": 0.6,
-     "style": 0.7,
-     "season": 0.6,
+     "formality": 0.7,
      "gender": 0.6,
-     "formality": 0.7
-    },
-    "colorVerdict": "supported"
+     "material": 0.6,
+     "pattern": 0.8,
+     "season": 0.6,
+     "sleeveLength": 0.8,
+     "style": 0.7,
+     "subcategory": 0.8
+    }
    },
    "usage": {
     "inputTokens": 300,
@@ -4879,7 +4879,6 @@
   {
    "item": "tshirt_red",
    "outcome": {
-    "kind": "garment",
     "attributes": {
      "category": "shirt",
      "subcategory": "tshirt",
@@ -4897,20 +4896,21 @@
      "gender": "unisex",
      "formality": "casual"
     },
+    "colorVerdict": "supported",
+    "kind": "garment",
     "rawConfidence": {
      "category": 0.9,
-     "subcategory": 0.8,
      "color": 0.9,
-     "pattern": 0.8,
-     "material": 0.6,
-     "sleeveLength": 0.8,
      "fit": 0.6,
-     "style": 0.7,
-     "season": 0.6,
+     "formality": 0.7,
      "gender": 0.6,
-     "formality": 0.7
-    },
-    "colorVerdict": "supported"
+     "material": 0.6,
+     "pattern": 0.8,
+     "season": 0.6,
+     "sleeveLength": 0.8,
+     "style": 0.7,
+     "subcategory": 0.8
+    }
    },
    "usage": {
     "inputTokens": 300,
@@ -5282,7 +5282,6 @@
   {
    "item": "shirt_lightblue",
    "outcome": {
-    "kind": "garment",
     "attributes": {
      "category": "shirt",
      "subcategory": "tshirt",
@@ -5300,20 +5299,21 @@
      "gender": "unisex",
      "formality": "casual"
     },
+    "colorVerdict": "supported",
+    "kind": "garment",
     "rawConfidence": {
      "category": 0.9,
-     "subcategory": 0.8,
      "color": 0.9,
-     "pattern": 0.8,
-     "material": 0.6,
-     "sleeveLength": 0.8,
      "fit": 0.6,
-     "style": 0.7,
-     "season": 0.6,
+     "formality": 0.7,
      "gender": 0.6,
-     "formality": 0.7
-    },
-    "colorVerdict": "supported"
+     "material": 0.6,
+     "pattern": 0.8,
+     "season": 0.6,
+     "sleeveLength": 0.8,
+     "style": 0.7,
+     "subcategory": 0.8
+    }
    },
    "usage": {
     "inputTokens": 300,
@@ -5685,7 +5685,6 @@
   {
    "item": "jacket_black",
    "outcome": {
-    "kind": "garment",
     "attributes": {
      "category": "shirt",
      "subcategory": "tshirt",
@@ -5703,20 +5702,21 @@
      "gender": "unisex",
      "formality": "casual"
     },
+    "colorVerdict": "weak",
+    "kind": "garment",
     "rawConfidence": {
      "category": 0.9,
-     "subcategory": 0.8,
      "color": 0.9,
-     "pattern": 0.8,
-     "material": 0.6,
-     "sleeveLength": 0.8,
      "fit": 0.6,
-     "style": 0.7,
-     "season": 0.6,
+     "formality": 0.7,
      "gender": 0.6,
-     "formality": 0.7
-    },
-    "colorVerdict": "weak"
+     "material": 0.6,
+     "pattern": 0.8,
+     "season": 0.6,
+     "sleeveLength": 0.8,
+     "style": 0.7,
+     "subcategory": 0.8
+    }
    },
    "usage": {
     "inputTokens": 300,
@@ -6088,7 +6088,6 @@
   {
    "item": "coat_camel",
    "outcome": {
-    "kind": "garment",
     "attributes": {
      "category": "shirt",
      "subcategory": "tshirt",
@@ -6106,20 +6105,21 @@
      "gender": "unisex",
      "formality": "casual"
     },
+    "colorVerdict": "weak",
+    "kind": "garment",
     "rawConfidence": {
      "category": 0.9,
-     "subcategory": 0.8,
      "color": 0.9,
-     "pattern": 0.8,
-     "material": 0.6,
-     "sleeveLength": 0.8,
      "fit": 0.6,
-     "style": 0.7,
-     "season": 0.6,
+     "formality": 0.7,
      "gender": 0.6,
-     "formality": 0.7
-    },
-    "colorVerdict": "weak"
+     "material": 0.6,
+     "pattern": 0.8,
+     "season": 0.6,
+     "sleeveLength": 0.8,
+     "style": 0.7,
+     "subcategory": 0.8
+    }
    },
    "usage": {
     "inputTokens": 300,
@@ -6491,7 +6491,6 @@
   {
    "item": "trousers_navy",
    "outcome": {
-    "kind": "garment",
     "attributes": {
      "category": "shirt",
      "subcategory": "tshirt",
@@ -6509,20 +6508,21 @@
      "gender": "unisex",
      "formality": "casual"
     },
+    "colorVerdict": "supported",
+    "kind": "garment",
     "rawConfidence": {
      "category": 0.9,
-     "subcategory": 0.8,
      "color": 0.9,
-     "pattern": 0.8,
-     "material": 0.6,
-     "sleeveLength": 0.8,
      "fit": 0.6,
-     "style": 0.7,
-     "season": 0.6,
+     "formality": 0.7,
      "gender": 0.6,
-     "formality": 0.7
-    },
-    "colorVerdict": "supported"
+     "material": 0.6,
+     "pattern": 0.8,
+     "season": 0.6,
+     "sleeveLength": 0.8,
+     "style": 0.7,
+     "subcategory": 0.8
+    }
    },
    "usage": {
     "inputTokens": 300,
@@ -6894,7 +6894,6 @@
   {
    "item": "jeans_blue",
    "outcome": {
-    "kind": "garment",
     "attributes": {
      "category": "shirt",
      "subcategory": "tshirt",
@@ -6912,20 +6911,21 @@
      "gender": "unisex",
      "formality": "casual"
     },
+    "colorVerdict": "supported",
+    "kind": "garment",
     "rawConfidence": {
      "category": 0.9,
-     "subcategory": 0.8,
      "color": 0.9,
-     "pattern": 0.8,
-     "material": 0.6,
-     "sleeveLength": 0.8,
      "fit": 0.6,
-     "style": 0.7,
-     "season": 0.6,
+     "formality": 0.7,
      "gender": 0.6,
-     "formality": 0.7
-    },
-    "colorVerdict": "supported"
+     "material": 0.6,
+     "pattern": 0.8,
+     "season": 0.6,
+     "sleeveLength": 0.8,
+     "style": 0.7,
+     "subcategory": 0.8
+    }
    },
    "usage": {
     "inputTokens": 300,
@@ -7297,7 +7297,6 @@
   {
    "item": "dress_burgundy",
    "outcome": {
-    "kind": "garment",
     "attributes": {
      "category": "shirt",
      "subcategory": "tshirt",
@@ -7315,20 +7314,21 @@
      "gender": "unisex",
      "formality": "casual"
     },
+    "colorVerdict": "supported",
+    "kind": "garment",
     "rawConfidence": {
      "category": 0.9,
-     "subcategory": 0.8,
      "color": 0.9,
-     "pattern": 0.8,
-     "material": 0.6,
-     "sleeveLength": 0.8,
      "fit": 0.6,
-     "style": 0.7,
-     "season": 0.6,
+     "formality": 0.7,
      "gender": 0.6,
-     "formality": 0.7
-    },
-    "colorVerdict": "supported"
+     "material": 0.6,
+     "pattern": 0.8,
+     "season": 0.6,
+     "sleeveLength": 0.8,
+     "style": 0.7,
+     "subcategory": 0.8
+    }
    },
    "usage": {
     "inputTokens": 300,
@@ -7700,7 +7700,6 @@
   {
    "item": "shoes_white",
    "outcome": {
-    "kind": "garment",
     "attributes": {
      "category": "shirt",
      "subcategory": "tshirt",
@@ -7718,20 +7717,21 @@
      "gender": "unisex",
      "formality": "casual"
     },
+    "colorVerdict": "supported",
+    "kind": "garment",
     "rawConfidence": {
      "category": 0.9,
-     "subcategory": 0.8,
      "color": 0.9,
-     "pattern": 0.8,
-     "material": 0.6,
-     "sleeveLength": 0.8,
      "fit": 0.6,
-     "style": 0.7,
-     "season": 0.6,
+     "formality": 0.7,
      "gender": 0.6,
-     "formality": 0.7
-    },
-    "colorVerdict": "supported"
+     "material": 0.6,
+     "pattern": 0.8,
+     "season": 0.6,
+     "sleeveLength": 0.8,
+     "style": 0.7,
+     "subcategory": 0.8
+    }
    },
    "usage": {
     "inputTokens": 300,
@@ -8103,7 +8103,6 @@
   {
    "item": "belt_brown",
    "outcome": {
-    "kind": "garment",
     "attributes": {
      "category": "shirt",
      "subcategory": "tshirt",
@@ -8121,20 +8120,21 @@
      "gender": "unisex",
      "formality": "casual"
     },
+    "colorVerdict": "supported",
+    "kind": "garment",
     "rawConfidence": {
      "category": 0.9,
-     "subcategory": 0.8,
      "color": 0.9,
-     "pattern": 0.8,
-     "material": 0.6,
-     "sleeveLength": 0.8,
      "fit": 0.6,
-     "style": 0.7,
-     "season": 0.6,
+     "formality": 0.7,
      "gender": 0.6,
-     "formality": 0.7
-    },
-    "colorVerdict": "supported"
+     "material": 0.6,
+     "pattern": 0.8,
+     "season": 0.6,
+     "sleeveLength": 0.8,
+     "style": 0.7,
+     "subcategory": 0.8
+    }
    },
    "usage": {
     "inputTokens": 300,
@@ -8506,7 +8506,6 @@
   {
    "item": "ambiguous_blob",
    "outcome": {
-    "kind": "garment",
     "attributes": {
      "category": "shirt",
      "subcategory": "tshirt",
@@ -8524,20 +8523,21 @@
      "gender": "unisex",
      "formality": "casual"
     },
+    "colorVerdict": "supported",
+    "kind": "garment",
     "rawConfidence": {
      "category": 0.9,
-     "subcategory": 0.8,
      "color": 0.9,
-     "pattern": 0.8,
-     "material": 0.6,
-     "sleeveLength": 0.8,
      "fit": 0.6,
-     "style": 0.7,
-     "season": 0.6,
+     "formality": 0.7,
      "gender": 0.6,
-     "formality": 0.7
-    },
-    "colorVerdict": "supported"
+     "material": 0.6,
+     "pattern": 0.8,
+     "season": 0.6,
+     "sleeveLength": 0.8,
+     "style": 0.7,
+     "subcategory": 0.8
+    }
    },
    "usage": {
     "inputTokens": 300,
@@ -8909,7 +8909,6 @@
   {
    "item": "multiple_garments",
    "outcome": {
-    "kind": "garment",
     "attributes": {
      "category": "shirt",
      "subcategory": "tshirt",
@@ -8927,20 +8926,21 @@
      "gender": "unisex",
      "formality": "casual"
     },
+    "colorVerdict": "supported",
+    "kind": "garment",
     "rawConfidence": {
      "category": 0.9,
-     "subcategory": 0.8,
      "color": 0.9,
-     "pattern": 0.8,
-     "material": 0.6,
-     "sleeveLength": 0.8,
      "fit": 0.6,
-     "style": 0.7,
-     "season": 0.6,
+     "formality": 0.7,
      "gender": 0.6,
-     "formality": 0.7
-    },
-    "colorVerdict": "supported"
+     "material": 0.6,
+     "pattern": 0.8,
+     "season": 0.6,
+     "sleeveLength": 0.8,
+     "style": 0.7,
+     "subcategory": 0.8
+    }
    },
    "usage": {
     "inputTokens": 300,
@@ -9312,7 +9312,6 @@
   {
    "item": "no_garment_landscape",
    "outcome": {
-    "kind": "garment",
     "attributes": {
      "category": "shirt",
      "subcategory": "tshirt",
@@ -9330,20 +9329,21 @@
      "gender": "unisex",
      "formality": "casual"
     },
+    "colorVerdict": "weak",
+    "kind": "garment",
     "rawConfidence": {
      "category": 0.9,
-     "subcategory": 0.8,
      "color": 0.9,
-     "pattern": 0.8,
-     "material": 0.6,
-     "sleeveLength": 0.8,
      "fit": 0.6,
-     "style": 0.7,
-     "season": 0.6,
+     "formality": 0.7,
      "gender": 0.6,
-     "formality": 0.7
-    },
-    "colorVerdict": "weak"
+     "material": 0.6,
+     "pattern": 0.8,
+     "season": 0.6,
+     "sleeveLength": 0.8,
+     "style": 0.7,
+     "subcategory": 0.8
+    }
    },
    "usage": {
     "inputTokens": 300,
@@ -9715,7 +9715,6 @@
   {
    "item": "poor_quality_tiny",
    "outcome": {
-    "kind": "garment",
     "attributes": {
      "category": "shirt",
      "subcategory": "tshirt",
@@ -9733,20 +9732,21 @@
      "gender": "unisex",
      "formality": "casual"
     },
+    "colorVerdict": "weak",
+    "kind": "garment",
     "rawConfidence": {
      "category": 0.9,
-     "subcategory": 0.8,
      "color": 0.9,
-     "pattern": 0.8,
-     "material": 0.6,
-     "sleeveLength": 0.8,
      "fit": 0.6,
-     "style": 0.7,
-     "season": 0.6,
+     "formality": 0.7,
      "gender": 0.6,
-     "formality": 0.7
-    },
-    "colorVerdict": "weak"
+     "material": 0.6,
+     "pattern": 0.8,
+     "season": 0.6,
+     "sleeveLength": 0.8,
+     "style": 0.7,
+     "subcategory": 0.8
+    }
    },
    "usage": {
     "inputTokens": 300,
@@ -10118,7 +10118,6 @@
   {
    "item": "poor_quality_blur",
    "outcome": {
-    "kind": "garment",
     "attributes": {
      "category": "shirt",
      "subcategory": "tshirt",
@@ -10136,20 +10135,21 @@
      "gender": "unisex",
      "formality": "casual"
     },
+    "colorVerdict": "conflict",
+    "kind": "garment",
     "rawConfidence": {
      "category": 0.9,
-     "subcategory": 0.8,
      "color": 0.9,
-     "pattern": 0.8,
-     "material": 0.6,
-     "sleeveLength": 0.8,
      "fit": 0.6,
-     "style": 0.7,
-     "season": 0.6,
+     "formality": 0.7,
      "gender": 0.6,
-     "formality": 0.7
-    },
-    "colorVerdict": "conflict"
+     "material": 0.6,
+     "pattern": 0.8,
+     "season": 0.6,
+     "sleeveLength": 0.8,
+     "style": 0.7,
+     "subcategory": 0.8
+    }
    },
    "usage": {
     "inputTokens": 300,
@@ -10547,8 +10547,8 @@
   {
    "feature": "stylist",
    "scenario": "malformed JSON (never retried)",
-   "expected": "refused_schema",
-   "actual": "refused_schema",
+   "expected": "error_malformed_response",
+   "actual": "error_malformed_response",
    "calls": 1,
    "pass": true
   },
@@ -10611,9 +10611,9 @@
   {
    "feature": "outfit",
    "scenario": "malformed JSON twice",
-   "expected": "fallback_not_json",
-   "actual": "fallback_not_json",
-   "calls": 2,
+   "expected": "fallback_error_malformed_response",
+   "actual": "fallback_error_malformed_response",
+   "calls": 1,
    "pass": true
   },
   {

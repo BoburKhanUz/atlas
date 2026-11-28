@@ -7,14 +7,16 @@ import { promises as fs } from 'fs'
 import os from 'os'
 import path from 'path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { aggregateRuns, buildBakeoff, compare, configuredVisionModel, MAX_RUNS, NO_SELECTION, recommend, withAccountedLatency, type RawOutput, type VisionSummary } from '../../../scripts/ai-eval/bakeoff'
-import { latencyStats, type SectionAccounting } from '../../../scripts/ai-eval/live-accounting'
-import { ScriptedOutfit } from '../../../scripts/ai-eval/outfit-eval'
-import { ScriptedStylist } from '../../../scripts/ai-eval/stylist-eval'
-import { renderSynthetic, syntheticVisionItems } from '../../../scripts/ai-eval/synthetic-vision'
+import { aggregateRuns, buildBakeoff, compare, configuredVisionModel, MAX_RUNS, NO_SELECTION, recommend, withAccountedLatency, type RawOutput, type VisionSummary } from '../../scripts/ai-eval/bakeoff'
+import { latencyStats, type SectionAccounting } from '../../scripts/ai-eval/live-accounting'
+import { ScriptedOutfit } from '../../scripts/ai-eval/outfit-eval'
+import { ScriptedStylist } from '../../scripts/ai-eval/stylist-eval'
+import { renderSynthetic, syntheticVisionItems } from '../../scripts/ai-eval/synthetic-vision'
 import { CONFIDENCE_KEYS } from '@/lib/ai/garment-analysis'
 import { AiProviderError } from '@/lib/ai/providers/errors'
 import type { LLMProvider, LLMRequest, VisionProvider, VisionRequest } from '@/lib/ai/providers/types'
+
+if (!process.env.LOOKLY_BINARY) throw new Error('LOOKLY_BINARY is not set: build apps/api (go build -tags nodynamic -o <path> ./cmd/lookly) and point it there')
 
 const FAKE = 'not-a-real-key'
 const conf = Object.fromEntries(CONFIDENCE_KEYS.map((k) => [k, 0.9]))
@@ -158,6 +160,22 @@ describe('bake-off vision: live section (scripted provider, app pipeline)', () =
     expect(recommend([l('TESTED'), l('NOT_TESTED')], false)).toBe(NO_SELECTION)
     expect(recommend([l('NOT_TESTED'), l('NOT_TESTED')], true)).toBe(NO_SELECTION)
     expect(recommend([l('TESTED'), l('TESTED')], false)).not.toMatch(/gemini|openai/i)
+  })
+})
+
+describe('bake-off vision: estimates follow the section, not the stand-in', () => {
+  it("a Gemini section is estimated as Gemini even when its model id is an OpenAI one (Go speaks OpenAI's format to the stand-in)", async () => {
+    const priced = { AI_VISION_PRICE_INPUT_USD_PER_MTOK: '1', AI_VISION_PRICE_OUTPUT_USD_PER_MTOK: '2' }
+    const gemini = { GEMINI_API_KEY: FAKE, AI_EVAL_GEMINI_VISION_MODEL: 'gpt-5.4-mini', AI_VISION_PROVIDER: 'gemini', AI_VISION_MODEL: 'gpt-5.4-mini', ...priced }
+    const openai = { OPENAI_API_KEY: FAKE, AI_EVAL_OPENAI_VISION_MODEL: 'gpt-5.4-mini', AI_VISION_PROVIDER: 'openai', AI_VISION_MODEL: 'gpt-5.4-mini', ...priced }
+    const costOf = async (env: Record<string, string>, provider: string) => {
+      const r = await buildBakeoff(env, { visionDataset: dir, sections: ['vision'], providers: { vision: () => scriptedVision('garment') } })
+      return r.live.find((l) => l.provider === provider)!.accounting.find((a) => a.feature === 'vision')!.costAccounting
+    }
+    // OpenAI has a documented image bound for this model: every attempt is estimated.
+    expect((await costOf(openai, 'openai')).estimatedAttempts).toBe(3)
+    // Gemini has none: no attempt is estimated, whatever the model is called.
+    expect((await costOf(gemini, 'gemini')).estimatedAttempts).toBe(0)
   })
 })
 

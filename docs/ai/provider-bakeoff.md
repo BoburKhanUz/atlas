@@ -142,7 +142,8 @@ AI_EVAL_GEMINI_MODEL=… AI_EVAL_OPENAI_MODEL=… AI_EVAL_GEMINI_VISION_MODEL=�
   ```
 
   Unselected sections are planned at zero calls and reported `NOT_TESTED (not selected (--section))`; `--vision-dataset` does not start vision unless `vision` is selected. Every other control is unchanged: the call cap is checked against the selected sections, and the shared budget, circuit breaker, dataset integrity and accounting work as before. `execution.sections` records the selection. An unknown, empty or repeated value is refused before any provider is built.
-- The harness is never run with real keys in CI. The unit tests use scripted providers and a fake key value.
+- The harness is never run with real keys in CI. The tests use scripted providers and a fake key value.
+- **On the Go server** (since B7.4f): every section runs through `lookly eval --gate`. A real provider is called by Go's own adapter, given only its key and a call cap; an injected (scripted) provider is served to Go by a stand-in on 127.0.0.1, with a 2-second attempt time limit (it answers at once; its "timeout" is the stand-in never answering). The gate puts every attempt Go makes, retries and corrections included, through the ledger below before it is sent, so the budget, the cost reservation and the circuit breaker act per attempt exactly as before. The offline self-test and the robustness scenarios run on Go too; the tests that build a bake-off are in `apps/web/tests/eval-go` (`bun run test:eval-go`, with `LOOKLY_BINARY`). A scripted provider that throws an error that is no provider error is answered 503 by the stand-in: Go reads it as `unavailable`.
 
 ## Methodology
 
@@ -186,10 +187,7 @@ Every section (provider × capability × run) has its own `accounting` entry.
 | `fullyCorrect` | subject acceptable and, for a single garment, every labelled field right ÷ eligible |
 | `falseAcceptance` / `falseRejection` | non-garment cases accepted ÷ eligible non-garment cases; single-garment cases rejected ÷ eligible single-garment cases. Errors are neither; they are in `outcomes` and `notAnswered`. |
 
-**Retry policy, one layer:** the bake-off uses the app's `withRetry`, as `client.ts` does: at most one retry, for `timeout`, `network`, `rate_limited` (when Retry-After ≤ 3 s) and `unavailable`. `auth`, `config`, `invalid_request`, `malformed_response`, `content_filtered`, `provider_error` and `cancelled` are never retried.
-- Text: the runners retry; the counting wrapper does not.
-- Vision: the wrapper retries; `vision-eval.ts runOne` does not.
-- So there is never a double retry.
+**Retry policy, one layer:** the Go server's own (`apps/api/internal/ai/retry.go`): at most one retry, for `timeout`, `network`, `rate_limited` (when Retry-After ≤ 3 s) and `unavailable`. `auth`, `config`, `invalid_request`, `malformed_response`, `content_filtered`, `provider_error` and `cancelled` are never retried. The harness does not retry; it only admits or refuses each attempt Go asks about, so there is never a double retry.
 
 **Circuit breaker:** per section, so separate per provider, capability and run, with no state across them.
 - It opens after 2 auth, config or invalid-request failures, or 5 failed attempts in a row. A success resets the streak, and a timeout counts as a failure.

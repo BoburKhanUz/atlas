@@ -8,8 +8,7 @@ import path from 'path'
 import { inventedGarments, kendallTau, leaksPrivate, llmProviderFromEnv, assertOutsideRepo, percentile, uzbekCheck } from '../../../scripts/ai-eval/eval-common'
 import { stylistCases } from '../../../scripts/ai-eval/stylist-cases'
 import { requestIsClean, scoreStylist, summarizeStylist, type StylistOutcome } from '../../../scripts/ai-eval/stylist-scoring'
-import { runRobustness } from '../../../scripts/ai-eval/robustness'
-import { buildBakeoff, configuredModel, NO_SELECTION } from '../../../scripts/ai-eval/bakeoff'
+import { configuredModel } from '../../../scripts/ai-eval/bakeoff'
 import { runStylistCase, ScriptedStylist } from '../../../scripts/ai-eval/stylist-eval'
 import { outfitCases } from '../../../scripts/ai-eval/outfit-cases'
 import { scoreOutfit } from '../../../scripts/ai-eval/outfit-scoring'
@@ -263,35 +262,7 @@ describe('injection through stored data, weather and occasion (request-level che
   })
 })
 
-describe('adversarial robustness suite (offline)', () => {
-  it('every scenario ends exactly as specified: grounded answer, refusal or deterministic fallback; never more than 2 calls', async () => {
-    const results = await runRobustness()
-    expect(results.length).toBeGreaterThanOrEqual(13)
-    for (const r of results) {
-      expect(r.actual, `${r.feature}: ${r.scenario}`).toBe(r.expected)
-      expect(r.calls).toBeLessThanOrEqual(2)
-    }
-    expect(results.filter((r) => r.scenario.startsWith('malformed JSON (never retried)'))[0].calls).toBe(1)
-  })
-})
-
-describe('bake-off report', () => {
-  it('without credentials: both providers NOT_TESTED, every live metric null, no selection; deterministic', async () => {
-    const env = { AI_LLM_PROVIDER: 'gemini', AI_LLM_MODEL: 'configured-model' } // a model but no key
-    const a = await buildBakeoff(env)
-    expect(a.live.map((l) => [l.provider, l.status])).toEqual([['gemini', 'NOT_TESTED'], ['openai', 'NOT_TESTED']])
-    for (const l of a.live) for (const f of l.features) {
-      expect(f.status).toBe('NOT_TESTED')
-      expect([f.schemaValidity, f.groundingRate, f.latencyP50, f.latencyP95]).toEqual([null, null, null, null])
-    }
-    expect(a.live[0].reason).toMatch(/no GEMINI_API_KEY/)
-    expect(a.recommendation).toBe(NO_SELECTION)
-    expect(a.offline.stylist.status).toBe('OFFLINE_SELF_TEST')
-    expect([a.offline.stylist.latencyP50, a.offline.outfit.latencyP95]).toEqual([null, null]) // no fake latency
-    expect(a.offline.robustness.failed).toBe(0)
-    expect(JSON.stringify(await buildBakeoff(env))).toBe(JSON.stringify(a))
-  })
-
+describe('the configured model', () => {
   it('the model is always the configured one (never a built-in default)', () => {
     expect(configuredModel('gemini', {})).toBeNull()
     expect(configuredModel('openai', { AI_LLM_PROVIDER: 'gemini', AI_LLM_MODEL: 'g' })).toBeNull()

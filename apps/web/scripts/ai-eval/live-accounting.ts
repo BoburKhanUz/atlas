@@ -450,12 +450,15 @@ export function estimateAsked(a: GateAsk): EstimateResult | undefined {
  * makes, a retry or a correction included, is estimated, reserved and counted
  * BEFORE it is sent, exactly as countedLLM and retryingVision do in process; a
  * refusal (circuit open, budget) is never sent. Go asks about one attempt at a
- * time, so the reservation in flight is the last one admitted.
+ * time, so the reservation in flight is the last one admitted. `section`
+ * names the provider and model the estimate is for (through a stand-in Go
+ * speaks OpenAI's format whatever section it stands in for).
  */
-export function ledgerGate(ledger: CallLedger): AttemptGate {
+export function ledgerGate(ledger: CallLedger, section?: { provider: string; model: string }): AttemptGate {
   let reservation: Reservation = { cost: null }
   return {
-    ask(a) {
+    ask(asked) {
+      const a = section ? { ...asked, ...section } : asked
       const estimate = ledger.wantsEstimate ? estimateAsked(a) : undefined
       try {
         reservation = ledger.before(a.provider, estimate)

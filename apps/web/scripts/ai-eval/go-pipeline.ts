@@ -294,3 +294,58 @@ export async function openGoPipeline(options: { scripted?: LLMProvider; provider
   })
   return { go, name: provider, model, close: () => go.close() }
 }
+
+/** Where a live section's provider key is read from. */
+const SECTION_KEY = { openai: 'OPENAI_API_KEY', gemini: 'GEMINI_API_KEY' } as const
+
+/**
+ * An injected provider's attempt time limit: it answers at once, so its
+ * "timeout" is the stand-in never answering, which this limit ends.
+ */
+export const STAND_IN_TIMEOUT_MS = 2_000
+
+/**
+ * One live section's Go pipeline (the bake-off's): an injected provider
+ * (tests' scripted ones) through a stand-in, or the real provider through
+ * Go's own adapter, given only its key from `env`. With a gate, the harness's
+ * ledger decides every attempt; `maxCalls` is then Go's own backstop (the
+ * bake-off passes its cap plus the two calls Go keeps in hand per request, so
+ * Go never refuses before the gate does).
+ */
+export async function openSectionPipeline(o: {
+  provider: 'openai' | 'gemini'
+  model: string
+  env: Record<string, string | undefined>
+  maxCalls: number | null
+  gate?: AttemptGate
+  text?: LLMProvider | null
+  vision?: VisionProvider | null
+}): Promise<{ go: GoPipeline; close: () => Promise<void> }> {
+  if (o.text || o.vision) {
+    const standIn = await serveStandIn(o.text ?? null, o.vision ?? null)
+    const go = new GoPipeline({ args: ['--provider=openai', `--model=${o.model}`, `--base-url=${standIn.url}`, `--timeout=${STAND_IN_TIMEOUT_MS}ms`], gate: o.gate })
+    return { go, close: async () => { await go.close(); await standIn.close() } }
+  }
+  const variable = SECTION_KEY[o.provider]
+  const key = o.env[variable]?.trim()
+  if (!key) throw new Error(`${variable} is not set`)
+  if (!(o.maxCalls !== null && Number.isInteger(o.maxCalls) && o.maxCalls > 0)) throw new Error('a live section on the Go pipeline needs a call cap (paid calls: owner rule 4)')
+  const go = new GoPipeline({
+    args: [`--provider=${o.provider}`, `--model=${o.model}`, `--max-calls=${o.maxCalls}`],
+    env: { PATH: process.env.PATH ?? '', NODE_ENV: 'production', [variable]: key },
+    gate: o.gate,
+  })
+  return { go, close: () => go.close() }
+}
+
+/** A case run with a scripted provider of its own, through a fresh stand-in and `lookly eval` (offline scenarios). */
+export async function withScriptedGo<T>(text: LLMProvider | null, vision: VisionProvider | null, model: string, fn: (go: GoPipeline) => Promise<T>, timeout = '10s'): Promise<T> {
+  const standIn = await serveStandIn(text, vision)
+  const go = new GoPipeline({ args: ['--provider=openai', `--model=${model}`, `--base-url=${standIn.url}`, `--timeout=${timeout}`] })
+  try {
+    return await fn(go)
+  } finally {
+    await go.close()
+    await standIn.close()
+  }
+}
