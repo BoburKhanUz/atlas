@@ -53,6 +53,8 @@ type askPicture struct {
 	Width           int            `json:"width"`
 	Height          int            `json:"height"`
 	MaxSide         int            `json:"maxSide"`
+	Instruction     string         `json:"instruction"`
+	Schema          *schema        `json:"schema"`
 	MaxOutputTokens *int           `json:"maxOutputTokens"`
 	Options         pictureOptions `json:"options"`
 }
@@ -76,9 +78,12 @@ func (g *LineGate) Admit(_ context.Context, attempt ai.Attempt) error {
 		}
 	}
 	if v := attempt.Vision; v != nil {
-		question.Vision = &askPicture{MimeType: v.MimeType, MaxSide: v.MaxSide, MaxOutputTokens: v.MaxOutputTokens, Options: pictureOptions{
+		question.Vision = &askPicture{MimeType: v.MimeType, MaxSide: v.MaxSide, Instruction: v.Instruction, MaxOutputTokens: v.MaxOutputTokens, Options: pictureOptions{
 			GeminiMediaResolution: v.Options.GeminiMediaResolution, GeminiThinkingLevel: v.Options.GeminiThinkingLevel, OpenAIDetail: v.Options.OpenAIDetail,
 		}}
+		if v.JSONSchema != nil {
+			question.Vision.Schema = &schema{Name: v.JSONSchema.Name, Schema: v.JSONSchema.Schema}
+		}
 		if cfg, _, err := image.DecodeConfig(bytes.NewReader(v.Image)); err == nil {
 			question.Vision.Width, question.Vision.Height = cfg.Width, cfg.Height
 		}

@@ -35,11 +35,11 @@
 import crypto from 'crypto'
 import { promises as fs } from 'fs'
 import path from 'path'
-import type { AiPrice, LLMProvider, LLMRequest, VisionProvider, VisionRequest } from './protocol'
-import { AiProviderError, isAiProviderError } from '../../src/lib/ai/providers/errors'
+import { errorKindOf, RETRYABLE_KINDS, type AiPrice, type AttemptGate, type GateAsk, type GateAttempted, type LLMProvider, type LLMRequest, type VisionProvider, type VisionRequest } from './protocol'
+import { AiProviderError } from '../../src/lib/ai/providers/errors'
 import { MAX_RETRIES, RetriedError, withRetry } from '../../src/lib/ai/providers/retry'
 import { estimateCostUsd } from '../../src/lib/ai/telemetry'
-import { costOf, estimateTextAttempt, estimateVisionAttempt, INPUT_ESTIMATE_STATUS, isBudgetablePrice, isSoundEstimate, roundUsd, type CostEstimate, type EstimateResult } from './cost-bounds'
+import { costOf, estimateTextAttempt, estimateVisionAttempt, estimateVisionTokens, INPUT_ESTIMATE_STATUS, isBudgetablePrice, isSoundEstimate, roundUsd, type CostEstimate, type EstimateResult } from './cost-bounds'
 import type { EvalProviderName } from './eval-common'
 
 export const CIRCUIT_MAX_FATAL = 2
@@ -349,8 +349,9 @@ export class CallLedger {
   }
 
   fail(err: unknown, reservation: Reservation = { cost: null }): void {
-    const kind = isAiProviderError(err) ? err.kind : 'unexpected'
-    this.pendingRetry = isAiProviderError(err) && err.retryable
+    const known = errorKindOf(err)
+    const kind = known ?? 'unexpected'
+    this.pendingRetry = known !== null && RETRYABLE_KINDS.has(known)
     this.attemptErrors[kind] = (this.attemptErrors[kind] ?? 0) + 1
     if (kind === 'timeout') this.timeouts++
     this.consecutive++
@@ -429,6 +430,46 @@ export function retryingVision(inner: VisionProvider, ledger: CallLedger, sleep?
       } catch (err) {
         throw err instanceof RetriedError ? err.lastError : err
       }
+    },
+  }
+}
+
+/** An attempt Go asks about, as the estimate reads it. */
+export function estimateAsked(a: GateAsk): EstimateResult | undefined {
+  if (a.text) return estimateTextAttempt({ messages: a.text.messages, maxOutputTokens: a.text.maxOutputTokens ?? undefined, jsonSchema: a.text.schema ?? undefined, timeoutMs: 0 })
+  if (a.vision) {
+    const v = a.vision
+    const readable = v.width > 0 && v.height > 0
+    return estimateVisionTokens(a.provider, a.model, { maxOutputTokens: v.maxOutputTokens, openaiDetail: v.options.openaiDetail, width: readable ? v.width : undefined, height: readable ? v.height : undefined, instruction: v.instruction, schema: v.schema })
+  }
+  return undefined
+}
+
+/**
+ * The ledger as Go's attempt gate (`lookly eval --gate`): every attempt Go
+ * makes, a retry or a correction included, is estimated, reserved and counted
+ * BEFORE it is sent, exactly as countedLLM and retryingVision do in process; a
+ * refusal (circuit open, budget) is never sent. Go asks about one attempt at a
+ * time, so the reservation in flight is the last one admitted.
+ */
+export function ledgerGate(ledger: CallLedger): AttemptGate {
+  let reservation: Reservation = { cost: null }
+  return {
+    ask(a) {
+      const estimate = ledger.wantsEstimate ? estimateAsked(a) : undefined
+      try {
+        reservation = ledger.before(a.provider, estimate)
+        return true
+      } catch (err) {
+        if (err instanceof LocalRefusalError) return false
+        throw err
+      }
+    },
+    attempted(end: GateAttempted) {
+      const usage = end.inputTokens !== undefined || end.outputTokens !== undefined ? { inputTokens: end.inputTokens, outputTokens: end.outputTokens } : undefined
+      if (end.outcome === 'ok') ledger.ok(usage, reservation)
+      else ledger.fail({ kind: end.outcome }, reservation)
+      reservation = { cost: null }
     },
   }
 }

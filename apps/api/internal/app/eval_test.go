@@ -551,7 +551,8 @@ func TestEvalGateShowsThePictureSize(t *testing.T) {
 	}
 	v := lines[0]["ask"].(map[string]any)["vision"].(map[string]any)
 	if v["mimeType"] != "image/jpeg" || max(v["width"].(float64), v["height"].(float64)) != 256 || v["maxSide"] != float64(256) ||
-		v["maxOutputTokens"] == nil || v["options"].(map[string]any)["openaiDetail"] != "low" {
+		v["maxOutputTokens"] == nil || v["options"].(map[string]any)["openaiDetail"] != "low" || v["instruction"] == "" ||
+		v["schema"].(map[string]any)["name"] != "garment_analysis" {
 		t.Errorf("ask %v", v)
 	}
 }

@@ -18,7 +18,7 @@ import { spawn, type ChildProcessWithoutNullStreams } from 'child_process'
 import http from 'http'
 import type { AddressInfo } from 'net'
 import { createInterface } from 'readline'
-import { errorKindOf, type ColorOutcome, type EvalResult, type LLMProvider, type LLMRequest, type Versions, type VisionImageMimeType, type VisionProvider } from './protocol'
+import { errorKindOf, type AttemptGate, type ColorOutcome, type EvalResult, type GateAsk, type GateAttempted, type LLMProvider, type LLMRequest, type Versions, type VisionImageMimeType, type VisionProvider } from './protocol'
 import type { StylistCase } from './stylist-cases'
 import type { OutfitCase } from './outfit-cases'
 
@@ -136,6 +136,12 @@ export interface GoPipelineOptions {
   binary?: string
   /** The child's environment (the key of a live provider). */
   env?: NodeJS.ProcessEnv
+  /**
+   * Decides every provider attempt Go makes (`lookly eval --gate`): asked
+   * before, told after. Cases then go one at a time (the answers share the
+   * input with the cases).
+   */
+  gate?: AttemptGate
 }
 
 /** A running `lookly eval`: send a case, get its result, in order. */
@@ -146,20 +152,33 @@ export class GoPipeline {
   /** Why the child is gone (it exited, or could not be started): every case after that is refused with it. */
   private ended: Error | null = null
   private readonly exited: Promise<void>
+  private readonly gate: AttemptGate | null
+  /** With a gate, the previous case: the next is sent only once it is answered. */
+  private previous: Promise<unknown> = Promise.resolve()
+  /** A gate that threw during the current case: the attempt was refused, and the case fails with this. */
+  private gateError: unknown = null
 
   constructor(options: GoPipelineOptions) {
     const binary = options.binary ?? process.env.LOOKLY_BINARY
     if (!binary) throw new Error('LOOKLY_BINARY is not set (the built `lookly` binary of apps/api)')
-    this.child = spawn(binary, ['eval', ...options.args], { env: options.env ?? { PATH: process.env.PATH ?? '', NODE_ENV: 'production' }, stdio: ['pipe', 'pipe', 'pipe'] })
+    this.gate = options.gate ?? null
+    this.child = spawn(binary, ['eval', ...options.args, ...(this.gate ? ['--gate'] : [])], { env: options.env ?? { PATH: process.env.PATH ?? '', NODE_ENV: 'production' }, stdio: ['pipe', 'pipe', 'pipe'] })
     this.child.stderr.on('data', (c: Buffer) => (this.stderr += c.toString()))
     createInterface({ input: this.child.stdout }).on('line', (line) => {
+      let parsed: EvalResult | { refused: string } | { ask: GateAsk } | { attempted: GateAttempted }
+      try {
+        parsed = JSON.parse(line) as typeof parsed
+      } catch {
+        return this.waiting.shift()?.reject(new Error(`lookly eval wrote a line that is not JSON: ${line.slice(0, 200)}`))
+      }
+      if ('ask' in parsed) return void this.answer(parsed.ask)
+      if ('attempted' in parsed) return void this.gate?.attempted(parsed.attempted)
       const next = this.waiting.shift()
       if (!next) return
-      let parsed: EvalResult | { refused: string }
-      try {
-        parsed = JSON.parse(line) as EvalResult | { refused: string }
-      } catch {
-        return next.reject(new Error(`lookly eval wrote a line that is not JSON: ${line.slice(0, 200)}`))
+      if (this.gateError !== null) {
+        const err = this.gateError
+        this.gateError = null
+        return next.reject(err instanceof Error ? err : new Error(String(err)))
       }
       if ('refused' in parsed) next.reject(new Error(`lookly eval refused the case: ${parsed.refused}`))
       else next.resolve(parsed)
@@ -194,11 +213,28 @@ export class GoPipeline {
   }
 
   private send(request: Record<string, unknown>): Promise<EvalResult> {
-    if (this.ended) return Promise.reject(this.ended)
-    return new Promise((resolve, reject) => {
-      this.waiting.push({ resolve, reject })
-      this.child.stdin.write(JSON.stringify(request) + '\n')
-    })
+    const go = (): Promise<EvalResult> => {
+      if (this.ended) return Promise.reject(this.ended)
+      return new Promise((resolve, reject) => {
+        this.waiting.push({ resolve, reject })
+        this.child.stdin.write(JSON.stringify(request) + '\n')
+      })
+    }
+    if (!this.gate) return go()
+    const sent = this.previous.then(go, go)
+    this.previous = sent.catch(() => undefined)
+    return sent
+  }
+
+  /** The gate's answer to an attempt Go asks about; a gate that throws refuses it, and the case fails with the error. */
+  private async answer(ask: GateAsk): Promise<void> {
+    let admit = false
+    try {
+      admit = (await this.gate?.ask(ask)) === true
+    } catch (err) {
+      this.gateError ??= err
+    }
+    if (!this.ended) this.child.stdin.write(JSON.stringify({ admit }) + '\n')
   }
 
   /** Ends the run: the child reads the end of its input and exits. */

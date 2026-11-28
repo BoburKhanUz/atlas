@@ -14,6 +14,9 @@ export const AI_ERROR_KINDS = [
 ] as const
 export type AiErrorKind = (typeof AI_ERROR_KINDS)[number]
 
+/** The kinds the app tries once more (Go's ai.Error.Retryable). */
+export const RETRYABLE_KINDS: ReadonlySet<AiErrorKind> = new Set(['timeout', 'network', 'rate_limited', 'unavailable'])
+
 /**
  * The kind of a scripted provider's failure: any error with a known `kind`
  * (the web app's AiProviderError included, while its pipeline runs the same
@@ -267,3 +270,38 @@ export type ColorOutcome =
 
 /** The garment analysis's confidences, one for each key. */
 export type GarmentConfidences = Record<ConfidenceKey, number>
+
+// ─── The attempt gate (`lookly eval --gate`) ───────────────────────────────
+
+/** What Go is about to send, asked before every provider attempt. */
+export interface GateAsk {
+  feature: string
+  provider: string
+  model: string
+  text?: { messages: LLMMessage[]; temperature: number | null; maxOutputTokens: number | null; schema: StructuredOutputSchema | null }
+  vision?: {
+    mimeType: VisionImageMimeType
+    /** The sent picture's size (0 when Go could not read it). */
+    width: number
+    height: number
+    maxSide: number
+    instruction: string
+    schema: StructuredOutputSchema | null
+    maxOutputTokens: number | null
+    options: VisionOptions
+  }
+}
+
+/** How an admitted attempt ended. */
+export interface GateAttempted {
+  outcome: 'ok' | AiErrorKind | 'error'
+  inputTokens?: number
+  outputTokens?: number
+}
+
+/** The harness's answer to every attempt Go makes. */
+export interface AttemptGate {
+  /** true: the attempt goes to the provider; false: it is refused (never sent, never counted). */
+  ask(attempt: GateAsk): boolean | Promise<boolean>
+  attempted(end: GateAttempted): void
+}

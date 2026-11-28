@@ -107,23 +107,36 @@ export function openaiImageTokens(model: string, detail: string, width: number, 
  * the settings the adapter applies, or why there is none.
  */
 export async function estimateVisionAttempt(provider: string, model: string, req: VisionRequest): Promise<EstimateResult> {
-  const outputTokens = outputBound(req.maxOutputTokens)
-  if (outputTokens === null) return { ok: false, reason: 'no output-token limit on the request' }
-  if (provider !== 'openai') return { ok: false, reason: `no documented image-token bound for ${provider}` }
-  if (!isOpenAIPatchModel(model)) return { ok: false, reason: 'no documented image-token bound for this model' }
-  // The OpenAI adapter sends req.options.openaiDetail, else 'auto'.
-  const detail = req.options?.openaiDetail ?? 'auto'
   let width: number | undefined, height: number | undefined
   try {
     ;({ width, height } = await sharp(req.image).metadata())
   } catch {
-    return { ok: false, reason: 'image dimensions unreadable' }
+    width = height = undefined
   }
-  const imageInputTokens = openaiImageTokens(model, detail, width ?? 0, height ?? 0)
+  return estimateVisionTokens(provider, model, { maxOutputTokens: req.maxOutputTokens, openaiDetail: req.options?.openaiDetail, width, height, instruction: req.instruction, schema: req.jsonSchema })
+}
+
+/**
+ * Token estimate of one vision attempt from what it sends: the picture's
+ * size (undefined: unreadable), the settings and the text, or why there is
+ * none (an attempt Go asks about through the gate gives exactly these).
+ */
+export function estimateVisionTokens(
+  provider: string,
+  model: string,
+  sent: { maxOutputTokens?: number | null; openaiDetail?: string; width?: number; height?: number; instruction: string; schema?: { name: string; schema: Record<string, unknown> } | null },
+): EstimateResult {
+  const outputTokens = outputBound(sent.maxOutputTokens ?? undefined)
+  if (outputTokens === null) return { ok: false, reason: 'no output-token limit on the request' }
+  if (provider !== 'openai') return { ok: false, reason: `no documented image-token bound for ${provider}` }
+  if (!isOpenAIPatchModel(model)) return { ok: false, reason: 'no documented image-token bound for this model' }
+  if (sent.width === undefined || sent.height === undefined) return { ok: false, reason: 'image dimensions unreadable' }
+  // The OpenAI adapter sends the openaiDetail option, else 'auto'.
+  const imageInputTokens = openaiImageTokens(model, sent.openaiDetail ?? 'auto', sent.width, sent.height)
   if (imageInputTokens === null) return { ok: false, reason: 'image setting or size outside the documented bound (detail high/auto, sides ≤ 2048 px)' }
   // Mirrors the adapter: a vision request without a schema gets { type: 'object' }.
-  const schema = req.jsonSchema ?? { name: 'vision_output', schema: { type: 'object' } }
-  return { ok: true, tokens: { textInputTokens: textInputHeuristic([req.instruction], schema), imageInputTokens, outputTokens } }
+  const schema = sent.schema ?? { name: 'vision_output', schema: { type: 'object' } }
+  return { ok: true, tokens: { textInputTokens: textInputHeuristic([sent.instruction], schema), imageInputTokens, outputTokens } }
 }
 
 /** Rounded UP to the micro-dollar: an estimate never rounds down. */
