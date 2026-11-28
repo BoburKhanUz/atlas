@@ -13,7 +13,7 @@ import { outfitCases, type OutfitCase } from './outfit-cases'
 import { ScriptedOutfit } from './outfit-eval'
 import type { OutfitRecord } from './outfit-scoring'
 import { runRobustness, type RobustnessResult, type Runners } from './robustness'
-import { stylistCases, type StylistCase } from './stylist-cases'
+import { preferencesCase, stylistCases } from './stylist-cases'
 import { ScriptedStylist } from './stylist-eval'
 import type { StylistRecord } from './stylist-scoring'
 import { renderSynthetic, syntheticVisionItems } from './synthetic-vision'
@@ -99,11 +99,6 @@ function scriptedVision() {
     },
   }
   return { provider, asked }
-}
-
-/** A stylist case with every style preference set (no scripted case has one). */
-export function preferencesCase(): StylistCase {
-  return { ...stylistCases()[0], preferences: { preferredStyles: ['classic'], dislikedStyles: ['sporty'], favoriteColors: ['navy'], dislikedColors: ['red'], preferredFit: 'slim' } }
 }
 
 type Asked<R> = { record: R; asked: unknown[] }

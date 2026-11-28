@@ -43,6 +43,7 @@ Principles:
 | `timings.ts` | local latency of everything around a provider call |
 | `eval-common.ts` | statistics, Uzbek proxy check, garment-mention grounding, provider from the environment |
 | `go-pipeline.ts` | the Go pipeline (stage B6.9): `lookly eval` from `LOOKLY_BINARY` (cases, dry runs, the versions, selfies), and a stand-in on 127.0.0.1 that serves a scripted provider in OpenAI's shape |
+| `case-setups.ts` / `case-setups.json` | Go's setup of every kept case (`lookly eval` dryRun: stylist references and messages, outfit candidates, profile and weather use, the deterministic explanation), keyed by the request's SHA-256; scoring, replays, reviews and the fallback explanations read it, so they need no Go binary. Regenerate after a change to the cases, prompts or engine: `LOOKLY_BINARY=<built lookly> bun scripts/ai-eval/case-setups.ts`; `tests/eval-go/case-setups.evalgo.ts` fails when it is stale. A live run on Go is scored against the setup Go returned with that very result |
 | `protocol.ts` / `catalog.ts` | the harness's own types (cases, `lookly eval` results and setups, the scripted providers' interface, error kinds) and the clothing catalog the Go server embeds (`apps/api/internal/catalog/catalog.json`); `tests/unit/ai-eval-protocol.test.ts` holds them to Go's error kinds and, while it exists, to the web app's own |
 
 ```bash

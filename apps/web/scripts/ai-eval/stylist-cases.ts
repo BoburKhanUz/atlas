@@ -135,3 +135,8 @@ export function stylistCases(): StylistCase[] {
     },
   ]
 }
+
+/** A stylist case with every style preference set (no scripted case has one). */
+export function preferencesCase(): StylistCase {
+  return { ...stylistCases()[0], preferences: { preferredStyles: ['classic'], dislikedStyles: ['sporty'], favoriteColors: ['navy'], dislikedColors: ['red'], preferredFit: 'slim' } }
+}

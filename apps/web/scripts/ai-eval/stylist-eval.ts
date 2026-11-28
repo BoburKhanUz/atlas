@@ -16,7 +16,7 @@ import path from 'path'
 import { generateOutfits } from '../../src/lib/ai/outfit-engine'
 import { isAiProviderError } from '../../src/lib/ai/providers/errors'
 import { RetriedError, withRetry } from '../../src/lib/ai/providers/retry'
-import type { LLMMessage, LLMProvider, LLMRequest } from './protocol'
+import type { LLMMessage, LLMProvider, LLMRequest, StylistSetup } from './protocol'
 import { InvalidStylistOutputError, interpretStylistOutput, parseStylistText, resolveReferences, STYLIST_LIMITS, STYLIST_SYSTEM_PROMPT, stylistJsonSchema } from '../../src/lib/ai/stylist'
 import { buildStylistContext, stylistMessages } from '../../src/lib/ai/stylist-context'
 import { stylistCorrectionMessages } from '../../src/lib/ai/stylist-service'
@@ -25,6 +25,7 @@ import { arg, assertOutsideRepo, llmProviderFromEnv } from './eval-common'
 import { STYLIST_CASES_VERSION, stylistCases, type StylistCase } from './stylist-cases'
 import { resolveCaseRubric, syntheticStylistRubricSet, type RubricResolution, type RubricSet } from './case-rubric'
 import type { DatasetIdentityRef } from './eval-rubric'
+import { stylistSetupOf } from './case-setups'
 import { openGoPipeline, stylistRequest, type GoPipeline } from './go-pipeline'
 import { requestIsClean, scoreStylist, summarizeStylist, type StylistOutcome, type StylistRecord, type StylistSummary } from './stylist-scoring'
 
@@ -50,8 +51,7 @@ export function stylistCaseSetup(c: StylistCase) {
   const context = buildStylistContext({ items: c.wardrobe, candidates, occasion: c.occasion, weather: c.weather, preferences: c.preferences, colorProfile: c.colorProfile })
   const messages = stylistMessages({ system: STYLIST_SYSTEM_PROMPT, context: context.data, history: [], message: c.message, occasionText: c.occasionText ?? null })
   const schema = { name: 'stylist_answer', schema: stylistJsonSchema(context.refs) }
-  const owned = new Set(c.wardrobe.map((w) => w.subcategory).filter((s): s is string => !!s))
-  return { context, messages, schema, owned }
+  return { context, messages, schema }
 }
 
 /** The identity of the current case set (version + SHA-256 of its JSON, as the bake-off records it). */
@@ -90,13 +90,17 @@ function rubricFor(c: StylistCase, ctx: StylistRubricContext): RubricResolution 
 
 /**
  * Scores an outcome of case `c` with the current evaluator (live runs and
- * offline replays share this). An UNSCORABLE case fails closed (pass false)
- * and carries the reason: it is neither a pass nor a model failure.
+ * offline replays share this), against Go's setup of the case: the one its
+ * run returned, else the frozen one (case-setups.json). An UNSCORABLE case
+ * fails closed (pass false) and carries the reason: it is neither a pass nor
+ * a model failure.
  */
-export function scoreStylistCase(c: StylistCase, outcome: StylistOutcome, ctx: StylistRubricContext = syntheticRubricContext()) {
-  const { context, messages, owned } = stylistCaseSetup(c)
+export function scoreStylistCase(c: StylistCase, outcome: StylistOutcome, ctx: StylistRubricContext = syntheticRubricContext(), given?: StylistSetup) {
+  // The rubric's own refusals (another case set, a changed case) come first.
   const r = rubricFor(c, ctx)
-  const scored = scoreStylist(c.expect, outcome, owned, requestIsClean(messages, c.expect.injectMarker), { rubric: r.status === 'SCORABLE' ? r.rubric : null, contextRefs: context.refs })
+  const setup = given ?? stylistSetupOf(c)
+  const owned = new Set(c.wardrobe.map((w) => w.subcategory).filter((s): s is string => !!s))
+  const scored = scoreStylist(c.expect, outcome, owned, requestIsClean(setup.messages, c.expect.injectMarker), { rubric: r.status === 'SCORABLE' ? r.rubric : null, contextRefs: setup.refs })
   return r.status === 'UNSCORABLE' ? { checks: scored.checks, pass: false, unscorable: r.reason } : { ...scored, unscorable: undefined }
 }
 
@@ -153,7 +157,8 @@ export async function runStylistCase(p: LLMProvider, c: StylistCase, ctx: Stylis
 export async function runStylistCaseGo(go: GoPipeline, p: { name: string; model: string }, c: StylistCase, ctx: StylistRubricContext = syntheticRubricContext()): Promise<StylistRecord> {
   const r = await go.run('stylist', stylistRequest(c))
   const outcome = r.outcome as unknown as StylistOutcome
-  const { checks, pass, unscorable } = scoreStylistCase(c, outcome, ctx)
+  // Scored against what Go made of the case in this very run.
+  const { checks, pass, unscorable } = scoreStylistCase(c, outcome, ctx, r.setup as StylistSetup)
   return {
     case: c.id, tags: c.tags, provider: p.name, model: p.model, latencyMs: r.latencyMs, calls: r.calls, requests: r.requests,
     inputTokens: r.inputTokens, outputTokens: r.outputTokens, outcome, checks, pass, ...(unscorable ? { unscorable } : {}),

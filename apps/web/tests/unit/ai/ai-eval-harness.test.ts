@@ -13,7 +13,7 @@ import { buildBakeoff, configuredModel, NO_SELECTION } from '../../../scripts/ai
 import { runStylistCase, ScriptedStylist } from '../../../scripts/ai-eval/stylist-eval'
 import { outfitCases } from '../../../scripts/ai-eval/outfit-cases'
 import { scoreOutfit } from '../../../scripts/ai-eval/outfit-scoring'
-import { fallbackExplanations, runOutfitCase, ScriptedOutfit } from '../../../scripts/ai-eval/outfit-eval'
+import { fallbackExplanations, outfitCaseContext, runOutfitCase, ScriptedOutfit } from '../../../scripts/ai-eval/outfit-eval'
 import { renderSynthetic, SYNTHETIC_VISION_VERSION, syntheticVisionItems } from '../../../scripts/ai-eval/synthetic-vision'
 import { Dataset } from '../../../scripts/ai-eval/vision-scoring'
 import { COLORS, SUBCATEGORIES } from '@/lib/ai/catalog'
@@ -188,15 +188,28 @@ describe('outfit evaluation', () => {
 
   it('scoring: weather and profile claims without data, references and invented garments fail', () => {
     const c = outfitCases().find((x) => x.id === 'profile_none')!
-    const candidates = generateOutfitResult({ wardrobe: c.wardrobe, occasion: c.occasion, colorProfile: null, topN: 5 }).outfits
-    const refs = candidates.map((_, i) => `O${i + 1}`)
-    const ctx = { candidates, weatherProvided: false, profileSent: false, profileStrong: false }
+    // Go's setup of the case, with neither a weather nor a profile known.
+    const ctx = { ...outfitCaseContext(c), weatherProvided: false, profileSent: false, profileStrong: false }
+    const refs = ctx.candidates.map((_, i) => `O${i + 1}`)
+    expect(refs.length).toBeGreaterThan(1)
     const ok = (explanation: string) => scoreOutfit(ctx, { kind: 'ranked', firstError: null, ranking: refs, explanation })
     expect(ok('Bu obraz qulay va ranglari bir-biriga mos.').pass).toBe(true)
     expect(ok('Bu obraz rang profilingizga mos.').checks.noUnsupportedClaims).toBe(false)
     expect(ok('Bugungi harorat uchun bu obraz mos.').checks.noUnsupportedClaims).toBe(false)
     expect(ok('O2 eng yaxshisi va bu sizga mos.').checks.noPrivateLeak).toBe(false)
     expect(ok('Bu obrazga galstuk qo‘shing va bu mos.').checks.explanationGrounded).toBe(false)
+  })
+
+  it("scoring follows Go's setup: a profile or weather claim fails only where the model was not given it", () => {
+    const claim = (id: string, explanation: string) => {
+      const ctx = outfitCaseContext(outfitCases().find((x) => x.id === id)!)
+      return scoreOutfit(ctx, { kind: 'ranked', firstError: null, ranking: ctx.candidates.map((_, i) => `O${i + 1}`), explanation }).checks.noUnsupportedClaims
+    }
+    expect(claim('profile_strong', 'Bu obraz rang profilingizga mos.')).toBe(true)
+    expect(claim('profile_weak', 'Bu obraz rang profilingizga mos.')).toBe(false)
+    expect(claim('profile_none', 'Bu obraz rang profilingizga mos.')).toBe(false)
+    expect(claim('hot', 'Bugungi harorat uchun bu obraz mos.')).toBe(true)
+    expect(claim('no_weather', 'Bugungi harorat uchun bu obraz mos.')).toBe(false)
   })
 
   it('the deterministic fallback explanations are grounded Latin Uzbek (no English occasion label)', () => {

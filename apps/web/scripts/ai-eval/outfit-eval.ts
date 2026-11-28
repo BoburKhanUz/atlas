@@ -12,12 +12,13 @@
  */
 import { promises as fs } from 'fs'
 import path from 'path'
-import { deterministicExplanation, interpretOutfitOutput, InvalidOutfitOutputError, outfitCorrectionMessages, outfitJsonSchema, outfitMessages } from '../../src/lib/ai/outfit-intelligence'
+import { interpretOutfitOutput, InvalidOutfitOutputError, outfitCorrectionMessages, outfitJsonSchema, outfitMessages } from '../../src/lib/ai/outfit-intelligence'
 import { OUTFIT_AI_TIMEOUT_MS } from '../../src/lib/ai/outfit-config'
-import { generateOutfitResult, profileContext } from '../../src/lib/ai/outfit-engine'
+import { generateOutfitResult } from '../../src/lib/ai/outfit-engine'
 import { isAiProviderError } from '../../src/lib/ai/providers/errors'
 import { RetriedError, withRetry } from '../../src/lib/ai/providers/retry'
-import type { LLMMessage, LLMProvider, LLMRequest } from './protocol'
+import { outfitSetupOf } from './case-setups'
+import type { LLMMessage, LLMProvider, LLMRequest, OutfitSetup } from './protocol'
 import { openGoPipeline, outfitRequest, type GoPipeline } from './go-pipeline'
 import { arg, assertOutsideRepo, llmProviderFromEnv } from './eval-common'
 import { LocalRefusalError } from './live-accounting'
@@ -35,13 +36,13 @@ export class ScriptedOutfit implements LLMProvider {
   }
 }
 
-/** The scoring context of case `c` (deterministic engine only): live runs and offline replays share it. */
-export function outfitCaseContext(c: OutfitCase): OutfitCaseContext {
-  const result = generateOutfitResult({ wardrobe: c.wardrobe, occasion: c.occasion, weather: c.weather, colorProfile: c.colorProfile, topN: c.topN })
-  const cp = profileContext(c.colorProfile)
-  const sent = !!c.colorProfile && (c.colorProfile.confidence ?? 0) >= 0.3 && !!c.colorProfile.season
-  return { candidates: result.outfits, weatherProvided: !!result.weather, profileSent: sent, profileStrong: !!cp && cp.strength >= 0.6 }
+/** The scoring context of a setup Go made: a strong profile is one the engine uses at 0.6 or more. */
+export function outfitScoringContext(setup: OutfitSetup): OutfitCaseContext {
+  return { candidates: setup.candidates, weatherProvided: setup.weatherProvided, profileSent: setup.profileSent, profileStrong: (setup.profileStrength ?? 0) >= 0.6 }
 }
+
+/** The scoring context of case `c`, from Go's setup (case-setups.json): live runs and offline replays share it. */
+export const outfitCaseContext = (c: OutfitCase): OutfitCaseContext => outfitScoringContext(outfitSetupOf(c))
 
 export async function runOutfitCase(p: LLMProvider, c: OutfitCase): Promise<OutfitRecord> {
   const result = generateOutfitResult({ wardrobe: c.wardrobe, occasion: c.occasion, weather: c.weather, colorProfile: c.colorProfile, topN: c.topN })
@@ -97,19 +98,17 @@ export async function runOutfitCase(p: LLMProvider, c: OutfitCase): Promise<Outf
 export async function runOutfitCaseGo(go: GoPipeline, p: { name: string; model: string }, c: OutfitCase): Promise<OutfitRecord> {
   const r = await go.run('outfit', outfitRequest(c))
   const outcome = r.outcome as unknown as OutfitOutcome
-  const { checks, pass } = scoreOutfit(outfitCaseContext(c), outcome)
+  // Scored against what Go made of the case in this very run.
+  const { checks, pass } = scoreOutfit(outfitScoringContext(r.setup as OutfitSetup), outcome)
   return {
     case: c.id, tags: c.tags, provider: p.name, model: p.model, candidates: r.candidates ?? 0, latencyMs: r.latencyMs, calls: r.calls,
     requests: r.requests, inputTokens: r.inputTokens, outputTokens: r.outputTokens, outcome, checks, pass,
   }
 }
 
-/** The deterministic explanation of each case's best outfit (what the fallback shows), for review. */
+/** The deterministic explanation of each case's best outfit (what the fallback shows, from Go's setup), for review. */
 export function fallbackExplanations(): Array<{ case: string; explanation: string }> {
-  return outfitCases().map((c) => {
-    const r = generateOutfitResult({ wardrobe: c.wardrobe, occasion: c.occasion, weather: c.weather, colorProfile: c.colorProfile, topN: c.topN })
-    return { case: c.id, explanation: r.outfits[0] ? deterministicExplanation(r.outfits[0], { occasion: c.occasion, weather: r.weather }) : '' }
-  })
+  return outfitCases().map((c) => ({ case: c.id, explanation: outfitSetupOf(c).fallbackExplanation ?? '' }))
 }
 
 const pct = (n: number | null) => (n === null ? '—' : `${(n * 100).toFixed(1)}%`)

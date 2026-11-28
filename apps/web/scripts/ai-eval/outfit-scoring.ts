@@ -2,7 +2,7 @@
  * Pure scoring of the outfit-AI evaluation (Phase 4.5). Unit-tested in
  * tests/unit/ai/ai-eval-harness.test.ts.
  */
-import type { OutfitCandidate } from '../../src/lib/ai/outfit-engine'
+import type { SetupCandidate } from './protocol'
 import { inventedGarments, type EvalStatus, kendallTau, leaksPrivate, percentile, rate, uzbekCheck, type UzbekCheck } from './eval-common'
 
 export type OutfitOutcome =
@@ -51,7 +51,8 @@ export const PROFILE_CLAIM = /(rang profil|kuz mavsumi|bahor mavsumi|yoz mavsumi
 export const WEATHER_CLAIM = /(ob-havo|harorat|°|daraja|yomg[‘'ʻ’]ir|qor|shamol|issiq kun|sovuq kun|quyoshli)/iu
 
 export interface OutfitCaseContext {
-  candidates: OutfitCandidate[]
+  /** The engine's outfits, best first, as Go's setup gives them. */
+  candidates: SetupCandidate[]
   weatherProvided: boolean
   /** Whether the colour profile is strong enough to be sent to the model. */
   profileSent: boolean
