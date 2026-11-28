@@ -105,6 +105,7 @@ export async function serveStandIn(text: LLMProvider | null, vision: VisionProvi
           const result = await vision.analyzeImage({
             image: new Uint8Array(Buffer.from(data, 'base64')), mimeType: mime as VisionImageMimeType, maxSide: 0, instruction,
             jsonSchema: schemaOf(body), maxOutputTokens: body.max_completion_tokens, timeoutMs: 0,
+            options: image.image_url!.detail ? { openaiDetail: image.image_url!.detail as 'low' | 'high' | 'auto' } : undefined,
           })
           content = JSON.stringify(result.output)
           usage = result.metadata.usage

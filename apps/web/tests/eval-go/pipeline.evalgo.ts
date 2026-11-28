@@ -14,13 +14,14 @@ import { stylistCases } from '../../scripts/ai-eval/stylist-cases'
 import { runStylistCase, runStylistCaseGo, ScriptedStylist } from '../../scripts/ai-eval/stylist-eval'
 import { renderSynthetic, syntheticVisionItems } from '../../scripts/ai-eval/synthetic-vision'
 import { runOne, runOneGo } from '../../scripts/ai-eval/vision-eval'
+import { AiProviderError, type AiErrorKind } from '@/lib/ai/providers/errors'
 import type { LLMProvider, LLMRequest, VisionProvider, VisionRequest } from '@/lib/ai/providers/types'
 
 if (!process.env.LOOKLY_BINARY) throw new Error('LOOKLY_BINARY is not set: build apps/api (go build -tags nodynamic -o <path> ./cmd/lookly) and point it there')
 
-async function withGo<T>(text: LLMProvider | null, vision: VisionProvider | null, model: string, fn: (go: GoPipeline) => Promise<T>): Promise<T> {
+async function withGo<T>(text: LLMProvider | null, vision: VisionProvider | null, model: string, fn: (go: GoPipeline) => Promise<T>, timeout = '10s'): Promise<T> {
   const standIn = await serveStandIn(text, vision)
-  const go = new GoPipeline({ args: ['--provider=openai', `--model=${model}`, `--base-url=${standIn.url}`, '--timeout=10s'] })
+  const go = new GoPipeline({ args: ['--provider=openai', `--model=${model}`, `--base-url=${standIn.url}`, `--timeout=${timeout}`] })
   try {
     return await fn(go)
   } finally {
@@ -102,6 +103,42 @@ describe('the evaluation on the Go pipeline', () => {
     }
   })
 
+  it('each provider failure gives the TypeScript record', async () => {
+    const kinds: AiErrorKind[] = ['rate_limited', 'auth', 'invalid_request', 'provider_error', 'content_filtered', 'malformed_response', 'network', 'timeout', 'unavailable']
+    const failing = (kind: AiErrorKind): LLMProvider => ({
+      name: 'failing', model: 'offline',
+      generate: async () => {
+        throw new AiProviderError(kind, 'failing')
+      },
+    })
+    for (const kind of kinds) {
+      // A timeout is the attempt's own time limit on Go: keep it short.
+      const timeout = kind === 'timeout' ? '300ms' : '10s'
+      const sc = stylistCases()[0]
+      const oc = outfitCases()[0]
+      const ts = { stylist: withoutLatency(await runStylistCase(failing(kind), sc)), outfit: withoutLatency(await runOutfitCase(failing(kind), oc)) }
+      const go = await withGo(failing(kind), null, 'offline', async (g) => ({
+        stylist: withoutLatency(await runStylistCaseGo(g, failing(kind), sc)),
+        outfit: withoutLatency(await runOutfitCaseGo(g, failing(kind), oc)),
+      }), timeout)
+      expect(go, kind).toEqual(ts)
+    }
+  })
+
+  it('a stylist case with style preferences: the same record and the same request', async () => {
+    const c = {
+      ...stylistCases()[0],
+      preferences: { preferredStyles: ['classic'], dislikedStyles: ['sporty'], favoriteColors: ['navy'], dislikedColors: ['red'], preferredFit: 'slim' },
+    }
+    const tsSide = recording(new ScriptedStylist())
+    const ts = withoutLatency(await runStylistCase(tsSide.provider, c))
+    const goSide = recording(new ScriptedStylist())
+    const go = await withGo(goSide.provider, null, goSide.provider.model, async (g) => withoutLatency(await runStylistCaseGo(g, goSide.provider, c)))
+    expect(go).toEqual(ts)
+    expect(goSide.asked).toEqual(tsSide.asked)
+    expect(JSON.stringify(tsSide.asked)).toContain('sporty')
+  })
+
   it('a corrected answer: the same record, its tokens summed over both requests, the same correction asked', async () => {
     const steps = (n: number, req: LLMRequest) => {
       const refs = ((req.jsonSchema!.schema as { properties: { referencedItems: { items: { enum?: string[] } } } }).properties.referencedItems.items.enum ?? []).slice(0, 2)
@@ -144,10 +181,12 @@ describe('the evaluation on the Go pipeline', () => {
 
   it('vision: the synthetic pictures give the TypeScript outcome', async () => {
     // A scripted model that names what each picture is.
+    // What it is asked, but the picture (each pipeline prepares its own, ADR 0009).
+    const asked: unknown[] = []
     const scripted: VisionProvider = {
       name: 'scripted-vision', model: 'offline',
       async analyzeImage(req: VisionRequest) {
-        void req
+        asked.push({ instruction: req.instruction, jsonSchema: req.jsonSchema, maxOutputTokens: req.maxOutputTokens, openaiDetail: req.options?.openaiDetail, mimeType: req.mimeType })
         return {
           output: {
             subject: 'single_garment', category: 'shirt', subcategory: 'tshirt', colors: ['white'], pattern: 'solid', material: 'cotton',
@@ -166,6 +205,9 @@ describe('the evaluation on the Go pipeline', () => {
         const ts = await runOne(scripted, config as never, bytes)
         const go = await runOneGo(g, config as never, bytes)
         expect({ outcome: go.outcome, usage: go.usage, calls: go.calls }, item.id).toEqual({ outcome: ts.outcome, usage: ts.usage, calls: 1 })
+        const [tsAsked, goAsked] = asked.splice(0)
+        expect(goAsked, item.id).toEqual(tsAsked)
+        expect(tsAsked).toMatchObject({ openaiDetail: 'low', mimeType: 'image/jpeg' })
       }
     })
   })
