@@ -84,8 +84,14 @@ jobs:
       - run: bun install --frozen-lockfile
       - name: Build (standalone)
         run: bun run build
+      # The runner's Go switches itself to the toolchain pinned in go.mod.
+      - name: Build the Go server
+        working-directory: apps/api
+        run: CGO_ENABLED=0 go build -trimpath -tags nodynamic -o "$RUNNER_TEMP/lookly" ./cmd/lookly
+      # The schema is the Go server's (docs/plan/B7.md, B7.3): `lookly migrate`
+      # makes it, and the queue's tables, on the empty database.
       - name: Apply migrations
-        run: bunx prisma migrate deploy
+        run: LOOKLY_ENV=test "$RUNNER_TEMP/lookly" migrate
       - name: Install Chromium for Playwright
         run: npx playwright install --with-deps chromium
       - name: Run e2e
@@ -105,11 +111,7 @@ jobs:
       # the whole API answered by Go and the pages by Next.js, behind a
       # test-only proxy (e2e/go-front.mjs), on the same database and secrets
       # as Next.js; the Go worker (e2e/go-worker.mjs) sends the queued mail
-      # to the outbox directory. The runner's Go switches itself to the
-      # toolchain pinned in go.mod.
-      - name: Build the Go server
-        working-directory: apps/api
-        run: CGO_ENABLED=0 go build -trimpath -tags nodynamic -o "$RUNNER_TEMP/lookly" ./cmd/lookly
+      # to the outbox directory.
       # The AI evaluation's scripted cases through `lookly eval` (docs/plan/B6.md,
       # B6.9): the same records as the TypeScript pipeline. Offline: a stand-in
       # on 127.0.0.1 answers, no key is read.

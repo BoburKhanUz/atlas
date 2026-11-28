@@ -92,10 +92,10 @@ func blackhole(t *testing.T) (addr string, accepted <-chan struct{}) {
 
 func TestUsage(t *testing.T) {
 	t.Parallel()
-	for _, args := range [][]string{nil, {"bogus"}, {"migrate"}, {"migrate", "public"}, {"serve", "extra"}} {
+	for _, args := range [][]string{nil, {"bogus"}, {"migrate", "public"}, {"migrate", "river", "x"}, {"serve", "extra"}} {
 		var stderr bytes.Buffer
 		code := app.Run(context.Background(), args, env(nil), &bytes.Buffer{}, &stderr)
-		if code != 2 || !strings.Contains(stderr.String(), "usage: lookly serve | worker | health | migrate river") {
+		if code != 2 || !strings.Contains(stderr.String(), "usage: lookly serve | worker | health | migrate | migrate river") {
 			t.Errorf("%v: exit %d, stderr %q", args, code, stderr.String())
 		}
 	}

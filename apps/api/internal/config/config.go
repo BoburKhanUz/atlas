@@ -122,21 +122,33 @@ var knownInsecureSecrets = map[string]bool{
 	"dev-refresh-secret-change-in-production-please-use-env": true,
 }
 
-// Load reads and validates the configuration. getenv is os.LookupEnv in
-// production; every problem is reported, joined, in one error.
-func Load(getenv func(string) (string, bool)) (Config, error) {
+// LoadDatabase reads and validates only what a command that works on the
+// database alone needs (`lookly migrate`): LOOKLY_ENV, DATABASE_URL,
+// LOOKLY_DB_MAX_CONNS and LOOKLY_LOG_LEVEL. The server's secrets are not read.
+func LoadDatabase(getenv func(string) (string, bool)) (Config, error) {
 	var errs []error
 	fail := func(variable, format string, args ...any) {
 		errs = append(errs, fmt.Errorf("%s: %s", variable, fmt.Sprintf(format, args...)))
 	}
-	value := func(name string) (string, bool) {
+	var c Config
+	loadDatabase(&c, envValue(getenv), fail)
+	if len(errs) > 0 {
+		return Config{}, fmt.Errorf("invalid configuration:\n%w", errors.Join(errs...))
+	}
+	return c, nil
+}
+
+// envValue reads a variable, trimmed; an empty value counts as unset.
+func envValue(getenv func(string) (string, bool)) func(string) (string, bool) {
+	return func(name string) (string, bool) {
 		v, ok := getenv(name)
 		v = strings.TrimSpace(v)
 		return v, ok && v != ""
 	}
+}
 
-	var c Config
-
+// loadDatabase reads the environment's name, the database and the log level.
+func loadDatabase(c *Config, value func(string) (string, bool), fail func(string, string, ...any)) {
 	switch v, _ := value("LOOKLY_ENV"); Env(v) {
 	case Production, Staging, Development, Test:
 		c.Env = Env(v)
@@ -144,15 +156,6 @@ func Load(getenv func(string) (string, bool)) (Config, error) {
 		fail("LOOKLY_ENV", "is not set (production, staging, development or test)")
 	default:
 		fail("LOOKLY_ENV", "must be production, staging, development or test")
-	}
-
-	c.HTTPAddr = defaultHTTPAddr
-	if v, ok := value("LOOKLY_HTTP_ADDR"); ok {
-		if err := checkListenAddr(v); err != nil {
-			fail("LOOKLY_HTTP_ADDR", "%v", err)
-		} else {
-			c.HTTPAddr = v
-		}
 	}
 
 	if v, ok := value("DATABASE_URL"); !ok {
@@ -191,6 +194,29 @@ func Load(getenv func(string) (string, bool)) (Config, error) {
 	}
 	if c.Env == Production && c.LogLevel < slog.LevelInfo {
 		fail("LOOKLY_LOG_LEVEL", "debug is not allowed in production")
+	}
+
+}
+
+// Load reads and validates the configuration. getenv is os.LookupEnv in
+// production; every problem is reported, joined, in one error.
+func Load(getenv func(string) (string, bool)) (Config, error) {
+	var errs []error
+	fail := func(variable, format string, args ...any) {
+		errs = append(errs, fmt.Errorf("%s: %s", variable, fmt.Sprintf(format, args...)))
+	}
+	value := envValue(getenv)
+
+	var c Config
+	loadDatabase(&c, value, fail)
+
+	c.HTTPAddr = defaultHTTPAddr
+	if v, ok := value("LOOKLY_HTTP_ADDR"); ok {
+		if err := checkListenAddr(v); err != nil {
+			fail("LOOKLY_HTTP_ADDR", "%v", err)
+		} else {
+			c.HTTPAddr = v
+		}
 	}
 
 	c.ShutdownGrace = defaultShutdownGrace

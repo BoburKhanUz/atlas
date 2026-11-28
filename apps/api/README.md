@@ -20,15 +20,22 @@ go run ./cmd/lookly serve
 curl -s localhost:8080/api/health
 ```
 
-Background jobs (needs River's tables once per database), with the same environment:
+The schema (the application's tables and the job queue's), once per database and after
+each update; it reads only `LOOKLY_ENV` and `DATABASE_URL` (and the pool and log
+settings), no secret:
 
 ```bash
-go run ./cmd/lookly migrate river
+go run ./cmd/lookly migrate
+```
+
+Background jobs, with the server's environment:
+
+```bash
 go run ./cmd/lookly worker
 ```
 
 The server queues jobs too (password reset mail, removal of a deleted account's
-images), so run `migrate river` before using those. In development, mail is written to
+images), so run `migrate` before using those. In development, mail is written to
 files (`MAIL_OUTBOX_DIR`, default `./storage/mail-outbox`); nothing is sent.
 
 Configuration variables and their rules: `docs/architecture/backend.md#configuration`.

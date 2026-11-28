@@ -1,6 +1,6 @@
 # 0007. Prisma owns the schema until cutover; Go migrations start from a recorded baseline
 
-- Status: accepted
+- Status: accepted; carried out in B7.3 (`lookly migrate`, docs/plan/B7.md)
 - Date: 2026-11-25
 - Decided by: the engineer (within the owner-approved plan)
 

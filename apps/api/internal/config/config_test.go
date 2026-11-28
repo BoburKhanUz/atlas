@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log/slog"
+	"maps"
 	"strings"
 	"testing"
 	"time"
@@ -390,5 +391,32 @@ func TestTheWeatherProvider(t *testing.T) {
 	}
 	if text := fmt.Sprintf("%v %+v", c, c.LogValue()); !strings.Contains(text, "WeatherProvider:mock") || !strings.Contains(text, "weatherProvider=mock") {
 		t.Errorf("the weather provider is not in the printed configuration: %s", text)
+	}
+}
+
+// The migrations read the database's settings only: the server's secrets
+// are not needed, and the same rules hold for what is read.
+func TestLoadDatabaseReadsTheDatabaseSettingsOnly(t *testing.T) {
+	t.Parallel()
+	vars := map[string]string{"LOOKLY_ENV": "production", "DATABASE_URL": valid()["DATABASE_URL"], "LOOKLY_DB_MAX_CONNS": "3", "LOOKLY_LOG_LEVEL": "warn"}
+	c, err := config.LoadDatabase(env(vars))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Env != config.Production || c.DatabaseURL != vars["DATABASE_URL"] || c.DBMaxConns != 3 || c.LogLevel != slog.LevelWarn || c.JWTSecret != nil {
+		t.Errorf("%+v", c)
+	}
+	for name, change := range map[string]map[string]string{
+		"no environment":                 {"LOOKLY_ENV": ""},
+		"no database":                    {"DATABASE_URL": ""},
+		"production without TLS setting": {"DATABASE_URL": "postgresql://u:p@db:5432/lookly"},
+		"a bad pool size":                {"LOOKLY_DB_MAX_CONNS": "0"},
+		"debug logs in production":       {"LOOKLY_LOG_LEVEL": "debug"},
+	} {
+		bad := maps.Clone(vars)
+		maps.Copy(bad, change)
+		if _, err := config.LoadDatabase(env(bad)); err == nil {
+			t.Errorf("%s: accepted", name)
+		}
 	}
 }

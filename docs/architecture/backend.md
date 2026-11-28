@@ -122,9 +122,9 @@ before listening. Values that hold credentials are never printed.
 The session variables are shared with the Next.js server and follow its rules, with two
 differences: Go refuses a value out of range or malformed, where the Next.js server
 silently used the default or the nearest limit; and Go refuses `COOKIE_SECURE=0` in
-production. `serve`, `worker` and `migrate river` validate the whole configuration, so
-all three need the secrets, `STORAGE_LOCAL_DIR` and valid mail settings (a one-off
-`migrate river` runs with the service's own environment); `health` reads only
+production. `serve` and `worker` validate the whole configuration (`migrate` and
+`migrate river` only the database's settings), so
+both need the secrets, `STORAGE_LOCAL_DIR` and valid mail settings; `health` reads only
 `LOOKLY_HTTP_ADDR`. In production
 without `TRUST_PROXY=1` the server logs a warning at start: client addresses are then
 unknown, so sign-in is limited per account only and registration shares one limit.
@@ -609,9 +609,18 @@ by slice (`docs/plan/B6.md`).
   it. It refuses to start without River's tables and without the storage directory.
 - `lookly serve` queues jobs (password reset, account deletion) and so needs River's
   tables too. It starts without them, as it starts without the database; until they
-  exist those two operations answer 500 and the log says to run `lookly migrate river`.
-- `lookly migrate river` creates River's schema and tables (idempotent). Against a
-  shared or production database only with the owner's approval of the deploy.
+  exist those two operations answer 500 and the log says to run `lookly migrate river`
+  (`lookly migrate` makes them too).
+- `lookly migrate` brings a database to the newest schema (B7.3): the application's
+  tables (`migrations.Migrate`: on an empty database every Go migration; on one Prisma
+  made, with every migration of `migrations.PrismaHistory` applied and none failed, the
+  baseline recorded as applied in goose's table and the later ones run; anything else,
+  tables without a history or a Prisma history that is not exactly that one, refused
+  with nothing changed), then River's. Runs at the same time wait for each other (an
+  advisory lock on a connection outside the pool). It reads only `LOOKLY_ENV`,
+  `DATABASE_URL`, `LOOKLY_DB_MAX_CONNS` and `LOOKLY_LOG_LEVEL`. `lookly migrate river`
+  does River's part alone (idempotent). Against a shared or production database only
+  with the owner's approval of the deploy.
 - `lookly health` requests the local `/api/health` and exits 0 only on 200. The image is
   distroless (no shell or curl), so this is its Docker `HEALTHCHECK`.
 - `GET /api/health` pings the database within 2 s: 200 `{status: ok, database: ok,
@@ -623,12 +632,12 @@ by slice (`docs/plan/B6.md`).
 
 ## Deployment notes for B7
 
-- goose keeps its version table (`goose_db_version`) in `public`. Decide at the cutover
-  whether it stays there while a rollback to Prisma is still possible, or moves to its
-  own schema.
+- goose keeps its version table (`goose_db_version`) in `public`, beside Prisma's
+  `_prisma_migrations` on a database Prisma made (B7.3: kept, so the database still
+  shows where it came from; no table of the application is changed by the recording).
 - `lookly worker` has no health check of its own: if River loses the database, it logs
   errors but keeps running. Monitor its logs (or add a probe) when it is deployed.
-- Deploy order: `lookly migrate river` before `serve` and `worker`. The worker needs the
+- Deploy order: `lookly migrate` before `serve` and `worker`. The worker needs the
   storage volume mounted at `STORAGE_LOCAL_DIR` (read-write), the mail settings and
   `PUBLIC_BASE_URL`; the server needs the same mail settings (it answers 503 on a reset
   request when mail is disabled).

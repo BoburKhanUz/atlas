@@ -48,13 +48,14 @@ import (
 	"lookly/internal/vision"
 	"lookly/internal/wardrobe"
 	"lookly/internal/weather"
+	"lookly/migrations"
 )
 
 // version is stamped at build time: -ldflags "-X lookly/internal/app.version=<v>".
 var version = "dev"
 
 const (
-	usage = "usage: lookly serve | worker | health | migrate river | eval (see lookly eval --help)"
+	usage = "usage: lookly serve | worker | health | migrate | migrate river | eval (see lookly eval --help)"
 
 	// Exit codes: 1 a runtime failure, 2 a usage or configuration error.
 	exitFailure = 1
@@ -90,6 +91,8 @@ func Run(ctx context.Context, args []string, getenv func(string) (string, bool),
 		return worker(ctx, getenv, stdout, stderr)
 	case "health":
 		return probe(ctx, getenv, stderr)
+	case "migrate":
+		return migrate(ctx, getenv, stdout, stderr)
 	case "migrate river":
 		return migrateRiver(ctx, getenv, stdout, stderr)
 	default:
@@ -370,9 +373,48 @@ func worker(ctx context.Context, getenv func(string) (string, bool), stdout, std
 	return 0
 }
 
+// migrate brings the database to the newest schema: the application's tables
+// (migrations.Migrate: the Go migrations; on a database Prisma made, the
+// baseline recorded as applied), then River's (idempotent; runs at the same
+// time wait for each other).
+func migrate(ctx context.Context, getenv func(string) (string, bool), stdout, stderr io.Writer) int {
+	log, pool, code := openDatabase(ctx, getenv, stdout, stderr)
+	if pool == nil {
+		return code
+	}
+	defer pool.Close()
+	if !reachable(ctx, pool, stderr) {
+		return exitFailure
+	}
+	out, err := migrations.Migrate(ctx, pool)
+	if err != nil {
+		log.Error("migrate", "err", database.Describe(err))
+		return exitFailure
+	}
+	switch {
+	case out.RecordedBaseline:
+		log.Info("schema: the database Prisma made is recorded at the baseline", "applied", out.Applied)
+	case len(out.Applied) > 0:
+		log.Info("schema: migrations applied", "versions", out.Applied)
+	default:
+		log.Info("schema: already current")
+	}
+	applied, err := jobs.Migrate(ctx, pool)
+	if err != nil {
+		log.Error("migrate river", "err", database.Describe(err))
+		return exitFailure
+	}
+	if len(applied) == 0 {
+		log.Info("river migrations already current", "schema", jobs.Schema)
+	} else {
+		log.Info("river migrations applied", "schema", jobs.Schema, "versions", applied)
+	}
+	return 0
+}
+
 // migrateRiver creates River's schema and tables (idempotent).
 func migrateRiver(ctx context.Context, getenv func(string) (string, bool), stdout, stderr io.Writer) int {
-	_, log, pool, code := open(ctx, getenv, stdout, stderr)
+	log, pool, code := openDatabase(ctx, getenv, stdout, stderr)
 	if pool == nil {
 		return code
 	}
@@ -413,6 +455,24 @@ func open(ctx context.Context, getenv func(string) (string, bool), stdout, stder
 		return config.Config{}, nil, nil, exitUsage
 	}
 	return cfg, log, pool, 0
+}
+
+// openDatabase is open for the commands that work on the database alone (the
+// migrations): only the database's settings are read, not the server's
+// secrets.
+func openDatabase(ctx context.Context, getenv func(string) (string, bool), stdout, stderr io.Writer) (*slog.Logger, *pgxpool.Pool, int) {
+	cfg, err := config.LoadDatabase(getenv)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return nil, nil, exitUsage
+	}
+	log := slog.New(slog.NewJSONHandler(stdout, &slog.HandlerOptions{Level: cfg.LogLevel}))
+	pool, err := database.Open(ctx, cfg)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return nil, nil, exitUsage
+	}
+	return log, pool, 0
 }
 
 // reachable checks the database before a command that needs it from the

@@ -19,7 +19,7 @@ Built so far (B0–B3) and planned:
 apps/api/
   cmd/lookly/            thin main (signals); the commands live in internal/app
   internal/
-    app/                 commands: `serve`, `worker`, `health`, `migrate river`; `eval` later
+    app/                 commands: `serve`, `worker`, `health`, `migrate`, `migrate river`, `eval`
     config/              typed config from env; validated at startup, fails closed
     apierr/              the contract's error codes: status and Uzbek message (one table)
     httpapi/             router, middleware (request id, access log, recovery, body

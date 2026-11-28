@@ -334,3 +334,57 @@ func TestWorkerSweepsTheStorageWithTheOperatorsLimit(t *testing.T) {
 		t.Fatalf("exit %d", code)
 	}
 }
+
+// `lookly migrate` on an empty database makes the whole schema and the
+// queue's; a second run changes nothing; a database it cannot continue from
+// is refused with the reason and left alone.
+func TestMigrateMakesTheSchemaOnceAndRefusesAnUnknownDatabase(t *testing.T) {
+	t.Parallel()
+	pool := dbtest.Empty(t)
+	var stdout, stderr bytes.Buffer
+	// The database's settings are all it needs: no secret of the server.
+	onlyDatabase := func(k string) (string, bool) {
+		switch k {
+		case "LOOKLY_ENV":
+			return "test", true
+		case "DATABASE_URL":
+			return dbtest.URL(pool), true
+		}
+		return "", false
+	}
+	if code := app.Run(context.Background(), []string{"migrate"}, onlyDatabase, &stdout, &stderr); code != 0 {
+		t.Fatalf("exit %d: %s %s", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "schema: migrations applied") || !strings.Contains(stdout.String(), "river migrations applied") {
+		t.Errorf("the log: %s", stdout.String())
+	}
+	want := dbtest.Catalog(t, schemaDB(t))
+	got := dbtest.Catalog(t, pool)
+	for k := range got {
+		if strings.Contains(k, "river") {
+			delete(got, k)
+		}
+	}
+	if diff := dbtest.Diff(want, got); diff != "" {
+		t.Fatalf("not the Go schema:\n%s", diff)
+	}
+	if n := count(t, pool, `SELECT count(*) FROM information_schema.tables WHERE table_schema = 'river' AND table_name = 'river_job'`); n != 1 {
+		t.Errorf("river_job: %d", n)
+	}
+	stdout.Reset()
+	if code := app.Run(context.Background(), []string{"migrate"}, appEnv(pool, nil), &stdout, &bytes.Buffer{}); code != 0 || !strings.Contains(stdout.String(), "schema: already current") {
+		t.Errorf("again: exit %d, %s", code, stdout.String())
+	}
+
+	other := dbtest.Empty(t)
+	if _, err := other.Exec(context.Background(), `CREATE TABLE "Other" ("id" text)`); err != nil {
+		t.Fatal(err)
+	}
+	stdout.Reset()
+	if code := app.Run(context.Background(), []string{"migrate"}, appEnv(other, nil), &stdout, &bytes.Buffer{}); code != 1 || !strings.Contains(stdout.String(), "without a history") {
+		t.Errorf("unknown database: exit %d, %s", code, stdout.String())
+	}
+	if n := count(t, other, `SELECT count(*) FROM information_schema.tables WHERE table_schema IN ('public', 'river')`); n != 1 {
+		t.Errorf("the unknown database was changed: %d tables", n)
+	}
+}
