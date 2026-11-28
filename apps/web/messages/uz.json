@@ -92,5 +92,77 @@
     "deleteDescription": "Hisobingiz va barcha ma’lumotlaringiz (garderob, obrazlar, suhbatlar, rang tahlili) butunlay o‘chiriladi. Bu amalni qaytarib bo‘lmaydi.",
     "deleted": "Hisob o‘chirildi",
     "deleteFailed": "Hisobni o‘chirib bo‘lmadi"
+  },
+  "landing": {
+    "meta": {
+      "title": "Lookly — shaxsiy AI stilist",
+      "description": "Garderobingizni suratga oling — Lookly ob-havo va tadbirga mos obrazni o‘zingizning kiyimlaringizdan tuzib beradi. Android va iPhone uchun."
+    },
+    "nav": {
+      "label": "Bo‘limlar",
+      "features": "Imkoniyatlar",
+      "how": "Qanday ishlaydi",
+      "faq": "Savollar",
+      "download": "Ilovani yuklab olish",
+      "menu": "Menyu",
+      "home": "Lookly bosh sahifasi"
+    },
+    "hero": {
+      "title": "Shaxsiy AI stilistingiz",
+      "subtitle": "Kiyimlaringizdan har kuni yangi obraz",
+      "text": "Garderobingizni suratga oling — Lookly ob-havo va tadbirga mos obrazni o‘zingizning kiyimlaringizdan tuzib beradi.",
+      "trustFree": "Bepul",
+      "trustUzbek": "O‘zbek tilida",
+      "trustPrivate": "Rasmlaringiz faqat sizniki",
+      "imageAlt": "Lookly ilovasi: oq futbolka, ko‘k jinsi shim va oq krossovkadan tuzilgan obraz"
+    },
+    "stores": {
+      "googlePlay": "Google Play orqali oling",
+      "appStore": "Download on the App Store",
+      "soon": "Tez kunda"
+    },
+    "features": {
+      "title": "Lookly nimalar qila oladi",
+      "wardrobeTitle": "Raqamli garderob",
+      "wardrobeText": "Kiyimni suratga oling, AI turi, rangi va mavsumini o‘zi aniqlaydi.",
+      "outfitTitle": "Har kunga obraz",
+      "outfitText": "Ob-havo va tadbirga qarab kiyimlaringizdan tayyor obraz.",
+      "stylistTitle": "AI stilist",
+      "stylistText": "Savol bering: stilist faqat sizdagi kiyimlardan maslahat beradi.",
+      "colorTitle": "Rang profilingiz",
+      "colorText": "Bitta selfi — sizga mos ranglar palitrasi."
+    },
+    "how": {
+      "title": "Qanday ishlaydi",
+      "step1": "Kiyimlaringizni suratga oling",
+      "step2": "Lookly obraz tuzadi",
+      "step3": "Kiying va saqlang"
+    },
+    "privacy": {
+      "title": "Ma’lumotlaringiz himoyada",
+      "selfie": "Selfi saqlanmaydi — faqat ranglar tahlil qilinadi",
+      "photos": "Kiyim rasmlaringizni faqat siz ko‘rasiz",
+      "delete": "Hisobingizni istalgan vaqtda o‘chirishingiz mumkin"
+    },
+    "banner": {
+      "title": "Lookly bilan har kuni chiroyli kiyining"
+    },
+    "faq": {
+      "title": "Ko‘p beriladigan savollar",
+      "freeQ": "Lookly bepulmi?",
+      "freeA": "Ha, hozir Lookly bepul. Har bir imkoniyatning kunlik chegarasi bor. Keyinchalik ko‘proq imkoniyat beradigan Premium obuna ham qo‘shiladi.",
+      "phonesQ": "Qaysi telefonlarda ishlaydi?",
+      "phonesA": "Android (7.0 va undan yangi) va iPhone (iOS 15 va undan yangi) telefonlarda. Ilova Google Play va App Store’da chiqadi.",
+      "photosQ": "Rasmlarim qayerda saqlanadi?",
+      "photosA": "Kiyim rasmlaringiz Lookly serverida, faqat sizning hisobingizda saqlanadi va ularni faqat siz ko‘rasiz. Kiyimning turi va rangini aniqlash uchun rasm AI xizmatiga yuboriladi. Selfi saqlanmaydi: undan faqat ranglar aniqlanadi. Hisobingizni o‘chirsangiz, rasmlaringiz ham o‘chiriladi.",
+      "stylistQ": "AI stilist qanday ishlaydi?",
+      "stylistA": "Savolingizni yozasiz — stilist garderobingizdagi kiyimlarni, ob-havo va tadbirni hisobga olib, faqat sizdagi kiyimlardan obraz taklif qiladi. Javoblar o‘zbek tilida."
+    },
+    "footer": {
+      "tagline": "Shaxsiy AI stilist",
+      "privacy": "Maxfiylik siyosati",
+      "terms": "Foydalanish shartlari",
+      "copyright": "© {year} Lookly"
+    }
   }
 }
