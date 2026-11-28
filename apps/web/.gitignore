@@ -56,3 +56,4 @@ server.log
 playwright-report/
 playwright-report-staging/
 test-results/
+test-results-api/

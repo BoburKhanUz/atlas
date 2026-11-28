@@ -115,6 +115,11 @@ jobs:
       # on 127.0.0.1 answers, no key is read.
       - name: AI evaluation on the Go pipeline (offline)
         run: LOOKLY_BINARY="$RUNNER_TEMP/lookly" bun run test:eval-go
+      # The API journeys against the Go server and its worker (docs/plan/B7.md,
+      # B7.2), every answer checked against docs/api/openapi.json; secrets are
+      # random per run (playwright.api.config.ts).
+      - name: API journeys against Go
+        run: E2E_GO_BINARY="$RUNNER_TEMP/lookly" bun run test:api-e2e
       - name: Run the e2e suite in Go mode
         run: |
           JWT_SECRET="$(openssl rand -hex 32)"
