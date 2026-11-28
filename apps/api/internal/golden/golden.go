@@ -1025,3 +1025,106 @@ func LoadGarment(t testing.TB) Garment {
 	}
 	return g
 }
+
+// OutfitAI is testdata/golden/outfit-ai.json (apps/web/scripts/golden-outfit-ai.ts):
+// the AI ranking of generated outfits as the Next.js code does it.
+type OutfitAI struct {
+	GeneratedBy  string `json:"generatedBy"`
+	SourceCommit string `json:"sourceCommit"`
+	Note         string `json:"note"`
+	Version      string `json:"version"`
+	SystemPrompt string `json:"systemPrompt"`
+	UserMessage  string `json:"userMessage"`
+	Correction   []struct {
+		Role    string `json:"role"`
+		Content string `json:"content"`
+	} `json:"correction"`
+	Schemas []string `json:"schemas"` // for 1 to 5 candidates
+	Limits  struct {
+		TimeoutMs           int `json:"timeoutMs"`
+		BudgetMs            int `json:"budgetMs"`
+		ExplanationMaxChars int `json:"explanationMaxChars"`
+	} `json:"limits"`
+	ForbiddenTerms []string `json:"forbiddenTerms"`
+	// Contexts: the context message for the outfits of the engine vectors'
+	// case of that name.
+	Contexts []struct {
+		Name    string `json:"name"`
+		Context string `json:"context"`
+	} `json:"contexts"`
+	// Direct: hand-made candidates and the context message made of them.
+	Direct []struct {
+		Name       string `json:"name"`
+		Candidates []struct {
+			Score   float64  `json:"score"`
+			Reasons []string `json:"reasons"`
+			Items   []struct {
+				Slot string `json:"slot"`
+				Item struct {
+					ID           string   `json:"id"`
+					Fit          *string  `json:"fit"`
+					Season       []string `json:"season"`
+					Gender       *string  `json:"gender"`
+					Category     string   `json:"category"`
+					Subcategory  *string  `json:"subcategory"`
+					Colors       []string `json:"colors"`
+					Pattern      *string  `json:"pattern"`
+					Material     *string  `json:"material"`
+					SleeveLength *string  `json:"sleeveLength"`
+					Style        *string  `json:"style"`
+					Formality    *string  `json:"formality"`
+				} `json:"item"`
+			} `json:"items"`
+		} `json:"candidates"`
+		Occasion *string `json:"occasion"`
+		Weather  *struct {
+			Band      *string  `json:"band"`
+			FeelsLike *float64 `json:"feelsLike"`
+			Wet       *string  `json:"wet"`
+			Snow      *bool    `json:"snow"`
+			Wind      *string  `json:"wind"`
+			UVHigh    *bool    `json:"uvHigh"`
+			// Completeness is not part of the context.
+			Completeness float64 `json:"completeness"`
+		} `json:"weather"`
+		ColorProfile *struct {
+			Season     *string  `json:"season"`
+			Undertone  *string  `json:"undertone"`
+			Confidence *float64 `json:"confidence"`
+			// The rest is not part of the context.
+			SecondarySeason     *string  `json:"secondarySeason"`
+			UndertoneConfidence *float64 `json:"undertoneConfidence"`
+			SecondaryConfidence *float64 `json:"secondaryConfidence"`
+			RecommendedColors   []string `json:"recommendedColors"`
+			NeutralColors       []string `json:"neutralColors"`
+			CautionColors       []string `json:"cautionColors"`
+		} `json:"colorProfile"`
+		Context string `json:"context"`
+	} `json:"direct"`
+	Interpreted []struct {
+		Name   string   `json:"name"`
+		Text   string   `json:"text"`
+		Refs   []string `json:"refs"`
+		Result *struct {
+			Ranking     []string `json:"ranking"`
+			Explanation string   `json:"explanation"`
+		} `json:"result"`
+		Reason string `json:"reason"`
+	} `json:"interpreted"`
+	Wording []struct {
+		Text     string   `json:"text"`
+		Terms    []string `json:"terms"`
+		Cyrillic bool     `json:"cyrillic"`
+	} `json:"wording"`
+}
+
+// LoadOutfitAI reads the outfit ranking vectors.
+func LoadOutfitAI(t testing.TB) OutfitAI {
+	t.Helper()
+	var o OutfitAI
+	load(t, "outfit-ai.json", &o)
+	if len(o.Contexts) == 0 || len(o.Direct) == 0 || len(o.Interpreted) == 0 || len(o.Wording) == 0 || len(o.Schemas) != 5 {
+		t.Fatal("outfit-ai.json: a section is empty")
+	}
+	return o
+}
