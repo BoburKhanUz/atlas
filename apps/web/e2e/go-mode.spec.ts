@@ -18,10 +18,10 @@ test.describe('Go mode routing', () => {
     expect(register.status()).toBe(201)
     expect(register.headers()['x-e2e-backend']).toBe('go')
 
-    // The cookies Go set authenticate a Next.js route …
-    const colorProfile = await request.get('/api/v1/color-profile')
-    expect(colorProfile.status()).toBe(200)
-    expect(colorProfile.headers()['x-e2e-backend']).toBe('next')
+    // The cookies Go set open a Next.js page (no redirect to sign-in) …
+    const wardrobePage = await request.get('/wardrobe', { maxRedirects: 0 })
+    expect(wardrobePage.status()).toBe(200)
+    expect(wardrobePage.headers()['x-e2e-backend']).toBe('next')
     // … and Go's own.
     const me = await request.get('/api/v1/auth/me')
     expect(me.status()).toBe(200)
@@ -332,8 +332,8 @@ test.describe('Go mode routing', () => {
     await page.goto('/wardrobe')
     await expect(page).toHaveURL(/\/wardrobe$/)
     expect(await cookie('atlas_rt')).not.toBe(rt2)
-    const colorProfile = await page.request.get('/api/v1/color-profile')
-    expect(colorProfile.status()).toBe(200)
-    expect(colorProfile.headers()['x-e2e-backend']).toBe('next')
+    const profilePage = await page.request.get('/profile', { maxRedirects: 0 })
+    expect(profilePage.status()).toBe(200)
+    expect(profilePage.headers()['x-e2e-backend']).toBe('next')
   })
 })

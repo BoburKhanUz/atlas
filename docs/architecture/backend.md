@@ -570,6 +570,15 @@ by slice (`docs/plan/B6.md`).
   key (`AI_UNAVAILABLE` 503 with `Retry-After: 15`, `AI_QUOTA_EXCEEDED` 429 to the
   next Tashkent midnight). The list shows the 50 latest changed conversations with
   their last message; a conversation shows its newest 1000 messages, oldest first.
+- **Colour profile** (`color.Service`, `/api/v1/color-profile`): a selfie (JPEG, PNG
+  or WebP, at most 8 MB, shortest side at least 256) becomes a canvas in memory
+  (`imaging.Processor.Canvas`: upright, within 320 pixels, on grey), is analysed by
+  `color.AnalyzeCanvas` (color-analysis-v2: deterministic, no model, no network, no
+  quota) and dropped; nothing of the picture is stored or logged. The result
+  replaces the user's one profile and the user profile points at it, with the skin
+  tone, undertone, hair and eye colour, in one transaction. Refusals:
+  `PHOTO_QUALITY_TOO_LOW` (with the reason), `SKIN_NOT_VISIBLE`, `INVALID_IMAGE`,
+  `IMAGE_DIMENSIONS`. DELETE removes the profile and those values.
 - **Monitoring** (`ai.Monitor`): the events `ai.call`, `ai.request` and `ai.quota`,
   one JSON log line each, the event's name as the message. Every event passes a
   whitelist per event: only known fields of the right kind, and a text only when it is

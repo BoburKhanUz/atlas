@@ -45,6 +45,9 @@ const GO_ROUTES = new Set([
   'POST /api/v1/outfits',
   'POST /api/v1/stylist/chat',
   'GET /api/v1/stylist/conversations',
+  'POST /api/v1/color-profile/analyze',
+  'GET /api/v1/color-profile',
+  'DELETE /api/v1/color-profile',
 ])
 
 /** The operations with a parameter in the path: one item of the wardrobe, one outfit and its feedback, one conversation, and every image. */
