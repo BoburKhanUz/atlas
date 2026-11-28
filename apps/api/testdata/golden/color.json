@@ -1,6 +1,6 @@
 {
  "generatedBy": "apps/web/scripts/golden-color.ts",
- "sourceCommit": "e98983253a297eb27ac920c38cab56694d47740a",
+ "sourceCommit": "c7a60a36487aabd04007742906ec8279c3fc5e9e",
  "note": "The selfie colour analysis as the Next.js code does it: synthetic canvases (PNG without noise, the noise and edits described) and the pure steps.",
  "version": "color-analysis-v2",
  "canvasMaxSide": 320,
@@ -1019,6 +1019,109 @@
     "crushedShare": 0,
     "clippedShare": 0,
     "sharpness": 1360.863047471411
+   },
+   "skin": {
+    "error": "photo_quality",
+    "reason": "background"
+   },
+   "result": {
+    "error": "photo_quality",
+    "reason": "background"
+   }
+  },
+  {
+   "name": "a skin-coloured background around a face that is not skin",
+   "png": "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",
+   "noise": 14,
+   "seed": 7,
+   "edits": [],
+   "sha256": "9620cd2811fd7d151e731dcbef0fe6c36880d9adb01ea328f80f39b9f91955e5",
+   "quality": {
+    "meanLuma": 142.18785332028702,
+    "lumaStd": 46.94886542093343,
+    "crushedShare": 0,
+    "clippedShare": 0,
+    "sharpness": 1384.9040774671544
+   },
+   "skin": {
+    "value": {
+     "lab": {
+      "L": 71.56333099121171,
+      "a": 15.374148622382181,
+      "b": 26.427876161193637
+     },
+     "luma": 176.0611475820285,
+     "pixels": 16750,
+     "cells": 8,
+     "agreement": 0.9996303387640237,
+     "box": {
+      "top": 32,
+      "bottom": 223,
+      "left": 36,
+      "right": 203
+     }
+    }
+   },
+   "result": {
+    "value": {
+     "version": "color-analysis-v2",
+     "skinTone": "light",
+     "undertone": "warm",
+     "undertoneConfidence": 0.53,
+     "hairColor": null,
+     "eyeColor": null,
+     "contrastLevel": null,
+     "season": "spring",
+     "confidence": 0.65,
+     "secondarySeason": "autumn",
+     "secondaryConfidence": 0.02,
+     "recommendedColors": [
+      "cream",
+      "light_blue",
+      "khaki",
+      "mustard",
+      "tan",
+      "beige",
+      "olive",
+      "orange"
+     ],
+     "neutralColors": [
+      "cream",
+      "beige",
+      "tan",
+      "ivory"
+     ],
+     "cautionColors": [
+      "black",
+      "navy",
+      "burgundy",
+      "purple"
+     ],
+     "analysis": {
+      "version": "color-analysis-v2",
+      "quality": 1,
+      "skinPixels": 16750,
+      "skinRegions": 8,
+      "agreement": 1,
+      "hairKnown": false,
+      "eyesKnown": false
+     }
+    }
+   }
+  },
+  {
+   "name": "a skin-coloured background around a small face",
+   "png": "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",
+   "noise": 14,
+   "seed": 7,
+   "edits": [],
+   "sha256": "6a841b964ddba6a78b0a01870d6328a33311d274260c5d67d01535886c0e9872",
+   "quality": {
+    "meanLuma": 162.75844481762903,
+    "lumaStd": 40.300805668204454,
+    "crushedShare": 0,
+    "clippedShare": 0,
+    "sharpness": 1370.363904239134
    },
    "skin": {
     "error": "photo_quality",
