@@ -24,7 +24,7 @@ changing storage each need the owner's go-ahead for that release (CLAUDE.md rule
 ## Server (VPS)
 
 1. Deploy the commit to **staging** (same compose files, separate database and server
-   settings; `deploy/compose.sh up -d --build --wait` runs `lookly migrate` first).
+   settings; `deploy/compose.sh up -d --build`, then `up -d --wait api web caddy`; `lookly migrate` runs first).
 2. Run `deploy/check-stack.py --remote` against staging (one paid analysis when its AI is
    on: owner approval) and the AI smoke (`docs/ai/staging.md`); open the app on a phone
    against staging.

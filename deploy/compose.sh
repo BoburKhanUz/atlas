@@ -1,6 +1,6 @@
 #!/bin/sh
 # docker compose with the base file, the server overlay and deploy/server.env.
-# Usage (from any directory): deploy/compose.sh up -d --build --wait | ps | logs -f api
+# Usage (from any directory): deploy/compose.sh up -d --build | up -d --wait api web caddy | ps | logs -f api
 set -eu
 cd "$(dirname "$0")/.."
 if [ ! -f deploy/server.env ]; then

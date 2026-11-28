@@ -67,12 +67,13 @@ Password reset e-mail: fill in the `SMTP_*` values and `MAIL_FROM` of any SMTP p
 ## 3. Start
 
 ```bash
-deploy/compose.sh up -d --build --wait
+deploy/compose.sh up -d --build
+deploy/compose.sh up -d --wait api web caddy   # until the API, the website and Caddy are healthy
 deploy/compose.sh ps
 curl -fsS "https://<ATLAS_DOMAIN>/api/health"
 ```
 
-Order: PostgreSQL starts; `migrate` makes or continues the schema and exits; the API and the worker start (each refuses to start when a secret, the storage, the mail or the AI configuration is invalid, and `deploy/compose.sh logs api` names the variable); the website starts; Caddy starts once the API and the website are healthy and obtains the certificate. Certificate problems (DNS not pointing here, port 80 closed) show in `deploy/compose.sh logs caddy`.
+Order: PostgreSQL starts; `migrate` makes or continues the schema and exits; the API and the worker start (each refuses to start when a secret, the storage, the mail or the AI configuration is invalid, and `deploy/compose.sh logs api` names the variable); the website starts; Caddy starts once the API and the website are healthy and obtains the certificate. The second command waits for the services that have a health check (the worker has none; older Compose versions refuse to wait for it). Certificate problems (DNS not pointing here, port 80 closed) show in `deploy/compose.sh logs caddy`.
 
 ## 4. Check it (from a development machine)
 
@@ -99,7 +100,8 @@ adb install -r build/app/outputs/flutter-apk/app-release.apk   # or copy the APK
 
 ```bash
 git pull
-deploy/compose.sh up -d --build --wait
+deploy/compose.sh up -d --build
+deploy/compose.sh up -d --wait api web caddy
 ```
 
 `migrate` runs again before the API and the worker restart; each gets 25 s to finish what it is doing, and requests fail for the seconds the API restarts. Rate limits and the job queue are in PostgreSQL, so nothing is lost on a restart. The worker has no health check: Compose restarts it when it exits, and its log shows failing jobs (`deploy/compose.sh logs worker`).
@@ -118,7 +120,8 @@ Restore (replaces the current data):
 deploy/compose.sh stop api worker caddy
 deploy/compose.sh exec -T postgres sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists --no-owner' < deploy/backups/<time>/atlas.dump
 deploy/compose.sh run --rm --no-deps -T --entrypoint tar -v atlas_uploads:/uploads postgres -xzf - -C /uploads < deploy/backups/<time>/uploads.tgz
-deploy/compose.sh up -d --wait
+deploy/compose.sh up -d
+deploy/compose.sh up -d --wait api web caddy
 ```
 
 ## Before production (not covered here)

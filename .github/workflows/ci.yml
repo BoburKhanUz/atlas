@@ -166,7 +166,10 @@ jobs:
       # security headers, sign-up, an upload, its signed image, the reset mail.
       - name: Start the stack and check it through Caddy
         run: |
-          docker compose -p ci --env-file "$RUNNER_TEMP/ci.env" up -d --no-build --wait
+          # Wait only on the services with a health check: Compose before v5
+          # refuses --wait for the worker, which has none.
+          docker compose -p ci --env-file "$RUNNER_TEMP/ci.env" up -d --no-build
+          docker compose -p ci --env-file "$RUNNER_TEMP/ci.env" up -d --no-build --wait api web caddy
           python3 -I -B deploy/check-stack.py http://127.0.0.1:3000 --outbox-volume ci_mail-outbox
       - name: Logs of the stack
         if: failure()
