@@ -112,3 +112,21 @@ func Explanation(c Candidate, occasion string, wx *WeatherContext) string {
 	}
 	return upperFirst(joinUz(names)) + "." + tail + harmony
 }
+
+// ApprovedColorName, ApprovedSubcategoryName and ApprovedCategoryName are
+// the owner-approved names that replace a catalog label (ok is false where
+// the label stands).
+func ApprovedColorName(id string) (name string, ok bool) {
+	name, ok = tables.ApprovedColorNames[id]
+	return name, ok
+}
+
+func ApprovedSubcategoryName(id string) (name string, ok bool) {
+	name, ok = tables.ApprovedSubcategories[id]
+	return name, ok
+}
+
+func ApprovedCategoryName(id string) (name string, ok bool) {
+	name, ok = tables.ApprovedCategoryNames[id]
+	return name, ok
+}

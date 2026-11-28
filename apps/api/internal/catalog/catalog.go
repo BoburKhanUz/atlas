@@ -12,6 +12,9 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"strings"
+
+	"lookly/internal/platform"
 )
 
 // Entry is one value of a vocabulary.
@@ -95,6 +98,7 @@ func init() {
 		subcategories[s.Category] = s.Entries
 		AllSubcategories = append(AllSubcategories, ids(s.Entries)...)
 	}
+	lookupOccasions()
 }
 
 func ids(entries []Entry) []string {
@@ -118,3 +122,41 @@ func SubcategoryOf(category, sub string) bool {
 	}
 	return false
 }
+
+// occasionAliases are other words for occasions (the Next.js server's
+// OCCASION_ALIASES): old client labels.
+var occasionAliases = map[string][]string{
+	"casual":  {"Casual", "Kasual"},
+	"wedding": {"To'y"},
+}
+
+// normalizeEvent is an event trimmed, lower-cased, with ’ ‘ ʻ ʼ as '.
+func normalizeEvent(text string) string {
+	return strings.Map(func(r rune) rune {
+		if strings.ContainsRune("’‘ʻʼ", r) {
+			return '\''
+		}
+		return r
+	}, strings.ToLower(strings.TrimFunc(text, platform.IsJSWhiteSpace)))
+}
+
+// occasionLookup maps a normalized id, label or alias to its occasion
+// (filled by init, once the vocabularies are read).
+var occasionLookup = map[string]string{}
+
+func lookupOccasions() {
+	for _, o := range OccasionEntries {
+		occasionLookup[normalizeEvent(o.ID)] = o.ID
+		occasionLookup[normalizeEvent(o.Label)] = o.ID
+	}
+	for id, aliases := range occasionAliases {
+		for _, alias := range aliases {
+			occasionLookup[normalizeEvent(alias)] = id
+		}
+	}
+}
+
+// OccasionFromEvent is the occasion a free-text event names: an exact id
+// ("wedding"), label ("To‘y") or alias ("To'y"), whatever the case; "" for
+// anything else.
+func OccasionFromEvent(event string) string { return occasionLookup[normalizeEvent(event)] }

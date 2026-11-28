@@ -1128,3 +1128,171 @@ func LoadOutfitAI(t testing.TB) OutfitAI {
 	}
 	return o
 }
+
+// StylistItem is a wardrobe item as a stylist vector names it.
+type StylistItem struct {
+	Category    string   `json:"category"`
+	Subcategory *string  `json:"subcategory"`
+	Colors      []string `json:"colors"`
+}
+
+// StylistMessage is a message of a stylist request.
+type StylistMessage struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+// Stylist is testdata/golden/stylist.json (apps/web/scripts/golden-stylist.ts):
+// the AI stylist as the Next.js code does it.
+type Stylist struct {
+	GeneratedBy     string `json:"generatedBy"`
+	SourceCommit    string `json:"sourceCommit"`
+	Note            string `json:"note"`
+	Version         string `json:"version"`
+	SystemPrompt    string `json:"systemPrompt"`
+	ContextPreamble string `json:"contextPreamble"`
+	LegacyFallback  string `json:"legacyFallback"`
+	Limits          struct {
+		Message             int `json:"message"`
+		Event               int `json:"event"`
+		WardrobeItems       int `json:"wardrobeItems"`
+		HistoryMessages     int `json:"historyMessages"`
+		HistoryMessageChars int `json:"historyMessageChars"`
+		OutfitCandidates    int `json:"outfitCandidates"`
+		AnswerChars         int `json:"answerChars"`
+		MaxOutputTokens     int `json:"maxOutputTokens"`
+		DeadlineMs          int `json:"deadlineMs"`
+	} `json:"limits"`
+	Schemas []struct {
+		Refs   int    `json:"refs"`
+		Schema string `json:"schema"`
+	} `json:"schemas"`
+	ResolveWardrobe []StylistItem `json:"resolveWardrobe"`
+	Interpreted     []struct {
+		Name   string          `json:"name"`
+		Output json.RawMessage `json:"output"`
+		Refs   []string        `json:"refs"`
+		Result *struct {
+			Answer          string   `json:"answer"`
+			ReferencedItems []string `json:"referencedItems"`
+			NeedsMoreInfo   bool     `json:"needsMoreInfo"`
+		} `json:"result"`
+		Reason      string   `json:"reason"`
+		InvalidRefs []string `json:"invalidRefs"`
+	} `json:"interpreted"`
+	Parsed []struct {
+		Text  string          `json:"text"`
+		Value json.RawMessage `json:"value"`
+		OK    bool            `json:"ok"`
+	} `json:"parsed"`
+	Names []struct {
+		Item StylistItem `json:"item"`
+		Name string      `json:"name"`
+	} `json:"names"`
+	Resolved []struct {
+		Text   string `json:"text"`
+		Result string `json:"result"`
+		Error  string `json:"error"`
+	} `json:"resolved"`
+	Mocks []struct {
+		Refs           []string `json:"refs"`
+		FirstCandidate []string `json:"firstCandidate"`
+		Output         struct {
+			Answer          string   `json:"answer"`
+			ReferencedItems []string `json:"referencedItems"`
+			NeedsMoreInfo   bool     `json:"needsMoreInfo"`
+		} `json:"output"`
+	} `json:"mocks"`
+	Corrections []struct {
+		InvalidRefs []string `json:"invalidRefs"`
+		Refs        []string `json:"refs"`
+		Message     string   `json:"message"`
+	} `json:"corrections"`
+	History []struct {
+		Name string `json:"name"`
+		Rows []struct {
+			Role     string          `json:"role"`
+			Content  string          `json:"content"`
+			Metadata json.RawMessage `json:"metadata"`
+		} `json:"rows"`
+		Messages []StylistMessage `json:"messages"`
+	} `json:"history"`
+	Occasions []struct {
+		Event    string  `json:"event"`
+		Occasion *string `json:"occasion"`
+	} `json:"occasions"`
+	Contexts []struct {
+		Name  string `json:"name"`
+		Input struct {
+			Items []struct {
+				ID           string    `json:"id"`
+				Category     string    `json:"category"`
+				Subcategory  *string   `json:"subcategory"`
+				Colors       []string  `json:"colors"`
+				Pattern      *string   `json:"pattern"`
+				Material     *string   `json:"material"`
+				SleeveLength *string   `json:"sleeveLength"`
+				Fit          *string   `json:"fit"`
+				Style        *string   `json:"style"`
+				Season       []string  `json:"season"`
+				Gender       *string   `json:"gender"`
+				Formality    *string   `json:"formality"`
+				CreatedAt    time.Time `json:"createdAt"`
+			} `json:"items"`
+			Weather *struct {
+				Temperature              float64 `json:"temperature"`
+				FeelsLike                float64 `json:"feelsLike"`
+				Condition                string  `json:"condition"`
+				PrecipitationProbability float64 `json:"precipitationProbability"`
+				Humidity                 float64 `json:"humidity"`
+				WindSpeed                float64 `json:"windSpeed"`
+				UVIndex                  float64 `json:"uvIndex"`
+			} `json:"weather"`
+			Occasion    *string `json:"occasion"`
+			Preferences struct {
+				PreferredStyles []string `json:"preferredStyles"`
+				DislikedStyles  []string `json:"dislikedStyles"`
+				FavoriteColors  []string `json:"favoriteColors"`
+				DislikedColors  []string `json:"dislikedColors"`
+				PreferredFit    *string  `json:"preferredFit"`
+			} `json:"preferences"`
+			Gender       *string `json:"gender"`
+			ColorProfile *struct {
+				Season            *string  `json:"season"`
+				Undertone         *string  `json:"undertone"`
+				ContrastLevel     *string  `json:"contrastLevel"`
+				RecommendedColors []string `json:"recommendedColors"`
+				NeutralColors     []string `json:"neutralColors"`
+				CautionColors     []string `json:"cautionColors"`
+			} `json:"colorProfile"`
+		} `json:"input"`
+		// TopN is how many outfits the engine was asked for.
+		TopN       float64    `json:"topN"`
+		Candidates [][]string `json:"candidates"`
+		Context    string     `json:"context"`
+		Refs       []string   `json:"refs"`
+		Items      []struct {
+			Ref         string   `json:"ref"`
+			ID          string   `json:"id"`
+			Category    string   `json:"category"`
+			Subcategory *string  `json:"subcategory"`
+			Colors      []string `json:"colors"`
+		} `json:"items"`
+		FirstCandidate []string         `json:"firstCandidate"`
+		Message        string           `json:"message"`
+		OccasionText   *string          `json:"occasionText"`
+		Messages       []StylistMessage `json:"messages"`
+		HistoryName    string           `json:"historyName"`
+	} `json:"contexts"`
+}
+
+// LoadStylist reads the stylist vectors.
+func LoadStylist(t testing.TB) Stylist {
+	t.Helper()
+	var s Stylist
+	load(t, "stylist.json", &s)
+	if len(s.Interpreted) == 0 || len(s.Resolved) == 0 || len(s.Contexts) == 0 || len(s.History) == 0 || len(s.Occasions) == 0 || len(s.Names) == 0 {
+		t.Fatal("stylist.json: a section is empty")
+	}
+	return s
+}
