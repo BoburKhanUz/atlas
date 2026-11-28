@@ -944,3 +944,84 @@ func LoadAIMonitoring(t testing.TB) AIMonitoring {
 	}
 	return m
 }
+
+// Garment is testdata/golden/garment.json (apps/web/scripts/golden-garment.ts):
+// garment analysis with a real provider as the Next.js code does it.
+type Garment struct {
+	GeneratedBy               string              `json:"generatedBy"`
+	SourceCommit              string              `json:"sourceCommit"`
+	Note                      string              `json:"note"`
+	Version                   string              `json:"version"`
+	Instruction               string              `json:"instruction"`
+	Schema                    string              `json:"schema"` // JSON.stringify of the schema
+	MaxOutputTokens           int                 `json:"maxOutputTokens"`
+	ConfidenceKeys            []string            `json:"confidenceKeys"`
+	UncalibratedMaxConfidence float64             `json:"uncalibratedMaxConfidence"`
+	MinSharpness              float64             `json:"minSharpness"`
+	Families                  map[string][]string `json:"families"`
+	// Interpreted: a model's answer and what is made of it: Result, or
+	// Error (the Next.js message, for its kind).
+	Interpreted []struct {
+		Name   string          `json:"name"`
+		Output json.RawMessage `json:"output"`
+		Result *struct {
+			Kind       string `json:"kind"` // garment | rejected
+			Subject    string `json:"subject"`
+			Attributes *struct {
+				Category     string   `json:"category"`
+				Subcategory  *string  `json:"subcategory"`
+				Colors       []string `json:"colors"`
+				Pattern      *string  `json:"pattern"`
+				Material     *string  `json:"material"`
+				SleeveLength *string  `json:"sleeveLength"`
+				Fit          *string  `json:"fit"`
+				Style        *string  `json:"style"`
+				Season       []string `json:"season"`
+				Gender       *string  `json:"gender"`
+				Formality    *string  `json:"formality"`
+			} `json:"attributes"`
+			RawConfidence map[string]float64 `json:"rawConfidence"`
+		} `json:"result"`
+		Error string `json:"error"`
+	} `json:"interpreted"`
+	Presented []struct {
+		Raw   map[string]float64 `json:"raw"`
+		Cap   *float64           `json:"cap"`
+		Shown map[string]float64 `json:"shown"`
+	} `json:"presented"`
+	Judged []struct {
+		Primary *string            `json:"primary"`
+		Shares  map[string]float64 `json:"shares"`
+		Check   struct {
+			Verdict       string   `json:"verdict"`
+			Support       float64  `json:"support"`
+			ConfidenceCap *float64 `json:"confidenceCap"`
+		} `json:"check"`
+	} `json:"judged"`
+	// Shared: 80×80 PNGs (base64) and the share of the centre each catalog
+	// colour covers.
+	Shared []struct {
+		Name   string             `json:"name"`
+		PNG    []byte             `json:"png"`
+		Shares map[string]float64 `json:"shares"`
+	} `json:"shared"`
+	// Sharpness: canvases (RGB bytes, base64) and their blur measure.
+	Sharpness []struct {
+		Name      string  `json:"name"`
+		Width     int     `json:"width"`
+		Height    int     `json:"height"`
+		RGB       []byte  `json:"rgb"`
+		Sharpness float64 `json:"sharpness"`
+	} `json:"sharpness"`
+}
+
+// LoadGarment reads the garment analysis vectors.
+func LoadGarment(t testing.TB) Garment {
+	t.Helper()
+	var g Garment
+	load(t, "garment.json", &g)
+	if len(g.Interpreted) == 0 || len(g.Presented) == 0 || len(g.Judged) == 0 || len(g.Shared) == 0 || len(g.Sharpness) == 0 || g.Instruction == "" || g.Schema == "" {
+		t.Fatal("garment.json: a section is empty")
+	}
+	return g
+}
