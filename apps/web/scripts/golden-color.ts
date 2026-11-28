@@ -134,6 +134,26 @@ for (const [num, noise] of [[80, 14], [65, 14], [55, 14], [65, 24]]) {
   add(`regions that disagree, darker ${num}%, noise ${noise}`, WARM_LIGHT, [{ op: 'skinLeft', rgb: [0xf0, 0xc0, 0xc8] }, { op: 'scale', num, den: 100 }], noise)
 }
 
+// The edges of the thresholds: small faces (few skin pixels, few cells),
+// a tiny canvas, hair close to the skin or bright or out of the hair hues,
+// hair partly hidden or noisy, one eye hidden, eyes off centre.
+for (const k of [0.28, 0.32, 0.36, 0.42, 0.5]) add(`face scale ${k}`, { ...WARM_LIGHT, width: 320, height: 320, faceScale: k })
+for (const k of [0.3, 0.4]) add(`face scale ${k}, cool`, { ...COOL_DEEP, width: 320, height: 300, faceScale: k })
+add('tiny', { ...WARM_LIGHT, width: 48, height: 64 })
+add('very small', { ...COOL_LIGHT, width: 72, height: 96 })
+add('small with eyes', { ...WARM_DEEP, width: 100, height: 130 })
+for (const hair of ['#c89878', '#d8a888', '#e8e8e8', '#f4f0f0', '#b04060', '#8040a0', '#a05030', '#606060', '#9a9a9a']) add(`hair ${hair}`, { ...WARM_LIGHT, hair })
+add('noisy hair', { ...WARM_DEEP }, [], 40, 99)
+add('noisy light hair', { ...COOL_LIGHT }, [], 45, 3)
+add('hair mostly hidden', WARM_LIGHT, [{ op: 'rect', x: 0, y: 40, w: 240, h: 55, rgb: [0x6f, 0x8f, 0xb0] }, { op: 'rect', x: 108, y: 70, w: 24, h: 25, rgb: [0x3b, 0x24, 0x16] }])
+add('hair partly hidden', WARM_LIGHT, [{ op: 'rect', x: 0, y: 40, w: 240, h: 40, rgb: [0x6f, 0x8f, 0xb0] }])
+add('one eye hidden', WARM_LIGHT, [{ op: 'rect', x: 130, y: 142, w: 30, h: 18, rgb: [0xf1, 0xc9, 0xa5] }])
+add('one eye hidden, a spot near the middle', WARM_LIGHT, [{ op: 'rect', x: 130, y: 142, w: 30, h: 18, rgb: [0xf1, 0xc9, 0xa5] }, { op: 'rect', x: 124, y: 146, w: 8, h: 8, rgb: [0x3a, 0x26, 0x18] }])
+add('one eye smaller', WARM_LIGHT, [{ op: 'rect', x: 130, y: 142, w: 30, h: 6, rgb: [0xf1, 0xc9, 0xa5] }, { op: 'rect', x: 130, y: 154, w: 30, h: 6, rgb: [0xf1, 0xc9, 0xa5] }])
+add('eyes off centre', COOL_LIGHT, [{ op: 'rect', x: 130, y: 142, w: 30, h: 18, rgb: [0xf0, 0xcf, 0xc8] }, { op: 'rect', x: 158, y: 146, w: 10, h: 8, rgb: [0x4f, 0x7a, 0xa8] }])
+add('a shadow over half the face', WARM_LIGHT, [{ op: 'scale', num: 100, den: 100 }, { op: 'rect', x: 120, y: 110, w: 90, h: 120, rgb: [0xb8, 0x8a, 0x68] }])
+add('a highlight over a quarter of the face', WARM_DEEP, [{ op: 'rect', x: 70, y: 120, w: 50, h: 60, rgb: [0xc8, 0x90, 0x68] }])
+
 // Seeded variety around skin colours, hair, eyes and backgrounds.
 {
   const rnd = lcg(2026)
@@ -193,7 +213,8 @@ const rgbs: Array<[number, number, number]> = [[0, 0, 0], [255, 255, 255], [241,
 const labs: Lab[] = [
   { L: 70, a: 10, b: 20 }, { L: 50, a: 18, b: 16 }, { L: 30, a: 2, b: 3 }, { L: 15, a: 1, b: 1 }, { L: 60, a: 3, b: 5 }, { L: 45, a: 25, b: 20 },
   { L: 56, a: 4, b: 6 }, { L: 30, a: -1, b: -8 }, { L: 50, a: -6, b: 10 }, { L: 45, a: 2, b: 3 }, { L: 20, a: 5, b: 5 }, { L: 39.9, a: 10, b: 10 },
-  { L: 57.9, a: 10, b: 30 }, { L: 80, a: -2, b: -2 },
+  { L: 57.9, a: 10, b: 30 }, { L: 80, a: -2, b: -2 }, { L: 55, a: 2, b: 3 }, { L: 54.99, a: 2, b: 3 }, { L: 25, a: 1, b: -5 }, { L: 25.01, a: 1, b: -5 },
+  { L: 40, a: -4, b: 5 }, { L: 40, a: -2, b: 5 }, { L: 40.01, a: 2, b: 2 }, { L: 54.9, a: 20, b: 15 }, { L: 21.99, a: 0, b: 0 }, { L: 22, a: 0, b: 0 },
 ]
 const hues = [0, 40.99, 41, 46.99, 47, 50, 52.99, 53, 58.99, 59, 90, 359.9]
 const lightness = [100, 68, 67.99, 57, 56.99, 45, 44.99, 0]
@@ -221,7 +242,10 @@ const pure = {
   ].map(([p, evidence, cap]) => {
     const probs: Array<{ season: Season; p: number }> = [{ season: 'winter', p }, { season: 'summer', p: (1 - p) * 0.6 }, { season: 'autumn', p: (1 - p) * 0.3 }, { season: 'spring', p: (1 - p) * 0.1 }]
     return { probabilities: probs, evidence, cap, decision: decideSeason(probs, evidence, cap) }
-  }),
+  }).concat(([[0.5, 0.48, 1, 0.45], [0.52, 0.46, 1, 0.8], [0.4, 0.39, 0.9, 0.65]] as Array<[number, number, number, number]>).map(([p1, p2, evidence, cap]) => {
+    const probs: Array<{ season: Season; p: number }> = [{ season: 'autumn', p: p1 }, { season: 'spring', p: p2 }, { season: 'winter', p: (1 - p1 - p2) / 2 }, { season: 'summer', p: (1 - p1 - p2) / 2 }]
+    return { probabilities: probs, evidence, cap, decision: decideSeason(probs, evidence, cap) }
+  })),
 }
 
 writeFileSync(
