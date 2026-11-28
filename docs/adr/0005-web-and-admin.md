@@ -1,6 +1,6 @@
 # 0005. Next.js serves the web app and the admin panel as UI only
 
-- Status: accepted
+- Status: accepted; the user web app is withdrawn by ADR 0012 (2026-11-28): Next.js serves the landing page, the legal and e-mail-link pages and the admin panel
 - Date: 2026-11-25
 - Decided by: the owner (admin in Next.js), the engineer (routing)
 
