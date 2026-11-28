@@ -1,11 +1,19 @@
-# Out of date since B7.6 (the Next.js API and Prisma are removed); B7.7 rewrites this
-# for the Go server (docs/plan/B7.md).
-# HTTPS for the ATLAS API (deploy/compose.server.yml). Caddy obtains and renews
-# the certificate for ATLAS_DOMAIN automatically: the domain's DNS A record must
-# point at this server and ports 80 and 443 must be reachable. HSTS is set
-# here, where HTTPS ends; the app sets the other security headers.
-{$ATLAS_DOMAIN} {
+# The one entry point (docker-compose.yml): /api and /api/* go to the Go server,
+# everything else to the website. SITE_ADDRESS is ":80" locally (plain http) and
+# the domain on a server (deploy/compose.server.yml), where Caddy obtains and
+# renews the certificate: the domain's DNS A record must point at the server and
+# ports 80 and 443 must be reachable. HSTS is set here, where HTTPS ends;
+# browsers ignore it over plain http. The other security headers are the
+# apps' own (apps/api/internal/httpapi, apps/web/next.config.ts).
+{$SITE_ADDRESS} {
 	encode zstd gzip
 	header Strict-Transport-Security "max-age=31536000"
-	reverse_proxy web:3000
+
+	@api path /api /api/*
+	handle @api {
+		reverse_proxy api:8080
+	}
+	handle {
+		reverse_proxy web:3000
+	}
 }

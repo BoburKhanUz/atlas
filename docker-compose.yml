@@ -1,9 +1,74 @@
-# Out of date since B7.6 (the Next.js API and Prisma are removed); B7.7 rewrites this
-# for the Go server (docs/plan/B7.md).
-# ATLAS local development stack.
+# Lookly on one machine: PostgreSQL, the schema (`lookly migrate`, once), the Go
+# API and its worker, the website, and Caddy in front (/api/* to Go, the rest to
+# the website). Local use:
 #   cp .env.example .env   # then fill in the secrets
 #   docker compose up --build
-# Web: http://localhost:3000   Postgres: localhost:5432 (dev only)
+#   open http://localhost:3000
+# On a server, deploy/compose.server.yml adds HTTPS and restarts (docs/deploy/staging.md).
+
+x-lookly-env: &lookly-env
+  LOOKLY_ENV: ${LOOKLY_ENV:-development}
+  LOOKLY_LOG_LEVEL: ${LOOKLY_LOG_LEVEL:-info}
+  DATABASE_URL: postgresql://${POSTGRES_USER:-atlas}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-atlas}?sslmode=disable
+  JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+  MEDIA_SIGNING_SECRET: ${MEDIA_SIGNING_SECRET:?Set MEDIA_SIGNING_SECRET in .env}
+  SESSION_ENC_KEY: ${SESSION_ENC_KEY:?Set SESSION_ENC_KEY in .env (openssl rand -base64 32)}
+  SESSION_ENC_DECRYPT_KEYS: ${SESSION_ENC_DECRYPT_KEYS:-}
+  ACCESS_TOKEN_TTL_SECONDS: ${ACCESS_TOKEN_TTL_SECONDS:-}
+  REFRESH_TOKEN_TTL_DAYS: ${REFRESH_TOKEN_TTL_DAYS:-}
+  COOKIE_SECURE: ${COOKIE_SECURE:-}
+  # Caddy is the only client and replaces X-Forwarded-For: per-IP limits work.
+  TRUST_PROXY: "1"
+  PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
+  MEDIA_URL_TTL_SECONDS: ${MEDIA_URL_TTL_SECONDS:-}
+  # Images: the uploads volume (local) or a Cloudflare R2 bucket (r2).
+  STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
+  STORAGE_LOCAL_DIR: /data/uploads
+  R2_ENDPOINT: ${R2_ENDPOINT:-}
+  R2_REGION: ${R2_REGION:-}
+  R2_BUCKET: ${R2_BUCKET:-}
+  R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
+  R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
+  # Password reset e-mail. Unset: files in MAIL_OUTBOX_DIR in development,
+  # disabled in staging and production.
+  MAIL_TRANSPORT: ${MAIL_TRANSPORT:-}
+  MAIL_FROM: ${MAIL_FROM:-}
+  MAIL_OUTBOX_DIR: /data/mail-outbox
+  SMTP_HOST: ${SMTP_HOST:-}
+  SMTP_PORT: ${SMTP_PORT:-}
+  SMTP_SECURE: ${SMTP_SECURE:-}
+  SMTP_USER: ${SMTP_USER:-}
+  SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+  WEATHER_PROVIDER: ${WEATHER_PROVIDER:-open-meteo}
+  # AI (docs/ai/provider-architecture.md); outside development a real
+  # provider needs its key and model, and every feature starts switched off.
+  AI_LLM_PROVIDER: ${AI_LLM_PROVIDER:-}
+  AI_LLM_MODEL: ${AI_LLM_MODEL:-}
+  AI_LLM_TIMEOUT_MS: ${AI_LLM_TIMEOUT_MS:-}
+  AI_LLM_PRICE_INPUT_USD_PER_MTOK: ${AI_LLM_PRICE_INPUT_USD_PER_MTOK:-}
+  AI_LLM_PRICE_OUTPUT_USD_PER_MTOK: ${AI_LLM_PRICE_OUTPUT_USD_PER_MTOK:-}
+  AI_VISION_PROVIDER: ${AI_VISION_PROVIDER:-}
+  AI_VISION_MODEL: ${AI_VISION_MODEL:-}
+  AI_VISION_TIMEOUT_MS: ${AI_VISION_TIMEOUT_MS:-}
+  AI_VISION_MAX_SIDE: ${AI_VISION_MAX_SIDE:-}
+  AI_VISION_RESOLUTION: ${AI_VISION_RESOLUTION:-}
+  AI_VISION_GEMINI_THINKING_LEVEL: ${AI_VISION_GEMINI_THINKING_LEVEL:-}
+  AI_VISION_DETAIL: ${AI_VISION_DETAIL:-}
+  AI_VISION_PRICE_INPUT_USD_PER_MTOK: ${AI_VISION_PRICE_INPUT_USD_PER_MTOK:-}
+  AI_VISION_PRICE_OUTPUT_USD_PER_MTOK: ${AI_VISION_PRICE_OUTPUT_USD_PER_MTOK:-}
+  AI_STYLIST_PROVIDER: ${AI_STYLIST_PROVIDER:-}
+  AI_STYLIST_MODEL: ${AI_STYLIST_MODEL:-}
+  AI_OUTFIT_PROVIDER: ${AI_OUTFIT_PROVIDER:-}
+  AI_OUTFIT_MODEL: ${AI_OUTFIT_MODEL:-}
+  AI_APPROVED_PROVIDERS: ${AI_APPROVED_PROVIDERS:-}
+  AI_ALLOW_MOCK_IN_PRODUCTION: ${AI_ALLOW_MOCK_IN_PRODUCTION:-}
+  GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  AI_STYLIST_ENABLED: ${AI_STYLIST_ENABLED:-}
+  AI_VISION_ENABLED: ${AI_VISION_ENABLED:-}
+  AI_OUTFIT_AI_ENABLED: ${AI_OUTFIT_AI_ENABLED:-}
+  AI_ROLLOUT_PERCENT: ${AI_ROLLOUT_PERCENT:-}
+  AI_ROLLOUT_ALLOWLIST: ${AI_ROLLOUT_ALLOWLIST:-}
 
 services:
   postgres:
@@ -22,77 +87,81 @@ services:
       timeout: 5s
       retries: 10
 
-  # One-shot: applies Prisma migrations, then exits.
+  # One-shot: makes or continues the schema and the job queue's tables, then
+  # exits. It reads only the database settings.
   migrate:
-    build:
-      context: ./apps/web
-      target: builder
-    command: ["bunx", "prisma", "migrate", "deploy"]
+    build: &api-build
+      context: ./apps/api
+      args:
+        VERSION: ${LOOKLY_VERSION:-dev}
+    image: lookly-api
+    command: ["migrate"]
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-atlas}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-atlas}
+      LOOKLY_ENV: ${LOOKLY_ENV:-development}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-atlas}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-atlas}?sslmode=disable
+    healthcheck:
+      disable: true
     depends_on:
       postgres:
         condition: service_healthy
 
+  api:
+    build: *api-build
+    image: lookly-api
+    command: ["serve"]
+    environment:
+      <<: *lookly-env
+      LOOKLY_HTTP_ADDR: ":8080"
+    volumes:
+      - uploads:/data/uploads
+      - mail-outbox:/data/mail-outbox
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  # The background jobs: reset mail, the purge of a deleted account's images,
+  # the hourly cleanup and storage sweep. It serves no HTTP.
+  worker:
+    build: *api-build
+    image: lookly-api
+    command: ["worker"]
+    environment: *lookly-env
+    volumes:
+      - uploads:/data/uploads
+      - mail-outbox:/data/mail-outbox
+    healthcheck:
+      disable: true
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  # The website: the landing page, the legal pages, the reset-link page. No
+  # database and no secret.
   web:
     build:
       context: ./apps/web
+
+  caddy:
+    image: caddy:2.11-alpine
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-atlas}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-atlas}
-      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
-      MEDIA_SIGNING_SECRET: ${MEDIA_SIGNING_SECRET:?Set MEDIA_SIGNING_SECRET in .env}
-      SESSION_ENC_KEY: ${SESSION_ENC_KEY:?Set SESSION_ENC_KEY in .env (openssl rand -base64 32)}
-      SESSION_ENC_DECRYPT_KEYS: ${SESSION_ENC_DECRYPT_KEYS:-}
-      MEDIA_URL_TTL_SECONDS: ${MEDIA_URL_TTL_SECONDS:-3600}
-      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
-      STORAGE_DRIVER: local
-      STORAGE_LOCAL_DIR: /app/storage/uploads
-      WEATHER_PROVIDER: ${WEATHER_PROVIDER:-open-meteo}
-      # The app refuses to start without a valid AI configuration (see .env.example).
-      AI_LLM_PROVIDER: ${AI_LLM_PROVIDER:-}
-      AI_LLM_MODEL: ${AI_LLM_MODEL:-}
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      AI_LLM_TIMEOUT_MS: ${AI_LLM_TIMEOUT_MS:-}
-      AI_VISION_PROVIDER: ${AI_VISION_PROVIDER:-mock}
-      AI_VISION_MODEL: ${AI_VISION_MODEL:-}
-      AI_VISION_TIMEOUT_MS: ${AI_VISION_TIMEOUT_MS:-}
-      AI_VISION_MAX_SIDE: ${AI_VISION_MAX_SIDE:-}
-      AI_VISION_RESOLUTION: ${AI_VISION_RESOLUTION:-}
-      AI_VISION_GEMINI_THINKING_LEVEL: ${AI_VISION_GEMINI_THINKING_LEVEL:-}
-      AI_VISION_DETAIL: ${AI_VISION_DETAIL:-}
-      AI_ALLOW_MOCK_IN_PRODUCTION: ${AI_ALLOW_MOCK_IN_PRODUCTION:-}
-      # Optional per-feature text routes and provider allowlist (empty = unset).
-      AI_STYLIST_PROVIDER: ${AI_STYLIST_PROVIDER:-}
-      AI_STYLIST_MODEL: ${AI_STYLIST_MODEL:-}
-      AI_OUTFIT_PROVIDER: ${AI_OUTFIT_PROVIDER:-}
-      AI_OUTFIT_MODEL: ${AI_OUTFIT_MODEL:-}
-      AI_APPROVED_PROVIDERS: ${AI_APPROVED_PROVIDERS:-}
-      # Phase 5.0 rollout: empty = off in production (fail closed).
-      AI_STYLIST_ENABLED: ${AI_STYLIST_ENABLED:-}
-      AI_VISION_ENABLED: ${AI_VISION_ENABLED:-}
-      AI_OUTFIT_AI_ENABLED: ${AI_OUTFIT_AI_ENABLED:-}
-      AI_ROLLOUT_PERCENT: ${AI_ROLLOUT_PERCENT:-}
-      AI_ROLLOUT_ALLOWLIST: ${AI_ROLLOUT_ALLOWLIST:-}
-      TRUST_PROXY: ${TRUST_PROXY:-0}
-      # Password reset e-mail (empty MAIL_TRANSPORT = disabled in production).
-      MAIL_TRANSPORT: ${MAIL_TRANSPORT:-}
-      MAIL_FROM: ${MAIL_FROM:-}
-      SMTP_HOST: ${SMTP_HOST:-}
-      SMTP_PORT: ${SMTP_PORT:-}
-      SMTP_SECURE: ${SMTP_SECURE:-}
-      SMTP_USER: ${SMTP_USER:-}
-      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      # Locally plain http on port 80 (published on 127.0.0.1:3000); the
+      # server overlay sets the domain, and Caddy then obtains a certificate.
+      SITE_ADDRESS: ":80"
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:3000:80"
     volumes:
-      - uploads:/app/storage/uploads
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
     depends_on:
-      postgres:
+      api:
         condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
+      web:
+        condition: service_healthy
 
 volumes:
   postgres-data:
   uploads:
+  mail-outbox:
+  caddy-data:
+  caddy-config:

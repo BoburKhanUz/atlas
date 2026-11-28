@@ -1,7 +1,7 @@
 # Server overlay for docker-compose.yml (staging and production): HTTPS through
-# Caddy, no database or app port on the host, restart policies, bounded logs.
-# Runbook: docs/deploy/staging.md. Always run it through deploy/compose.sh,
-# which adds the base file, this file and deploy/server.env:
+# Caddy on the domain, no database or app port on the host, restart policies,
+# bounded logs. Runbook: docs/deploy/staging.md. Always run it through
+# deploy/compose.sh, which adds the base file, this file and deploy/server.env:
 #   deploy/compose.sh up -d --build
 
 name: atlas
@@ -20,40 +20,35 @@ services:
 
   migrate:
     logging: *logging
+    environment:
+      LOOKLY_ENV: ${LOOKLY_ENV:?Set LOOKLY_ENV in deploy/server.env (staging or production)}
 
-  web:
-    ports: !reset []
+  api:
     restart: unless-stopped
     logging: *logging
     environment:
-      # Caddy is the only client and replaces X-Forwarded-For: per-IP auth rate limits work.
-      TRUST_PROXY: "1"
-      # Absolute image URLs for the mobile app.
+      # staging or production (deploy/server.env); never development here.
+      LOOKLY_ENV: ${LOOKLY_ENV:?Set LOOKLY_ENV in deploy/server.env (staging or production)}
+      # Absolute image URLs and reset links for the phone app.
       PUBLIC_BASE_URL: https://${ATLAS_DOMAIN:?Set ATLAS_DOMAIN in deploy/server.env}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
-      # Cost estimates in ai.call logs (USD per million tokens; both of a pair or neither).
-      AI_LLM_PRICE_INPUT_USD_PER_MTOK: ${AI_LLM_PRICE_INPUT_USD_PER_MTOK:-}
-      AI_LLM_PRICE_OUTPUT_USD_PER_MTOK: ${AI_LLM_PRICE_OUTPUT_USD_PER_MTOK:-}
-      AI_VISION_PRICE_INPUT_USD_PER_MTOK: ${AI_VISION_PRICE_INPUT_USD_PER_MTOK:-}
-      AI_VISION_PRICE_OUTPUT_USD_PER_MTOK: ${AI_VISION_PRICE_OUTPUT_USD_PER_MTOK:-}
 
-  caddy:
-    image: caddy:2.11-alpine
+  worker:
     restart: unless-stopped
     logging: *logging
-    ports:
+    environment:
+      LOOKLY_ENV: ${LOOKLY_ENV:?Set LOOKLY_ENV in deploy/server.env (staging or production)}
+      PUBLIC_BASE_URL: https://${ATLAS_DOMAIN:?Set ATLAS_DOMAIN in deploy/server.env}
+
+  web:
+    restart: unless-stopped
+    logging: *logging
+
+  caddy:
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      SITE_ADDRESS: ${ATLAS_DOMAIN:?Set ATLAS_DOMAIN in deploy/server.env}
+    ports: !override
       - "80:80"
       - "443:443"
       - "443:443/udp"
-    environment:
-      ATLAS_DOMAIN: ${ATLAS_DOMAIN:?Set ATLAS_DOMAIN in deploy/server.env}
-    volumes:
-      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data
-      - caddy-config:/config
-    depends_on:
-      - web
-
-volumes:
-  caddy-data:
-  caddy-config:

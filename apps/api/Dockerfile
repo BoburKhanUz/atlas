@@ -12,10 +12,14 @@ COPY . .
 ARG VERSION=dev
 RUN CGO_ENABLED=0 go build -trimpath -tags nodynamic -ldflags "-s -w -X lookly/internal/app.version=${VERSION}" \
     -o /out/lookly ./cmd/lookly
+# The directories a named volume is mounted on, owned by the image's user, so a
+# fresh volume starts writable for it (Docker copies the ownership over).
+RUN mkdir -p /out/data/uploads /out/data/mail-outbox
 
 # Static binary on a minimal, non-root base: no shell, no package manager.
 FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab
 COPY --from=build /out/lookly /lookly
+COPY --from=build --chown=65532:65532 /out/data /data
 USER nonroot:nonroot
 EXPOSE 8080
 # The image has no curl: the binary probes itself (exit 0 only on HTTP 200).

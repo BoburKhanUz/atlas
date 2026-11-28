@@ -142,36 +142,44 @@ jobs:
           sh -c "dart pub get && dart run build_runner build --delete-conflicting-outputs && dart analyze --no-fatal-warnings"
 
   docker:
-    name: docker (build + compose config)
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    name: docker (images, the stack through Caddy, compose config)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-      - name: Build image (no push)
-        run: docker build apps/web
-      - name: Build the API image (no push)
-        run: docker build --build-arg VERSION=ci apps/api
-      - name: Validate docker-compose.yml with generated dummy env
+      - name: Throwaway settings for this run
         run: |
-          # Random throwaway values, generated per run; nothing is stored.
+          # Random values, generated per run; nothing is stored.
           {
-            echo "POSTGRES_DB=atlas"
-            echo "POSTGRES_USER=atlas"
             echo "POSTGRES_PASSWORD=$(openssl rand -hex 16)"
-            echo "JWT_SECRET=$(openssl rand -hex 32)"
-            echo "JWT_REFRESH_SECRET=$(openssl rand -hex 32)"
-            echo "MEDIA_SIGNING_SECRET=$(openssl rand -hex 32)"
+            echo "JWT_SECRET=$(openssl rand -base64 48)"
+            echo "MEDIA_SIGNING_SECRET=$(openssl rand -base64 48)"
             echo "SESSION_ENC_KEY=$(openssl rand -base64 32)"
+            echo "WEATHER_PROVIDER=mock"
           } > "$RUNNER_TEMP/ci.env"
-          docker compose --env-file "$RUNNER_TEMP/ci.env" config --quiet
+      - name: Build the images (API and website)
+        run: docker compose -p ci --env-file "$RUNNER_TEMP/ci.env" build
+      # The whole stack of docker-compose.yml (PostgreSQL, lookly migrate, the
+      # API, the worker, the website, Caddy), checked through Caddy: routing,
+      # security headers, sign-up, an upload, its signed image, the reset mail.
+      - name: Start the stack and check it through Caddy
+        run: |
+          docker compose -p ci --env-file "$RUNNER_TEMP/ci.env" up -d --no-build --wait
+          python3 -I deploy/check-stack.py http://127.0.0.1:3000 --outbox-volume ci_mail-outbox
+      - name: Logs of the stack
+        if: failure()
+        run: docker compose -p ci --env-file "$RUNNER_TEMP/ci.env" logs --no-color --tail 200
+      - name: Stop the stack
+        if: always()
+        run: docker compose -p ci --env-file "$RUNNER_TEMP/ci.env" down -v
       - name: Validate the server overlay (deploy/) and its Caddyfile
         run: |
-          # Same throwaway values plus a placeholder domain; nothing is stored.
-          { cat "$RUNNER_TEMP/ci.env"; echo "ATLAS_DOMAIN=staging-api.example.com"; } > "$RUNNER_TEMP/server.env"
+          # Same throwaway values plus a server's settings; nothing is stored.
+          { cat "$RUNNER_TEMP/ci.env"; echo "ATLAS_DOMAIN=staging-api.example.com"; echo "LOOKLY_ENV=staging"; } > "$RUNNER_TEMP/server.env"
           docker compose -f docker-compose.yml -f deploy/compose.server.yml --env-file "$RUNNER_TEMP/server.env" config --quiet
-          docker run --rm -e ATLAS_DOMAIN=staging-api.example.com -v "$PWD/deploy/Caddyfile:/etc/caddy/Caddyfile:ro" \
+          docker run --rm -e SITE_ADDRESS=staging-api.example.com -v "$PWD/deploy/Caddyfile:/etc/caddy/Caddyfile:ro" \
             caddy:2.11-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
 
   secret-scan:
