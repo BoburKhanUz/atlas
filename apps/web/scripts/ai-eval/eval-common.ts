@@ -10,9 +10,9 @@
  */
 import { GeminiProvider } from '../../src/lib/ai/providers/gemini'
 import { OpenAIProvider } from '../../src/lib/ai/providers/openai'
-import type { LLMProvider } from '../../src/lib/ai/providers/types'
 import { MOBILE_LABELS } from './client-labels'
-import { CATEGORIES, COLORS, FITS, FORMALITIES, GENDERS, MATERIALS, OCCASIONS, PATTERNS, SEASONS, SLEEVE_LENGTHS, STYLES, SUBCATEGORIES } from '../../src/lib/ai/catalog'
+import type { LLMProvider } from './protocol'
+import { CATEGORIES, COLORS, FITS, FORMALITIES, GENDERS, MATERIALS, OCCASIONS, PATTERNS, SEASONS, SLEEVE_LENGTHS, STYLES, SUBCATEGORIES } from './catalog'
 
 /** Evaluation status written into every machine-readable summary. */
 export type EvalStatus = 'TESTED' | 'PARTIALLY_TESTED' | 'NOT_TESTED' | 'OFFLINE_SELF_TEST'

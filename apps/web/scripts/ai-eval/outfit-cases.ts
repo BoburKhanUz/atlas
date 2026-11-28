@@ -3,8 +3,7 @@
  * and wardrobe-size variations. Catalog values only, synthetic ids (the model
  * never sees them: candidates are O1…On with attributes only).
  */
-import type { Occasion } from '../../src/lib/ai/color-theory'
-import type { ColorProfileInput, WardrobeItemSummary, WeatherSnapshot } from '../../src/lib/ai/outfit-engine'
+import type { ColorProfileInput, Occasion, WardrobeItemSummary, WeatherSnapshot } from './protocol'
 
 export interface OutfitCase {
   id: string

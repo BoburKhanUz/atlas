@@ -5,7 +5,7 @@
  * scenario states the outcome the app must produce. Deterministic; no network.
  */
 import { AiProviderError } from '../../src/lib/ai/providers/errors'
-import type { LLMProvider, LLMRequest } from '../../src/lib/ai/providers/types'
+import type { LLMProvider, LLMRequest } from './protocol'
 import { outfitCases, type OutfitCase } from './outfit-cases'
 import { runOutfitCase } from './outfit-eval'
 import type { OutfitRecord } from './outfit-scoring'

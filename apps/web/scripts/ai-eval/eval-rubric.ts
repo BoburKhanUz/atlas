@@ -21,7 +21,7 @@
  * Every entry replaces a proxy with a stricter or more precise property; see
  * docs/ai/provider-bakeoff.md ("Evaluator rubric v2").
  */
-import type { SUBJECTS } from '../../src/lib/ai/garment-analysis'
+import type { SUBJECTS } from './catalog'
 
 export const EVAL_RUBRIC_VERSION = 'eval-rubric-v3.1'
 

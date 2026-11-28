@@ -18,27 +18,16 @@ import { spawn, type ChildProcessWithoutNullStreams } from 'child_process'
 import http from 'http'
 import type { AddressInfo } from 'net'
 import { createInterface } from 'readline'
-import { AiProviderError } from '../../src/lib/ai/providers/errors'
-import type { LLMProvider, LLMRequest, VisionImageMimeType, VisionProvider } from '../../src/lib/ai/providers/types'
+import { errorKindOf, type ColorOutcome, type EvalResult, type LLMProvider, type LLMRequest, type Versions, type VisionImageMimeType, type VisionProvider } from './protocol'
 import type { StylistCase } from './stylist-cases'
 import type { OutfitCase } from './outfit-cases'
 
-/** One result line of `lookly eval`. */
-export interface GoResult {
-  outcome: Record<string, unknown> & { kind: string }
-  provider: string
-  model: string
-  calls: number
-  requests: number
-  inputTokens?: number
-  outputTokens?: number
-  latencyMs: number
-  candidates?: number
-}
+/** One result line of `lookly eval` for a stylist, outfit or vision case. */
+export type GoResult = EvalResult<Record<string, unknown> & { kind: string }>
 
 /** HTTP answers that the Go OpenAI adapter reads as each error kind. */
 function failure(res: http.ServerResponse, err: unknown) {
-  const kind = err instanceof AiProviderError ? err.kind : 'unexpected'
+  const kind = errorKindOf(err) ?? 'unexpected'
   const send = (status: number, body: unknown, headers: Record<string, string> = {}) => {
     res.writeHead(status, { 'content-type': 'application/json', ...headers })
     res.end(JSON.stringify(body))
@@ -152,7 +141,7 @@ export interface GoPipelineOptions {
 /** A running `lookly eval`: send a case, get its result, in order. */
 export class GoPipeline {
   private readonly child: ChildProcessWithoutNullStreams
-  private readonly waiting: Array<{ resolve: (r: GoResult) => void; reject: (e: Error) => void }> = []
+  private readonly waiting: Array<{ resolve: (r: EvalResult) => void; reject: (e: Error) => void }> = []
   private stderr = ''
   /** Why the child is gone (it exited, or could not be started): every case after that is refused with it. */
   private ended: Error | null = null
@@ -166,9 +155,9 @@ export class GoPipeline {
     createInterface({ input: this.child.stdout }).on('line', (line) => {
       const next = this.waiting.shift()
       if (!next) return
-      let parsed: GoResult | { refused: string }
+      let parsed: EvalResult | { refused: string }
       try {
-        parsed = JSON.parse(line) as GoResult | { refused: string }
+        parsed = JSON.parse(line) as EvalResult | { refused: string }
       } catch {
         return next.reject(new Error(`lookly eval wrote a line that is not JSON: ${line.slice(0, 200)}`))
       }
@@ -189,11 +178,26 @@ export class GoPipeline {
     })
   }
 
-  run(feature: 'stylist' | 'outfit' | 'vision', c: unknown): Promise<GoResult> {
+  /** A case; with `dryRun`, only its setup (no provider call). */
+  run(feature: 'stylist' | 'outfit' | 'vision', c: unknown, options: { dryRun?: boolean } = {}): Promise<GoResult> {
+    return this.send({ feature, case: c, ...(options.dryRun ? { dryRun: true } : {}) }) as Promise<GoResult>
+  }
+
+  /** The versions of the prompts, the engine and the analyses. */
+  async versions(): Promise<Versions> {
+    return (await this.send({ feature: 'versions' })).outcome as Versions
+  }
+
+  /** A selfie analysed as the colour profile does (no model). */
+  color(image: Uint8Array): Promise<EvalResult<ColorOutcome>> {
+    return this.send({ feature: 'color', case: { image: Buffer.from(image).toString('base64') } }) as Promise<EvalResult<ColorOutcome>>
+  }
+
+  private send(request: Record<string, unknown>): Promise<EvalResult> {
     if (this.ended) return Promise.reject(this.ended)
     return new Promise((resolve, reject) => {
       this.waiting.push({ resolve, reject })
-      this.child.stdin.write(JSON.stringify({ feature, case: c }) + '\n')
+      this.child.stdin.write(JSON.stringify(request) + '\n')
     })
   }
 

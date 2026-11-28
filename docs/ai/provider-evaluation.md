@@ -42,7 +42,8 @@ Principles:
 | `synthetic-vision.ts` | 15 labelled synthetic images for `vision-eval.ts` (Phase 4.1) |
 | `timings.ts` | local latency of everything around a provider call |
 | `eval-common.ts` | statistics, Uzbek proxy check, garment-mention grounding, provider from the environment |
-| `go-pipeline.ts` | the Go pipeline (stage B6.9): `lookly eval` from `LOOKLY_BINARY`, and a stand-in on 127.0.0.1 that serves a scripted provider in OpenAI's shape |
+| `go-pipeline.ts` | the Go pipeline (stage B6.9): `lookly eval` from `LOOKLY_BINARY` (cases, dry runs, the versions, selfies), and a stand-in on 127.0.0.1 that serves a scripted provider in OpenAI's shape |
+| `protocol.ts` / `catalog.ts` | the harness's own types (cases, `lookly eval` results and setups, the scripted providers' interface, error kinds) and the clothing catalog the Go server embeds (`apps/api/internal/catalog/catalog.json`); `tests/unit/ai-eval-protocol.test.ts` holds them to Go's error kinds and, while it exists, to the web app's own |
 
 ```bash
 cd apps/web

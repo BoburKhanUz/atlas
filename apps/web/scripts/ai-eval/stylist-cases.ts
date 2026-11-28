@@ -4,9 +4,7 @@
  * the model (the context uses W references). Every expectation is explicit
  * and checked automatically by stylist-scoring.ts.
  */
-import type { Occasion } from '../../src/lib/ai/color-theory'
-import type { WeatherSnapshot } from '../../src/lib/ai/outfit-engine'
-import type { ColorProfileRow, StylePreferences, WardrobeRow } from '../../src/lib/ai/stylist-context'
+import type { ColorProfileRow, Occasion, StylePreferences, WardrobeRow, WeatherSnapshot } from './protocol'
 
 export interface StylistExpect {
   /** Minimum / maximum number of wardrobe references in the answer. */

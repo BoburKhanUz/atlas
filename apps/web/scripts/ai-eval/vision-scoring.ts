@@ -4,8 +4,8 @@
  * summaries. No network, no files: unit-tested in tests/unit/ai/vision-eval.test.ts.
  */
 import { z } from 'zod'
-import { CONFIDENCE_KEYS, SUBJECTS, type GarmentAttributes, type GarmentConfidences } from '../../src/lib/ai/garment-analysis'
-import type { ColorVerdict } from '../../src/lib/ai/color-check'
+import type { ColorVerdict, GarmentAttributes, GarmentConfidences } from './protocol'
+import { CONFIDENCE_KEYS, SUBJECTS } from './catalog'
 import { visionItt, type VisionItt } from './vision-itt'
 
 // ─── Dataset ────────────────────────────────────────────────────────────────

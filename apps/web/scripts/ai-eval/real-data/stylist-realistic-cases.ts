@@ -12,9 +12,7 @@
  * Versioned and hashed like any dataset (STYLIST_REALISTIC_VERSION); changing
  * any case requires a new version.
  */
-import type { Occasion } from '../../../src/lib/ai/color-theory'
-import type { WeatherSnapshot } from '../../../src/lib/ai/outfit-engine'
-import type { ColorProfileRow, WardrobeRow } from '../../../src/lib/ai/stylist-context'
+import type { ColorProfileRow, Occasion, WardrobeRow, WeatherSnapshot } from '../protocol'
 import type { StylistCase, StylistExpect } from '../stylist-cases'
 
 export const STYLIST_REALISTIC_VERSION = 'constructed-v1'

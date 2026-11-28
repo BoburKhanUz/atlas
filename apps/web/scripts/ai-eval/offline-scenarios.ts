@@ -7,8 +7,8 @@
  * (tests/eval-go/golden/offline.json): written once from the TypeScript
  * pipeline while it existed, and held against the Go pipeline from then on.
  */
-import { AiProviderError, type AiErrorKind } from '../../src/lib/ai/providers/errors'
-import type { LLMProvider, LLMRequest, VisionProvider, VisionRequest } from '../../src/lib/ai/providers/types'
+import { AiProviderError } from '../../src/lib/ai/providers/errors'
+import type { AiErrorKind, LLMProvider, LLMRequest, VisionProvider, VisionRequest } from './protocol'
 import { outfitCases, type OutfitCase } from './outfit-cases'
 import { ScriptedOutfit } from './outfit-eval'
 import type { OutfitRecord } from './outfit-scoring'

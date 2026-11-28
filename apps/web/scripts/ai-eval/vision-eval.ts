@@ -31,7 +31,7 @@ import {
 import { isAiProviderError } from '../../src/lib/ai/providers/errors'
 import { GeminiProvider } from '../../src/lib/ai/providers/gemini'
 import { OpenAIProvider } from '../../src/lib/ai/providers/openai'
-import type { VisionProvider } from '../../src/lib/ai/providers/types'
+import type { VisionProvider } from './protocol'
 import { prepareVisionImage } from '../../src/lib/ai/providers/vision-input'
 import { estimateCostUsd } from '../../src/lib/ai/telemetry'
 import { applyVisionRubric } from './eval-rubric'

@@ -10,7 +10,7 @@
  */
 import sharp from 'sharp'
 import { analyzeSelfie } from '../../src/lib/ai/color-analysis'
-import { CONFIDENCE_KEYS, GARMENT_INSTRUCTION, interpretGarmentOutput } from '../../src/lib/ai/garment-analysis'
+import { GARMENT_INSTRUCTION, interpretGarmentOutput } from '../../src/lib/ai/garment-analysis'
 import { analyzeClothing } from '../../src/lib/ai/mock-vision'
 import { generateOutfitResult, generateOutfits } from '../../src/lib/ai/outfit-engine'
 import { interpretOutfitOutput, outfitMessages } from '../../src/lib/ai/outfit-intelligence'
@@ -22,6 +22,7 @@ import { selfie } from '../../tests/unit/ai/selfie-fixtures'
 import { arg, percentile } from './eval-common'
 import { outfitCases } from './outfit-cases'
 import { fullWardrobe } from './stylist-cases'
+import { CONFIDENCE_KEYS } from './catalog'
 
 async function time(n: number, f: () => unknown | Promise<unknown>): Promise<{ p50: number; p95: number }> {
   await f() // warm-up (JIT, sharp init)

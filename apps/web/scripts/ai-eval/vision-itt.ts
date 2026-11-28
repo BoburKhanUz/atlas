@@ -19,7 +19,7 @@
  * Each case lands in exactly one outcome bucket (outcomes sum to `eligible`);
  * duplicate case ids are refused.
  */
-import type { SUBJECTS } from '../../src/lib/ai/garment-analysis'
+import type { SUBJECTS } from './catalog'
 import type { ItemOutcome } from './vision-scoring'
 
 export const VISION_ITT_VERSION = 'vision-itt-v1'

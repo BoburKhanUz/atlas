@@ -28,7 +28,7 @@
 import { promises as fs } from 'fs'
 import path from 'path'
 import { z } from 'zod'
-import { CATEGORIES, COLORS, MATERIALS, OCCASIONS, SUBCATEGORIES } from '../../src/lib/ai/catalog'
+import { CATEGORIES, COLORS, MATERIALS, OCCASIONS, SUBCATEGORIES } from './catalog'
 import { arg, assertOutsideRepo, CATALOG_TERMS, inventedGarments, leaksPrivate, uzbekCheck, uzbekTokens, type UzbekCheck } from './eval-common'
 import { WEATHER_CLAIM } from './outfit-scoring'
 import { outfitRuleViolations } from './outfit-rules'

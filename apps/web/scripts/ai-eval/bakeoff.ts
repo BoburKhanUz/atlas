@@ -40,7 +40,6 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import { GeminiProvider } from '../../src/lib/ai/providers/gemini'
 import { OpenAIProvider } from '../../src/lib/ai/providers/openai'
-import type { LLMProvider, VisionProvider } from '../../src/lib/ai/providers/types'
 import { arg, assertOutsideRepo, llmProviderFromEnv, type EvalProviderName, type EvalStatus } from './eval-common'
 import { outfitCases } from './outfit-cases'
 import { runOutfitCase, ScriptedOutfit } from './outfit-eval'
@@ -57,6 +56,7 @@ import { accountSection, assertCapForLive, DatasetIntegrityError, sha256Hex, ass
 import { evaluateVisionConfig } from './vision-eval'
 import { Dataset, validateExpected, type ConfigSummary, type EvalConfig, type ItemRecord } from './vision-scoring'
 import type { VisionItt } from './vision-itt'
+import type { LLMProvider, VisionProvider } from './protocol'
 
 export const NO_SELECTION = 'NO FINAL PROVIDER SELECTED — LIVE BAKE-OFF REQUIRED'
 /** Phase 5.1: the bake-off collects evidence; the provider decision is a separate, approval-gated step. */

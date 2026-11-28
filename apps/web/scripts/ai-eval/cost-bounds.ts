@@ -30,8 +30,7 @@
  * image dimensions.
  */
 import sharp from 'sharp'
-import type { LLMRequest, VisionRequest } from '../../src/lib/ai/providers/types'
-import type { AiPrice } from '../../src/lib/ai/config'
+import type { AiPrice, LLMRequest, VisionRequest } from './protocol'
 
 /** Text-input heuristic: estimated tokens per UTF-8 byte of message text (HEURISTIC). */
 export const TEXT_BYTES_MULTIPLIER = 1

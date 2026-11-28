@@ -15,8 +15,8 @@
  * (same input twice, shuffled wardrobe order). Colour harmony is a matter of
  * taste: NOT_EVALUATED here (needs human raters).
  */
-import { generateOutfitResult, type GenerateInput, type GenerateProblem, type OutfitCandidate, type UserProfileSummary, type WardrobeItemSummary, type WeatherSnapshot } from '../../../src/lib/ai/outfit-engine'
-import type { Occasion } from '../../../src/lib/ai/color-theory'
+import { generateOutfitResult, type GenerateInput, type OutfitCandidate, type UserProfileSummary } from '../../../src/lib/ai/outfit-engine'
+import type { GenerateProblem, Occasion, WardrobeItemSummary, WeatherSnapshot } from '../protocol'
 import type { Count } from './real-vision'
 import { outfitRuleViolations, type RuleContext } from '../outfit-rules'
 
