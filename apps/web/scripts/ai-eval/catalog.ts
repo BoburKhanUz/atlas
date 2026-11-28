@@ -3,12 +3,31 @@
  * (apps/api/internal/catalog/catalog.json): the harness's vocabularies, so
  * cases and scoring use exactly the server's ids (docs/plan/B7.md, B7.4c).
  */
-import catalog from '../../../api/internal/catalog/catalog.json'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 
 export interface CatalogEntry {
   id: string
   label: string
 }
+
+/** catalog.json's shape. Read when the harness runs: the web app's image is built without apps/api. */
+interface GoCatalog {
+  categories: CatalogEntry[]
+  subcategories: Array<{ category: string; entries: CatalogEntry[] }>
+  colors: (CatalogEntry & { hex: string })[]
+  patterns: CatalogEntry[]
+  materials: CatalogEntry[]
+  styles: CatalogEntry[]
+  sleeveLengths: CatalogEntry[]
+  fits: CatalogEntry[]
+  seasons: CatalogEntry[]
+  formalities: CatalogEntry[]
+  genders: CatalogEntry[]
+  occasions: CatalogEntry[]
+}
+
+const catalog = JSON.parse(readFileSync(path.resolve(__dirname, '../../../api/internal/catalog/catalog.json'), 'utf8')) as GoCatalog
 
 export const CATEGORIES: CatalogEntry[] = catalog.categories
 export const SUBCATEGORIES: Record<string, CatalogEntry[]> = Object.fromEntries(catalog.subcategories.map((s) => [s.category, s.entries]))
