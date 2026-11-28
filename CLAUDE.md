@@ -11,6 +11,7 @@ module and binary). The product name users see is **Lookly**.
 
 1. **Talk to the owner in Uzbek.** Code, commit messages, comments and repo docs are in English.
    The owner is not a programmer: explain outcomes, decisions and risks in plain words.
+   Give times to the owner in Tashkent time (UTC+5), not UTC (owner request, 2026-11-28).
 2. **Git** (owner approval, 2026-11-25). On the session's assigned branch you may commit
    and push without asking again: (a) a slice whose tests and checks pass locally, so
    work is never lost when the session ends; (b) a stage or bug fix that passed the
