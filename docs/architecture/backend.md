@@ -728,10 +728,10 @@ reads and writes data but changes no schema there.
 
   The `docker` job builds the image.
 - **E2E in Go mode** (CI job `e2e`, second run): the whole browser suite runs again
-  with the operations Go already serves answered by Go.
+  with the whole API answered by Go (every operation of the contract since B6.10).
   `apps/web/e2e/go-front.mjs`, a test-only proxy, stands in front of a Next.js server
-  and a Go server on one database and the same secrets, and sends those operations to
-  Go and everything else to Next.js. `apps/web/e2e/go-worker.mjs` runs
+  and a Go server on one database and the same secrets, and sends everything under
+  `/api/` to Go and the pages to Next.js. `apps/web/e2e/go-worker.mjs` runs
   `lookly migrate river` and the Go worker, which writes the reset mails to the same
   outbox directory the specs read. In this arrangement every session is started by Go
   (sign-in is Go's); Next.js reads them and rotates them on page loads. Each answer is

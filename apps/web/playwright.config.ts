@@ -19,8 +19,8 @@ import path from 'node:path'
  * Go mode (E2E_GO=1, E2E_GO_BINARY=<the built `lookly` binary>): each instance
  * becomes three processes on the same database and secrets: Next.js, the Go
  * server, and e2e/go-front.mjs in front of them on the instance's port. The
- * proxy sends the operations Go already serves to Go and everything else to
- * Next.js. One Go worker (e2e/go-worker.mjs) serves both instances: it sends
+ * proxy sends the whole API (everything under /api/: every operation of the
+ * contract since stage B6.10) to Go and the pages to Next.js. One Go worker (e2e/go-worker.mjs) serves both instances: it sends
  * the mail the Go server queues (to the same outbox directory) and removes
  * the images of deleted accounts (from the same storage directory). A test
  * arrangement only; see docs/plan/B2.md and B3.md.

@@ -4,15 +4,46 @@ import { CONSENT, uniqueUser } from './helpers'
 
 /**
  * Go mode only (E2E_GO=1; playwright.config.ts leaves this file out of the
- * default run): the front proxy sends the operations the Go server serves
- * (auth, legal texts and consent, profile, password reset, account deletion,
- * the wardrobe and its images, the weather, outfit generation and the saved
- * outfits) to Go and everything else to Next.js. This spec proves the routing, so the
- * other specs really ran against Go, and that the two servers work on each
- * other's sessions in both directions.
+ * default run): the front proxy sends the whole API (every operation of the
+ * contract, stage B6.10) to Go and the pages to Next.js. This spec proves the
+ * routing, so the other specs really ran against Go, and that the two servers
+ * work on each other's sessions in both directions.
  */
 test.describe('Go mode routing', () => {
-  test('the operations Go serves are served by Go, the rest by Next.js, on one session', async ({ request }) => {
+  test('every operation of the contract is answered by Go, and the pages by Next.js', async ({ baseURL }) => {
+    // Signed out, so that nothing is changed: each operation answers (a
+    // refusal is an answer too), and each answer comes from Go.
+    const anonymous = await playwrightRequest.newContext({ baseURL })
+    try {
+      const document = await anonymous.get('/api/v1/openapi.json')
+      expect(document.status()).toBe(200)
+      expect(document.headers()['x-e2e-backend']).toBe('go')
+      const { paths } = (await document.json()) as { paths: Record<string, Record<string, unknown>> }
+      const operations = Object.entries(paths).flatMap(([path, item]) =>
+        Object.keys(item).filter((m) => ['get', 'post', 'put', 'patch', 'delete'].includes(m)).map((m) => [m.toUpperCase(), path.replace(/\{[^}]+\}/g, 'x')] as const),
+      )
+      expect(operations.length).toBeGreaterThanOrEqual(35)
+      for (const [method, path] of operations) {
+        const url = path.startsWith('/api/') ? path : `/api/v1${path}`
+        const res = await anonymous.fetch(url, { method, maxRedirects: 0 })
+        expect(res.headers()['x-e2e-backend'], `${method} ${url}`).toBe('go')
+        expect(res.status(), `${method} ${url}`).toBeLessThan(500)
+      }
+      // A path that is no operation: Go's own refusal, in the contract's envelope.
+      const unknown = await anonymous.get('/api/v1/no-such-operation')
+      expect(unknown.headers()['x-e2e-backend']).toBe('go')
+      expect(unknown.status()).toBe(404)
+      expect(await unknown.json()).toMatchObject({ code: expect.any(String), requestId: expect.any(String) })
+      // The pages are Next.js's.
+      const page = await anonymous.get('/login', { maxRedirects: 0 })
+      expect(page.status()).toBe(200)
+      expect(page.headers()['x-e2e-backend']).toBe('next')
+    } finally {
+      await anonymous.dispose()
+    }
+  })
+
+  test('the API on Go and the pages on Next.js work on one session', async ({ request }) => {
     const user = uniqueUser('go')
     const register = await request.post('/api/v1/auth/register', { data: { ...user, ...CONSENT } })
     expect(register.status()).toBe(201)
@@ -152,7 +183,7 @@ test.describe('Go mode routing', () => {
     const login = await request.post('/api/v1/auth/login', { data: { email: user.email, password: user.password } })
     expect(login.status()).toBe(200)
     expect(login.headers()['x-e2e-backend']).toBe('go')
-    expect((await request.get('/api/health')).headers()['x-e2e-backend']).toBe('next')
+    expect((await request.get('/api/health')).headers()['x-e2e-backend']).toBe('go')
 
     // Go deletes the account: its session is refused at once.
     const deleted = await request.delete('/api/v1/account')
