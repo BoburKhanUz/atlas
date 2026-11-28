@@ -610,8 +610,8 @@ func LoadIdempotency(t testing.TB) Idempotency {
 
 // OutfitValidation is testdata/golden/outfit-validation.json
 // (apps/web/scripts/golden-outfit-validation.ts): what the Next.js API
-// answers to the bodies of the outfit routes, the outfit list's query and
-// the weather's coordinates.
+// answers to the bodies of the outfit routes, the outfit list's query, the
+// weather's coordinates, the stylist chat's body and a conversation id.
 type OutfitValidation struct {
 	GeneratedBy  string           `json:"generatedBy"`
 	SourceCommit string           `json:"sourceCommit"`
@@ -629,6 +629,11 @@ type OutfitValidation struct {
 		Lon *string `json:"lon"`
 		Outcome
 	} `json:"coordinates"`
+	StylistChat     []ValidationCase `json:"stylistChat"`
+	ConversationIDs []struct {
+		ID string `json:"id"`
+		Outcome
+	} `json:"conversationIds"`
 }
 
 // LoadOutfitValidation reads testdata/golden/outfit-validation.json;
@@ -637,7 +642,8 @@ func LoadOutfitValidation(t testing.TB) OutfitValidation {
 	t.Helper()
 	var o OutfitValidation
 	load(t, "outfit-validation.json", &o)
-	if len(o.Generate) == 0 || len(o.Save) == 0 || len(o.Patch) == 0 || len(o.Feedback) == 0 || len(o.Saved) == 0 || len(o.Coordinates) == 0 {
+	if len(o.Generate) == 0 || len(o.Save) == 0 || len(o.Patch) == 0 || len(o.Feedback) == 0 || len(o.Saved) == 0 || len(o.Coordinates) == 0 ||
+		len(o.StylistChat) == 0 || len(o.ConversationIDs) == 0 {
 		t.Fatal("outfit-validation.json: a section is empty")
 	}
 	return o

@@ -1,6 +1,6 @@
 {
  "generatedBy": "apps/web/scripts/golden-outfit-validation.ts",
- "sourceCommit": "d24afdc3aedfee642259b39ed82d6187470b4f2c",
+ "sourceCommit": "cacc46929564a600f48b7fcbbc067d3d20324d1f",
  "note": "generate, save, patch, feedback: raw bodies through parseJson. saved, coordinates: the parameters as the routes pass them (an empty one is absent) through validate.",
  "generate": [
   {
@@ -5846,6 +5846,1635 @@
      "message": "Noto‘g‘ri variant: quyidagilardan biri kutilgan \"0\"|\"1\"|\"true\"|\"false\""
     }
    ]
+  }
+ ],
+ "stylistChat": [
+  {
+   "name": "an empty body",
+   "body": "",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "message",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "white space only",
+   "body": "  \n",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "not JSON",
+   "body": "{occasion",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "two JSON values",
+   "body": "{}{}",
+   "ok": false,
+   "status": 400,
+   "code": "BAD_REQUEST",
+   "error": "Yaroqsiz JSON",
+   "details": []
+  },
+  {
+   "name": "JSON null",
+   "body": "null",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "a JSON array",
+   "body": "[]",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "a JSON number",
+   "body": "12",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "an empty object",
+   "body": "{}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined",
+   "details": [
+    {
+     "path": "message",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan undefined"
+    }
+   ]
+  },
+  {
+   "name": "the message only",
+   "body": "{\"message\":\"Ertaga nima kiyay?\"}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?"
+   }
+  },
+  {
+   "name": "members that are not known",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"other\":1,\"history\":[]}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?"
+   }
+  },
+  {
+   "name": "message null",
+   "body": "{\"message\":null}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "message",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "message a number",
+   "body": "{\"message\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "message",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "message true",
+   "body": "{\"message\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "message",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "message an array",
+   "body": "{\"message\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "message",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "message an object",
+   "body": "{\"message\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "message",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "message text 0",
+   "body": "{\"message\":\"\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Xabar bo‘sh bo‘lmasligi kerak",
+   "details": [
+    {
+     "path": "message",
+     "message": "Xabar bo‘sh bo‘lmasligi kerak"
+    }
+   ]
+  },
+  {
+   "name": "message text 1",
+   "body": "{\"message\":\"   \"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Xabar bo‘sh bo‘lmasligi kerak",
+   "details": [
+    {
+     "path": "message",
+     "message": "Xabar bo‘sh bo‘lmasligi kerak"
+    }
+   ]
+  },
+  {
+   "name": "message text 2",
+   "body": "{\"message\":\" \\n Salom \\t\"}",
+   "ok": true,
+   "value": {
+    "message": "Salom"
+   }
+  },
+  {
+   "name": "message text 3",
+   "body": "{\"message\":\"mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm\"}",
+   "ok": true,
+   "value": {
+    "message": "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"
+   }
+  },
+  {
+   "name": "message text 4",
+   "body": "{\"message\":\"mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=2000 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "message",
+     "message": "Juda katta: kutilgan string <=2000 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "message text 5",
+   "body": "{\"message\":\" mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm \"}",
+   "ok": true,
+   "value": {
+    "message": "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"
+   }
+  },
+  {
+   "name": "message text 6",
+   "body": "{\"message\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+   "ok": true,
+   "value": {
+    "message": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+   }
+  },
+  {
+   "name": "message text 7",
+   "body": "{\"message\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=2000 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "message",
+     "message": "Juda katta: kutilgan string <=2000 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "message text 8",
+   "body": "{\"message\":\"ўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўў\"}",
+   "ok": true,
+   "value": {
+    "message": "ўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўўў"
+   }
+  },
+  {
+   "name": "message text 9",
+   "body": "{\"message\":\" Salom　\"}",
+   "ok": true,
+   "value": {
+    "message": "Salom"
+   }
+  },
+  {
+   "name": "message text 10",
+   "body": "{\"message\":\"​Salom\"}",
+   "ok": true,
+   "value": {
+    "message": "​Salom"
+   }
+  },
+  {
+   "name": "conversationId a number",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"conversationId\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "conversationId",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "conversationId true",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"conversationId\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "conversationId",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "conversationId an array",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"conversationId\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "conversationId",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "conversationId an object",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"conversationId\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "conversationId",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "conversationId text 0",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"conversationId\":\"c1\"}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "conversationId": "c1"
+   }
+  },
+  {
+   "name": "conversationId text 1",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"conversationId\":\"\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "conversationId",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "conversationId text 2",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"conversationId\":\"   \"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "conversationId",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "conversationId text 3",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"conversationId\":\" c1 \"}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "conversationId": "c1"
+   }
+  },
+  {
+   "name": "conversationId text 4",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"conversationId\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\"}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "conversationId": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+   }
+  },
+  {
+   "name": "conversationId text 5",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"conversationId\":\"ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=64 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "conversationId",
+     "message": "Juda katta: kutilgan string <=64 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "conversationId text 6",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"conversationId\":\" cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc \"}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "conversationId": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+   }
+  },
+  {
+   "name": "conversationId null",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"conversationId\":null}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "conversationId": null
+   }
+  },
+  {
+   "name": "weather whole",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather with a member more",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5,\"pressure\":1013}}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather null",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":null}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": null
+   }
+  },
+  {
+   "name": "weather a number",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "weather",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "weather true",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "weather",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "weather a string",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":\"text\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string",
+   "details": [
+    {
+     "path": "weather",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "weather an array",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "weather",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "weather empty",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{}}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": {}
+   }
+  },
+  {
+   "name": "weather without temperature",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": {
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather without feelsLike",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": {
+     "temperature": 21.5,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather without condition",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather without precipitationProbability",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather without humidity",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather without windSpeed",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather without uvIndex",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12}}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12
+    }
+   }
+  },
+  {
+   "name": "weather temperature null",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":null,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null",
+   "details": [
+    {
+     "path": "weather.temperature",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "weather temperature of another type",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":\"5\",\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "weather.temperature",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "weather feelsLike null",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":null,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null",
+   "details": [
+    {
+     "path": "weather.feelsLike",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "weather feelsLike of another type",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":\"5\",\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "weather.feelsLike",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "weather condition null",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":null,\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null",
+   "details": [
+    {
+     "path": "weather.condition",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "weather condition of another type",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":5,\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "weather.condition",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "weather precipitationProbability null",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":null,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null",
+   "details": [
+    {
+     "path": "weather.precipitationProbability",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "weather precipitationProbability of another type",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":\"5\",\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "weather.precipitationProbability",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "weather humidity null",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":null,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null",
+   "details": [
+    {
+     "path": "weather.humidity",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "weather humidity of another type",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":\"5\",\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "weather.humidity",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "weather windSpeed null",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":null,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null",
+   "details": [
+    {
+     "path": "weather.windSpeed",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "weather windSpeed of another type",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":\"5\",\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "weather.windSpeed",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "weather uvIndex null",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":null}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null",
+   "details": [
+    {
+     "path": "weather.uvIndex",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan null"
+    }
+   ]
+  },
+  {
+   "name": "weather uvIndex of another type",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":\"5\"}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string",
+   "details": [
+    {
+     "path": "weather.uvIndex",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    }
+   ]
+  },
+  {
+   "name": "weather temperature -90",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":-90,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": {
+     "temperature": -90,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather temperature -90.5",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":-90.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=-90",
+   "details": [
+    {
+     "path": "weather.temperature",
+     "message": "Juda kichik: kutilgan number >=-90"
+    }
+   ]
+  },
+  {
+   "name": "weather temperature 70",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":70,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": {
+     "temperature": 70,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather temperature 70.5",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":70.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=70",
+   "details": [
+    {
+     "path": "weather.temperature",
+     "message": "Juda katta: kutilgan number <=70"
+    }
+   ]
+  },
+  {
+   "name": "weather feelsLike -100",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":-100,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": -100,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather feelsLike -100.5",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":-100.5,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=-100",
+   "details": [
+    {
+     "path": "weather.feelsLike",
+     "message": "Juda kichik: kutilgan number >=-100"
+    }
+   ]
+  },
+  {
+   "name": "weather feelsLike 80",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":80,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 80,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather feelsLike 80.5",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":80.5,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=80",
+   "details": [
+    {
+     "path": "weather.feelsLike",
+     "message": "Juda katta: kutilgan number <=80"
+    }
+   ]
+  },
+  {
+   "name": "weather precipitationProbability 0",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":0,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 0,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather precipitationProbability -0.5",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":-0.5,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=0",
+   "details": [
+    {
+     "path": "weather.precipitationProbability",
+     "message": "Juda kichik: kutilgan number >=0"
+    }
+   ]
+  },
+  {
+   "name": "weather precipitationProbability 100",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":100,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 100,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather precipitationProbability 100.5",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":100.5,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=100",
+   "details": [
+    {
+     "path": "weather.precipitationProbability",
+     "message": "Juda katta: kutilgan number <=100"
+    }
+   ]
+  },
+  {
+   "name": "weather humidity 0",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":0,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 0,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather humidity -0.5",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":-0.5,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=0",
+   "details": [
+    {
+     "path": "weather.humidity",
+     "message": "Juda kichik: kutilgan number >=0"
+    }
+   ]
+  },
+  {
+   "name": "weather humidity 100",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":100,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 100,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather humidity 100.5",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":100.5,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=100",
+   "details": [
+    {
+     "path": "weather.humidity",
+     "message": "Juda katta: kutilgan number <=100"
+    }
+   ]
+  },
+  {
+   "name": "weather windSpeed 0",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":0,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 0,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather windSpeed -0.5",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":-0.5,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=0",
+   "details": [
+    {
+     "path": "weather.windSpeed",
+     "message": "Juda kichik: kutilgan number >=0"
+    }
+   ]
+  },
+  {
+   "name": "weather windSpeed 500",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":500,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 500,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather windSpeed 500.5",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":500.5,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=500",
+   "details": [
+    {
+     "path": "weather.windSpeed",
+     "message": "Juda katta: kutilgan number <=500"
+    }
+   ]
+  },
+  {
+   "name": "weather uvIndex 0",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":0}}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 0
+    }
+   }
+  },
+  {
+   "name": "weather uvIndex -0.5",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":-0.5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan number >=0",
+   "details": [
+    {
+     "path": "weather.uvIndex",
+     "message": "Juda kichik: kutilgan number >=0"
+    }
+   ]
+  },
+  {
+   "name": "weather uvIndex 30",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":30}}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 30
+    }
+   }
+  },
+  {
+   "name": "weather uvIndex 30.5",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":30.5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=30",
+   "details": [
+    {
+     "path": "weather.uvIndex",
+     "message": "Juda katta: kutilgan number <=30"
+    }
+   ]
+  },
+  {
+   "name": "weather condition empty",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "weather.condition",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "weather condition of spaces",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"   \",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "weather.condition",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "weather condition trimmed",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"  rain \\n\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "rain",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather condition of 40 characters",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"cccccccccccccccccccccccccccccccccccccccc\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "cccccccccccccccccccccccccccccccccccccccc",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    }
+   }
+  },
+  {
+   "name": "weather condition of 41 characters",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"ccccccccccccccccccccccccccccccccccccccccc\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=40 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "weather.condition",
+     "message": "Juda katta: kutilgan string <=40 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "weather with everything wrong",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":99,\"feelsLike\":\"x\",\"condition\":\"\",\"humidity\":-1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan number <=70",
+   "details": [
+    {
+     "path": "weather.temperature",
+     "message": "Juda katta: kutilgan number <=70"
+    },
+    {
+     "path": "weather.feelsLike",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan string"
+    },
+    {
+     "path": "weather.condition",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    },
+    {
+     "path": "weather.humidity",
+     "message": "Juda kichik: kutilgan number >=0"
+    }
+   ]
+  },
+  {
+   "name": "weather temperature past the largest number",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"weather\":{\"temperature\":1e400,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "weather.temperature",
+     "message": "Noto‘g‘ri kirish: kutilgan raqam, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "event a number",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"event\":7}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam",
+   "details": [
+    {
+     "path": "event",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    }
+   ]
+  },
+  {
+   "name": "event true",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"event\":true}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean",
+   "details": [
+    {
+     "path": "event",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan boolean"
+    }
+   ]
+  },
+  {
+   "name": "event an array",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"event\":[\"x\"]}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv",
+   "details": [
+    {
+     "path": "event",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan massiv"
+    }
+   ]
+  },
+  {
+   "name": "event an object",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"event\":{\"a\":1}}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object",
+   "details": [
+    {
+     "path": "event",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan object"
+    }
+   ]
+  },
+  {
+   "name": "event text 0",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"event\":\"To‘y\"}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "event": "To‘y"
+   }
+  },
+  {
+   "name": "event text 1",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"event\":\"\"}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "event": ""
+   }
+  },
+  {
+   "name": "event text 2",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"event\":\"   \"}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "event": ""
+   }
+  },
+  {
+   "name": "event text 3",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"event\":\" ishga \"}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "event": "ishga"
+   }
+  },
+  {
+   "name": "event text 4",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"event\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\"}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "event": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+   }
+  },
+  {
+   "name": "event text 5",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"event\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "event",
+     "message": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "event text 6",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"event\":\" eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee \"}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "event": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+   }
+  },
+  {
+   "name": "event text 7",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"event\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "event": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+   }
+  },
+  {
+   "name": "event text 8",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"event\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "event",
+     "message": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "event null",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"event\":null}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "event": null
+   }
+  },
+  {
+   "name": "everything",
+   "body": "{\"message\":\"Ertaga nima kiyay?\",\"conversationId\":\"cabc\",\"weather\":{\"temperature\":21.5,\"feelsLike\":20,\"condition\":\"clear\",\"precipitationProbability\":10,\"humidity\":40,\"windSpeed\":12,\"uvIndex\":5},\"event\":\"To‘y\"}",
+   "ok": true,
+   "value": {
+    "message": "Ertaga nima kiyay?",
+    "conversationId": "cabc",
+    "weather": {
+     "temperature": 21.5,
+     "feelsLike": 20,
+     "condition": "clear",
+     "precipitationProbability": 10,
+     "humidity": 40,
+     "windSpeed": 12,
+     "uvIndex": 5
+    },
+    "event": "To‘y"
+   }
+  },
+  {
+   "name": "everything wrong",
+   "body": "{\"message\":\"\",\"conversationId\":5,\"weather\":\"x\",\"event\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\"}",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Xabar bo‘sh bo‘lmasligi kerak",
+   "details": [
+    {
+     "path": "message",
+     "message": "Xabar bo‘sh bo‘lmasligi kerak"
+    },
+    {
+     "path": "conversationId",
+     "message": "Noto‘g‘ri kirish: kutilgan string, qabul qilingan raqam"
+    },
+    {
+     "path": "weather",
+     "message": "Noto‘g‘ri kirish: kutilgan object, qabul qilingan string"
+    },
+    {
+     "path": "event",
+     "message": "Juda katta: kutilgan string <=60 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "name": "a member twice (the last counts)",
+   "body": "{\"message\":\"a\",\"message\":\"b\"}",
+   "ok": true,
+   "value": {
+    "message": "b"
+   }
+  }
+ ],
+ "conversationIds": [
+  {
+   "id": "c1",
+   "ok": true,
+   "value": {
+    "id": "c1"
+   }
+  },
+  {
+   "id": "",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "id",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "id": "   ",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "id",
+     "message": "Juda kichik: kutilgan string >=1 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "id": " c1 ",
+   "ok": true,
+   "value": {
+    "id": "c1"
+   }
+  },
+  {
+   "id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+   "ok": true,
+   "value": {
+    "id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+   }
+  },
+  {
+   "id": "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+   "ok": false,
+   "status": 400,
+   "code": "VALIDATION_ERROR",
+   "error": "Juda katta: kutilgan string <=64 belgi bo‘lishi kerak",
+   "details": [
+    {
+     "path": "id",
+     "message": "Juda katta: kutilgan string <=64 belgi bo‘lishi kerak"
+    }
+   ]
+  },
+  {
+   "id": " cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc ",
+   "ok": true,
+   "value": {
+    "id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+   }
+  },
+  {
+   "id": "ўзбек",
+   "ok": true,
+   "value": {
+    "id": "ўзбек"
+   }
   }
  ],
  "coordinates": [

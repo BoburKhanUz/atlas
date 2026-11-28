@@ -1,6 +1,7 @@
 /**
  * Golden vectors for the Go port of request validation in the outfit and
- * weather routes (stage B5, parity strength "exact"): the bodies of
+ * weather routes (stage B5, parity strength "exact"), and of the stylist
+ * (stage B6.6: POST /stylist/chat, the id of a conversation): the bodies of
  * POST /outfits/generate, POST /outfits, PATCH /outfits/{id} and
  * POST /outfits/{id}/feedback, the query of GET /outfits and of
  * GET /weather/current.
@@ -14,7 +15,8 @@ import { execFileSync } from 'node:child_process'
 import { writeFileSync } from 'node:fs'
 import type { ZodType } from 'zod'
 import { ApiError, parseJson, validate } from '@/server/http'
-import { OutfitFeedbackRequest, OutfitGenerateRequest, OutfitListQuery, OutfitPatchRequest, OutfitSaveRequest, WeatherQuery } from '@/server/schemas/requests'
+import { OutfitFeedbackRequest, OutfitGenerateRequest, OutfitListQuery, OutfitPatchRequest, OutfitSaveRequest, StylistChatRequest, WeatherQuery } from '@/server/schemas/requests'
+import { idParamsSchema } from '@/server/schemas/common'
 import { OCCASIONS } from '@/lib/ai/catalog'
 
 const out = process.argv[2]
@@ -247,6 +249,27 @@ function outcome(fn: () => unknown) {
   }
 }
 
+// ── POST /stylist/chat ──────────────────────────────────────────────────────
+const message = 'Ertaga nima kiyay?'
+const chat: Case[] = [
+  ...notAnObject,
+  json('the message only', { message }),
+  json('members that are not known', { message, other: 1, history: [] }),
+  ...WRONG_TYPES.filter(([name]) => name !== 'a string').map(([name, value]) => json(`message ${name}`, { message: value })),
+  ...['', '   ', ' \n Salom \t', 'm'.repeat(2000), 'm'.repeat(2001), ` ${'m'.repeat(2000)} `, '😀'.repeat(1000), '😀'.repeat(1001), 'ў'.repeat(2000), '\u00a0Salom\u3000', '\u200bSalom'].map((m, i) => json(`message text ${i}`, { message: m })),
+  ...WRONG_TYPES.filter(([name]) => !['null', 'a string'].includes(name)).map(([name, value]) => json(`conversationId ${name}`, { message, conversationId: value })),
+  ...['c1', '', '   ', ' c1 ', 'c'.repeat(64), 'c'.repeat(65), ` ${'c'.repeat(64)} `].map((id, i) => json(`conversationId text ${i}`, { message, conversationId: id })),
+  json('conversationId null', { message, conversationId: null }),
+  ...weatherCases((w) => ({ message, weather: w })),
+  ...WRONG_TYPES.filter(([name]) => !['null', 'a string'].includes(name)).map(([name, value]) => json(`event ${name}`, { message, event: value })),
+  ...['To‘y', '', '   ', ' ishga ', 'e'.repeat(60), 'e'.repeat(61), ` ${'e'.repeat(60)} `, '😀'.repeat(30), '😀'.repeat(31)].map((e, i) => json(`event text ${i}`, { message, event: e })),
+  json('event null', { message, event: null }),
+  json('everything', { message, conversationId: 'cabc', weather, event: 'To‘y' }),
+  json('everything wrong', { message: '', conversationId: 5, weather: 'x', event: 'e'.repeat(61) }),
+  raw('a member twice (the last counts)', '{"message":"a","message":"b"}'),
+]
+const conversationIds = ['c1', '', '   ', ' c1 ', 'c'.repeat(64), 'c'.repeat(65), ` ${'c'.repeat(64)} `, 'ўзбек']
+
 const sourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
 const sections = {
   generate: await runBodies(OutfitGenerateRequest, generate),
@@ -254,6 +277,8 @@ const sections = {
   patch: await runBodies(OutfitPatchRequest, patch),
   feedback: await runBodies(OutfitFeedbackRequest, feedback),
   saved: saved.map((value) => ({ saved: value, ...outcome(() => validate(value ? { saved: value } : {}, OutfitListQuery)) })),
+  stylistChat: await runBodies(StylistChatRequest, chat),
+  conversationIds: conversationIds.map((id) => ({ id, ...outcome(() => validate({ id }, idParamsSchema)) })),
   coordinates: coordinates.map((c) => ({ ...c, ...outcome(() => validate({ lat: c.lat || undefined, lon: c.lon || undefined }, WeatherQuery)) })),
 }
 writeFileSync(

@@ -160,7 +160,14 @@ func (v *validation) occasion(out map[string]any) {
 
 // weather reads the optional weather snapshot (or null) into out: all
 // seven members, each within its range.
-func (v *validation) weather(out map[string]any) {
+func (v *validation) weather(out map[string]any) { v.snapshot(out, true) }
+
+// partialWeather reads the optional weather (or null) of the stylist chat
+// into out: any of the seven members, each within its range.
+func (v *validation) partialWeather(out map[string]any) { v.snapshot(out, false) }
+
+// snapshot reads the weather; complete: every member is required.
+func (v *validation) snapshot(out map[string]any, complete bool) {
 	const name = "weather"
 	if isNull(v.members[name]) {
 		out[name] = nil
@@ -172,11 +179,11 @@ func (v *validation) weather(out map[string]any) {
 	}
 	snapshot := map[string]any{}
 	number := func(member string, min, max int64) {
-		w.put(snapshot, member, numRule{required: true, bounded: true, min: min, max: max})
+		w.put(snapshot, member, numRule{required: complete, bounded: true, min: min, max: max})
 	}
 	number("temperature", -90, 70)
 	number("feelsLike", -100, 80)
-	if condition, ok := w.text("condition", textRule{trim: true, checks: []check{minLength(1, ""), maxLength(conditionMax, "")}}); ok {
+	if condition, ok := w.text("condition", textRule{optional: !complete, trim: true, checks: []check{minLength(1, ""), maxLength(conditionMax, "")}}); ok {
 		snapshot["condition"] = condition
 	}
 	number("precipitationProbability", 0, 100)
@@ -288,6 +295,36 @@ func OutfitFeedbackBody(raw []byte) ([]byte, *apierr.Error) {
 	if note, ok := v.text("note", textRule{optional: true, trim: true, checks: []check{maxLength(feedbackNoteMax, "")}}); ok {
 		out["note"] = note
 	}
+	return v.result(out)
+}
+
+// The limits of the stylist chat's body.
+const (
+	chatMessageMax = 2000
+	chatEventMax   = 60
+	msgEmptyChat   = "Xabar bo‘sh bo‘lmasligi kerak"
+)
+
+// StylistChatBody is the body of POST /api/v1/stylist/chat: the message
+// (trimmed, 1 to 2000 characters), and optionally the conversation it
+// continues, the weather (any of its members) and the event the user typed
+// (trimmed, at most 60 characters); each of the three may be null.
+func StylistChatBody(raw []byte) ([]byte, *apierr.Error) {
+	v, err := readObject(raw)
+	if err != nil {
+		return nil, err
+	}
+	out := map[string]any{}
+	if message, ok := v.text("message", textRule{trim: true, checks: []check{minLength(1, msgEmptyChat), maxLength(chatMessageMax, "")}}); ok {
+		out["message"] = message
+	}
+	if isNull(v.members["conversationId"]) {
+		out["conversationId"] = nil
+	} else if id, ok := v.text("conversationId", textRule{optional: true, trim: true, checks: []check{minLength(1, ""), maxLength(idMax, "")}}); ok {
+		out["conversationId"] = id
+	}
+	v.partialWeather(out)
+	v.nullableText(out, "event", chatEventMax)
 	return v.result(out)
 }
 

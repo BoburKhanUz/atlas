@@ -18,7 +18,18 @@ func TestOutfitAndWeatherRequestsAreJudgedAsTheNextJSAPIJudgesThem(t *testing.T)
 		{name: "save", rule: httpapi.OutfitSaveBody, cases: g.Save, exact: true},
 		{name: "patch", rule: httpapi.OutfitPatchBody, cases: g.Patch, exact: true},
 		{name: "feedback", rule: httpapi.OutfitFeedbackBody, cases: g.Feedback, exact: true},
+		{name: "stylistChat", rule: httpapi.StylistChatBody, cases: g.StylistChat, exact: true},
 	})
+
+	// A conversation id from the path is read as an item id is.
+	for _, c := range g.ConversationIDs {
+		id, err := httpapi.ItemID(c.ID)
+		var got map[string]any
+		if err == nil {
+			got = map[string]any{"id": id}
+		}
+		same(t, "conversation id "+c.ID, c.Outcome, got, err)
+	}
 
 	for _, c := range g.Saved {
 		values, name := url.Values{}, "saved absent"
@@ -59,7 +70,7 @@ func TestOutfitAndWeatherRequestsAreJudgedAsTheNextJSAPIJudgesThem(t *testing.T)
 // accept again unchanged.
 func FuzzOutfitBodies(f *testing.F) {
 	g := golden.LoadOutfitValidation(f)
-	for _, section := range [][]golden.ValidationCase{g.Generate, g.Save, g.Patch, g.Feedback} {
+	for _, section := range [][]golden.ValidationCase{g.Generate, g.Save, g.Patch, g.Feedback, g.StylistChat} {
 		for _, c := range section {
 			f.Add(c.Body)
 		}
