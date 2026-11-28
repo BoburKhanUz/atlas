@@ -127,6 +127,12 @@ func known(allowed []string, v *string) *string {
 // is not shown to the model.
 const minimumProfileConfidence = 0.3
 
+// ProfileShown says whether a colour profile is shown to the ranking model:
+// its confidence at least 0.3 and a season the ranking knows.
+func ProfileShown(profile *ColorProfile) bool {
+	return profile != nil && profile.Confidence != nil && *profile.Confidence >= minimumProfileConfidence && known(profileSeasons, profile.Season) != nil
+}
+
 // RankingContext is the context message of the ranking request for the
 // engine's candidates: the occasion ("" for none), the weather (nil: not
 // known) and the colour profile (nil: none).
@@ -145,7 +151,7 @@ func RankingContext(candidates []Candidate, occasion string, wx *WeatherContext,
 		}
 		c.Weather = w
 	}
-	if profile != nil && profile.Confidence != nil && *profile.Confidence >= minimumProfileConfidence && known(profileSeasons, profile.Season) != nil {
+	if ProfileShown(profile) {
 		c.ColorProfile = &rankingColorProfile{Season: *profile.Season, Undertone: known(profileUndertones, profile.Undertone)}
 	}
 	for i, candidate := range candidates {

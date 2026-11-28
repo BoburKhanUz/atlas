@@ -593,6 +593,15 @@ func setOf(list []string) set {
 	return s
 }
 
+// ProfileStrength is how strongly the engine uses a colour profile (its
+// confidence, or the legacy default), nil when it uses none.
+func ProfileStrength(cp *ColorProfile) *float64 {
+	if p := profileOf(cp); p != nil {
+		return &p.strength
+	}
+	return nil
+}
+
 // profileOf is the usable part of a colour profile, or nil when it should
 // not influence anything.
 func profileOf(cp *ColorProfile) *profileContext {

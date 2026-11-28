@@ -73,6 +73,20 @@ two attempts, so a case runs only while two more calls fit under the cap; one th
 does not is recorded as `call_cap`. The deliberate differences from the TypeScript
 pipeline are listed in `docs/plan/B6.md` (B6.9).
 
+Each result also carries `attempts` (every provider attempt's outcome, in order: `ok`
+or an error kind) and `setup`: what the pipeline made of the case before asking a
+model (stylist: the context's references, the messages and schema of the first
+request; outfit: the engine's candidates with their references, signals and items,
+whether a weather was given, whether the colour profile was shown and how strongly the
+engine used it, why there are no outfits, the deterministic explanation shown without
+the model, and the messages and schema; vision: the prepared picture's size and the
+schema). `"dryRun": true` on a request makes the setup only, with no call. Two more
+requests: `{"feature":"versions"}` names the versions of the prompts, the engine and
+the analyses, and `{"feature":"color","case":{"image":<base64>}}` analyses a selfie
+as the colour profile does (no model; `profile`, `rejected_quality` with the reason,
+`rejected_skin`, or an error). A case with a member the server does not know is
+refused, so a case the harness changed is never half read.
+
 With credentials, run each live text evaluation three times (product temperatures 0.7 and 0.3) and report the spread.
 
 ### Bake-off vision and repeated runs (PHASE 5.0)

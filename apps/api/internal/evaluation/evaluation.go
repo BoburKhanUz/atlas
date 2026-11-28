@@ -10,15 +10,22 @@
 //	{"feature": "stylist" | "outfit" | "vision", "case": {...}}
 //
 // and one JSON result per line on the output: the outcome as the harness's
-// runners record it (stylist-eval.ts runStylistCase, outfit-eval.ts
-// runOutfitCase, vision-eval.ts runOne), with the provider attempts
-// ("calls"), the logical requests (the first and the correction), the
-// tokens and the latency. A request that cannot be read is answered
-// {"refused": reason}; the run goes on.
+// runners record it, with the provider attempts ("calls", and each one's
+// outcome in "attempts"), the logical requests (the first and the
+// correction), the tokens, the latency, and the case's "setup": what the
+// pipeline made of it before asking a model (the context's references, the
+// messages and schema of the first request, the engine's candidates, the
+// prepared picture's size), which the harness scores with. "dryRun": true
+// makes the setup only, with no call. Two more requests: {"feature":
+// "versions"} names the versions of the prompts, the engine and the
+// analyses; {"feature": "color", "case": {"image": ...}} analyses a selfie.
+// A case with a member this server does not know is refused, as is a request
+// that cannot be read ({"refused": reason}); the run goes on.
 package evaluation
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -30,6 +37,7 @@ import (
 	"time"
 
 	"lookly/internal/ai"
+	"lookly/internal/color"
 	"lookly/internal/engine"
 	"lookly/internal/imaging"
 	"lookly/internal/stylist"
@@ -61,15 +69,19 @@ type VisionClient interface {
 	AnalyzeImage(ctx context.Context, feature ai.Feature, request ai.VisionRequest) (ai.VisionResult, error)
 }
 
-// Pictures prepare a picture for a vision model (*imaging.Processor).
+// Pictures prepare a picture for a vision model, or a selfie's canvas
+// (*imaging.Processor).
 type Pictures interface {
 	PrepareVision(ctx context.Context, data []byte, maxSide int) (imaging.VisionInput, error)
+	Canvas(ctx context.Context, data []byte) (rgb []byte, width, height int, err error)
 }
 
-// Counter counts the provider attempts of a run (the client's Recorder).
+// Counter counts the provider attempts of a run and keeps each one's
+// outcome (the client's Recorder).
 type Counter struct {
-	mu    sync.Mutex
-	calls int
+	mu       sync.Mutex
+	calls    int
+	outcomes []string
 }
 
 // RecordCall counts one call's attempts.
@@ -77,6 +89,21 @@ func (c *Counter) RecordCall(_ context.Context, record ai.CallRecord) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.calls += record.Attempts
+	c.outcomes = append(c.outcomes, record.AttemptOutcomes...)
+}
+
+// mark is where a case's attempts start.
+func (c *Counter) mark() int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return len(c.outcomes)
+}
+
+// since are the attempts' outcomes after a mark.
+func (c *Counter) since(mark int) []string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return slices.Clone(c.outcomes[mark:])
 }
 
 // Calls are the attempts so far.
@@ -120,11 +147,47 @@ type Result struct {
 	LatencyMs    int64    `json:"latencyMs"`
 	// Candidates is how many outfits the engine gave (outfit cases).
 	Candidates *int `json:"candidates,omitempty"`
+	// Attempts are each provider attempt's outcome, in order: "ok" or an
+	// error kind.
+	Attempts []string `json:"attempts,omitempty"`
+	// Setup is what the pipeline made of the case before asking a model.
+	Setup any `json:"setup,omitempty"`
 }
 
 type request struct {
 	Feature string          `json:"feature"`
 	Case    json.RawMessage `json:"case"`
+	// DryRun makes the case's setup only: no model is asked.
+	DryRun bool `json:"dryRun"`
+}
+
+// message is a request message as the setup shows it.
+type message struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+// schema is a request's response schema as the setup shows it.
+type schema struct {
+	Name   string          `json:"name"`
+	Schema json.RawMessage `json:"schema"`
+}
+
+func messagesOut(in []ai.Message) []message {
+	out := make([]message, len(in))
+	for i, m := range in {
+		out[i] = message{Role: m.Role, Content: m.Content}
+	}
+	return out
+}
+
+// decodeCase reads a case strictly: a member this server does not know is
+// refused, so a case the harness changed cannot be read half.
+func decodeCase(raw json.RawMessage, into any) error {
+	// raw is one JSON value (the request was read whole).
+	d := json.NewDecoder(bytes.NewReader(raw))
+	d.DisallowUnknownFields()
+	return d.Decode(into)
 }
 
 // Run answers each request of in on out, in order.
@@ -165,22 +228,33 @@ func (r *Runner) one(ctx context.Context, line []byte) (Result, error) {
 	switch req.Feature {
 	case "stylist":
 		var c StylistCase
-		if err := json.Unmarshal(req.Case, &c); err != nil {
+		if err := decodeCase(req.Case, &c); err != nil {
 			return Result{}, fmt.Errorf("not a stylist case: %w", err)
 		}
-		return r.stylist(ctx, c), nil
+		return r.stylist(ctx, c, req.DryRun), nil
 	case "outfit":
 		var c OutfitCase
-		if err := json.Unmarshal(req.Case, &c); err != nil {
+		if err := decodeCase(req.Case, &c); err != nil {
 			return Result{}, fmt.Errorf("not an outfit case: %w", err)
 		}
-		return r.outfit(ctx, c), nil
+		return r.outfit(ctx, c, req.DryRun), nil
 	case "vision":
 		var c VisionCase
-		if err := json.Unmarshal(req.Case, &c); err != nil {
+		if err := decodeCase(req.Case, &c); err != nil {
 			return Result{}, fmt.Errorf("not a vision case: %w", err)
 		}
-		return r.vision(ctx, c)
+		return r.vision(ctx, c, req.DryRun)
+	case "color":
+		var c ColorCase
+		if err := decodeCase(req.Case, &c); err != nil {
+			return Result{}, fmt.Errorf("not a colour case: %w", err)
+		}
+		return r.color(ctx, c)
+	case "versions":
+		return Result{Outcome: Versions{
+			Kind: "versions", VisionAnalysis: vision.AnalysisVersion, StylistPrompt: stylist.PromptVersion,
+			RankingPrompt: engine.RankingVersion, Engine: engine.Version, ColorAnalysis: color.Version,
+		}}, nil
 	}
 	return Result{}, fmt.Errorf("unknown feature %q", req.Feature)
 }
@@ -266,11 +340,20 @@ func weatherOf(w *stylist.Weather) *engine.Weather {
 	}
 }
 
+// StylistSetup is a stylist case's setup.
+type StylistSetup struct {
+	// Refs are the context's item references.
+	Refs []string `json:"refs"`
+	// Messages are the first request's.
+	Messages []message `json:"messages"`
+	Schema   schema    `json:"schema"`
+}
+
 // stylist runs a case as runStylistCase: the engine's candidates (no
 // profile), the context, the request without history, the provider, the
 // answer validated with one correction for unknown references, the
 // references resolved.
-func (r *Runner) stylist(ctx context.Context, c StylistCase) Result {
+func (r *Runner) stylist(ctx context.Context, c StylistCase, dryRun bool) Result {
 	started := time.Now()
 	items := make([]engine.Item, len(c.Wardrobe))
 	for i, row := range c.Wardrobe {
@@ -288,7 +371,11 @@ func (r *Runner) stylist(ctx context.Context, c StylistCase) Result {
 		JSONSchema: &ai.Schema{Name: "stylist_answer", Schema: stylist.Schema(built.Refs)},
 	}}
 	provider, model := r.Text.TextProviderOf(ai.StylistChat)
-	before := r.Counter.Calls()
+	setup := StylistSetup{Refs: built.Refs, Messages: messagesOut(messages), Schema: schema{Name: calls.request.JSONSchema.Name, Schema: calls.request.JSONSchema.Schema}}
+	if dryRun {
+		return Result{Provider: provider, Model: model, Setup: setup}
+	}
+	before, mark := r.Counter.Calls(), r.Counter.mark()
 
 	outcome := func() any {
 		first, err := calls.call(ctx, messages)
@@ -329,6 +416,7 @@ func (r *Runner) stylist(ctx context.Context, c StylistCase) Result {
 	return Result{
 		Outcome: outcome, Provider: provider, Model: model, Calls: r.Counter.Calls() - before, Requests: calls.requests,
 		InputTokens: calls.inputTokens, OutputTokens: calls.outputTokens, LatencyMs: time.Since(started).Milliseconds(),
+		Attempts: r.Counter.since(mark), Setup: setup,
 	}
 }
 
@@ -343,10 +431,60 @@ type OutfitCase struct {
 	TopN         *float64             `json:"topN"`
 }
 
+// OutfitSetup is an outfit case's setup.
+type OutfitSetup struct {
+	// Candidates are the engine's outfits, best first (O1, O2, ...).
+	Candidates []candidate `json:"candidates"`
+	// WeatherProvided: the engine had a weather; ProfileSent: the colour
+	// profile was shown to the model; ProfileStrength: how strongly the
+	// engine used it (nil: not at all).
+	WeatherProvided bool     `json:"weatherProvided"`
+	ProfileSent     bool     `json:"profileSent"`
+	ProfileStrength *float64 `json:"profileStrength"`
+	// Problem says why there are no outfits ("" when there are).
+	Problem string `json:"problem"`
+	// FallbackExplanation is what the user is shown without the model (the
+	// best outfit's deterministic explanation; nil without outfits).
+	FallbackExplanation *string   `json:"fallbackExplanation"`
+	Messages            []message `json:"messages"`
+	Schema              schema    `json:"schema"`
+}
+
+// candidate is an engine outfit as the setup shows it: its reference in the
+// request (O1, O2, ...), the engine's key, score and signals, its items.
+type candidate struct {
+	Ref     string             `json:"ref"`
+	Key     string             `json:"key"`
+	Score   float64            `json:"score"`
+	Signals map[string]float64 `json:"signals"`
+	Items   []piece            `json:"items"`
+}
+
+type piece struct {
+	Item item   `json:"item"`
+	Role string `json:"role"`
+}
+
+// item is a wardrobe item as the case gave it.
+type item struct {
+	ID           string   `json:"id"`
+	Category     string   `json:"category"`
+	Subcategory  *string  `json:"subcategory"`
+	Colors       []string `json:"colors"`
+	Pattern      *string  `json:"pattern"`
+	Material     *string  `json:"material"`
+	SleeveLength *string  `json:"sleeveLength"`
+	Fit          *string  `json:"fit"`
+	Style        *string  `json:"style"`
+	Season       []string `json:"season"`
+	Gender       *string  `json:"gender"`
+	Formality    *string  `json:"formality"`
+}
+
 // outfit runs a case as runOutfitCase: the engine's outfits (with the
 // colour profile), the ranking request, the provider, one correction for
 // any invalid answer.
-func (r *Runner) outfit(ctx context.Context, c OutfitCase) Result {
+func (r *Runner) outfit(ctx context.Context, c OutfitCase, dryRun bool) Result {
 	started := time.Now()
 	result := engine.Generate(engine.Input{Wardrobe: c.Wardrobe, Occasion: c.Occasion, Weather: c.Weather, ColorProfile: c.ColorProfile, TopN: c.TopN})
 	candidates := result.Outfits
@@ -362,7 +500,30 @@ func (r *Runner) outfit(ctx context.Context, c OutfitCase) Result {
 		JSONSchema: &ai.Schema{Name: "outfit_ranking", Schema: engine.RankingSchema(len(candidates))},
 	}}
 	provider, model := r.Text.TextProviderOf(ai.OutfitExplanation)
-	before := r.Counter.Calls()
+	setup := OutfitSetup{
+		Candidates: make([]candidate, len(candidates)), WeatherProvided: result.Weather != nil, ProfileSent: engine.ProfileShown(c.ColorProfile),
+		ProfileStrength: engine.ProfileStrength(c.ColorProfile), Problem: string(result.Problem),
+		Messages: messagesOut(messages), Schema: schema{Name: calls.request.JSONSchema.Name, Schema: calls.request.JSONSchema.Schema},
+	}
+	for i, o := range candidates {
+		setup.Candidates[i] = candidate{Ref: refs[i], Key: o.Key, Score: o.Score, Signals: o.Signals, Items: make([]piece, len(o.Items))}
+		for j, p := range o.Items {
+			it := p.Item
+			setup.Candidates[i].Items[j] = piece{Role: p.Role, Item: item{
+				ID: it.ID, Category: it.Category, Subcategory: it.Subcategory, Colors: it.Colors, Pattern: it.Pattern, Material: it.Material,
+				SleeveLength: it.SleeveLength, Fit: it.Fit, Style: it.Style, Season: it.Season, Gender: it.Gender, Formality: it.Formality,
+			}}
+		}
+	}
+	if len(candidates) > 0 {
+		explanation := engine.Explanation(candidates[0], c.Occasion, result.Weather)
+		setup.FallbackExplanation = &explanation
+	}
+	n := len(candidates)
+	if dryRun {
+		return Result{Provider: provider, Model: model, Candidates: &n, Setup: setup}
+	}
+	before, mark := r.Counter.Calls(), r.Counter.mark()
 
 	outcome := func() any {
 		first, err := calls.call(ctx, messages)
@@ -390,10 +551,10 @@ func (r *Runner) outfit(ctx context.Context, c OutfitCase) Result {
 		}
 		return map[string]any{"kind": "ranked", "firstError": invalid.Reason, "ranking": ranking, "explanation": explanation}
 	}()
-	n := len(candidates)
 	return Result{
 		Outcome: outcome, Provider: provider, Model: model, Calls: r.Counter.Calls() - before, Requests: calls.requests,
 		InputTokens: calls.inputTokens, OutputTokens: calls.outputTokens, LatencyMs: time.Since(started).Milliseconds(), Candidates: &n,
+		Attempts: r.Counter.since(mark), Setup: setup,
 	}
 }
 
@@ -426,7 +587,20 @@ type attributesBody struct {
 	Formality    *string  `json:"formality"`
 }
 
-func (r *Runner) vision(ctx context.Context, c VisionCase) (Result, error) {
+// VisionSetup is a vision case's setup: the prepared picture (nil when it
+// could not be prepared) and the response schema.
+type VisionSetup struct {
+	Picture *preparedPicture `json:"picture"`
+	Schema  schema           `json:"schema"`
+}
+
+type preparedPicture struct {
+	MimeType string `json:"mimeType"`
+	Width    int    `json:"width"`
+	Height   int    `json:"height"`
+}
+
+func (r *Runner) vision(ctx context.Context, c VisionCase, dryRun bool) (Result, error) {
 	image, err := base64.StdEncoding.DecodeString(c.Image)
 	if err != nil {
 		return Result{}, errors.New("the picture is not base64")
@@ -441,19 +615,27 @@ func (r *Runner) vision(ctx context.Context, c VisionCase) (Result, error) {
 	}
 	provider, model := r.Images.VisionProvider()
 	started := time.Now()
-	before := r.Counter.Calls()
+	before, mark := r.Counter.Calls(), r.Counter.mark()
+	options := ai.VisionOptions{GeminiMediaResolution: c.GeminiMediaResolution, GeminiThinkingLevel: c.GeminiThinkingLevel, OpenAIDetail: c.OpenAIDetail}
+	setup := VisionSetup{Schema: schema{Name: "garment_analysis", Schema: vision.Schema}}
+	picture, prepareErr := r.Pictures.PrepareVision(ctx, image, maxSide)
+	if prepareErr == nil {
+		setup.Picture = &preparedPicture{MimeType: "image/jpeg", Width: picture.Width, Height: picture.Height}
+	}
+	if dryRun {
+		return Result{Provider: provider, Model: model, Setup: setup}, nil
+	}
 	var usage ai.Usage
 	outcome := func() any {
-		picture, err := r.Pictures.PrepareVision(ctx, image, maxSide)
-		if err != nil {
-			return errorOutcome(err)
+		if prepareErr != nil {
+			return errorOutcome(prepareErr)
 		}
 		if r.MaxCalls > 0 && r.Counter.Calls()+2 > r.MaxCalls {
 			return errorOutcome(errCallCap)
 		}
 		// The server's own request; no blur pre-check, as in the harness's
 		// runner: the evaluation scores what the model makes of the picture.
-		request := vision.GarmentRequest(picture, maxSide, ai.VisionOptions{GeminiMediaResolution: c.GeminiMediaResolution, GeminiThinkingLevel: c.GeminiThinkingLevel, OpenAIDetail: c.OpenAIDetail})
+		request := vision.GarmentRequest(picture, maxSide, options)
 		request.Timeout = timeout
 		result, err := r.Images.AnalyzeImage(ctx, ai.ClothingAnalysis, request)
 		if err != nil {
@@ -481,5 +663,58 @@ func (r *Runner) vision(ctx context.Context, c VisionCase) (Result, error) {
 	return Result{
 		Outcome: outcome, Provider: provider, Model: model, Calls: r.Counter.Calls() - before, Requests: 1,
 		InputTokens: usage.InputTokens, OutputTokens: usage.OutputTokens, LatencyMs: time.Since(started).Milliseconds(),
+		Attempts: r.Counter.since(mark), Setup: setup,
 	}, nil
+}
+
+// ─── Versions and the colour analysis ──────────────────────────────────────
+
+// Versions name what produced a result: the prompts', the engine's and the
+// analyses' versions.
+type Versions struct {
+	Kind           string `json:"kind"`
+	VisionAnalysis string `json:"visionAnalysis"`
+	StylistPrompt  string `json:"stylistPrompt"`
+	RankingPrompt  string `json:"rankingPrompt"`
+	Engine         string `json:"engine"`
+	ColorAnalysis  string `json:"colorAnalysis"`
+}
+
+// ColorCase is a selfie, in base64.
+type ColorCase struct {
+	Image string `json:"image"`
+}
+
+// color analyses a selfie as the colour profile does: the canvas, then the
+// analysis (no model, no call). Outcomes: "profile" with the analysis,
+// "rejected_quality" with the reason, "rejected_skin", or an error
+// ("picture_size" for a picture the upload refuses by its size,
+// "unreadable_picture" for one it cannot read).
+func (r *Runner) color(ctx context.Context, c ColorCase) (Result, error) {
+	image, err := base64.StdEncoding.DecodeString(c.Image)
+	if err != nil {
+		return Result{}, errors.New("the picture is not base64")
+	}
+	started := time.Now()
+	outcome := func() any {
+		rgb, width, height, err := r.Pictures.Canvas(ctx, image)
+		switch {
+		case errors.Is(err, imaging.ErrDimensions):
+			return map[string]any{"kind": "error", "error": "picture_size"}
+		case err != nil:
+			return map[string]any{"kind": "error", "error": "unreadable_picture"}
+		}
+		result, err := color.AnalyzeCanvas(color.Canvas{Width: width, Height: height, RGB: rgb})
+		var quality *color.PhotoQualityError
+		switch {
+		case errors.As(err, &quality):
+			return map[string]any{"kind": "rejected_quality", "reason": quality.Reason}
+		case errors.Is(err, color.ErrSkinNotVisible):
+			return map[string]any{"kind": "rejected_skin"}
+		case err != nil:
+			return map[string]any{"kind": "error", "error": "unexpected"}
+		}
+		return map[string]any{"kind": "profile", "profile": result}
+	}()
+	return Result{Outcome: outcome, Provider: color.Provider, Model: color.Version, LatencyMs: time.Since(started).Milliseconds()}, nil
 }

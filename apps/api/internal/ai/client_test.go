@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -106,6 +107,9 @@ func TestACallIsTriedOnceMoreAndToldToTheMonitoringOnce(t *testing.T) {
 		fields.Retry != "succeeded" || !fields.Success || *fields.Input != 1000 || *fields.Output != 200 || *fields.Total != 1200 || *fields.CostUSD != 0.0008 {
 		t.Errorf("the record: %+v", fields)
 	}
+	if !slices.Equal(calls[0].AttemptOutcomes, []string{"unavailable", "ok"}) {
+		t.Errorf("each attempt: %v", calls[0].AttemptOutcomes)
+	}
 	if provider, model := c.TextProviderOf(ai.StylistChat); provider != "gemini" || model != "gemini-test" {
 		t.Errorf("the stylist's provider: %s %s", provider, model)
 	}
@@ -119,23 +123,24 @@ func TestAFailureIsTheLastAttemptsAndIsRecorded(t *testing.T) {
 		kind     ai.Kind
 		status   int
 		attempts int32
+		each     []string
 	}{
-		{"refused credentials are not tried again", []func(http.ResponseWriter, *http.Request){status(401, `{}`)}, ai.Auth, 401, 1},
-		{"a bad request is not tried again", []func(http.ResponseWriter, *http.Request){status(400, `{}`)}, ai.InvalidRequest, 400, 1},
-		{"busy twice", []func(http.ResponseWriter, *http.Request){status(503, `{}`), status(502, `{}`)}, ai.Unavailable, 502, 2},
-		{"busy, then refused", []func(http.ResponseWriter, *http.Request){status(500, `{}`), status(403, `{}`)}, ai.Auth, 403, 2},
+		{"refused credentials are not tried again", []func(http.ResponseWriter, *http.Request){status(401, `{}`)}, ai.Auth, 401, 1, []string{"auth"}},
+		{"a bad request is not tried again", []func(http.ResponseWriter, *http.Request){status(400, `{}`)}, ai.InvalidRequest, 400, 1, []string{"invalid_request"}},
+		{"busy twice", []func(http.ResponseWriter, *http.Request){status(503, `{}`), status(502, `{}`)}, ai.Unavailable, 502, 2, []string{"unavailable", "unavailable"}},
+		{"busy, then refused", []func(http.ResponseWriter, *http.Request){status(500, `{}`), status(403, `{}`)}, ai.Auth, 403, 2, []string{"unavailable", "auth"}},
 		{"too many requests with a long wait is not tried again", []func(http.ResponseWriter, *http.Request){func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Set("Retry-After", "30")
 			w.WriteHeader(429)
-		}}, ai.RateLimited, 429, 1},
+		}}, ai.RateLimited, 429, 1, []string{"rate_limited"}},
 		{"too many requests with a short wait is tried again", []func(http.ResponseWriter, *http.Request){func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Set("Retry-After", "1")
 			w.WriteHeader(429)
-		}}, ai.RateLimited, 429, 2},
-		{"an answer that is not JSON", []func(http.ResponseWriter, *http.Request){status(200, `<html>`)}, ai.MalformedResponse, 0, 1},
+		}}, ai.RateLimited, 429, 2, []string{"rate_limited", "rate_limited"}},
+		{"an answer that is not JSON", []func(http.ResponseWriter, *http.Request){status(200, `<html>`)}, ai.MalformedResponse, 0, 1, []string{"malformed_response"}},
 		// An answer that would be read as "Salom" if all nine megabytes of it were read.
-		{"an answer too long to be one", []func(http.ResponseWriter, *http.Request){status(200, `{"candidates":[{"content":{"parts":[{"text":"Salom"}]}}],"padding":"`+strings.Repeat("x", 9<<20)+`"}`)}, ai.MalformedResponse, 0, 1},
-		{"a filtered answer", []func(http.ResponseWriter, *http.Request){status(200, `{"promptFeedback":{"blockReason":"SAFETY"}}`)}, ai.ContentFiltered, 0, 1},
+		{"an answer too long to be one", []func(http.ResponseWriter, *http.Request){status(200, `{"candidates":[{"content":{"parts":[{"text":"Salom"}]}}],"padding":"`+strings.Repeat("x", 9<<20)+`"}`)}, ai.MalformedResponse, 0, 1, []string{"malformed_response"}},
+		{"a filtered answer", []func(http.ResponseWriter, *http.Request){status(200, `{"promptFeedback":{"blockReason":"SAFETY"}}`)}, ai.ContentFiltered, 0, 1, []string{"content_filtered"}},
 	} {
 		gemini, asked := scripted(t, c.replies...)
 		client, rec := client(t, settings(5*time.Second), gemini.URL, "http://127.0.0.1:1")
@@ -147,7 +152,7 @@ func TestAFailureIsTheLastAttemptsAndIsRecorded(t *testing.T) {
 		}
 		calls := rec.all()
 		if len(calls) != 1 || calls[0].Outcome != string(c.kind) || calls[0].HTTPStatus != c.status || calls[0].Attempts != int(c.attempts) ||
-			calls[0].Usage != (ai.Usage{}) || calls[0].Price != nil {
+			calls[0].Usage != (ai.Usage{}) || calls[0].Price != nil || !slices.Equal(calls[0].AttemptOutcomes, c.each) {
 			t.Errorf("%s: the record %+v", c.name, calls)
 		}
 		// Nothing of the question, the answer or the key is in the error or the record.

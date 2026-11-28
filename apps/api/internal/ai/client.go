@@ -26,6 +26,9 @@ type CallRecord struct {
 	Price    *config.AIPrice
 	// HTTPStatus is the status of the failure (0: none).
 	HTTPStatus int
+	// AttemptOutcomes are each attempt's outcome, in order: "ok", an error
+	// Kind, or "error" (the evaluation's accounting; not in the monitoring).
+	AttemptOutcomes []string
 }
 
 // CallFields are the fields of the monitoring's "ai.call" event.
@@ -194,11 +197,13 @@ func (c *Client) AnalyzeImage(ctx context.Context, feature Feature, request Visi
 func (c *Client) run(ctx context.Context, feature Feature, provider, model string, price *config.AIPrice, attempt func() (Usage, error)) error {
 	started := c.now()
 	var usage Usage
+	var outcomes []string
 	attempts, err := c.retrier.do(ctx, func() (err error) {
 		usage, err = attempt()
+		outcomes = append(outcomes, outcomeOf(err))
 		return err
 	})
-	record := CallRecord{Feature: feature, Provider: provider, Model: model, Outcome: "ok", Latency: c.now().Sub(started), Attempts: attempts}
+	record := CallRecord{Feature: feature, Provider: provider, Model: model, Outcome: "ok", Latency: c.now().Sub(started), Attempts: attempts, AttemptOutcomes: outcomes}
 	if err != nil {
 		record.Outcome = "error"
 		var failure *Error
@@ -210,4 +215,16 @@ func (c *Client) run(ctx context.Context, feature Feature, provider, model strin
 	}
 	c.recorder.RecordCall(ctx, record)
 	return err
+}
+
+// outcomeOf is an attempt's outcome: "ok", the error's Kind, or "error".
+func outcomeOf(err error) string {
+	if err == nil {
+		return "ok"
+	}
+	var failure *Error
+	if errors.As(err, &failure) {
+		return string(failure.Kind)
+	}
+	return "error"
 }
