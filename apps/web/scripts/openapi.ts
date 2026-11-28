@@ -1,46 +1,28 @@
 /**
- * OpenAPI document (docs/api/openapi.json, generated from src/server/openapi).
+ * The API contract (docs/api/openapi.json) is hand-owned since B7.5 (ADR
+ * 0003): edit the document itself, then regenerate the Go server
+ * (apps/api/scripts/generate.sh) and the Dart client
+ * (apps/mobile/tool/openapi/generate_api.sh); CI fails on stale generated code.
  *
- *   bun scripts/openapi.ts --write      regenerate the committed copy
- *   bun scripts/openapi.ts --check      exit 1 when the committed copy is out of date (CI)
- *   bun scripts/openapi.ts --validate   validate the generated document (OpenAPI 3.1 schema + refs)
+ *   bun scripts/openapi.ts --validate   the committed document is valid OpenAPI 3.1 (schema + $refs)
  */
 import { promises as fs } from 'fs'
 import path from 'path'
 import { validate } from '@readme/openapi-parser'
-import { buildOpenApiDocument, serializeOpenApiDocument } from '../src/server/openapi/document'
 
-const OUT = path.resolve(__dirname, '../../../docs/api/openapi.json')
+export const CONTRACT = path.resolve(__dirname, '../../../docs/api/openapi.json')
 
 async function main(): Promise<number> {
-  const mode = process.argv[2]
-  const text = serializeOpenApiDocument()
-  if (mode === '--write') {
-    await fs.mkdir(path.dirname(OUT), { recursive: true })
-    await fs.writeFile(OUT, text)
-    console.log(`wrote ${path.relative(process.cwd(), OUT)}`)
+  if (process.argv[2] !== '--validate') throw new Error('usage: openapi.ts --validate (the document is hand-owned: edit docs/api/openapi.json)')
+  const doc = JSON.parse(await fs.readFile(CONTRACT, 'utf8')) as { openapi: string }
+  const result = await validate(structuredClone(doc) as never)
+  if (result.valid) {
+    console.log(`valid OpenAPI ${doc.openapi}${result.warnings.length ? ` (${result.warnings.length} warnings)` : ''}`)
+    for (const w of result.warnings) console.log(`warning: ${JSON.stringify(w)}`)
     return 0
   }
-  if (mode === '--check') {
-    const committed = await fs.readFile(OUT, 'utf8').catch(() => '')
-    if (committed === text) {
-      console.log('docs/api/openapi.json is up to date')
-      return 0
-    }
-    console.error('docs/api/openapi.json is out of date: run `bun run openapi:write` and commit the result')
-    return 1
-  }
-  if (mode === '--validate') {
-    const result = await validate(structuredClone(buildOpenApiDocument()) as never)
-    if (result.valid) {
-      console.log(`valid OpenAPI ${(buildOpenApiDocument() as { openapi: string }).openapi}${result.warnings.length ? ` (${result.warnings.length} warnings)` : ''}`)
-      for (const w of result.warnings) console.log(`warning: ${JSON.stringify(w)}`)
-      return 0
-    }
-    console.error(JSON.stringify(result.errors, null, 2))
-    return 1
-  }
-  throw new Error('usage: openapi.ts --write | --check | --validate')
+  console.error(JSON.stringify(result.errors, null, 2))
+  return 1
 }
 
 main().then(

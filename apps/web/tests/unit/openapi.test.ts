@@ -3,7 +3,6 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
 import { validate } from '@readme/openapi-parser'
-import { buildOpenApiDocument, serializeOpenApiDocument } from '@/server/openapi/document'
 import { OPERATIONS } from '@/server/openapi/registry'
 import { ERROR_CODES } from '@/server/schemas/responses'
 import { errorStatus } from '@/server/http'
@@ -39,16 +38,8 @@ describe('OpenAPI document', () => {
     expect(new Set(OPERATIONS.map((o) => o.operationId)).size).toBe(OPERATIONS.length)
   })
 
-  it('OAS-02: generation is deterministic and the committed docs/api/openapi.json is up to date', async () => {
-    const a = serializeOpenApiDocument()
-    const b = serializeOpenApiDocument()
-    expect(a).toBe(b)
-    expect(a).not.toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/) // no timestamps
-    expect(await fs.readFile(COMMITTED, 'utf8'), 'run `bun run openapi:write`').toBe(a)
-  })
-
-  it('OAS-03: the document is a valid OpenAPI 3.1 description (schema + $refs)', async () => {
-    const doc = buildOpenApiDocument() as { openapi: string; paths: Record<string, Record<string, { responses: Record<string, { 'x-error-codes'?: string[] }> }>> }
+  it('OAS-03: the committed (hand-owned) document is a valid OpenAPI 3.1 description (schema + $refs)', async () => {
+    const doc = JSON.parse(await fs.readFile(COMMITTED, 'utf8')) as { openapi: string; paths: Record<string, Record<string, { responses: Record<string, { 'x-error-codes'?: string[] }> }>> }
     expect(doc.openapi).toBe('3.1.0')
     const result = await validate(structuredClone(doc) as never)
     if (!result.valid) expect(result.errors).toEqual([])
@@ -63,8 +54,8 @@ describe('OpenAPI document', () => {
     }
   })
 
-  it('the document carries no secrets or environment values', () => {
-    const text = serializeOpenApiDocument()
+  it('the document carries no secrets or environment values', async () => {
+    const text = await fs.readFile(COMMITTED, 'utf8')
     for (const name of ['JWT_SECRET', 'MEDIA_SIGNING_SECRET', 'SESSION_ENC_KEY']) {
       const value = process.env[name]
       if (value) expect(text).not.toContain(value)

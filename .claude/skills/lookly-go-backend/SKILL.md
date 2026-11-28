@@ -61,11 +61,11 @@ apps/api/
   The document is OpenAPI 3.1 and is used as is (ADR 0008): only implemented
   operations are generated (`include-operation-ids`), and contract tests validate
   responses with `internal/contracttest`.
-- **Until B7 the document is generated** from `apps/web/src/server/openapi/registry.ts`:
-  a contract change starts there, then `bun run openapi:write`, then
-  `apps/mobile/tool/openapi/generate_api.sh`, then the Go code. Never edit the JSON by
-  hand before B7 (CI's `openapi:check` rejects it). From B7 the JSON is hand-owned
-  (ADR 0003).
+- **The document is hand-owned** (ADR 0003, since B7.5): a contract change starts in
+  `docs/api/openapi.json`, then `scripts/generate.sh` (Go) and
+  `apps/mobile/tool/openapi/generate_api.sh` (Dart), then the Go code. CI fails when
+  generated code is stale (`generate.sh --check`, `generate_api.sh --check`) or the
+  document is invalid (`bun run openapi:validate`).
 - Error responses always use the envelope `{error, code, details?, requestId}` with the
   codes and HTTP statuses listed in the contract. The Uzbek `error` text comes from one
   table; codes never change meaning.

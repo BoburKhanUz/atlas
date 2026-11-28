@@ -82,9 +82,9 @@ regenerate. A deliberate difference is listed by name in the test, with its reas
 
 ## Change the contract
 
-Until B7 the contract is generated from the TypeScript registry (ADR 0003): change
-`apps/web/src/server/openapi/registry.ts`, run `bun run openapi:write` in `apps/web`, then
-`scripts/generate.sh` here. To serve a new operation, add its id to
+The contract is hand-owned (ADR 0003, since B7.5): change `docs/api/openapi.json`, check
+it with `bun run openapi:validate` in `apps/web`, run `scripts/generate.sh` here and
+`apps/mobile/tool/openapi/generate_api.sh` for the phone. To serve a new operation, add its id to
 `internal/httpapi/contract/oapi-codegen.yaml`, remove it from `notYetImplemented` in
 `coverage_test.go`, regenerate, and implement the new `Server` method.
 

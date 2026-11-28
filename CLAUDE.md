@@ -39,7 +39,7 @@ module and binary). The product name users see is **Lookly**.
 | `apps/mobile` | Flutter app (Android + iOS), Riverpod 3, go_router, generated API client in `apps/mobile/packages/atlas_api` |
 | `apps/web` | Next.js app: web UI, and until stage B7 the API under `src/app/api/v1` and the Prisma schema |
 | `apps/api` | Go backend (stage B0 onward; replaces the Next.js API with the same contract) |
-| `docs/api/openapi.json` | The API contract. Until B7 it is generated from `apps/web/src/server/openapi/registry.ts` (see ADR 0003) |
+| `docs/api/openapi.json` | The API contract, hand-owned (ADR 0003): edit it, then regenerate the Go server and the Dart client |
 | `docs/adr/` | Architecture decision records — binding; read before changing architecture |
 | `docs/architecture/`, `docs/ai/`, `docs/database/`, `docs/deploy/`, `docs/release/` | Design notes, AI design, database cutover, deployment, release checklists |
 | `deploy/` | Single-server deployment (Compose overlay, Caddy, backup script) |
@@ -77,7 +77,7 @@ tool/openapi/generate_api.sh --check            # generated client matches the c
 bun install
 bun run lint && bun run typecheck
 env -u GEMINI_API_KEY -u OPENAI_API_KEY bun run test
-bun run openapi:check && bun run openapi:validate
+bun run openapi:validate
 bun run brand:check
 bun run test:integration    # needs a PostgreSQL 16 (see .github/workflows/ci.yml, job "integration")
 bun run test:e2e            # e2e/run-local.sh: expects a trust-auth PostgreSQL 16 on a Unix socket

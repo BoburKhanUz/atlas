@@ -1,17 +1,17 @@
 # API contract (OpenAPI 3.1)
 
-`openapi.json` is generated — do not edit it by hand. It is also served at
-`GET /api/v1/openapi.json`.
+`openapi.json` is the contract, edited by hand (ADR 0003; generated from a
+TypeScript registry until B7.5). The Go server serves it at `GET /api/v1/openapi.json`.
 
-- Source: `apps/web/src/server/openapi/registry.ts` (one entry per route
-  method) and the Zod schemas in `apps/web/src/server/schemas/requests.ts` /
-  `responses.ts`, which the route handlers use too.
-- Regenerate after changing a route or schema: `cd apps/web && bun run openapi:write`.
-- CI: `openapi:check` (committed copy up to date), `openapi:validate`
-  (OpenAPI 3.1 schema and `$ref`s), `tests/unit/openapi.test.ts` (every route
-  file ↔ registry entry), `tests/integration/contract.itest.ts` (real handler
-  responses match the schemas; every documented success and operation-specific
-  error code is exercised).
+- Change it here, then regenerate the Go server interface and types
+  (`apps/api/scripts/generate.sh`) and the Dart client
+  (`apps/mobile/tool/openapi/generate_api.sh`), then implement.
+- CI: `bun run openapi:validate` in `apps/web` (OpenAPI 3.1 schema and `$ref`s);
+  `generate.sh --check` and `generate_api.sh --check` (generated code current); Go's
+  contract tests (`internal/contracttest`: every response the handlers give matches;
+  `internal/apierr`: every error code sits under the status the document gives it);
+  the API journey suite (`apps/web/api-e2e`: every answer of the running Go server
+  checked against the document).
 - Errors: every non-2xx JSON response is `ErrorResponse`; the codes possible
   per status are listed in `x-error-codes`. Clients branch on `code`.
 - Auth: `bearerAuth` (mobile, `Authorization: Bearer`) or `cookieAuth` (web).

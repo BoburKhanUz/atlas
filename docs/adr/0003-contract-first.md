@@ -1,6 +1,6 @@
 # 0003. The OpenAPI document is the single source of truth
 
-- Status: accepted
+- Status: accepted; the document is hand-owned since B7.5 (2026-11-28)
 - Date: 2026-11-25
 - Decided by: the engineer (within the owner-approved plan)
 
