@@ -94,6 +94,32 @@ func (p *Processor) PrepareVision(ctx context.Context, data []byte, maxSide int)
 	}, nil
 }
 
+// Canvas is a picture as the selfie colour analysis reads it (the Next.js
+// loadCanvas): upright, within 320 pixels (never enlarged), laid on grey,
+// as rows of R, G, B bytes. It refuses what Process refuses, and waits for
+// a slot as Process does. Nothing of the picture is kept.
+func (p *Processor) Canvas(ctx context.Context, data []byte) (rgb []byte, width, height int, err error) {
+	h, err := inspect(data, p.d)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	select {
+	case p.slots <- struct{}{}:
+	case <-ctx.Done():
+		return nil, 0, 0, fmt.Errorf("%w: %w", ErrBusy, ctx.Err())
+	}
+	defer func() { <-p.slots }()
+	src, err := guarded(func() (image.Image, error) { return p.d.pixels(h.format, data) })
+	if err != nil {
+		return nil, 0, 0, unreadable(err)
+	}
+	if src.Bounds().Dx() != h.cfg.Width || src.Bounds().Dy() != h.cfg.Height {
+		return nil, 0, 0, ErrInvalid
+	}
+	canvas := flatten(fitInside(orient(src, h.orientation), canvasSide), canvasBackground)
+	return rgbOf(canvas), canvas.Rect.Dx(), canvas.Rect.Dy(), nil
+}
+
 // flatten lays a picture on an opaque background.
 func flatten(src image.Image, background color.NRGBA) *image.RGBA {
 	b := src.Bounds()

@@ -140,6 +140,9 @@ var routes = map[string]routeRule{
 	"POST /api/v1/stylist/chat":              {body: StylistChatBody, timeout: ChatTimeout},
 	"GET /api/v1/stylist/conversations":      {},
 	"GET /api/v1/stylist/conversations/{id}": {itemID: true},
+	"POST /api/v1/color-profile/analyze":     {request: FormHeaders, bodyLimit: UploadBodyLimit, timeout: SelfieTimeout},
+	"GET /api/v1/color-profile":              {},
+	"DELETE /api/v1/color-profile":           {},
 }
 
 type identityKey struct{}

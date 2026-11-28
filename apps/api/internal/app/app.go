@@ -25,6 +25,7 @@ import (
 	"lookly/internal/accounts"
 	"lookly/internal/ai"
 	"lookly/internal/auth"
+	"lookly/internal/color"
 	"lookly/internal/config"
 	"lookly/internal/database"
 	"lookly/internal/health"
@@ -145,6 +146,7 @@ func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger, images storage
 		Stylist: stylist.New(stylist.Config{
 			Pool: pool, Keys: keys, Client: models, Quotas: quotas, Monitor: monitor, Route: cfg.AI.Stylist, Rollout: cfg.AI.Rollout, Log: log,
 		}),
+		Colors:       color.NewService(pool, pictures, monitor, log),
 		Media:        media.NewSigner(cfg.MediaSigningSecret, cfg.MediaURLTTL, cfg.PublicBaseURL),
 		Images:       images,
 		CookieSecure: cfg.CookieSecure,

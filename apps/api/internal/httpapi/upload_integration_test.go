@@ -825,10 +825,11 @@ func TestUploadThatCannotBeProcessedInTimeLeavesNothing(t *testing.T) {
 	w.is(got, http.StatusUnprocessableEntity, "IMAGE_DIMENSIONS")
 }
 
-// The upload has its own budget: a body up to 10 MB and time for a slow
-// connection; the stylist chat has time for the model (50 s) inside the
-// server's 60 s write timeout; every other route keeps the defaults.
-func TestOnlyTheUploadAndTheChatHaveALargerBudget(t *testing.T) {
+// The upload and the selfie have their own budget: a body up to 10 MB and
+// time for a slow connection; the stylist chat has time for the model
+// (50 s) inside the server's 60 s write timeout; every other route keeps
+// the defaults.
+func TestOnlyTheUploadsAndTheChatHaveALargerBudget(t *testing.T) {
 	t.Parallel()
 	// The Next.js API's sizes, and a minute and a half for a phone on a
 	// slow connection.
@@ -839,7 +840,7 @@ func TestOnlyTheUploadAndTheChatHaveALargerBudget(t *testing.T) {
 		body, timeout := httpapi.RouteBudget(pattern)
 		wantBody, wantTimeout := int64(httpapi.DefaultBodyLimit), httpapi.RequestTimeout
 		switch pattern {
-		case "POST /api/v1/wardrobe/items":
+		case "POST /api/v1/wardrobe/items", "POST /api/v1/color-profile/analyze":
 			wantBody, wantTimeout = httpapi.UploadBodyLimit, httpapi.UploadTimeout
 		case "POST /api/v1/stylist/chat":
 			wantTimeout = 55 * time.Second

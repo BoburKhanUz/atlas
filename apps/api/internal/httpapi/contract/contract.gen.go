@@ -21,6 +21,36 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for ColorProfileResponse0Status.
+const (
+	NotAnalyzed ColorProfileResponse0Status = "not_analyzed"
+)
+
+// Valid indicates whether the value is a known member of the ColorProfileResponse0Status enum.
+func (e ColorProfileResponse0Status) Valid() bool {
+	switch e {
+	case NotAnalyzed:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ColorProfileResponse1Status.
+const (
+	Analyzed ColorProfileResponse1Status = "analyzed"
+)
+
+// Valid indicates whether the value is a known member of the ColorProfileResponse1Status enum.
+func (e ColorProfileResponse1Status) Valid() bool {
+	switch e {
+	case Analyzed:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ErrorResponseCode.
 const (
 	AIQUOTAEXCEEDED          ErrorResponseCode = "AI_QUOTA_EXCEEDED"
@@ -1220,6 +1250,71 @@ type AuthResponse struct {
 	union json.RawMessage
 }
 
+// ColorAnalysisResponse defines model for ColorAnalysisResponse.
+type ColorAnalysisResponse struct {
+	ColorProfile struct {
+		// AnalyzedAt ISO 8601, UTC
+		AnalyzedAt          time.Time                  `json:"analyzedAt"`
+		CautionColors       []string                   `json:"cautionColors"`
+		Confidence          float64                    `json:"confidence"`
+		ContrastLevel       nullable.Nullable[string]  `json:"contrastLevel"`
+		EyeColor            nullable.Nullable[string]  `json:"eyeColor"`
+		HairColor           nullable.Nullable[string]  `json:"hairColor"`
+		Id                  string                     `json:"id"`
+		NeutralColors       []string                   `json:"neutralColors"`
+		RecommendedColors   []string                   `json:"recommendedColors"`
+		Season              nullable.Nullable[string]  `json:"season"`
+		SecondaryConfidence nullable.Nullable[float64] `json:"secondaryConfidence"`
+		SecondarySeason     nullable.Nullable[string]  `json:"secondarySeason"`
+		SkinTone            nullable.Nullable[string]  `json:"skinTone"`
+		Undertone           nullable.Nullable[string]  `json:"undertone"`
+		UndertoneConfidence nullable.Nullable[float64] `json:"undertoneConfidence"`
+	} `json:"colorProfile"`
+	Disclaimer string `json:"disclaimer"`
+}
+
+// ColorProfileResponse defines model for ColorProfileResponse.
+type ColorProfileResponse struct {
+	union json.RawMessage
+}
+
+// ColorProfileResponse0 defines model for ColorProfileResponse.0.
+type ColorProfileResponse0 struct {
+	ColorProfile nullable.Nullable[any]      `json:"colorProfile"`
+	Message      string                      `json:"message"`
+	Status       ColorProfileResponse0Status `json:"status"`
+}
+
+// ColorProfileResponse0Status defines model for ColorProfileResponse.0.Status.
+type ColorProfileResponse0Status string
+
+// ColorProfileResponse1 defines model for ColorProfileResponse.1.
+type ColorProfileResponse1 struct {
+	ColorProfile struct {
+		// AnalyzedAt ISO 8601, UTC
+		AnalyzedAt          time.Time                  `json:"analyzedAt"`
+		CautionColors       []string                   `json:"cautionColors"`
+		Confidence          nullable.Nullable[float64] `json:"confidence"`
+		ContrastLevel       nullable.Nullable[string]  `json:"contrastLevel"`
+		EyeColor            nullable.Nullable[string]  `json:"eyeColor"`
+		HairColor           nullable.Nullable[string]  `json:"hairColor"`
+		Id                  string                     `json:"id"`
+		NeutralColors       []string                   `json:"neutralColors"`
+		RecommendedColors   []string                   `json:"recommendedColors"`
+		Season              nullable.Nullable[string]  `json:"season"`
+		SecondaryConfidence nullable.Nullable[float64] `json:"secondaryConfidence"`
+		SecondarySeason     nullable.Nullable[string]  `json:"secondarySeason"`
+		SkinTone            nullable.Nullable[string]  `json:"skinTone"`
+		Undertone           nullable.Nullable[string]  `json:"undertone"`
+		UndertoneConfidence nullable.Nullable[float64] `json:"undertoneConfidence"`
+	} `json:"colorProfile"`
+	Disclaimer string                      `json:"disclaimer"`
+	Status     ColorProfileResponse1Status `json:"status"`
+}
+
+// ColorProfileResponse1Status defines model for ColorProfileResponse.1.Status.
+type ColorProfileResponse1Status string
+
 // ConversationListResponse defines model for ConversationListResponse.
 type ConversationListResponse struct {
 	Conversations []struct {
@@ -2008,6 +2103,12 @@ type RegisterParams struct {
 // RegisterParamsXAtlasClient defines parameters for Register.
 type RegisterParamsXAtlasClient string
 
+// AnalyzeColorProfileMultipartBody defines parameters for AnalyzeColorProfile.
+type AnalyzeColorProfileMultipartBody struct {
+	// File Selfie (JPEG, PNG, WebP), ≤ 8 MB, shortest side ≥ 256 px
+	File openapi_types.File `json:"file"`
+}
+
 // ListOutfitsParams defines parameters for ListOutfits.
 type ListOutfitsParams struct {
 	Saved *ListOutfitsParamsSaved `form:"saved,omitempty" json:"saved,omitempty"`
@@ -2070,6 +2171,9 @@ type RefreshSessionJSONRequestBody = MobileRefreshRequest
 
 // RegisterJSONRequestBody defines body for Register for application/json ContentType.
 type RegisterJSONRequestBody = RegisterRequest
+
+// AnalyzeColorProfileMultipartRequestBody defines body for AnalyzeColorProfile for multipart/form-data ContentType.
+type AnalyzeColorProfileMultipartRequestBody AnalyzeColorProfileMultipartBody
 
 // AcceptLegalDocumentsJSONRequestBody defines body for AcceptLegalDocuments for application/json ContentType.
 type AcceptLegalDocumentsJSONRequestBody = LegalConsentRequest
@@ -2160,6 +2264,68 @@ func (t *AuthResponse) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsColorProfileResponse0 returns the union data inside the ColorProfileResponse as a ColorProfileResponse0
+func (t ColorProfileResponse) AsColorProfileResponse0() (ColorProfileResponse0, error) {
+	var body ColorProfileResponse0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromColorProfileResponse0 overwrites any union data inside the ColorProfileResponse as the provided ColorProfileResponse0
+func (t *ColorProfileResponse) FromColorProfileResponse0(v ColorProfileResponse0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeColorProfileResponse0 performs a merge with any union data inside the ColorProfileResponse, using the provided ColorProfileResponse0
+func (t *ColorProfileResponse) MergeColorProfileResponse0(v ColorProfileResponse0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsColorProfileResponse1 returns the union data inside the ColorProfileResponse as a ColorProfileResponse1
+func (t ColorProfileResponse) AsColorProfileResponse1() (ColorProfileResponse1, error) {
+	var body ColorProfileResponse1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromColorProfileResponse1 overwrites any union data inside the ColorProfileResponse as the provided ColorProfileResponse1
+func (t *ColorProfileResponse) FromColorProfileResponse1(v ColorProfileResponse1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeColorProfileResponse1 performs a merge with any union data inside the ColorProfileResponse, using the provided ColorProfileResponse1
+func (t *ColorProfileResponse) MergeColorProfileResponse1(v ColorProfileResponse1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ColorProfileResponse) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ColorProfileResponse) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// GetHealth Liveness and database check
@@ -2189,6 +2355,15 @@ type ServerInterface interface {
 	// Register Create an account and sign in (web: cookies; mobile: tokens in the body)
 	// (POST /api/v1/auth/register)
 	Register(w http.ResponseWriter, r *http.Request, params RegisterParams)
+	// DeleteColorProfile Delete the colour profile and the selfie-derived skin tone, undertone, hair and eye colour (idempotent; selfies are never stored)
+	// (DELETE /api/v1/color-profile)
+	DeleteColorProfile(w http.ResponseWriter, r *http.Request)
+	// GetColorProfile The current colour profile (one per user). undertone: warm, neutral_warm, neutral, neutral_cool, cool or unknown; season null when no season is supported; hair/eye colour null when not measurable; confidences 0–1 (overall ≤ 0.8), null for profiles from before Phase 4.3.
+	// (GET /api/v1/color-profile)
+	GetColorProfile(w http.ResponseWriter, r *http.Request)
+	// AnalyzeColorProfile Analyse a selfie into a colour profile, replacing the current one. Deterministic and on the server only: the selfie is not stored, logged or sent to any AI provider. Nothing is stored for any error.
+	// (POST /api/v1/color-profile/analyze)
+	AnalyzeColorProfile(w http.ResponseWriter, r *http.Request)
 	// GetLegalDocuments The current privacy policy and terms of use (versioned; registration accepts the version)
 	// (GET /api/v1/legal)
 	GetLegalDocuments(w http.ResponseWriter, r *http.Request)
@@ -2485,6 +2660,48 @@ func (siw *ServerInterfaceWrapper) Register(w http.ResponseWriter, r *http.Reque
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Register(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteColorProfile operation middleware
+func (siw *ServerInterfaceWrapper) DeleteColorProfile(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteColorProfile(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetColorProfile operation middleware
+func (siw *ServerInterfaceWrapper) GetColorProfile(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetColorProfile(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AnalyzeColorProfile operation middleware
+func (siw *ServerInterfaceWrapper) AnalyzeColorProfile(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AnalyzeColorProfile(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3149,6 +3366,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/auth/password/reset", wrapper.ResetPassword)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/auth/refresh", wrapper.RefreshSession)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/auth/register", wrapper.Register)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/color-profile", wrapper.DeleteColorProfile)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/color-profile", wrapper.GetColorProfile)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/color-profile/analyze", wrapper.AnalyzeColorProfile)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/legal", wrapper.GetLegalDocuments)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/legal/consent", wrapper.AcceptLegalDocuments)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/outfits", wrapper.ListOutfits)
@@ -4014,6 +4234,274 @@ func (response Register500JSONResponse) VisitRegisterResponse(w http.ResponseWri
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteColorProfileRequestObject struct {
+}
+
+type DeleteColorProfileResponseObject interface {
+	VisitDeleteColorProfileResponse(w http.ResponseWriter) error
+}
+
+type DeleteColorProfile200JSONResponse OkResponse
+
+func (response DeleteColorProfile200JSONResponse) VisitDeleteColorProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteColorProfile401JSONResponse ErrorResponse
+
+func (response DeleteColorProfile401JSONResponse) VisitDeleteColorProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteColorProfile403JSONResponse ErrorResponse
+
+func (response DeleteColorProfile403JSONResponse) VisitDeleteColorProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteColorProfile500JSONResponse ErrorResponse
+
+func (response DeleteColorProfile500JSONResponse) VisitDeleteColorProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetColorProfileRequestObject struct {
+}
+
+type GetColorProfileResponseObject interface {
+	VisitGetColorProfileResponse(w http.ResponseWriter) error
+}
+
+type GetColorProfile200JSONResponse ColorProfileResponse
+
+func (t GetColorProfile200JSONResponse) MarshalJSON() ([]byte, error) {
+	return ColorProfileResponse(t).MarshalJSON()
+}
+
+func (t *GetColorProfile200JSONResponse) UnmarshalJSON(b []byte) error {
+	return (*ColorProfileResponse)(t).UnmarshalJSON(b)
+}
+
+func (response GetColorProfile200JSONResponse) VisitGetColorProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetColorProfile401JSONResponse ErrorResponse
+
+func (response GetColorProfile401JSONResponse) VisitGetColorProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetColorProfile403JSONResponse ErrorResponse
+
+func (response GetColorProfile403JSONResponse) VisitGetColorProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetColorProfile500JSONResponse ErrorResponse
+
+func (response GetColorProfile500JSONResponse) VisitGetColorProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AnalyzeColorProfileRequestObject struct {
+	Body *multipart.Reader
+}
+
+type AnalyzeColorProfileResponseObject interface {
+	VisitAnalyzeColorProfileResponse(w http.ResponseWriter) error
+}
+
+type AnalyzeColorProfile200JSONResponse ColorAnalysisResponse
+
+func (response AnalyzeColorProfile200JSONResponse) VisitAnalyzeColorProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AnalyzeColorProfile400JSONResponse ErrorResponse
+
+func (response AnalyzeColorProfile400JSONResponse) VisitAnalyzeColorProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AnalyzeColorProfile401JSONResponse ErrorResponse
+
+func (response AnalyzeColorProfile401JSONResponse) VisitAnalyzeColorProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AnalyzeColorProfile403JSONResponse ErrorResponse
+
+func (response AnalyzeColorProfile403JSONResponse) VisitAnalyzeColorProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AnalyzeColorProfile413JSONResponse ErrorResponse
+
+func (response AnalyzeColorProfile413JSONResponse) VisitAnalyzeColorProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AnalyzeColorProfile415JSONResponse ErrorResponse
+
+func (response AnalyzeColorProfile415JSONResponse) VisitAnalyzeColorProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(415)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AnalyzeColorProfile422JSONResponse ErrorResponse
+
+func (response AnalyzeColorProfile422JSONResponse) VisitAnalyzeColorProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AnalyzeColorProfile500JSONResponse ErrorResponse
+
+func (response AnalyzeColorProfile500JSONResponse) VisitAnalyzeColorProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AnalyzeColorProfile503JSONResponse ErrorResponse
+
+func (response AnalyzeColorProfile503JSONResponse) VisitAnalyzeColorProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -6059,6 +6547,15 @@ type StrictServerInterface interface {
 	// Register Create an account and sign in (web: cookies; mobile: tokens in the body)
 	// (POST /api/v1/auth/register)
 	Register(ctx context.Context, request RegisterRequestObject) (RegisterResponseObject, error)
+	// DeleteColorProfile Delete the colour profile and the selfie-derived skin tone, undertone, hair and eye colour (idempotent; selfies are never stored)
+	// (DELETE /api/v1/color-profile)
+	DeleteColorProfile(ctx context.Context, request DeleteColorProfileRequestObject) (DeleteColorProfileResponseObject, error)
+	// GetColorProfile The current colour profile (one per user). undertone: warm, neutral_warm, neutral, neutral_cool, cool or unknown; season null when no season is supported; hair/eye colour null when not measurable; confidences 0–1 (overall ≤ 0.8), null for profiles from before Phase 4.3.
+	// (GET /api/v1/color-profile)
+	GetColorProfile(ctx context.Context, request GetColorProfileRequestObject) (GetColorProfileResponseObject, error)
+	// AnalyzeColorProfile Analyse a selfie into a colour profile, replacing the current one. Deterministic and on the server only: the selfie is not stored, logged or sent to any AI provider. Nothing is stored for any error.
+	// (POST /api/v1/color-profile/analyze)
+	AnalyzeColorProfile(ctx context.Context, request AnalyzeColorProfileRequestObject) (AnalyzeColorProfileResponseObject, error)
 	// GetLegalDocuments The current privacy policy and terms of use (versioned; registration accepts the version)
 	// (GET /api/v1/legal)
 	GetLegalDocuments(ctx context.Context, request GetLegalDocumentsRequestObject) (GetLegalDocumentsResponseObject, error)
@@ -6425,6 +6922,85 @@ func (sh *strictHandler) Register(w http.ResponseWriter, r *http.Request, params
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RegisterResponseObject); ok {
 		if err := validResponse.VisitRegisterResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteColorProfile operation middleware
+func (sh *strictHandler) DeleteColorProfile(w http.ResponseWriter, r *http.Request) {
+	var request DeleteColorProfileRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteColorProfile(ctx, request.(DeleteColorProfileRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteColorProfile")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteColorProfileResponseObject); ok {
+		if err := validResponse.VisitDeleteColorProfileResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetColorProfile operation middleware
+func (sh *strictHandler) GetColorProfile(w http.ResponseWriter, r *http.Request) {
+	var request GetColorProfileRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetColorProfile(ctx, request.(GetColorProfileRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetColorProfile")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetColorProfileResponseObject); ok {
+		if err := validResponse.VisitGetColorProfileResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AnalyzeColorProfile operation middleware
+func (sh *strictHandler) AnalyzeColorProfile(w http.ResponseWriter, r *http.Request) {
+	var request AnalyzeColorProfileRequestObject
+
+	if reader, err := r.MultipartReader(); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
+		return
+	} else {
+		request.Body = reader
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AnalyzeColorProfile(ctx, request.(AnalyzeColorProfileRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AnalyzeColorProfile")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AnalyzeColorProfileResponseObject); ok {
+		if err := validResponse.VisitAnalyzeColorProfileResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

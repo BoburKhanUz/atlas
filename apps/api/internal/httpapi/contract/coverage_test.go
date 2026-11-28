@@ -15,7 +15,7 @@ import (
 // oapi-codegen.yaml together with their handlers; the list is empty at the
 // cutover (B7).
 var notYetImplemented = []string{
-	"analyzeColorProfile", "deleteColorProfile", "getColorProfile", "getOpenApiDocument", "reportClientErrors",
+	"getOpenApiDocument", "reportClientErrors",
 }
 
 // servedByHand are the operations served without generated code, each with

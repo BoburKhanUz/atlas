@@ -223,3 +223,41 @@ func TestAHeaderThatDisagreesWithThePixelsIsNotPrepared(t *testing.T) {
 		t.Fatalf("a decoder's panic: %v", err)
 	}
 }
+
+// The selfie colour analysis's canvas is the vision canvas: the same
+// pixels, without a JPEG being made.
+func TestTheColourCanvasIsTheVisionCanvas(t *testing.T) {
+	t.Parallel()
+	for _, name := range []string{"orientation-6.jpg", "gps.jpg", "min.png", "alpha.png", "orientation-8.jpg", "orientation-6.webp"} {
+		rgb, w, h, err := processor.Canvas(context.Background(), fixture(t, name))
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		in := prepare(t, name, 64)
+		if w != in.CanvasWidth || h != in.CanvasHeight || !bytes.Equal(rgb, in.Canvas) {
+			t.Errorf("%s: %d×%d, the vision canvas %d×%d (same bytes: %t)", name, w, h, in.CanvasWidth, in.CanvasHeight, bytes.Equal(rgb, in.Canvas))
+		}
+	}
+	for _, c := range []struct {
+		name string
+		want error
+	}{
+		{"garbage.bin", imaging.ErrInvalid},
+		{"truncated.jpg", imaging.ErrInvalid},
+		{"picture.gif", imaging.ErrUnsupported},
+		{"heic-brand.bin", imaging.ErrUnsupported},
+		{"tiny.png", imaging.ErrDimensions},
+	} {
+		if _, _, _, err := processor.Canvas(context.Background(), fixture(t, c.name)); !errors.Is(err, c.want) {
+			t.Errorf("%s: %v, want %v", c.name, err, c.want)
+		}
+	}
+	p := imaging.NewProcessor(1)
+	release := p.Hold()
+	defer release()
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, _, _, err := p.Canvas(ctx, fixture(t, "gps.jpg")); !errors.Is(err, imaging.ErrBusy) {
+		t.Errorf("with every slot taken: %v", err)
+	}
+}

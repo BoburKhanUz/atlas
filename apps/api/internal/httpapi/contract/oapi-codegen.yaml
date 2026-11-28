@@ -53,3 +53,6 @@ output-options:
     - stylistChat
     - listConversations
     - getConversation
+    - analyzeColorProfile
+    - getColorProfile
+    - deleteColorProfile

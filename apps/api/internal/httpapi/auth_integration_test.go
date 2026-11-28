@@ -33,6 +33,7 @@ import (
 	"lookly/internal/ai"
 	"lookly/internal/apierr"
 	"lookly/internal/auth"
+	"lookly/internal/color"
 	"lookly/internal/config"
 	"lookly/internal/contracttest"
 	"lookly/internal/dbtest"
@@ -250,6 +251,7 @@ func newAPI(t *testing.T, o apiOptions) *api {
 			Pool: pool, Images: a.images, Processor: a.processor, Analyzer: a.analyzer, Limiter: limiter, Keys: keys, Log: log,
 		}),
 		Stylist:      newStylist(t, pool, keys, log, o.ai, o.aiAt, o.stylistDeadline),
+		Colors:       color.NewService(pool, a.processor, ai.NewMonitor(log, "test"), log),
 		CookieSecure: o.cookieSecure, TrustProxy: o.trustProxy,
 	})
 	a.gate = &httpapi.Gate{Tokens: a.tokens, Sessions: a.sessions, Consent: consent, Users: users, TrustProxy: o.trustProxy, HTTPSOnly: o.cookieSecure}

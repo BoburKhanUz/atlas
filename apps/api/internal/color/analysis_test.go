@@ -1,14 +1,11 @@
 package color_test
 
 import (
-	"bytes"
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"image/png"
 	"math"
 	"slices"
 	"testing"
@@ -16,7 +13,6 @@ import (
 	"lookly/internal/catalog"
 	"lookly/internal/color"
 	"lookly/internal/golden"
-	"lookly/internal/platform"
 )
 
 // close: the Go maths library and V8's can differ in the last bits of a
@@ -74,88 +70,6 @@ func asJSON(t *testing.T, v any) any {
 	return out
 }
 
-// canvasOf builds a golden canvas as the script did: the PNG's pixels, the
-// fixture's seeded noise, then the edits.
-func canvasOf(t *testing.T, c golden.ColorCanvas) color.Canvas {
-	t.Helper()
-	raw, err := base64.StdEncoding.DecodeString(c.PNG)
-	if err != nil {
-		t.Fatal(err)
-	}
-	img, err := png.Decode(bytes.NewReader(raw))
-	if err != nil {
-		t.Fatal(err)
-	}
-	b := img.Bounds()
-	canvas := color.Canvas{Width: b.Dx(), Height: b.Dy(), RGB: make([]byte, 0, b.Dx()*b.Dy()*3)}
-	for y := b.Min.Y; y < b.Max.Y; y++ {
-		for x := b.Min.X; x < b.Max.X; x++ {
-			r, g, bl, _ := img.At(x, y).RGBA()
-			canvas.RGB = append(canvas.RGB, byte(r>>8), byte(g>>8), byte(bl>>8))
-		}
-	}
-	if c.Noise > 0 {
-		s := c.Seed
-		if s == 0 {
-			s = 1
-		}
-		for i := 0; i < len(canvas.RGB); i += 3 {
-			s = s*1664525 + 1013904223
-			n := float64(float64(float64(s)/4294967296-0.5)*2) * c.Noise
-			for ch := range 3 {
-				canvas.RGB[i+ch] = byte(min(255, max(0, platform.RoundHalfUp(float64(canvas.RGB[i+ch])+n))))
-			}
-		}
-	}
-	for _, e := range c.Edits {
-		edit(canvas, e)
-	}
-	return canvas
-}
-
-func edit(c color.Canvas, e golden.ColorEdit) {
-	d := c.RGB
-	switch e.Op {
-	case "skinLeft":
-		for y := range c.Height {
-			for x := 0; float64(x) < float64(c.Width)/2; x++ {
-				i := (y*c.Width + x) * 3
-				if color.IsSkinPixel(d[i], d[i+1], d[i+2]) {
-					copy(d[i:i+3], e.RGB[:])
-				}
-			}
-		}
-	case "rect":
-		for y := e.Y; y < min(c.Height, e.Y+e.H); y++ {
-			for x := e.X; x < min(c.Width, e.X+e.W); x++ {
-				copy(d[(y*c.Width+x)*3:], e.RGB[:])
-			}
-		}
-	case "scale":
-		for i := range d {
-			d[i] = byte(min(255, int(d[i])*e.Num/e.Den))
-		}
-	case "blur":
-		src := bytes.Clone(d)
-		for y := range c.Height {
-			for x := range c.Width {
-				for ch := range 3 {
-					sum, n := 0, 0
-					for yy := max(0, y-e.R); yy <= min(c.Height-1, y+e.R); yy++ {
-						for xx := max(0, x-e.R); xx <= min(c.Width-1, x+e.R); xx++ {
-							sum += int(src[(yy*c.Width+xx)*3+ch])
-							n++
-						}
-					}
-					d[(y*c.Width+x)*3+ch] = byte(sum / n)
-				}
-			}
-		}
-	default:
-		panic("unknown edit " + e.Op)
-	}
-}
-
 // outcome is a refusal as the vectors name it.
 func outcome(err error) (kind, reason string) {
 	var quality *color.PhotoQualityError
@@ -175,7 +89,8 @@ func TestTheAnalysisOfACanvasIsTheNextJSAnalysis(t *testing.T) {
 		t.Fatalf("version %s, canvas %d", g.Version, g.CanvasMaxSide)
 	}
 	for _, c := range g.Canvases {
-		canvas := canvasOf(t, c)
+		rgb, w, h := c.Pixels(t, color.IsSkinPixel)
+		canvas := color.Canvas{Width: w, Height: h, RGB: rgb}
 		if sum := sha256.Sum256(canvas.RGB); hex.EncodeToString(sum[:]) != c.SHA256 {
 			t.Fatalf("%s: the canvas is not the script's", c.Name)
 		}

@@ -1,8 +1,13 @@
 package golden
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
+	"image/png"
 	"testing"
+
+	"lookly/internal/platform"
 )
 
 // Color is testdata/golden/color.json (apps/web/scripts/golden-color.ts):
@@ -174,4 +179,99 @@ func LoadColor(t testing.TB) Color {
 		t.Fatal("color.json: a section is empty")
 	}
 	return c
+}
+
+// Pixels are the canvas as the script analysed it: the PNG's pixels, the
+// selfie fixture's seeded noise (its LCG, rounded as Math.round), then the
+// edits. isSkin is the analysis's skin test (for the skinLeft edit).
+func (c ColorCanvas) Pixels(t testing.TB, isSkin func(r, g, b uint8) bool) (rgb []byte, width, height int) {
+	t.Helper()
+	raw, err := base64.StdEncoding.DecodeString(c.PNG)
+	if err != nil {
+		t.Fatal(err)
+	}
+	img, err := png.Decode(bytes.NewReader(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	b := img.Bounds()
+	width, height = b.Dx(), b.Dy()
+	rgb = make([]byte, 0, width*height*3)
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		for x := b.Min.X; x < b.Max.X; x++ {
+			r, g, bl, _ := img.At(x, y).RGBA()
+			rgb = append(rgb, byte(r>>8), byte(g>>8), byte(bl>>8))
+		}
+	}
+	if c.Noise > 0 {
+		s := c.Seed
+		if s == 0 {
+			s = 1
+		}
+		for i := 0; i < len(rgb); i += 3 {
+			s = s*1664525 + 1013904223
+			n := float64(float64(float64(s)/4294967296-0.5)*2) * c.Noise
+			for ch := range 3 {
+				rgb[i+ch] = byte(min(255, max(0, platform.RoundHalfUp(float64(rgb[i+ch])+n))))
+			}
+		}
+	}
+	for _, e := range c.Edits {
+		e.apply(rgb, width, height, isSkin)
+	}
+	return rgb, width, height
+}
+
+func (e ColorEdit) apply(d []byte, width, height int, isSkin func(r, g, b uint8) bool) {
+	switch e.Op {
+	case "skinLeft":
+		for y := range height {
+			for x := 0; float64(x) < float64(width)/2; x++ {
+				i := (y*width + x) * 3
+				if isSkin(d[i], d[i+1], d[i+2]) {
+					copy(d[i:i+3], e.RGB[:])
+				}
+			}
+		}
+	case "rect":
+		for y := e.Y; y < min(height, e.Y+e.H); y++ {
+			for x := e.X; x < min(width, e.X+e.W); x++ {
+				copy(d[(y*width+x)*3:], e.RGB[:])
+			}
+		}
+	case "scale":
+		for i := range d {
+			d[i] = byte(min(255, int(d[i])*e.Num/e.Den))
+		}
+	case "blur":
+		src := bytes.Clone(d)
+		for y := range height {
+			for x := range width {
+				for ch := range 3 {
+					sum, n := 0, 0
+					for yy := max(0, y-e.R); yy <= min(height-1, y+e.R); yy++ {
+						for xx := max(0, x-e.R); xx <= min(width-1, x+e.R); xx++ {
+							sum += int(src[(yy*width+xx)*3+ch])
+							n++
+						}
+					}
+					d[(y*width+x)*3+ch] = byte(sum / n)
+				}
+			}
+		}
+	default:
+		panic("color.json: unknown edit " + e.Op)
+	}
+}
+
+// Canvas is the named canvas.
+func (c Color) Canvas(t testing.TB, name string) ColorCanvas {
+	t.Helper()
+	for _, cv := range c.Canvases {
+		if cv.Name == name {
+			return cv
+		}
+	}
+	t.Fatalf("color.json: no canvas %q", name)
+	return ColorCanvas{}
 }

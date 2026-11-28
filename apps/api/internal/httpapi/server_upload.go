@@ -112,6 +112,13 @@ func UploadHeaders(r *http.Request) *apierr.Error {
 	if present {
 		r.Header.Set("Idempotency-Key", key) // as it counts: without the white space around it
 	}
+	return FormHeaders(r)
+}
+
+// FormHeaders judges the headers of a form with a picture before its body
+// is read, as the Next.js parseForm does: the declared length (there must
+// be one, within the limit), then the form's type.
+func FormHeaders(r *http.Request) *apierr.Error {
 	switch {
 	case r.ContentLength < 0:
 		return apierr.With(apierr.PayloadTooLarge, msgNoContentLength)
