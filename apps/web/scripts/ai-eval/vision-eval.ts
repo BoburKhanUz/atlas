@@ -19,21 +19,8 @@
  */
 import { promises as fs } from 'fs'
 import path from 'path'
-import { crossCheckPrimaryColor } from '../../src/lib/ai/color-check'
-import {
-  GARMENT_INSTRUCTION,
-  GARMENT_JSON_SCHEMA,
-  GARMENT_MAX_OUTPUT_TOKENS,
-  InvalidGarmentOutputError,
-  VISION_ANALYSIS_VERSION,
-  interpretGarmentOutput,
-} from '../../src/lib/ai/garment-analysis'
-import { isAiProviderError } from '../../src/lib/ai/providers/errors'
-import type { VisionProvider } from './protocol'
-import { prepareVisionImage } from '../../src/lib/ai/providers/vision-input'
-import { estimateCostUsd } from '../../src/lib/ai/telemetry'
 import { applyVisionRubric } from './eval-rubric'
-import { visionDatasetIdentity } from './live-accounting'
+import { estimateCostUsd, visionDatasetIdentity } from './live-accounting'
 import { GoPipeline, openGoPipeline, refuseRemovedPipelineFlag, requireProviderKey } from './go-pipeline'
 import { Dataset, Matrix, scoreItem, summarize, validateExpected, type ConfigSummary, type EvalConfig, type ItemOutcome, type ItemRecord } from './vision-scoring'
 
@@ -46,41 +33,6 @@ function arg(name: string): string | undefined {
 
 async function readJson(file: string): Promise<unknown> {
   return JSON.parse(await fs.readFile(file, 'utf8'))
-}
-
-export async function runOne(p: VisionProvider, config: EvalConfig, bytes: Uint8Array) {
-  const prepared = await prepareVisionImage(bytes, config.maxSide)
-  const started = performance.now()
-  let outcome: ItemOutcome
-  let usage: { inputTokens?: number; outputTokens?: number } = {}
-  try {
-    const result = await p.analyzeImage({
-      image: prepared.image,
-      mimeType: prepared.mimeType,
-      maxSide: prepared.maxSide,
-      instruction: GARMENT_INSTRUCTION,
-      jsonSchema: { name: 'garment_analysis', schema: GARMENT_JSON_SCHEMA },
-      maxOutputTokens: GARMENT_MAX_OUTPUT_TOKENS,
-      options: {
-        geminiMediaResolution: config.geminiMediaResolution,
-        geminiThinkingLevel: config.geminiThinkingLevel,
-        openaiDetail: config.openaiDetail,
-      },
-      timeoutMs: config.timeoutMs ?? DEFAULT_TIMEOUT_MS,
-    })
-    usage = result.metadata.usage
-    const interpreted = interpretGarmentOutput(result.output)
-    if (interpreted.kind === 'rejected') outcome = { kind: 'rejected', subject: interpreted.subject }
-    else {
-      const color = await crossCheckPrimaryColor(prepared.image, interpreted.attributes.colors)
-      outcome = { kind: 'garment', attributes: interpreted.attributes, rawConfidence: interpreted.rawConfidence, colorVerdict: color.verdict }
-    }
-  } catch (err) {
-    if (err instanceof InvalidGarmentOutputError) outcome = { kind: 'invalid' }
-    else if (isAiProviderError(err)) outcome = { kind: 'error', error: err.kind }
-    else outcome = { kind: 'error', error: 'unexpected' }
-  }
-  return { outcome, usage, latencyMs: Math.round(performance.now() - started) }
 }
 
 /**
@@ -101,8 +53,8 @@ export async function runOneGo(go: GoPipeline, config: EvalConfig, bytes: Uint8A
  * bakeoff.ts use). `onRecord` sees each record as it is produced.
  */
 export async function evaluateVisionConfig(
-  /** The Go pipeline set to this configuration's provider and model, or (bake-off and real-data, until they move to Go) a provider. */
-  p: VisionProvider | GoPipeline,
+  /** The Go pipeline set to this configuration's provider and model. */
+  go: GoPipeline,
   config: EvalConfig,
   datasetDir: string,
   items: Dataset['items'],
@@ -115,8 +67,8 @@ export async function evaluateVisionConfig(
   const records: ItemRecord[] = []
   for (const item of items) {
     const bytes = await readImage(path.join(datasetDir, item.file))
-    const { outcome, usage, latencyMs, calls } = p instanceof GoPipeline ? await runOneGo(p, config, bytes) : { ...(await runOne(p, config, bytes)), calls: undefined }
-    if (calls !== undefined) onCalls?.(calls)
+    const { outcome, usage, latencyMs, calls } = await runOneGo(go, config, bytes)
+    onCalls?.(calls)
     const record: ItemRecord = {
       config: config.label,
       provider: config.provider,
@@ -138,9 +90,9 @@ export async function evaluateVisionConfig(
 
 const pct = (n: number | null) => (n === null ? '—' : `${(n * 100).toFixed(1)}%`)
 
-function markdown(summaries: ConfigSummary[]): string {
+function markdown(summaries: ConfigSummary[], analysisVersion: string): string {
   const lines = [
-    `# Vision evaluation (analysis ${VISION_ANALYSIS_VERSION})`,
+    `# Vision evaluation (analysis ${analysisVersion})`,
     '',
     'Confidence values are the RAW model confidences; they are not calibrated.',
     '',
@@ -207,7 +159,9 @@ async function main() {
     if (used >= maxCalls) break
   }
   await fs.writeFile(path.join(outDir, 'summary.json'), JSON.stringify(summaries, null, 2) + '\n')
-  await fs.writeFile(path.join(outDir, 'summary.md'), markdown(summaries))
+  const versions = new GoPipeline({ args: ['--provider=mock'] })
+  const analysis = (await versions.versions().finally(() => versions.close())).visionAnalysis
+  await fs.writeFile(path.join(outDir, 'summary.md'), markdown(summaries, analysis))
   console.log(`done: ${path.join(outDir, 'summary.md')}`)
 }
 

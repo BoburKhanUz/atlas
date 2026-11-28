@@ -1,7 +1,8 @@
 /**
  * Colour-profile validation on consented selfies (Phase 5.2). HIGH
- * SENSITIVITY. The deterministic analyser (color-analysis.ts, unchanged) runs
- * locally: no provider, no network, nothing of the image is kept. Only the
+ * SENSITIVITY. The Go server's deterministic analyser (`lookly eval`'s colour
+ * case) runs on this machine: no provider, no network, nothing of the image
+ * is kept. Only the
  * case id and the derived labels reach the report.
  *
  * Ground truth separates what can be observed from expert judgement:
@@ -17,7 +18,7 @@
  */
 import { promises as fs } from 'fs'
 import path from 'path'
-import { analyzeSelfie, PhotoQualityError, SkinNotVisibleError, type ColorAnalysisResult } from '../../../src/lib/ai/color-analysis'
+import { GoPipeline } from '../go-pipeline'
 import { sha256Hex, DatasetIntegrityError } from '../live-accounting'
 import { agreement, annotationLimitations, fieldTruth, type AgreementStats } from './annotations'
 import { casesFor, type LoadedDataset, type Purpose } from './dataset'
@@ -29,15 +30,35 @@ export const COLOR_FIELDS = ['qualityAcceptable', 'contrast', 'undertone', 'seas
 
 const count = (correct: number, scored: number): Count => ({ correct, scored, rate: scored ? Math.round((correct / scored) * 10_000) / 10_000 : null })
 
+/** What the analyser says of a selfie that it accepts. */
+export interface SelfieProfile {
+  season: string | null
+  undertone: 'warm' | 'neutral_warm' | 'neutral' | 'neutral_cool' | 'cool' | 'unknown'
+  contrastLevel: 'low' | 'medium' | 'high' | null
+  confidence: number
+}
+
 /** The analyser's 5-level undertone on the experts' 3-level scale; unknown abstains. */
-export function undertone3(u: ColorAnalysisResult['undertone']): 'warm' | 'neutral' | 'cool' | null {
+export function undertone3(u: SelfieProfile['undertone']): 'warm' | 'neutral' | 'cool' | null {
   if (u === 'warm' || u === 'neutral_warm') return 'warm'
   if (u === 'cool' || u === 'neutral_cool') return 'cool'
   if (u === 'neutral') return 'neutral'
   return null
 }
 
-export type SelfieOutcome = { kind: 'profile'; result: Pick<ColorAnalysisResult, 'season' | 'undertone' | 'contrastLevel' | 'confidence'> } | { kind: 'rejected_quality' } | { kind: 'rejected_skin' }
+export type SelfieOutcome = { kind: 'profile'; result: SelfieProfile } | { kind: 'rejected_quality' } | { kind: 'rejected_skin' }
+
+/** One selfie through the server's analyser: its outcome and the analyser's version. */
+export async function analyzeOnGo(go: GoPipeline, bytes: Uint8Array): Promise<{ outcome: SelfieOutcome; version: string }> {
+  const r = await go.color(bytes)
+  const o = r.outcome
+  if (o.kind === 'profile') {
+    const p = o.profile as unknown as SelfieProfile
+    return { outcome: { kind: 'profile', result: { season: p.season, undertone: p.undertone, contrastLevel: p.contrastLevel, confidence: p.confidence } }, version: r.model }
+  }
+  if (o.kind === 'rejected_quality' || o.kind === 'rejected_skin') return { outcome: { kind: o.kind }, version: r.model }
+  throw new Error(`the colour analysis refused a selfie: ${o.error}`)
+}
 
 export interface ColorScores {
   /** Analyser refused vs experts' quality judgement. */
@@ -112,7 +133,7 @@ export interface ColorReport {
 }
 
 /** Analyses each consented selfie locally and scores it; the image bytes are dropped right after analysis. */
-export async function runColorValidation(ds: LoadedDataset, opts: { purpose: Purpose; today: string; analyze?: (buffer: Buffer) => Promise<ColorAnalysisResult> }): Promise<ColorReport> {
+export async function runColorValidation(ds: LoadedDataset, opts: { purpose: Purpose; today: string; analyze?: (bytes: Uint8Array) => Promise<{ outcome: SelfieOutcome; version: string }> }): Promise<ColorReport> {
   const m = ds.manifest
   const governance = governanceGate(m, 'local_evaluation', opts.today)
   const selected = casesFor(m, ds.cases, opts.purpose).filter((c) => c.file)
@@ -124,21 +145,20 @@ export async function runColorValidation(ds: LoadedDataset, opts: { purpose: Pur
   if (m.datasetType !== 'color-profile') throw new Error('runColorValidation needs a color-profile dataset')
   if (!governance.ok) return { ...base, status: 'BLOCKED', reason: governance.reasons.join('; '), scores: null, analyzerVersion: null }
   if (!ds.annotations || m.annotation.status === 'none') return { ...base, status: NOT_EVALUATED, reason: 'no expert labels', scores: null, analyzerVersion: null }
-  const analyze = opts.analyze ?? ((buffer: Buffer) => analyzeSelfie({ buffer }))
+  const go = opts.analyze ? null : new GoPipeline({ args: ['--provider=mock'] })
+  const analyze = opts.analyze ?? ((bytes: Uint8Array) => analyzeOnGo(go!, bytes))
   const outcomes: Array<{ case: string; outcome: SelfieOutcome }> = []
   let version: string | null = null
-  for (const c of selected) {
-    const bytes = await fs.readFile(path.join(ds.dir, 'files', c.file!))
-    if (ds.files[c.file!] !== sha256Hex(bytes)) throw new DatasetIntegrityError()
-    try {
+  try {
+    for (const c of selected) {
+      const bytes = new Uint8Array(await fs.readFile(path.join(ds.dir, 'files', c.file!)))
+      if (ds.files[c.file!] !== sha256Hex(bytes)) throw new DatasetIntegrityError()
       const r = await analyze(bytes)
       version = r.version
-      outcomes.push({ case: c.id, outcome: { kind: 'profile', result: { season: r.season, undertone: r.undertone, contrastLevel: r.contrastLevel, confidence: r.confidence } } })
-    } catch (err) {
-      if (err instanceof PhotoQualityError) outcomes.push({ case: c.id, outcome: { kind: 'rejected_quality' } })
-      else if (err instanceof SkinNotVisibleError) outcomes.push({ case: c.id, outcome: { kind: 'rejected_skin' } })
-      else throw err
+      outcomes.push({ case: c.id, outcome: r.outcome })
     }
+  } finally {
+    await go?.close()
   }
   const annotations = ds.annotations
   return { ...base, status: 'EVALUATED', reason: null, scores: scoreColor(outcomes, (id, f) => fieldTruth(annotations, id, f)), analyzerVersion: version }

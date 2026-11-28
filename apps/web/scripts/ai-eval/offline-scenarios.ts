@@ -7,7 +7,6 @@
  * (tests/eval-go/golden/offline.json): written once from the TypeScript
  * pipeline while it existed, and held against the Go pipeline from then on.
  */
-import { AiProviderError } from '../../src/lib/ai/providers/errors'
 import type { AiErrorKind, LLMProvider, LLMRequest, VisionProvider, VisionRequest } from './protocol'
 import { outfitCases, type OutfitCase } from './outfit-cases'
 import { ScriptedOutfit } from './outfit-eval'
@@ -65,7 +64,7 @@ function failing(kind: AiErrorKind): LLMProvider {
   return {
     name: 'failing', model: 'offline',
     generate: async () => {
-      throw new AiProviderError(kind, 'failing')
+      throw Object.assign(new Error(`failing: ${kind}`), { kind })
     },
   }
 }

@@ -4,15 +4,17 @@
  * provider, no network.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { LLMProvider } from '@/lib/ai/providers/types'
-import { precheckRubricSet, realisticStylistRubricSet, type RubricSet } from '../../../scripts/ai-eval/case-rubric'
-import { RubricIdentityError } from '../../../scripts/ai-eval/eval-rubric'
-import { caseSetIdentity } from '../../../scripts/ai-eval/live-accounting'
-import { evaluateFixture, evaluateFixtures, FixtureOutput, OutfitFixture } from '../../../scripts/ai-eval/outfit-fixtures'
-import { STYLIST_REALISTIC_VERSION, stylistRealisticCases } from '../../../scripts/ai-eval/real-data/stylist-realistic-cases'
-import { runValidation } from '../../../scripts/ai-eval/real-data/validate'
-import { reviewCase, summarizeReview } from '../../../scripts/ai-eval/review'
-import { scoreStylistCase, ScriptedStylist } from '../../../scripts/ai-eval/stylist-eval'
+import type { LLMProvider } from '../../scripts/ai-eval/protocol'
+import { precheckRubricSet, realisticStylistRubricSet, type RubricSet } from '../../scripts/ai-eval/case-rubric'
+import { RubricIdentityError } from '../../scripts/ai-eval/eval-rubric'
+import { caseSetIdentity } from '../../scripts/ai-eval/live-accounting'
+import { evaluateFixture, evaluateFixtures, FixtureOutput, OutfitFixture } from '../../scripts/ai-eval/outfit-fixtures'
+import { STYLIST_REALISTIC_VERSION, stylistRealisticCases } from '../../scripts/ai-eval/real-data/stylist-realistic-cases'
+import { runValidation } from '../../scripts/ai-eval/real-data/validate'
+import { reviewCase, summarizeReview } from '../../scripts/ai-eval/review'
+import { scoreStylistCase, ScriptedStylist } from '../../scripts/ai-eval/stylist-eval'
+
+if (!process.env.LOOKLY_BINARY) throw new Error('LOOKLY_BINARY is not set: build apps/api (go build -tags nodynamic -o <path> ./cmd/lookly) and point it there')
 
 let globalFetch: ReturnType<typeof vi.fn>
 beforeEach(() => {

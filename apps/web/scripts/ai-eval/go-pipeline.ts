@@ -34,7 +34,7 @@ function failure(res: http.ServerResponse, err: unknown) {
   }
   switch (kind) {
     case 'rate_limited':
-      return send(429, { error: { message: 'rate limited' } }, { 'retry-after': '0' })
+      return send(429, { error: { message: 'rate limited' } }, { 'retry-after': String(Math.ceil(((err as { retryAfterMs?: number }).retryAfterMs ?? 0) / 1000)) })
     case 'auth':
       return send(401, { error: { message: 'auth' } })
     case 'invalid_request':

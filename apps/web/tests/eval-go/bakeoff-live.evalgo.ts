@@ -10,25 +10,24 @@ import os from 'os'
 import path from 'path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { ALL_SECTIONS, bakeoffMarkdown, buildBakeoff, defaultRuns, NO_SELECTION, NOT_SELECTED, parseSections, planOnly, PROVIDER_DECISION } from '../../scripts/ai-eval/bakeoff'
-import { CallLedger, CIRCUIT_MAX_CONSECUTIVE, CIRCUIT_MAX_FATAL, configuredPrice, latencyPercentile, MAX_CALLS_PER_CASE, parseMaxCalls, planCalls, retryingVision, visionDatasetIdentity } from '../../scripts/ai-eval/live-accounting'
+import { CallLedger, CIRCUIT_MAX_CONSECUTIVE, CIRCUIT_MAX_FATAL, configuredPrice, latencyPercentile, LocalRefusalError, MAX_CALLS_PER_CASE, parseMaxCalls, planCalls, visionDatasetIdentity } from '../../scripts/ai-eval/live-accounting'
 import { outfitCases } from '../../scripts/ai-eval/outfit-cases'
 import { ScriptedOutfit } from '../../scripts/ai-eval/outfit-eval'
 import { stylistCases } from '../../scripts/ai-eval/stylist-cases'
 import { ScriptedStylist } from '../../scripts/ai-eval/stylist-eval'
 import { renderSynthetic, syntheticVisionItems } from '../../scripts/ai-eval/synthetic-vision'
-import { CONFIDENCE_KEYS } from '@/lib/ai/garment-analysis'
-import { AiProviderError } from '@/lib/ai/providers/errors'
-import type { LLMProvider, LLMRequest, VisionProvider } from '@/lib/ai/providers/types'
+import { CONFIDENCE_KEYS } from '../../scripts/ai-eval/catalog'
+import { failure, visionThroughGo } from './through-go'
+import type { LLMProvider, LLMRequest, VisionProvider } from '../../scripts/ai-eval/protocol'
 
 if (!process.env.LOOKLY_BINARY) throw new Error('LOOKLY_BINARY is not set: build apps/api (go build -tags nodynamic -o <path> ./cmd/lookly) and point it there')
 
 const FAKE = 'fake-key-not-real-7f3a9c'
-const noSleep = async () => {}
 const S = stylistCases().length, O = outfitCases().length
 const textEnv = (extra: Record<string, string> = {}) => ({ GEMINI_API_KEY: FAKE, OPENAI_API_KEY: FAKE, AI_EVAL_GEMINI_MODEL: 'g-text', AI_EVAL_OPENAI_MODEL: 'o-text', ...extra })
 
 /** Scripted text provider: stylist/outfit answers routed by schema; `fault` decides per call. */
-function scriptedLlm(fault: (n: number, req: LLMRequest) => AiProviderError | 'leak' | null = () => null): LLMProvider & { calls: number } {
+function scriptedLlm(fault: (n: number, req: LLMRequest) => ReturnType<typeof failure> | 'leak' | null = () => null): LLMProvider & { calls: number } {
   const s = new ScriptedStylist(), o = new ScriptedOutfit()
   const p = {
     name: 'scripted',
@@ -36,7 +35,7 @@ function scriptedLlm(fault: (n: number, req: LLMRequest) => AiProviderError | 'l
     calls: 0,
     async generate(req: LLMRequest) {
       const f = fault(p.calls++, req)
-      if (f instanceof AiProviderError) throw f
+      if (f instanceof Error) throw f
       const out = await (req.jsonSchema?.name === 'outfit_ranking' ? o.generate(req) : s.generate(req))
       if (f === 'leak') {
         const parsed = JSON.parse(out.text)
@@ -50,7 +49,7 @@ function scriptedLlm(fault: (n: number, req: LLMRequest) => AiProviderError | 'l
 
 const conf = Object.fromEntries(CONFIDENCE_KEYS.map((k) => [k, 0.9]))
 const JEANS = { subject: 'single_garment', category: 'pants', subcategory: 'jeans', colors: ['blue'], pattern: 'solid', material: 'denim', sleeveLength: null, fit: 'regular', style: 'casual', season: ['spring'], gender: 'unisex', formality: 'casual', confidence: conf }
-const visionAlways = (fault?: AiProviderError): VisionProvider & { calls: number } => {
+const visionAlways = (fault?: ReturnType<typeof failure>): VisionProvider & { calls: number } => {
   const p = {
     name: 'scripted-vision',
     model: 'scripted',
@@ -122,14 +121,14 @@ describe('live classification and accounting (scripted)', () => {
   })
 
   it('a transient timeout is retried once (app policy) and counted: retries, timeouts and the error kind', async () => {
-    const r = await buildBakeoff(textEnv(), { providers: { llm: () => scriptedLlm((n) => (n === 0 ? new AiProviderError('timeout', 'scripted') : null)) } })
+    const r = await buildBakeoff(textEnv(), { providers: { llm: () => scriptedLlm((n) => (n === 0 ? failure('timeout') : null)) } })
     const st = r.live[0].accounting.find((a) => a.feature === 'stylist')!
     expect(st).toMatchObject({ retries: 1, timeouts: 1, attemptErrors: { timeout: 1 }, caseErrors: {} })
     expect(st.attempts).toBe(st.requests + 1)
   })
 
   it('a provider that keeps failing: the circuit opens, calls stay bounded, every case is a listed failure, nothing averaged into quality', async () => {
-    const bad = scriptedLlm(() => new AiProviderError('auth', 'scripted', { status: 401 }))
+    const bad = scriptedLlm(() => failure('auth'))
     const r = await buildBakeoff(textEnv(), { providers: { llm: (p) => (p === 'gemini' ? bad : scriptedLlm()) } })
     const g = r.live[0]
     const st = g.accounting.find((a) => a.feature === 'stylist')!
@@ -155,33 +154,35 @@ describe('live classification and accounting (scripted)', () => {
     const l = new CallLedger()
     for (let i = 0; i < CIRCUIT_MAX_CONSECUTIVE; i++) {
       l.before('p')
-      l.fail(new AiProviderError('unavailable', 'p', { status: 503 }))
+      l.fail(failure('unavailable'))
     }
     expect(l.circuitOpen).toBe('unavailable')
-    expect(() => l.before('p')).toThrow(AiProviderError)
+    expect(() => l.before('p')).toThrow(LocalRefusalError)
     expect([l.attempts, l.skipped.circuit_break]).toEqual([CIRCUIT_MAX_CONSECUTIVE, 1])
     // A success in between resets the streak.
     const k = new CallLedger()
     for (let i = 0; i < CIRCUIT_MAX_CONSECUTIVE * 2; i++) {
       k.before('p')
       if (i % 2) k.ok({})
-      else k.fail(new AiProviderError('timeout', 'p'))
+      else k.fail(failure('timeout'))
     }
     expect(k.circuitOpen).toBeNull()
   })
 
-  it('vision follows the app retry policy: one retry on a transient error, none on auth', async () => {
-    const flaky = { name: 'v', model: 'm', calls: 0, async analyzeImage() { if (this.calls++ === 0) throw new AiProviderError('rate_limited', 'v', { status: 429 }); return { output: JEANS, metadata: { provider: 'v', model: 'm', usage: {} } } } }
+  it("vision follows the server's retry policy: one retry on a transient error, none on auth", async () => {
+    const flaky = { name: 'v', model: 'm', calls: 0, async analyzeImage() { if (this.calls++ === 0) throw failure('rate_limited'); return { output: JEANS, metadata: { provider: 'v', model: 'm', usage: {} } } } }
+    const picture = await renderSynthetic(syntheticVisionItems()[0])
+    const config = { label: 'x', provider: 'openai' as const, model: 'm', maxSide: 512 }
     const l = new CallLedger()
-    await retryingVision(flaky, l, noSleep).analyzeImage({} as never)
+    expect((await visionThroughGo(flaky, l, config, picture)).outcome.kind).toBe('garment')
     expect([l.attempts, l.attemptErrors]).toEqual([2, { rate_limited: 1 }])
     const l2 = new CallLedger()
-    await expect(retryingVision(visionAlways(new AiProviderError('auth', 'v', { status: 401 })), l2, noSleep).analyzeImage({} as never)).rejects.toMatchObject({ kind: 'auth' })
+    expect((await visionThroughGo(visionAlways(failure('auth')), l2, config, picture)).outcome).toEqual({ kind: 'error', error: 'auth' })
     expect(l2.attempts).toBe(1)
   })
 
   it('a vision section that keeps timing out: each case is a timeout, retried once, then the circuit stops calling', async () => {
-    const v = visionAlways(new AiProviderError('timeout', 'v'))
+    const v = visionAlways(failure('timeout'))
     const r = await buildBakeoff({ GEMINI_API_KEY: FAKE, AI_EVAL_GEMINI_VISION_MODEL: 'gv' }, { visionDataset: dir, providers: { vision: () => v }})
     const a = r.live[0].accounting.find((x) => x.feature === 'vision')!
     expect(a).toMatchObject({ cases: 2, requests: 2, attempts: 4, retries: 2, timeouts: 4, caseErrors: { timeout: 2 } })
@@ -354,7 +355,7 @@ describe('--section selector', () => {
   })
 
   it('stylist only: the circuit breaker still stops a failing provider', async () => {
-    const bad = scriptedLlm(() => new AiProviderError('auth', 'scripted', { status: 401 }))
+    const bad = scriptedLlm(() => failure('auth'))
     const r = await buildBakeoff(geminiText, { runs: 1, sections: ['stylist'], maxCalls: 68, providers: { llm: () => bad } })
     const st = r.live[0].accounting.find((a) => a.feature === 'stylist')!
     expect(st.circuitOpen).toBe('auth')

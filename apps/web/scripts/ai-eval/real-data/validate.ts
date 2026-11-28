@@ -24,19 +24,15 @@ import { execFileSync } from 'child_process'
 import crypto from 'crypto'
 import { promises as fs } from 'fs'
 import path from 'path'
-import { COLOR_ANALYSIS_VERSION } from '../../../src/lib/ai/color-analysis'
-import { VISION_ANALYSIS_VERSION } from '../../../src/lib/ai/garment-analysis'
-import { OUTFIT_ENGINE_VERSION } from '../../../src/lib/ai/outfit-config'
-import { OUTFIT_PROMPT_VERSION } from '../../../src/lib/ai/outfit-intelligence'
 import type { LLMProvider, VisionProvider } from '../protocol'
-import { STYLIST_PROMPT_VERSION } from '../../../src/lib/ai/stylist'
 import { configuredModel, PROVIDER_DECISION } from '../bakeoff'
+import { GoPipeline, openSectionPipeline } from '../go-pipeline'
 import { isBudgetablePrice } from '../cost-bounds'
-import { arg, assertOutsideRepo, llmProviderFromEnv, type EvalProviderName } from '../eval-common'
-import { accountSection, assertCapForLive, CallBudget, CallLedger, caseResult, caseSetIdentity, configuredPrice, costAccounting, countedLLM, parseMaxCalls, parseMaxCost, planCalls, type CaseResult, type CostAccounting, type SectionAccounting } from '../live-accounting'
+import { arg, assertOutsideRepo, type EvalProviderName } from '../eval-common'
+import { accountSection, assertCapForLive, CallBudget, CallLedger, caseResult, caseSetIdentity, configuredPrice, costAccounting, ledgerGate, MAX_CALLS_PER_CASE, parseMaxCalls, parseMaxCost, planCalls, type CaseResult, type CostAccounting, type SectionAccounting } from '../live-accounting'
 import { ISOLATION_CHECK_KIND, precheckRubricSet, realisticStylistRubricSet, type RubricSet } from '../case-rubric'
 import { reviewCase, summarizeReview, type ReviewSummary } from '../review'
-import { runStylistCase } from '../stylist-eval'
+import { runStylistCaseGo } from '../stylist-eval'
 import { summarizeStylist, type StylistRecord, type StylistSummary } from '../stylist-scoring'
 import { runColorValidation, type ColorReport } from './color-validation'
 import { loadDataset, registerVersion, type Purpose } from './dataset'
@@ -102,7 +98,6 @@ export interface ValidateOptions {
   providers?: { llm?: (provider: EvalProviderName, model: string, env: Env) => LLMProvider; vision?: (provider: EvalProviderName, model: string, env: Env) => VisionProvider }
   /** The stylist corpus's rubric set (default: the built-in constructed-v1 set); tests inject another. */
   stylistRubricSet?: RubricSet
-  sleep?: (ms: number) => Promise<void>
 }
 
 async function datasetDirs(root: string, type: string): Promise<string[]> {
@@ -169,7 +164,7 @@ export async function runValidation(env: Env, opts: ValidateOptions): Promise<Va
     for (const dir of await datasetDirs(opts.root, 'vision')) {
       const ds = await loadDataset(dir, REPO_ROOT)
       await registerVersion(registry, REPO_ROOT, ds.manifest, opts.now)
-      vision.push(await runRealVision(ds, env, { purpose: opts.purpose, today, budget, providers: opts.providers, sleep: opts.sleep }))
+      vision.push(await runRealVision(ds, env, { purpose: opts.purpose, today, budget, providers: opts.providers }))
     }
     for (const dir of await datasetDirs(opts.root, 'color-profile')) {
       const ds = await loadDataset(dir, REPO_ROOT)
@@ -200,13 +195,20 @@ export async function runValidation(env: Env, opts: ValidateOptions): Promise<Va
     }
     const price = configuredPrice(provider, model!, 'llm', env)
     const ledger = new CallLedger(budget, price)
-    const base = (opts.providers?.llm ?? ((p, m, e) => llmProviderFromEnv(p, m, e)))(provider, model!, env)
-    const p = countedLLM(base, ledger)
+    // On the Go pipeline, the ledger deciding every attempt; an injected provider (tests) through the stand-in.
+    const injected = opts.providers?.llm?.(provider, model!, env) ?? null
+    const who = { name: injected?.name ?? provider, model: injected?.model ?? model! }
+    const backstop = budget.maxCalls === null ? null : budget.maxCalls + MAX_CALLS_PER_CASE.stylist
+    const section = await openSectionPipeline({ provider, model: model!, env, maxCalls: backstop, gate: ledgerGate(ledger, { provider, model: model! }), text: injected })
     const records: StylistRecord[] = [], results: CaseResult[] = []
-    for (const c of corpus) {
-      const r = await runStylistCase(p, c, rubrics)
-      records.push(r)
-      results.push(caseResult(r.latencyMs, r.requests, r.outcome, ledger.endCase()))
+    try {
+      for (const c of corpus) {
+        const r = await runStylistCaseGo(section.go, who, c, rubrics)
+        records.push(r)
+        results.push(caseResult(r.latencyMs, r.requests, r.outcome, ledger.endCase()))
+      }
+    } finally {
+      await section.close()
     }
     live.push({
       provider,
@@ -237,8 +239,11 @@ export async function runValidation(env: Env, opts: ValidateOptions): Promise<Va
   }
   if (humanRatings.status === 'NOT_EVALUATED') blockers.push('stylist human ratings: NOT_EVALUATED — no native Uzbek raters / blind ratings')
 
-  const outfit = runOutfitRealistic()
+  const outfit = await runOutfitRealistic()
   const commit = opts.appCommit ?? gitCommit()
+  // The versions of what produced the results: the Go server's own.
+  const go = new GoPipeline({ args: ['--provider=mock'] })
+  const v = await go.versions().finally(() => go.close())
   return {
     evaluationVersion: EVALUATION_VERSION,
     providerDecision: PROVIDER_DECISION,
@@ -248,7 +253,7 @@ export async function runValidation(env: Env, opts: ValidateOptions): Promise<Va
       appCommit: commit.sha,
       appTreeClean: commit.clean,
       purpose: opts.purpose,
-      versions: { visionPrompt: VISION_ANALYSIS_VERSION, stylistPrompt: STYLIST_PROMPT_VERSION, outfitPrompt: OUTFIT_PROMPT_VERSION, outfitEngine: OUTFIT_ENGINE_VERSION, colorAnalysis: COLOR_ANALYSIS_VERSION, preprocessing: PREPROCESSING_VERSION },
+      versions: { visionPrompt: v.visionAnalysis, stylistPrompt: v.stylistPrompt, outfitPrompt: v.rankingPrompt, outfitEngine: v.engine, colorAnalysis: v.colorAnalysis, preprocessing: PREPROCESSING_VERSION },
     },
     budget: { maxCalls: opts.maxCalls, maxCostUsd: opts.maxCostUsd, attemptsUsed: budget.attemptsUsed, exhausted: budget.exhausted, stopDetail: budget.stopDetail, costAccounting: costAccounting(budget.cost) },
     vision,

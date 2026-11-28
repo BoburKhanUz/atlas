@@ -38,8 +38,6 @@
  */
 import { promises as fs } from 'fs'
 import path from 'path'
-import { GeminiProvider } from '../../src/lib/ai/providers/gemini'
-import { OpenAIProvider } from '../../src/lib/ai/providers/openai'
 import { arg, assertOutsideRepo, type EvalProviderName, type EvalStatus } from './eval-common'
 import { openSectionPipeline, STAND_IN_TIMEOUT_MS, withScriptedGo, type GoPipeline } from './go-pipeline'
 import { outfitCases } from './outfit-cases'
@@ -298,11 +296,6 @@ const notTested = (provider: string, model: string | null, feature: NotTested['f
 })
 
 const count = (values: string[]) => Object.fromEntries([...new Set(values)].sort().map((v) => [v, values.filter((x) => x === v).length]))
-
-export function realVision(provider: EvalProviderName, model: string, env: Env): VisionProvider {
-  const apiKey = env[KEY[provider]]!.trim()
-  return provider === 'gemini' ? new GeminiProvider({ apiKey, model }) : new OpenAIProvider({ apiKey, model })
-}
 
 /** The app's default vision settings (src/lib/ai/config.ts), so the bake-off measures what users would get. */
 export function bakeoffVisionConfig(provider: EvalProviderName, model: string): EvalConfig {

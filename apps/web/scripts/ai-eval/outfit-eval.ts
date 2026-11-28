@@ -5,23 +5,17 @@
  *   OPENAI_API_KEY=… bun scripts/ai-eval/outfit-eval.ts --provider=openai --model=<configured model> --out=<dir outside the repo>
  *   bun scripts/ai-eval/outfit-eval.ts --provider=scripted --out=<dir>   # offline self-test of the harness (NOT a provider result)
  *
- * Each case: the deterministic engine's candidates → outfitMessages (the
- * production prompt and context) → the provider (with the app's retry policy)
- * → interpretOutfitOutput → at most one correction (outfitCorrectionMessages).
+ * Each case through the Go server's production path (`lookly eval`): the
+ * deterministic engine's candidates → the ranking prompt and context → the
+ * provider (the server's retry policy) → validation → at most one correction.
  * No quota, no database.
  */
 import { promises as fs } from 'fs'
 import path from 'path'
-import { interpretOutfitOutput, InvalidOutfitOutputError, outfitCorrectionMessages, outfitJsonSchema, outfitMessages } from '../../src/lib/ai/outfit-intelligence'
-import { OUTFIT_AI_TIMEOUT_MS } from '../../src/lib/ai/outfit-config'
-import { generateOutfitResult } from '../../src/lib/ai/outfit-engine'
-import { isAiProviderError } from '../../src/lib/ai/providers/errors'
-import { RetriedError, withRetry } from '../../src/lib/ai/providers/retry'
 import { outfitSetupOf } from './case-setups'
-import type { LLMMessage, LLMProvider, LLMRequest, OutfitSetup } from './protocol'
+import type { LLMProvider, LLMRequest, OutfitSetup } from './protocol'
 import { openGoPipeline, refuseRemovedPipelineFlag, outfitRequest, type GoPipeline } from './go-pipeline'
 import { arg, assertOutsideRepo } from './eval-common'
-import { LocalRefusalError } from './live-accounting'
 import { outfitCases, type OutfitCase } from './outfit-cases'
 import { scoreOutfit, summarizeOutfit, type OutfitCaseContext, type OutfitOutcome, type OutfitRecord, type OutfitSummary } from './outfit-scoring'
 
@@ -43,56 +37,6 @@ export function outfitScoringContext(setup: OutfitSetup): OutfitCaseContext {
 
 /** The scoring context of case `c`, from Go's setup (case-setups.json): live runs and offline replays share it. */
 export const outfitCaseContext = (c: OutfitCase): OutfitCaseContext => outfitScoringContext(outfitSetupOf(c))
-
-export async function runOutfitCase(p: LLMProvider, c: OutfitCase): Promise<OutfitRecord> {
-  const result = generateOutfitResult({ wardrobe: c.wardrobe, occasion: c.occasion, weather: c.weather, colorProfile: c.colorProfile, topN: c.topN })
-  const candidates = result.outfits
-  const refs = candidates.map((_, i) => `O${i + 1}`)
-  const messages = outfitMessages({ candidates, occasion: c.occasion, weather: result.weather, colorProfile: c.colorProfile ?? null })
-  const schema = { name: 'outfit_ranking', schema: outfitJsonSchema(refs) }
-  // calls = provider attempts (retries included, failed ones too); requests = logical requests (first + correction).
-  let calls = 0, requests = 0, inputTokens: number | undefined, outputTokens: number | undefined
-  const add = (a: number | undefined, b: number | undefined) => (a === undefined && b === undefined ? undefined : (a ?? 0) + (b ?? 0))
-  const call = async (msgs: LLMMessage[]) => {
-    requests++
-    let result
-    try {
-      result = await withRetry(() => p.generate({ messages: msgs, temperature: 0.3, maxOutputTokens: 400, jsonSchema: schema, timeoutMs: OUTFIT_AI_TIMEOUT_MS }))
-    } catch (err) {
-      // A locally refused attempt (bake-off circuit breaker or budget) never reached the provider.
-      if (err instanceof RetriedError) calls += err.attempts - (err.lastError instanceof LocalRefusalError ? 1 : 0)
-      throw err
-    }
-    const { value, attempts } = result
-    calls += attempts
-    inputTokens = add(inputTokens, value.metadata.usage.inputTokens)
-    outputTokens = add(outputTokens, value.metadata.usage.outputTokens)
-    return value.text
-  }
-  const started = performance.now()
-  let outcome: OutfitOutcome
-  try {
-    const first = await call(messages)
-    try {
-      const r = interpretOutfitOutput(first, refs)
-      outcome = { kind: 'ranked', firstError: null, ...r }
-    } catch (err) {
-      if (!(err instanceof InvalidOutfitOutputError)) throw err
-      const second = await call(outfitCorrectionMessages(messages, first, err.reason, refs))
-      try {
-        outcome = { kind: 'ranked', firstError: err.reason, ...interpretOutfitOutput(second, refs) }
-      } catch (again) {
-        if (!(again instanceof InvalidOutfitOutputError)) throw again
-        outcome = { kind: 'invalid', firstError: err.reason, finalError: again.reason }
-      }
-    }
-  } catch (err) {
-    const cause = (err as { lastError?: unknown }).lastError ?? err
-    outcome = { kind: 'error', error: isAiProviderError(cause) ? cause.kind : 'unexpected' }
-  }
-  const { checks, pass } = scoreOutfit(outfitCaseContext(c), outcome)
-  return { case: c.id, tags: c.tags, provider: p.name, model: p.model, candidates: candidates.length, latencyMs: Math.round(performance.now() - started), calls, requests, inputTokens, outputTokens, outcome, checks, pass }
-}
 
 /** The same case through the Go pipeline (`lookly eval`): Go's outcome, this file's scoring. */
 export async function runOutfitCaseGo(go: GoPipeline, p: { name: string; model: string }, c: OutfitCase): Promise<OutfitRecord> {

@@ -1,7 +1,7 @@
 /**
- * Real clothing validation (Phase 5.2): the app's vision pipeline
- * (prepareVisionImage → garment schema → interpretGarmentOutput → colour
- * cross-check, the app's single retry) over a governed, annotated dataset,
+ * Real clothing validation (Phase 5.2): the Go server's vision pipeline
+ * (`lookly eval`: picture preparation → garment schema → interpretation →
+ * colour cross-check, the server's single retry) over a governed, annotated dataset,
  * scored against independent human ground truth. Reuses the Phase 5.1
  * accounting: per-section ledger, shared call budget, circuit breaker,
  * per-image integrity check.
@@ -20,12 +20,12 @@
 import { promises as fs } from 'fs'
 import path from 'path'
 import sharp from 'sharp'
-import { prepareVisionImage } from '../../../src/lib/ai/providers/vision-input'
-import type { VisionProvider } from '../protocol'
-import { bakeoffVisionConfig, configuredVisionModel, realVision } from '../bakeoff'
+import type { VisionProvider, VisionSetup } from '../protocol'
+import { bakeoffVisionConfig, configuredVisionModel } from '../bakeoff'
+import { GoPipeline, openSectionPipeline, STAND_IN_TIMEOUT_MS } from '../go-pipeline'
 import { isBudgetablePrice, isOpenAIPatchModel } from '../cost-bounds'
 import type { EvalProviderName } from '../eval-common'
-import { accountSection, CallBudget, CallLedger, caseResult, configuredPrice, DatasetIntegrityError, retryingVision, sha256Hex, type CaseResult, type SectionAccounting } from '../live-accounting'
+import { accountSection, CallBudget, CallLedger, caseResult, configuredPrice, DatasetIntegrityError, ledgerGate, MAX_CALLS_PER_CASE, sha256Hex, type CaseResult, type SectionAccounting } from '../live-accounting'
 import { evaluateVisionConfig } from '../vision-eval'
 import type { ItemOutcome, ItemRecord } from '../vision-scoring'
 import { visionItt, type IttCase, type VisionItt } from '../vision-itt'
@@ -58,27 +58,23 @@ export interface ImageQuality {
   orientation: number | null
   /** The original carried EXIF / GPS blocks (their content is never read or stored). */
   hadExif: boolean
-  /** prepareVisionImage succeeded and its output carries no EXIF, ICC-GPS or XMP block. */
+  /** The server prepared the picture, and whether its output still carries an EXIF, XMP or IPTC block. */
   preparedOk: boolean
   preparedHasMetadata: boolean
 }
 
-export async function imageQuality(caseId: string, bytes: Uint8Array): Promise<ImageQuality> {
+/** The original's properties, and what the server's preparation (`lookly eval` dry run, no model) made of it. */
+export async function imageQuality(caseId: string, bytes: Uint8Array, go: GoPipeline): Promise<ImageQuality> {
   let meta: Awaited<ReturnType<ReturnType<typeof sharp>['metadata']>> | null = null
   try {
     meta = await sharp(bytes).metadata()
   } catch {
     meta = null
   }
-  let preparedOk = false, preparedHasMetadata = false
-  try {
-    const prepared = await prepareVisionImage(bytes, 1024)
-    const pm = await sharp(prepared.image).metadata()
-    preparedOk = true
-    preparedHasMetadata = !!(pm.exif || pm.xmp || pm.iptc)
-  } catch {
-    preparedOk = false
-  }
+  const r = await go.run('vision', { image: Buffer.from(bytes).toString('base64'), maxSide: 1024 }, { dryRun: true })
+  const picture = (r.setup as VisionSetup).picture
+  const preparedOk = picture !== null
+  const preparedHasMetadata = picture?.metadata ?? false
   return {
     case: caseId,
     width: meta?.width ?? null,
@@ -238,7 +234,6 @@ export interface RealVisionOptions {
   budget: CallBudget
   /** Tests inject scripted providers (reported TEST_ONLY). */
   providers?: { vision?: (provider: EvalProviderName, model: string, env: Env) => VisionProvider }
-  sleep?: (ms: number) => Promise<void>
 }
 
 export interface RealVisionReport {
@@ -279,7 +274,12 @@ export async function runRealVision(ds: LoadedDataset, env: Env, opts: RealVisio
     if (ds.files[path.basename(file)] !== sha256Hex(bytes)) throw new DatasetIntegrityError()
     return bytes
   }
-  for (const c of selected) report.quality.push(await imageQuality(c.id, await readImage(path.join(ds.dir, 'files', c.file!))))
+  const preparation = new GoPipeline({ args: ['--provider=mock'] })
+  try {
+    for (const c of selected) report.quality.push(await imageQuality(c.id, await readImage(path.join(ds.dir, 'files', c.file!)), preparation))
+  } finally {
+    await preparation.close()
+  }
 
   const truth = (id: string, field: string) => (ds.annotations ? fieldTruth(ds.annotations, id, field) : ({ status: 'unknown' } as const))
   const items = selected.map((c) => {
@@ -307,11 +307,14 @@ export async function runRealVision(ds: LoadedDataset, env: Env, opts: RealVisio
 
     const price = configuredPrice(provider, model!, 'vision', env)
     const ledger = new CallLedger(opts.budget, price)
-    const factory = opts.providers?.vision ?? realVision
-    const p = retryingVision(factory(provider, model!, env), ledger, opts.sleep)
+    // On the Go pipeline, the ledger deciding every attempt; an injected provider (tests) through the stand-in.
+    const injected = opts.providers?.vision?.(provider, model!, env) ?? null
+    const backstop = opts.budget.maxCalls! + MAX_CALLS_PER_CASE.stylist
+    const section = await openSectionPipeline({ provider, model: model!, env, maxCalls: backstop, gate: ledgerGate(ledger, { provider, model: model! }), vision: injected })
+    const config = injected ? { ...bakeoffVisionConfig(provider, model!), timeoutMs: STAND_IN_TIMEOUT_MS } : bakeoffVisionConfig(provider, model!)
     const results: CaseResult[] = []
     try {
-      const { records } = await evaluateVisionConfig(p, bakeoffVisionConfig(provider, model!), path.join(ds.dir, 'files'), items, (r) => {
+      const { records } = await evaluateVisionConfig(section.go, config, path.join(ds.dir, 'files'), items, (r) => {
         results.push(caseResult(r.latencyMs, 1, r.outcome, ledger.endCase()))
       }, readImage)
       report.providers.push({ provider, status: opts.providers?.vision ? 'TEST_ONLY' : 'TESTED', reason: null, model, scores: scoreVision(records, truth, items.map((i) => i.id)), accounting: accountSection('vision', ledger, results, price) })
@@ -319,6 +322,8 @@ export async function runRealVision(ds: LoadedDataset, env: Env, opts: RealVisio
       if (!(err instanceof DatasetIntegrityError)) throw err
       report.providers.push({ provider, status: 'BLOCKED', reason: 'DATASET_INTEGRITY_FAILURE', model, scores: null, accounting: accountSection('vision', ledger, results, price) })
       break
+    } finally {
+      await section.close()
     }
   }
   return report

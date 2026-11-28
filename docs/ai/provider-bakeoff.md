@@ -37,7 +37,7 @@ Collect comparable, repeatable evidence for Gemini and OpenAI on the three imple
 
 | Capability | Live path (the app's code) |
 |---|---|
-| Vision / clothing analysis | `prepareVisionImage` → garment schema → `interpretGarmentOutput` → colour cross-check; the app's retry policy (one retry, transient errors only) |
+| Vision / clothing analysis | the Go server's picture preparation → garment schema → interpretation → colour cross-check (`lookly eval`); the server's retry policy (one retry, transient errors only) |
 | Stylist | engine candidates → `buildStylistContext` → `stylistMessages` → provider → `interpretStylistOutput` → at most one correction → reference resolution |
 | Outfit AI (rerank and explanation) | deterministic engine → `outfitMessages` → provider → `interpretOutfitOutput` → at most one correction, else the deterministic result |
 
@@ -275,7 +275,7 @@ Why the text-input part is only a heuristic: OpenAI documents that request struc
   - no database id (stylist references are opaque `W1/W2…` inside the harness);
   - no key, and no Authorization header.
 - Provider errors are reduced to their kind.
-- Images are re-encoded by `prepareVisionImage`, so no EXIF or GPS data reaches the provider.
+- Images are re-encoded by the Go server's preparation (`apps/api/internal/imaging`, ADR 0009), so no EXIF or GPS data reaches the provider; the real-data validation checks each prepared picture for metadata (`lookly eval` dry run, `picture.metadata`).
 - The app's content-free monitoring is unchanged. The harness writes nothing to the database and stores nothing as training data.
 - Datasets and results stay outside Git.
 - Provider data handling (training use, retention, ZDR, paid tier) is documented in [`privacy.md`](privacy.md) as operational evidence. **Legal review: PENDING.** No legal conclusion is drawn here.

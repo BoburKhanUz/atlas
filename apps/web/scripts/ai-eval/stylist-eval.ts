@@ -5,22 +5,16 @@
  *   GEMINI_API_KEY=… bun scripts/ai-eval/stylist-eval.ts --provider=gemini --model=<configured model> --out=<dir outside the repo>
  *   bun scripts/ai-eval/stylist-eval.ts --provider=scripted --out=<dir>   # offline self-test of the harness (NOT a provider result)
  *
- * Each synthetic case goes through the production path: engine candidates →
- * buildStylistContext → stylistMessages → the provider (with the app's retry
- * policy) → interpretStylistOutput → at most one correction → reference
+ * Each synthetic case goes through the Go server's production path (`lookly
+ * eval`): engine candidates → the context → the messages → the provider (the
+ * server's retry policy) → validation → at most one correction → reference
  * resolution. No quota, no database. Outputs: results.jsonl (synthetic
  * prompts/answers only), summary.json, summary.md.
  */
 import { promises as fs } from 'fs'
 import path from 'path'
-import { generateOutfits } from '../../src/lib/ai/outfit-engine'
-import { isAiProviderError } from '../../src/lib/ai/providers/errors'
-import { RetriedError, withRetry } from '../../src/lib/ai/providers/retry'
-import type { LLMMessage, LLMProvider, LLMRequest, StylistSetup } from './protocol'
-import { InvalidStylistOutputError, interpretStylistOutput, parseStylistText, resolveReferences, STYLIST_LIMITS, STYLIST_SYSTEM_PROMPT, stylistJsonSchema } from '../../src/lib/ai/stylist'
-import { buildStylistContext, stylistMessages } from '../../src/lib/ai/stylist-context'
-import { stylistCorrectionMessages } from '../../src/lib/ai/stylist-service'
-import { caseSetIdentity, LocalRefusalError } from './live-accounting'
+import type { LLMProvider, LLMRequest, StylistSetup } from './protocol'
+import { caseSetIdentity } from './live-accounting'
 import { arg, assertOutsideRepo } from './eval-common'
 import { STYLIST_CASES_VERSION, stylistCases, type StylistCase } from './stylist-cases'
 import { resolveCaseRubric, syntheticStylistRubricSet, type RubricResolution, type RubricSet } from './case-rubric'
@@ -29,7 +23,6 @@ import { stylistSetupOf } from './case-setups'
 import { openGoPipeline, refuseRemovedPipelineFlag, stylistRequest, type GoPipeline } from './go-pipeline'
 import { requestIsClean, scoreStylist, summarizeStylist, type StylistOutcome, type StylistRecord, type StylistSummary } from './stylist-scoring'
 
-const TIMEOUT_MS = Number(process.env.AI_LLM_TIMEOUT_MS ?? 25_000)
 
 /** Offline stand-in: a grounded Uzbek answer from the context. Exercises the harness only. */
 export class ScriptedStylist implements LLMProvider {
@@ -43,15 +36,6 @@ export class ScriptedStylist implements LLMProvider {
       : { answer: 'Garderobingizda hali kiyim yo‘q. Qanday kiyimlaringiz bor?', referencedItems: [], needsMoreInfo: true }
     return { text: JSON.stringify(output), metadata: { provider: this.name, model: this.model, usage: {} } }
   }
-}
-
-/** The deterministic part of a case (engine, context, messages, schema): what a live run sends, and what a replay re-scores against. */
-export function stylistCaseSetup(c: StylistCase) {
-  const candidates = generateOutfits({ wardrobe: c.wardrobe, occasion: c.occasion, weather: c.weather, topN: STYLIST_LIMITS.outfitCandidates })
-  const context = buildStylistContext({ items: c.wardrobe, candidates, occasion: c.occasion, weather: c.weather, preferences: c.preferences, colorProfile: c.colorProfile })
-  const messages = stylistMessages({ system: STYLIST_SYSTEM_PROMPT, context: context.data, history: [], message: c.message, occasionText: c.occasionText ?? null })
-  const schema = { name: 'stylist_answer', schema: stylistJsonSchema(context.refs) }
-  return { context, messages, schema }
 }
 
 /** The identity of the current case set (version + SHA-256 of its JSON, as the bake-off records it). */
@@ -104,55 +88,10 @@ export function scoreStylistCase(c: StylistCase, outcome: StylistOutcome, ctx: S
   return r.status === 'UNSCORABLE' ? { checks: scored.checks, pass: false, unscorable: r.reason } : { ...scored, unscorable: undefined }
 }
 
-export async function runStylistCase(p: LLMProvider, c: StylistCase, ctx: StylistRubricContext = syntheticRubricContext()): Promise<StylistRecord> {
-  const { context, messages, schema } = stylistCaseSetup(c)
-  // calls = provider attempts (retries included, failed ones too); requests = logical requests (first + correction).
-  let calls = 0, requests = 0, inputTokens: number | undefined, outputTokens: number | undefined
-  const add = (a: number | undefined, b: number | undefined) => (a === undefined && b === undefined ? undefined : (a ?? 0) + (b ?? 0))
-  const call = async (msgs: LLMMessage[]) => {
-    requests++
-    let result
-    try {
-      result = await withRetry(() => p.generate({ messages: msgs, temperature: 0.7, maxOutputTokens: STYLIST_LIMITS.maxOutputTokens, jsonSchema: schema, timeoutMs: TIMEOUT_MS }))
-    } catch (err) {
-      // A locally refused attempt (bake-off circuit breaker or budget) never reached the provider.
-      if (err instanceof RetriedError) calls += err.attempts - (err.lastError instanceof LocalRefusalError ? 1 : 0)
-      throw err
-    }
-    const { value, attempts } = result
-    calls += attempts
-    inputTokens = add(inputTokens, value.metadata.usage.inputTokens)
-    outputTokens = add(outputTokens, value.metadata.usage.outputTokens)
-    return value.text
-  }
-  const started = performance.now()
-  let outcome: StylistOutcome
-  try {
-    const first = await call(messages)
-    let firstError: null | 'schema' | 'invalid_reference' = null
-    let answer
-    try {
-      answer = interpretStylistOutput(parseStylistText(first), context.refs)
-    } catch (err) {
-      if (!(err instanceof InvalidStylistOutputError)) throw err
-      firstError = err.reason
-      if (err.reason !== 'invalid_reference') throw err
-      answer = interpretStylistOutput(parseStylistText(await call(stylistCorrectionMessages(messages, first, err.invalidRefs, context.refs))), context.refs)
-    }
-    outcome = { kind: 'answer', firstError, raw: answer.answer, shown: resolveReferences(answer.answer, context.items), refs: answer.referencedItems, needsMoreInfo: answer.needsMoreInfo }
-  } catch (err) {
-    const cause = (err as { lastError?: unknown }).lastError ?? err
-    if (cause instanceof InvalidStylistOutputError) outcome = { kind: 'invalid', firstError: cause.reason }
-    else outcome = { kind: 'error', error: isAiProviderError(cause) ? cause.kind : 'unexpected' }
-  }
-  const { checks, pass, unscorable } = scoreStylistCase(c, outcome, ctx)
-  return { case: c.id, tags: c.tags, provider: p.name, model: p.model, latencyMs: Math.round(performance.now() - started), calls, requests, inputTokens, outputTokens, outcome, checks, pass, ...(unscorable ? { unscorable } : {}) }
-}
-
 /**
  * The same case through the Go pipeline (`lookly eval`, go-pipeline.ts):
  * the outcome is Go's, the scoring this file's. `p` names the provider in
- * the record, as runStylistCase does.
+ * the record.
  */
 export async function runStylistCaseGo(go: GoPipeline, p: { name: string; model: string }, c: StylistCase, ctx: StylistRubricContext = syntheticRubricContext()): Promise<StylistRecord> {
   const r = await go.run('stylist', stylistRequest(c))

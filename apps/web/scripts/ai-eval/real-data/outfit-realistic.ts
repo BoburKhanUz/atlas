@@ -1,6 +1,7 @@
 /**
- * Realistic outfit-context validation (Phase 5.2). The deterministic engine
- * (outfit-engine.ts, unchanged) is the source of truth; this checks it on 20
+ * Realistic outfit-context validation (Phase 5.2). The Go server's
+ * deterministic engine (`lookly eval` dry runs: no model) is the source of
+ * truth; this checks it on 20
  * CONSTRUCTED everyday contexts against expectations written independently
  * of the engine's scoring (what a stylist would require), and reports every
  * failed check by case. A failed check is a finding for a later phase, never
@@ -15,8 +16,8 @@
  * (same input twice, shuffled wardrobe order). Colour harmony is a matter of
  * taste: NOT_EVALUATED here (needs human raters).
  */
-import { generateOutfitResult, type GenerateInput, type OutfitCandidate, type UserProfileSummary } from '../../../src/lib/ai/outfit-engine'
-import type { GenerateProblem, Occasion, WardrobeItemSummary, WeatherSnapshot } from '../protocol'
+import { GoPipeline } from '../go-pipeline'
+import type { GenerateProblem, Occasion, OutfitSetup, SetupCandidate, UserProfileSummary, WardrobeItemSummary, WeatherSnapshot } from '../protocol'
 import type { Count } from './real-vision'
 import { outfitRuleViolations, type RuleContext } from '../outfit-rules'
 
@@ -108,7 +109,7 @@ export function outfitRealisticCases(): RealisticOutfitCase[] {
 }
 
 /** Independent checks of one case's result; each returns the failed check names. */
-export function checkOutfits(c: RealisticOutfitCase, outfits: OutfitCandidate[], problem: GenerateProblem | null): string[] {
+export function checkOutfits(c: RealisticOutfitCase, outfits: SetupCandidate[], problem: GenerateProblem | null): string[] {
   if (c.expect.problem) return problem !== c.expect.problem || outfits.length ? [`expected_problem:${c.expect.problem}`] : []
   if (!outfits.length) return [`no_outfit:${problem ?? 'none'}`]
   const disliked = new Set(c.profile?.dislikedColors ?? [])
@@ -142,21 +143,31 @@ export interface OutfitValidationReport {
 
 const shuffled = <T,>(xs: T[]) => xs.map((x, i) => [x, (i * 7919) % 101] as const).sort((a, b) => a[1] - b[1]).map(([x]) => x)
 
-export function runOutfitRealistic(): OutfitValidationReport {
+/** The engine's outfits for a case, as Go makes them (a dry run: no model). */
+async function engineOutfits(go: GoPipeline, c: RealisticOutfitCase, wardrobe: WardrobeItemSummary[]): Promise<OutfitSetup> {
+  const r = await go.run('outfit', { wardrobe, occasion: c.occasion ?? '', weather: c.weather ?? null, profile: c.profile ?? null, colorProfile: null, topN: 3 }, { dryRun: true })
+  return r.setup as OutfitSetup
+}
+
+export async function runOutfitRealistic(): Promise<OutfitValidationReport> {
   const cases = outfitRealisticCases()
   const failures: OutfitValidationReport['failures'] = []
   const byCheck: Record<string, number> = {}
   let stable = 0
-  for (const c of cases) {
-    const input: GenerateInput = { wardrobe: c.wardrobe, occasion: c.occasion, weather: c.weather, profile: c.profile, topN: 3 }
-    const a = generateOutfitResult(input)
-    const b = generateOutfitResult(input)
-    const s = generateOutfitResult({ ...input, wardrobe: shuffled(c.wardrobe) })
-    const key = (r: typeof a) => JSON.stringify([r.problem, r.outfits.map((o) => [o.key, o.score])])
-    if (key(a) === key(b) && key(a) === key(s)) stable++
-    const failed = checkOutfits(c, a.outfits, a.problem)
-    for (const f of failed) { const k = f.replace(/^O\d+:/, ''); byCheck[k] = (byCheck[k] ?? 0) + 1 }
-    if (failed.length) failures.push({ case: c.id, failed })
+  const go = new GoPipeline({ args: ['--provider=mock'] })
+  try {
+    for (const c of cases) {
+      const a = await engineOutfits(go, c, c.wardrobe)
+      const b = await engineOutfits(go, c, c.wardrobe)
+      const s = await engineOutfits(go, c, shuffled(c.wardrobe))
+      const key = (r: OutfitSetup) => JSON.stringify([r.problem, r.candidates.map((o) => [o.key, o.score])])
+      if (key(a) === key(b) && key(a) === key(s)) stable++
+      const failed = checkOutfits(c, a.candidates, a.problem || null)
+      for (const f of failed) { const k = f.replace(/^O\d+:/, ''); byCheck[k] = (byCheck[k] ?? 0) + 1 }
+      if (failed.length) failures.push({ case: c.id, failed })
+    }
+  } finally {
+    await go.close()
   }
   const count = (a: number, b: number): Count => ({ correct: a, scored: b, rate: b ? Math.round((a / b) * 10_000) / 10_000 : null })
   return { version: OUTFIT_REALISTIC_VERSION, cases: cases.length, status: 'EVALUATED', casesPassing: count(cases.length - failures.length, cases.length), byCheck, failures, deterministic: count(stable, cases.length), colorHarmony: 'NOT_EVALUATED' }

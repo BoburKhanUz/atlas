@@ -17,26 +17,25 @@ import {
   caseResult,
   CIRCUIT_MAX_CONSECUTIVE,
   CIRCUIT_MAX_FATAL,
-  countedLLM,
+  LocalRefusalError,
   parseMaxCost,
   planCalls,
-  retryingVision,
   type CaseResult,
 } from '../../scripts/ai-eval/live-accounting'
 import { outfitCases } from '../../scripts/ai-eval/outfit-cases'
-import { runOutfitCase, ScriptedOutfit } from '../../scripts/ai-eval/outfit-eval'
+import { ScriptedOutfit } from '../../scripts/ai-eval/outfit-eval'
 import { stylistCases } from '../../scripts/ai-eval/stylist-cases'
-import { runStylistCase, ScriptedStylist } from '../../scripts/ai-eval/stylist-eval'
+import { ScriptedStylist } from '../../scripts/ai-eval/stylist-eval'
 import { renderSynthetic, syntheticVisionItems } from '../../scripts/ai-eval/synthetic-vision'
 import { evaluateVisionConfig } from '../../scripts/ai-eval/vision-eval'
-import { CONFIDENCE_KEYS } from '@/lib/ai/garment-analysis'
-import { AiProviderError, type AiErrorKind } from '@/lib/ai/providers/errors'
-import type { LLMProvider, LLMRequest, VisionProvider } from '@/lib/ai/providers/types'
+import { CONFIDENCE_KEYS } from '../../scripts/ai-eval/catalog'
+import { STAND_IN_TIMEOUT_MS } from '../../scripts/ai-eval/go-pipeline'
+import type { AiErrorKind, LLMProvider, LLMRequest, VisionProvider } from '../../scripts/ai-eval/protocol'
+import { failure, outfitThroughGo, stylistThroughGo, visionThroughGo, withGate } from './through-go'
 
 if (!process.env.LOOKLY_BINARY) throw new Error('LOOKLY_BINARY is not set: build apps/api (go build -tags nodynamic -o <path> ./cmd/lookly) and point it there')
 
 const FAKE = 'fake-key-not-real-51acc'
-const noSleep = async () => {}
 const CASE = stylistCases().find((c) => c.id === 'casual')!
 const usage = { inputTokens: 1000, outputTokens: 100 }
 
@@ -51,7 +50,7 @@ function llm(steps: Step[]): LLMProvider & { calls: number } {
     async generate(req: LLMRequest) {
       const step = steps[Math.min(p.calls++, steps.length - 1)]
       if (step instanceof Error) throw step
-      if (step !== 'ok' && step !== 'bad_ref' && step !== 'not_json') throw new AiProviderError(step, 'scripted', step === 'auth' ? { status: 401 } : {})
+      if (step !== 'ok' && step !== 'bad_ref' && step !== 'not_json') throw failure(step)
       if (step === 'not_json') return { text: 'Sorry, here is some prose instead of JSON.', metadata: { provider: 'scripted', model: 'm', usage } }
       const out = JSON.parse((await good.generate(req)).text)
       if (step === 'bad_ref') out.referencedItems = ['W999']
@@ -61,10 +60,10 @@ function llm(steps: Step[]): LLMProvider & { calls: number } {
   return p
 }
 
-/** One stylist case through the bake-off's own path: counted provider → runner (app retry policy) → classification → accounting. */
+/** One stylist case through the bake-off's own path: Go (the server's retry policy) with the ledger as its gate → classification → accounting. */
 async function stylistOnce(steps: Step[], ledger = new CallLedger()) {
   const inner = llm(steps)
-  const record = await runStylistCase(countedLLM(inner, ledger), CASE)
+  const record = await stylistThroughGo(inner, ledger, CASE)
   const result = caseResult(record.latencyMs, record.requests, record.outcome, ledger.endCase())
   return { inner, record, result, acc: accountSection('stylist', ledger, [result], null), ledger }
 }
@@ -107,7 +106,7 @@ describe('accounting: the ten required cases (stylist runner, exact counts)', ()
     const ledger = new CallLedger()
     for (let i = 0; i < CIRCUIT_MAX_FATAL; i++) {
       ledger.before('scripted')
-      ledger.fail(new AiProviderError('auth', 'scripted', { status: 401 }))
+      ledger.fail(failure('auth'))
     }
     ledger.endCase()
     const fresh = new CallLedger()
@@ -123,10 +122,9 @@ describe('accounting: the ten required cases (stylist runner, exact counts)', ()
   it('7. circuit opens after N failures: later cases are not called', async () => {
     const ledger = new CallLedger()
     const inner = llm(['auth'])
-    const p = countedLLM(inner, ledger)
     const results: CaseResult[] = []
     for (let i = 0; i < 4; i++) {
-      const r = await runStylistCase(p, CASE)
+      const r = await stylistThroughGo(inner, ledger, CASE)
       results.push(caseResult(r.latencyMs, r.requests, r.outcome, ledger.endCase()))
     }
     expect(inner.calls).toBe(CIRCUIT_MAX_FATAL) // auth is never retried
@@ -154,11 +152,11 @@ describe('accounting: the ten required cases (stylist runner, exact counts)', ()
     expect(acc).toMatchObject({ attempts: 2, retries: 1, attemptErrors: { network: 2 }, caseErrors: { network: 1 } })
   })
 
-  it('10. malformed provider response: a 2xx with prose is an application-level invalid output (provider answered, not retried, no circuit); a malformed_response error is a provider failure, not retried', async () => {
+  it('10. malformed provider response: a 2xx with prose where JSON was asked is refused by the provider layer (malformed_response: not retried, not corrected; owner decision 2026-11-28), as is a malformed_response error', async () => {
     const prose = await stylistOnce(['not_json'])
     expect(prose.record.calls).toBe(1)
-    expect(prose.result.status).toBe('invalid_output')
-    expect(prose.acc).toMatchObject({ attempts: 1, retries: 0, attemptErrors: {}, invalidOutputCases: 1, providerErrorCases: 0, failureRate: 1 })
+    expect(prose.result).toMatchObject({ status: 'provider_error', errorKind: 'malformed_response' })
+    expect(prose.acc).toMatchObject({ attempts: 1, retries: 0, attemptErrors: { malformed_response: 1 }, invalidOutputCases: 0, providerErrorCases: 1, failureRate: 1 })
     const thrown = await stylistOnce(['malformed_response', 'ok'])
     expect(thrown.record.calls).toBe(1)
     expect(thrown.acc).toMatchObject({ attempts: 1, retries: 0, attemptErrors: { malformed_response: 1 }, caseErrors: { malformed_response: 1 } })
@@ -173,7 +171,7 @@ function outfitLlm(steps: Array<'ok' | 'bad' | AiErrorKind>): LLMProvider & { ca
     async generate(req: LLMRequest) {
       const step = steps[Math.min(p.calls++, steps.length - 1)]
       if (step === 'bad') return { text: JSON.stringify({ selectedCandidate: 'O99', ranking: ['O99'], explanation: 'x', needsMoreInfo: false }), metadata: { provider: 'scripted', model: 'm', usage } }
-      if (step !== 'ok') throw new AiProviderError(step, 'scripted')
+      if (step !== 'ok') throw failure(step)
       return { ...(await good.generate(req)), metadata: { provider: 'scripted', model: 'm', usage } }
     },
   }
@@ -182,7 +180,7 @@ function outfitLlm(steps: Array<'ok' | 'bad' | AiErrorKind>): LLMProvider & { ca
 const OUTFIT = outfitCases()[0]
 async function outfitOnce(steps: Array<'ok' | 'bad' | AiErrorKind>, ledger = new CallLedger()) {
   const inner = outfitLlm(steps)
-  const record = await runOutfitCase(countedLLM(inner, ledger), OUTFIT)
+  const record = await outfitThroughGo(inner, ledger, OUTFIT)
   const result = caseResult(record.latencyMs, record.requests, record.outcome, ledger.endCase())
   return { inner, record, result, acc: accountSection('outfit', ledger, [result], null) }
 }
@@ -229,10 +227,10 @@ describe('mid-case refusals and the ledger contract', () => {
   it('an attempt after a NON-retryable failure is never counted as a retry (even without endCase)', () => {
     const l = new CallLedger()
     l.before('p')
-    l.fail(new AiProviderError('auth', 'p', { status: 401 }))
+    l.fail(failure('auth'))
     l.before('p')
     expect(l.retries).toBe(0)
-    l.fail(new AiProviderError('timeout', 'p'))
+    l.fail(failure('timeout'))
     l.before('p')
     expect(l.retries).toBe(1)
   })
@@ -252,27 +250,34 @@ describe('correction turn accounting', () => {
   })
 })
 
-describe('retry policy: one layer, the app classification', () => {
+describe("retry policy: one layer, the server's classification", () => {
+  // Every kind a provider's answer can be (config and cancelled are the server's own, never an answer).
   const kinds: Array<[AiErrorKind, number]> = [
     ['timeout', 2], ['network', 2], ['rate_limited', 2], ['unavailable', 2],
-    ['auth', 1], ['config', 1], ['invalid_request', 1], ['malformed_response', 1], ['content_filtered', 1], ['provider_error', 1], ['cancelled', 1],
+    ['auth', 1], ['invalid_request', 1], ['malformed_response', 1], ['content_filtered', 1], ['provider_error', 1],
   ]
+  const VISION = { label: 'x', provider: 'openai' as const, model: 'm', maxSide: 512 }
+  let picture: Uint8Array
+  beforeAll(async () => {
+    picture = await renderSynthetic(syntheticVisionItems()[0])
+  })
   it.each(kinds)('vision %s → %i attempt(s)', async (kind, attempts) => {
-    const inner = { name: 'v', model: 'm', calls: 0, async analyzeImage() { inner.calls++; throw new AiProviderError(kind, 'v', kind === 'rate_limited' ? { status: 429 } : {}) } }
+    const inner = { name: 'v', model: 'm', calls: 0, async analyzeImage() { inner.calls++; throw failure(kind) } }
     const ledger = new CallLedger()
-    await expect(retryingVision(inner, ledger, noSleep).analyzeImage({} as never)).rejects.toMatchObject({ kind })
+    const r = await visionThroughGo(inner, ledger, VISION, picture)
+    expect(r.outcome).toEqual({ kind: 'error', error: kind })
     expect([inner.calls, ledger.attempts, ledger.retries]).toEqual([attempts, attempts, attempts - 1])
   })
 
-  it.each(kinds)('stylist %s → %i attempt(s) (runner retry only; the counted wrapper never retries)', async (kind, attempts) => {
+  it.each(kinds)('stylist %s → %i attempt(s) (the server retries; the harness only admits)', async (kind, attempts) => {
     const { inner, acc } = await stylistOnce([kind, kind, kind])
     expect([inner.calls, acc.attempts, acc.retries]).toEqual([attempts, attempts, attempts - 1])
   })
 
-  it('a 429 asking to wait longer than the app allows is not retried', async () => {
-    const inner = { name: 'v', model: 'm', calls: 0, async analyzeImage() { inner.calls++; throw new AiProviderError('rate_limited', 'v', { status: 429, retryAfterMs: 60_000 }) } }
+  it('a 429 asking to wait longer than the server allows is not retried', async () => {
+    const inner = { name: 'v', model: 'm', calls: 0, async analyzeImage() { inner.calls++; throw Object.assign(failure('rate_limited'), { retryAfterMs: 60_000 }) } }
     const ledger = new CallLedger()
-    await expect(retryingVision(inner, ledger, noSleep).analyzeImage({} as never)).rejects.toMatchObject({ kind: 'rate_limited' })
+    expect((await visionThroughGo(inner, ledger, VISION, picture)).outcome).toEqual({ kind: 'error', error: 'rate_limited' })
     expect([inner.calls, ledger.retries]).toEqual([1, 0])
     // The unused retry is not carried into the next case.
     expect(ledger.endCase()).toEqual({ skip: null, attempts: 1 })
@@ -301,7 +306,7 @@ describe('vision section accounting (app pipeline, one retry layer)', () => {
       name: 'v', model: 'm', calls: 0,
       async analyzeImage() {
         inner.calls++
-        if (n++ === 0) throw new AiProviderError('timeout', 'v')
+        if (n++ === 0) throw failure('timeout')
         return { output: JEANS, metadata: { provider: 'v', model: 'm', usage: { inputTokens: 500, outputTokens: 50 } } }
       },
     }
@@ -309,9 +314,9 @@ describe('vision section accounting (app pipeline, one retry layer)', () => {
     const ledger = new CallLedger(null, price)
     const results: CaseResult[] = []
     const labels = JSON.parse(await fs.readFile(path.join(dir, 'labels.json'), 'utf8'))
-    await evaluateVisionConfig(retryingVision(inner, ledger, noSleep), { label: 'x', provider: 'gemini', model: 'm', maxSide: 512 }, dir, labels.items, (r) => {
+    await withGate(null, inner, 'm', ledger, (go) => evaluateVisionConfig(go, { label: 'x', provider: 'gemini', model: 'm', maxSide: 512, timeoutMs: STAND_IN_TIMEOUT_MS }, dir, labels.items, (r) => {
       results.push(caseResult(r.latencyMs, 1, r.outcome, ledger.endCase()))
-    })
+    }))
     const acc = accountSection('vision', ledger, results, price, 'test price')
     expect(inner.calls).toBe(4)
     expect(acc).toMatchObject({ cases: 3, attemptedCases: 3, requests: 3, attempts: 4, retries: 1, timeouts: 1, successfulCases: 3, timeoutRate: 0.25 })
@@ -325,10 +330,9 @@ describe('call budget and cost cap (enforced before and during execution)', () =
     const budget = new CallBudget(3, null)
     const ledger = new CallLedger(budget)
     const inner = llm(['ok'])
-    const p = countedLLM(inner, ledger)
     const results: CaseResult[] = []
     for (let i = 0; i < 5; i++) {
-      const r = await runStylistCase(p, CASE)
+      const r = await stylistThroughGo(inner, ledger, CASE)
       results.push(caseResult(r.latencyMs, r.requests, r.outcome, ledger.endCase()))
     }
     expect(inner.calls).toBe(3)
@@ -344,7 +348,7 @@ describe('call budget and cost cap (enforced before and during execution)', () =
     ledger.ok({ inputTokens: 1000, outputTokens: 100 }, ledger.before('p', est)) // reported $0.0012
     ledger.ok({ inputTokens: 1000, outputTokens: 100 }, ledger.before('p', est)) // charged $0.0024
     expect(budget.exhausted).toBeNull()
-    expect(() => ledger.before('p', est)).toThrow(AiProviderError) // 0.0024 + 0.0012 > 0.003
+    expect(() => ledger.before('p', est)).toThrow(LocalRefusalError) // 0.0024 + 0.0012 > 0.003
     expect([budget.exhausted, ledger.endCase().skip, budget.attemptsUsed]).toEqual(['max_cost', 'budget_stop', 2])
     expect(budget.costSpentUsd).toBe(0.0024)
   })

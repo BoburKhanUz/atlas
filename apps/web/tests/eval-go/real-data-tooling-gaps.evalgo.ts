@@ -7,21 +7,23 @@
  * Artificial fixtures only (no person, no real data), no provider, no network.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { CONFIDENCE_KEYS, type GarmentAttributes } from '@/lib/ai/garment-analysis'
-import type { LLMProvider, LLMRequest } from '@/lib/ai/providers/types'
-import { parseRubricSet, REALISTIC_PIN, realisticStylistRubricSet, resolveCaseRubric, syntheticStylistRubricSet, type RubricSet } from '../../../scripts/ai-eval/case-rubric'
-import { RubricIdentityError } from '../../../scripts/ai-eval/eval-rubric'
-import { caseSetIdentity } from '../../../scripts/ai-eval/live-accounting'
-import { evaluateFixture, evaluateFixtures, FixtureOutput, OutfitFixture, type OutfitFixture as Fixture } from '../../../scripts/ai-eval/outfit-fixtures'
-import { scoreVision } from '../../../scripts/ai-eval/real-data/real-vision'
-import { STYLIST_REALISTIC_VERSION, stylistRealisticCases } from '../../../scripts/ai-eval/real-data/stylist-realistic-cases'
-import { runValidation, validationMarkdown } from '../../../scripts/ai-eval/real-data/validate'
-import { reviewCase, summarizeReview } from '../../../scripts/ai-eval/review'
-import { stylistCases, type StylistCase } from '../../../scripts/ai-eval/stylist-cases'
-import { scoreStylistCase, type StylistRubricContext } from '../../../scripts/ai-eval/stylist-eval'
-import type { StylistOutcome } from '../../../scripts/ai-eval/stylist-scoring'
-import { visionItt, type IttCase } from '../../../scripts/ai-eval/vision-itt'
-import { ittOf, summarize, type ItemOutcome, type ItemRecord } from '../../../scripts/ai-eval/vision-scoring'
+import { CONFIDENCE_KEYS } from '../../scripts/ai-eval/catalog'
+import type { GarmentAttributes, LLMProvider, LLMRequest } from '../../scripts/ai-eval/protocol'
+import { parseRubricSet, REALISTIC_PIN, realisticStylistRubricSet, resolveCaseRubric, syntheticStylistRubricSet, type RubricSet } from '../../scripts/ai-eval/case-rubric'
+import { RubricIdentityError } from '../../scripts/ai-eval/eval-rubric'
+import { caseSetIdentity } from '../../scripts/ai-eval/live-accounting'
+import { evaluateFixture, evaluateFixtures, FixtureOutput, OutfitFixture, type OutfitFixture as Fixture } from '../../scripts/ai-eval/outfit-fixtures'
+import { scoreVision } from '../../scripts/ai-eval/real-data/real-vision'
+import { STYLIST_REALISTIC_VERSION, stylistRealisticCases } from '../../scripts/ai-eval/real-data/stylist-realistic-cases'
+import { runValidation, validationMarkdown } from '../../scripts/ai-eval/real-data/validate'
+import { reviewCase, summarizeReview } from '../../scripts/ai-eval/review'
+import { stylistCases, type StylistCase } from '../../scripts/ai-eval/stylist-cases'
+import { scoreStylistCase, type StylistRubricContext } from '../../scripts/ai-eval/stylist-eval'
+import type { StylistOutcome } from '../../scripts/ai-eval/stylist-scoring'
+import { visionItt, type IttCase } from '../../scripts/ai-eval/vision-itt'
+import { ittOf, summarize, type ItemOutcome, type ItemRecord } from '../../scripts/ai-eval/vision-scoring'
+
+if (!process.env.LOOKLY_BINARY) throw new Error('LOOKLY_BINARY is not set: build apps/api (go build -tags nodynamic -o <path> ./cmd/lookly) and point it there')
 
 let globalFetch: ReturnType<typeof vi.fn>
 beforeEach(() => {

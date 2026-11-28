@@ -12,9 +12,9 @@ import { latencyStats, type SectionAccounting } from '../../scripts/ai-eval/live
 import { ScriptedOutfit } from '../../scripts/ai-eval/outfit-eval'
 import { ScriptedStylist } from '../../scripts/ai-eval/stylist-eval'
 import { renderSynthetic, syntheticVisionItems } from '../../scripts/ai-eval/synthetic-vision'
-import { CONFIDENCE_KEYS } from '@/lib/ai/garment-analysis'
-import { AiProviderError } from '@/lib/ai/providers/errors'
-import type { LLMProvider, LLMRequest, VisionProvider, VisionRequest } from '@/lib/ai/providers/types'
+import { CONFIDENCE_KEYS } from '../../scripts/ai-eval/catalog'
+import { failure } from './through-go'
+import type { LLMProvider, LLMRequest, VisionProvider, VisionRequest } from '../../scripts/ai-eval/protocol'
 
 if (!process.env.LOOKLY_BINARY) throw new Error('LOOKLY_BINARY is not set: build apps/api (go build -tags nodynamic -o <path> ./cmd/lookly) and point it there')
 
@@ -37,7 +37,7 @@ function scriptedVision(third: 'timeout' | 'unavailable' | 'invalid' | 'garment'
     async analyzeImage(_req: VisionRequest) {
       const i = this.calls++
       if (latencyMs) await new Promise((r) => setTimeout(r, latencyMs))
-      if (i >= 2 && (third === 'timeout' || third === 'unavailable')) throw new AiProviderError(third, 'scripted-vision')
+      if (i >= 2 && (third === 'timeout' || third === 'unavailable')) throw failure(third)
       const output = i === 0 ? JEANS : i === 1 ? LANDSCAPE : third === 'invalid' ? { subject: 'single_garment' } : JEANS
       return { output, metadata: { provider: 'scripted-vision', model: 'scripted', usage: { inputTokens: 100, outputTokens: 20 } } }
     },

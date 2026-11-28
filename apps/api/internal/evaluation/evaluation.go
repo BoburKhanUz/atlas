@@ -436,9 +436,11 @@ func (r *Runner) stylist(ctx context.Context, c StylistCase, dryRun bool) Result
 
 // OutfitCase is an outfit case as the harness writes one (outfit-cases.ts).
 type OutfitCase struct {
-	Wardrobe     []engine.Item        `json:"wardrobe"`
-	Occasion     string               `json:"occasion"`
-	Weather      *engine.Weather      `json:"weather"`
+	Wardrobe []engine.Item   `json:"wardrobe"`
+	Occasion string          `json:"occasion"`
+	Weather  *engine.Weather `json:"weather"`
+	// Profile is the user's style preferences (the realistic cases have them).
+	Profile      *engine.Profile      `json:"profile"`
 	ColorProfile *engine.ColorProfile `json:"colorProfile"`
 	TopN         *float64             `json:"topN"`
 }
@@ -498,7 +500,7 @@ type item struct {
 // any invalid answer.
 func (r *Runner) outfit(ctx context.Context, c OutfitCase, dryRun bool) Result {
 	started := time.Now()
-	result := engine.Generate(engine.Input{Wardrobe: c.Wardrobe, Occasion: c.Occasion, Weather: c.Weather, ColorProfile: c.ColorProfile, TopN: c.TopN})
+	result := engine.Generate(engine.Input{Wardrobe: c.Wardrobe, Occasion: c.Occasion, Weather: c.Weather, Profile: c.Profile, ColorProfile: c.ColorProfile, TopN: c.TopN})
 	candidates := result.Outfits
 	refs := engine.RankingRefs(len(candidates))
 	messages := []ai.Message{
@@ -610,6 +612,9 @@ type preparedPicture struct {
 	MimeType string `json:"mimeType"`
 	Width    int    `json:"width"`
 	Height   int    `json:"height"`
+	// Metadata: the prepared picture carries an EXIF, XMP or IPTC block
+	// (it must not: the privacy check of the real-data validation).
+	Metadata bool `json:"metadata"`
 }
 
 func (r *Runner) vision(ctx context.Context, c VisionCase, dryRun bool) (Result, error) {
@@ -632,7 +637,7 @@ func (r *Runner) vision(ctx context.Context, c VisionCase, dryRun bool) (Result,
 	setup := VisionSetup{Schema: schema{Name: "garment_analysis", Schema: vision.Schema}}
 	picture, prepareErr := r.Pictures.PrepareVision(ctx, image, maxSide)
 	if prepareErr == nil {
-		setup.Picture = &preparedPicture{MimeType: "image/jpeg", Width: picture.Width, Height: picture.Height}
+		setup.Picture = &preparedPicture{MimeType: "image/jpeg", Width: picture.Width, Height: picture.Height, Metadata: jpegHasMetadata(picture.JPEG)}
 	}
 	if dryRun {
 		return Result{Provider: provider, Model: model, Setup: setup}, nil

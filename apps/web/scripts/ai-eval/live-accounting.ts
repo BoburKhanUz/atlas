@@ -35,11 +35,8 @@
 import crypto from 'crypto'
 import { promises as fs } from 'fs'
 import path from 'path'
-import { errorKindOf, RETRYABLE_KINDS, type AiPrice, type AttemptGate, type GateAsk, type GateAttempted, type LLMProvider, type LLMRequest, type VisionProvider, type VisionRequest } from './protocol'
-import { AiProviderError } from '../../src/lib/ai/providers/errors'
-import { MAX_RETRIES, RetriedError, withRetry } from '../../src/lib/ai/providers/retry'
-import { estimateCostUsd } from '../../src/lib/ai/telemetry'
-import { costOf, estimateTextAttempt, estimateVisionAttempt, estimateVisionTokens, INPUT_ESTIMATE_STATUS, isBudgetablePrice, isSoundEstimate, roundUsd, type CostEstimate, type EstimateResult } from './cost-bounds'
+import { errorKindOf, RETRYABLE_KINDS, type AiPrice, type AttemptGate, type GateAsk, type GateAttempted } from './protocol'
+import { costOf, estimateTextAttempt, estimateVisionTokens, INPUT_ESTIMATE_STATUS, isBudgetablePrice, isSoundEstimate, roundUsd, type CostEstimate, type EstimateResult } from './cost-bounds'
 import type { EvalProviderName } from './eval-common'
 
 export const CIRCUIT_MAX_FATAL = 2
@@ -61,14 +58,24 @@ export type SkipReason = 'circuit_break' | 'budget_stop'
  * app's code paths treat it like any failure; the runners exclude it from
  * their call count.
  */
-export class LocalRefusalError extends AiProviderError {
+export class LocalRefusalError extends Error {
+  readonly kind = 'cancelled'
   constructor(
     provider: string,
     readonly reason: SkipReason,
   ) {
-    super('cancelled', provider)
+    super(`${provider}: cancelled (${reason})`)
     this.name = 'LocalRefusalError'
   }
+}
+
+/** The server's retry policy: at most one more attempt (apps/api/internal/ai/retry.go). */
+export const MAX_RETRIES = 1
+
+/** USD from complete usage at a price (rounded to the micro-dollar); undefined without either. */
+export function estimateCostUsd(usage: { inputTokens?: number; outputTokens?: number } | undefined, price: AiPrice | null | undefined): number | undefined {
+  if (!price || !usage || usage.inputTokens === undefined || usage.outputTokens === undefined) return undefined
+  return Math.round(((usage.inputTokens * price.inputUsdPerMTok + usage.outputTokens * price.outputUsdPerMTok) / 1_000_000) * 1e6) / 1e6
 }
 
 /** Why the budget refuses every further attempt. */
@@ -381,59 +388,6 @@ export class CallLedger {
   }
 }
 
-/**
- * One counted attempt: the estimate (when it matters) and the reservation come
- * BEFORE the request is dispatched; the settlement after it.
- */
-async function counted<T extends { metadata: { usage: { inputTokens?: number; outputTokens?: number } } }>(
-  ledger: CallLedger,
-  provider: string,
-  attempt: () => Promise<T>,
-  estimate?: () => EstimateResult | Promise<EstimateResult>,
-): Promise<T> {
-  const est = estimate && ledger.wantsEstimate ? await estimate() : undefined
-  const reservation = ledger.before(provider, est)
-  try {
-    const result = await attempt()
-    ledger.ok(result.metadata.usage, reservation)
-    return result
-  } catch (err) {
-    ledger.fail(err, reservation)
-    throw err
-  }
-}
-
-/**
- * An LLM provider whose every attempt is estimated, reserved and counted. It
- * does NOT retry: the text runners apply the app's retry policy (withRetry, as
- * client.ts does), so there is exactly one retry layer and every retry and
- * correction is its own attempt with its own reservation.
- */
-export function countedLLM(inner: LLMProvider, ledger: CallLedger): LLMProvider {
-  return { name: inner.name, model: inner.model, generate: (req: LLMRequest) => counted(ledger, inner.name, () => inner.generate(req), () => estimateTextAttempt(req)) }
-}
-
-/**
- * A vision provider with the app's retry policy (withRetry, as client.ts:
- * at most one retry, transient kinds only) and every attempt estimated,
- * reserved and counted. The vision runner (vision-eval.ts runOne) does not
- * retry, so there is exactly one retry layer. The last provider error is
- * rethrown as is.
- */
-export function retryingVision(inner: VisionProvider, ledger: CallLedger, sleep?: (ms: number) => Promise<void>): VisionProvider {
-  return {
-    name: inner.name,
-    model: inner.model,
-    async analyzeImage(req: VisionRequest) {
-      try {
-        return (await withRetry(() => counted(ledger, inner.name, () => inner.analyzeImage(req), () => estimateVisionAttempt(inner.name, inner.model, req)), { sleep })).value
-      } catch (err) {
-        throw err instanceof RetriedError ? err.lastError : err
-      }
-    },
-  }
-}
-
 /** An attempt Go asks about, as the estimate reads it. */
 export function estimateAsked(a: GateAsk): EstimateResult | undefined {
   if (a.text) return estimateTextAttempt({ messages: a.text.messages, maxOutputTokens: a.text.maxOutputTokens ?? undefined, jsonSchema: a.text.schema ?? undefined, timeoutMs: 0 })
@@ -448,7 +402,7 @@ export function estimateAsked(a: GateAsk): EstimateResult | undefined {
 /**
  * The ledger as Go's attempt gate (`lookly eval --gate`): every attempt Go
  * makes, a retry or a correction included, is estimated, reserved and counted
- * BEFORE it is sent, exactly as countedLLM and retryingVision do in process; a
+ * BEFORE it is sent; a
  * refusal (circuit open, budget) is never sent. Go asks about one attempt at a
  * time, so the reservation in flight is the last one admitted. `section`
  * names the provider and model the estimate is for (through a stand-in Go

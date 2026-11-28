@@ -24,7 +24,7 @@ Principles:
 - **The production path:** the harness uses the production prompt, context builder, schema, validator and correction:
   - stylist: `buildStylistContext` → `stylistMessages` → `interpretStylistOutput` → `stylistCorrectionMessages`;
   - outfit AI: `outfitMessages` → `interpretOutfitOutput` → `outfitCorrectionMessages`;
-  - vision: `prepareVisionImage` → garment schema → `interpretGarmentOutput`.
+  - vision: the Go server's picture preparation → garment schema → interpretation (`lookly eval`).
 
   The retry policy is the same; quota and database are left out.
 - **Configured models only:** `--provider`/`--model`, `AI_EVAL_GEMINI_MODEL`/`AI_EVAL_OPENAI_MODEL`, or `AI_LLM_PROVIDER`/`AI_LLM_MODEL`. There is no built-in model.
@@ -40,7 +40,7 @@ Principles:
 | `outfit-eval.ts` / `outfit-cases.ts` / `outfit-scoring.ts` | 11 outfit cases and their scoring |
 | `robustness.ts` | 13 adversarial scenarios with expected outcomes |
 | `synthetic-vision.ts` | 15 labelled synthetic images for `vision-eval.ts` (Phase 4.1) |
-| `timings.ts` | local latency of everything around a provider call |
+| (Go benchmarks) | local cost of everything around a provider call: `cd apps/api && go test -tags nodynamic -run '^$' -bench . ./internal/evaluation/` (the stylist's and outfit's request, a phone photo's preparation, a selfie's colour analysis) and `./internal/imaging/` |
 | `eval-common.ts` | statistics, Uzbek proxy check, garment-mention grounding, provider from the environment |
 | `go-pipeline.ts` | the Go pipeline (stage B6.9): `lookly eval` from `LOOKLY_BINARY` (cases, dry runs, the versions, selfies), and a stand-in on 127.0.0.1 that serves a scripted provider in OpenAI's shape |
 | `case-setups.ts` / `case-setups.json` | Go's setup of every kept case (`lookly eval` dryRun: stylist references and messages, outfit candidates, profile and weather use, the deterministic explanation), keyed by the request's SHA-256; scoring, replays, reviews and the fallback explanations read it, so they need no Go binary. Regenerate after a change to the cases, prompts or engine: `LOOKLY_BINARY=<built lookly> bun scripts/ai-eval/case-setups.ts`; `tests/eval-go/case-setups.evalgo.ts` fails when it is stale. A live run on Go is scored against the setup Go returned with that very result |
@@ -52,7 +52,6 @@ bun scripts/ai-eval/bakeoff.ts --out=/tmp/atlas-eval            # offline now; l
 bun scripts/ai-eval/synthetic-vision.ts --out=/tmp/atlas-eval/vision-ds
 bun scripts/ai-eval/bakeoff.ts --out=/tmp/atlas-eval --vision-dataset=/tmp/atlas-eval/vision-ds --runs=3   # PHASE 5.0
 GEMINI_API_KEY=… OPENAI_API_KEY=… LOOKLY_BINARY=/tmp/lookly bun scripts/ai-eval/vision-eval.ts --dataset=/tmp/atlas-eval/vision-ds --matrix=<matrix with the configured models> --max-calls=<cap> --out=/tmp/atlas-eval/vision
-bun scripts/ai-eval/timings.ts --n=30
 ```
 
 **On the Go server's pipeline** (stage B6.9; the only one since B7.4e). The scoring and

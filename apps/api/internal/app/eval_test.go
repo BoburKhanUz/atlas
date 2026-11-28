@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"image"
 	"image/png"
 	"net/http"
@@ -580,5 +581,31 @@ func TestEvalTimeoutLimitsTheOutfitAttempts(t *testing.T) {
 	}
 	if elapsed := time.Since(started); elapsed > 4*time.Second {
 		t.Errorf("took %v: the outfit's attempts were not limited to 200ms", elapsed)
+	}
+}
+
+// The user's preferences reach the engine: a disliked colour changes the outfits.
+func TestEvalOutfitCaseCarriesThePreferences(t *testing.T) {
+	t.Parallel()
+	dry := strings.Replace(outfitCase, `{"feature":"outfit",`, `{"feature":"outfit","dryRun":true,`, 1)
+	disliked := strings.Replace(dry, `"occasion":"casual"`, `"occasion":"casual","profile":{"dislikedColors":["white"]}`, 1)
+	unknown := strings.Replace(dry, `"occasion":"casual"`, `"occasion":"casual","profile":{"dislikedColour":["white"]}`, 1)
+	code, lines, stderr := runEval(t, nil, dry+"\n"+disliked+"\n"+unknown+"\n", "--provider=mock")
+	if code != 0 || len(lines) != 3 {
+		t.Fatalf("exit %d, %v, %s", code, lines, stderr)
+	}
+	score := func(l map[string]any) []any {
+		var out []any
+		for _, c := range l["setup"].(map[string]any)["candidates"].([]any) {
+			c := c.(map[string]any)
+			out = append(out, c["key"], c["score"])
+		}
+		return out
+	}
+	if a, b := score(lines[0]), score(lines[1]); fmt.Sprint(a) == fmt.Sprint(b) {
+		t.Errorf("the disliked colour changed nothing: %v", a)
+	}
+	if r, _ := lines[2]["refused"].(string); !strings.Contains(r, "not an outfit case") {
+		t.Errorf("an unknown preference: %v", lines[2])
 	}
 }

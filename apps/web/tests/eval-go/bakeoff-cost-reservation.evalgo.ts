@@ -21,21 +21,18 @@ import {
   SCHEMA_BYTES_MULTIPLIER,
   textInputHeuristic,
 } from '../../scripts/ai-eval/cost-bounds'
-import { CallBudget, CallLedger, configuredPrice, costAccounting, COST_UNAVAILABLE, countedLLM, retryingVision } from '../../scripts/ai-eval/live-accounting'
+import { CallBudget, CallLedger, configuredPrice, costAccounting, COST_UNAVAILABLE, ledgerGate } from '../../scripts/ai-eval/live-accounting'
 import { runValidation } from '../../scripts/ai-eval/real-data/validate'
-import { runStylistCase, ScriptedStylist } from '../../scripts/ai-eval/stylist-eval'
+import { ScriptedStylist } from '../../scripts/ai-eval/stylist-eval'
 import { stylistCases } from '../../scripts/ai-eval/stylist-cases'
-import { AiProviderError } from '@/lib/ai/providers/errors'
-import { OpenAIProvider } from '@/lib/ai/providers/openai'
-import type { FetchLike } from '@/lib/ai/providers/http'
-import type { LLMProvider, LLMRequest, VisionRequest } from '@/lib/ai/providers/types'
+import type { AiErrorKind, GateAsk, GateAttempted, LLMProvider, LLMRequest, VisionRequest } from '../../scripts/ai-eval/protocol'
+import { failure, stylistThroughGo } from './through-go'
 
 if (!process.env.LOOKLY_BINARY) throw new Error('LOOKLY_BINARY is not set: build apps/api (go build -tags nodynamic -o <path> ./cmd/lookly) and point it there')
 
 const FAKE = 'fake-key-not-real-cost-01'
 const MODEL = 'gpt-5.4-mini'
 const PRICE = { inputUsdPerMTok: 1, outputUsdPerMTok: 2 }
-const noSleep = async () => {}
 
 const REQ: LLMRequest = {
   messages: [
@@ -52,23 +49,56 @@ const EST = (() => {
   return costOf(e.tokens, PRICE)
 })()
 
-const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
-const completion = (content: string, usage?: { prompt_tokens: number; completion_tokens: number }) =>
-  json({ choices: [{ finish_reason: 'stop', message: { content } }], ...(usage ? { usage: { ...usage, total_tokens: usage.prompt_tokens + usage.completion_tokens } } : {}) })
+/*
+ * Each attempt goes through the ledger exactly as Go asks about it (`lookly
+ * eval --gate`, ledgerGate): `ask` before it is sent, `attempted` after. The
+ * provider's answer is the attempt's end as Go reports it. That Go asks
+ * before every attempt it makes is proved through Go in gate.evalgo.ts.
+ */
+type End = GateAttempted | Promise<GateAttempted>
+/** A successful answer, with the usage the provider reported (none: not reported). */
+const ok = (inputTokens?: number, outputTokens?: number): GateAttempted => ({ outcome: 'ok', ...(inputTokens === undefined ? {} : { inputTokens, outputTokens }) })
+const failed = (outcome: AiErrorKind): GateAttempted => ({ outcome })
 
-/** A scripted transport: `respond` decides each dispatch; `calls` counts them; `seen` records what the budget looked like at dispatch. */
-function transport(respond: (n: number, init?: RequestInit) => Promise<Response> | Response, budget?: CallBudget) {
-  const t = {
-    calls: 0,
-    seen: [] as Array<{ attemptsUsed: number; reservedUsd: number }>,
-    fetch: (async (_url: string, init?: RequestInit) => {
-      if (budget) t.seen.push({ attemptsUsed: budget.attemptsUsed, reservedUsd: budget.cost.reservedUsd })
-      return respond(t.calls++, init)
-    }) as FetchLike,
-  }
-  return t
+/** The provider side: `respond` decides each attempt that was sent; `calls` counts them; `seen` records the budget at the moment of sending. */
+function transport(respond: (n: number) => End, budget?: CallBudget) {
+  return { calls: 0, seen: [] as Array<{ attemptsUsed: number; reservedUsd: number }>, respond, budget }
 }
-const openai = (fetch: FetchLike, model = MODEL) => new OpenAIProvider({ apiKey: FAKE, model, fetch })
+type Transport = ReturnType<typeof transport>
+
+const textAsk = (req: LLMRequest): GateAsk => ({
+  feature: 'stylist_chat', provider: 'openai', model: MODEL,
+  text: { messages: req.messages, temperature: req.temperature ?? null, maxOutputTokens: req.maxOutputTokens ?? null, schema: req.jsonSchema ?? null },
+})
+async function pictureAsk(req: VisionRequest): Promise<GateAsk> {
+  let width = 0, height = 0
+  try {
+    ;({ width = 0, height = 0 } = await sharp(req.image).metadata())
+  } catch {
+    // unreadable: Go then says 0 × 0
+  }
+  return {
+    feature: 'clothing_analysis', provider: 'openai', model: MODEL,
+    vision: { mimeType: req.mimeType, width, height, maxSide: req.maxSide, instruction: req.instruction, schema: req.jsonSchema ?? null, maxOutputTokens: req.maxOutputTokens ?? null, options: req.options ?? {} },
+  }
+}
+
+/** One attempt through the gate: refused (rejects as a LocalRefusalError would), or sent and ended as the transport says. */
+async function attempt(ledger: CallLedger, t: Transport, ask: GateAsk): Promise<void> {
+  const gate = ledgerGate(ledger)
+  const before = { ...ledger.skipped }
+  if (!(await gate.ask(ask))) {
+    const reason = ledger.skipped.circuit_break > before.circuit_break ? 'circuit_break' : 'budget_stop'
+    throw Object.assign(new Error(`refused: ${reason}`), { name: 'LocalRefusalError', kind: 'cancelled', reason })
+  }
+  if (t.budget) t.seen.push({ attemptsUsed: t.budget.attemptsUsed, reservedUsd: t.budget.cost.reservedUsd })
+  const end = await t.respond(t.calls++)
+  gate.attempted(end)
+  if (end.outcome !== 'ok') throw failure(end.outcome as AiErrorKind)
+}
+/** Text attempts through the gate (`generate`), as the in-process wrapper was used. */
+const gatedLLM = (ledger: CallLedger, t: Transport) => ({ generate: (req: LLMRequest = REQ) => attempt(ledger, t, textAsk(req)) })
+const gatedVision = (ledger: CallLedger, t: Transport) => ({ analyzeImage: async (req: VisionRequest) => attempt(ledger, t, await pictureAsk(req)) })
 
 let globalFetch: ReturnType<typeof vi.fn>
 beforeEach(() => {
@@ -85,22 +115,22 @@ afterEach(() => {
 describe('reservation before dispatch', () => {
   it('the attempt is admitted and its estimate reserved before the request is dispatched', async () => {
     const budget = new CallBudget(10, 1)
-    const t = transport(() => completion('{"a":1}', { prompt_tokens: 10, completion_tokens: 5 }), budget)
-    await countedLLM(openai(t.fetch), new CallLedger(budget, PRICE)).generate(REQ)
+    const t = transport(() => ok(10, 5), budget)
+    await gatedLLM(new CallLedger(budget, PRICE), t).generate(REQ)
     expect(t.seen).toEqual([{ attemptsUsed: 1, reservedUsd: EST.totalUsd }])
   })
 
   it('a request whose reservation exceeds the remaining budget is never dispatched', async () => {
     const budget = new CallBudget(10, EST.totalUsd / 2)
-    const t = transport(() => completion('{"a":1}'))
-    await expect(countedLLM(openai(t.fetch), new CallLedger(budget, PRICE)).generate(REQ)).rejects.toMatchObject({ name: 'LocalRefusalError', reason: 'budget_stop' })
+    const t = transport(() => ok())
+    await expect(gatedLLM(new CallLedger(budget, PRICE), t).generate(REQ)).rejects.toMatchObject({ name: 'LocalRefusalError', reason: 'budget_stop' })
     expect([t.calls, budget.attemptsUsed, budget.exhausted]).toEqual([0, 0, 'max_cost'])
   })
 
   it('regression: once the budget is exhausted no further fetch is dispatched', async () => {
     const budget = new CallBudget(100, EST.totalUsd * 2)
-    const t = transport(() => json({ error: {} }, 500))
-    const p = countedLLM(openai(t.fetch), new CallLedger(budget, PRICE))
+    const t = transport(() => failed('unavailable'))
+    const p = gatedLLM(new CallLedger(budget, PRICE), t)
     for (let i = 0; i < 5; i++) await p.generate(REQ).catch(() => undefined)
     // Two failed attempts keep their whole reservation (2 × estimate = the cap); the third cannot be reserved.
     expect([t.calls, budget.attemptsUsed, budget.exhausted]).toEqual([2, 2, 'max_cost'])
@@ -110,8 +140,8 @@ describe('reservation before dispatch', () => {
   it('concurrent attempts cannot reserve the same budget twice', async () => {
     const budget = new CallBudget(100, EST.totalUsd * 2)
     const release: Array<() => void> = []
-    const t = transport(() => new Promise<Response>((resolve) => release.push(() => resolve(completion('{"a":1}', { prompt_tokens: 10, completion_tokens: 5 })))))
-    const p = countedLLM(openai(t.fetch), new CallLedger(budget, PRICE))
+    const t = transport(() => new Promise<GateAttempted>((resolve) => release.push(() => resolve(ok(10, 5)))))
+    const p = gatedLLM(new CallLedger(budget, PRICE), t)
     const all = Promise.allSettled([p.generate(REQ), p.generate(REQ), p.generate(REQ)])
     await vi.waitFor(() => expect(release.length).toBe(2))
     release.forEach((r) => r())
@@ -122,42 +152,37 @@ describe('reservation before dispatch', () => {
 })
 
 describe('failed and incomplete attempts are never free', () => {
-  const run = async (respond: (n: number, init?: RequestInit) => Promise<Response> | Response, req: LLMRequest = REQ) => {
+  const run = async (respond: (n: number) => End, req: LLMRequest = REQ) => {
     const budget = new CallBudget(10, 1)
     const ledger = new CallLedger(budget, PRICE)
     const t = transport(respond)
-    const err = await countedLLM(openai(t.fetch), ledger)
+    const err = await gatedLLM(ledger, t)
       .generate(req)
       .then(() => null, (e: unknown) => e)
     return { budget, ledger, t, err }
   }
 
   it('a timeout keeps the full reservation', async () => {
-    const { budget, ledger, err } = await run(
-      (_n, init) => new Promise((_resolve, reject) => init?.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')))),
-      { ...REQ, timeoutMs: 20 },
-    )
+    const { budget, ledger, err } = await run(() => failed('timeout'))
     expect(err).toMatchObject({ kind: 'timeout' })
     expect(costAccounting(budget.cost)).toMatchObject({ retainedReservationAttempts: 1, retainedReservationUsd: EST.totalUsd, providerReportedCostUsd: COST_UNAVAILABLE, conservativeCostUsd: EST.totalUsd })
     expect(ledger.timeouts).toBe(1)
   })
 
   it('a network failure keeps the full reservation', async () => {
-    const { budget, err } = await run(() => {
-      throw new TypeError('connection reset')
-    })
+    const { budget, err } = await run(() => failed('network'))
     expect(err).toMatchObject({ kind: 'network' })
     expect(budget.cost).toMatchObject({ retainedReservationAttempts: 1, retainedReservationUsd: EST.totalUsd, providerReportedAttempts: 0 })
   })
 
   it('a malformed response keeps the full reservation, even though the body carried usage', async () => {
-    const { budget, err } = await run(() => completion('not json at all', { prompt_tokens: 10, completion_tokens: 5 }))
+    const { budget, err } = await run(() => ({ outcome: 'malformed_response', inputTokens: 10, outputTokens: 5 }))
     expect(err).toMatchObject({ kind: 'malformed_response' })
     expect(budget.cost).toMatchObject({ retainedReservationAttempts: 1, retainedReservationUsd: EST.totalUsd, providerReportedAttempts: 0 })
   })
 
   it('a successful response without usage is not treated as zero cost', async () => {
-    const { budget, err } = await run(() => completion('{"a":1}'))
+    const { budget, err } = await run(() => ok())
     expect(err).toBeNull()
     expect(costAccounting(budget.cost)).toMatchObject({ providerReportedCostUsd: COST_UNAVAILABLE, retainedReservationAttempts: 1, conservativeCostUsd: EST.totalUsd })
     expect(budget.cost.chargedUsd).toBeGreaterThan(0)
@@ -165,7 +190,7 @@ describe('failed and incomplete attempts are never free', () => {
 
   it('without a price there is no estimate either: the cost is reported as unknown, never $0', () => {
     const ledger = new CallLedger(new CallBudget(10, null), null)
-    ledger.fail(new AiProviderError('timeout', 'p'), ledger.before('p'))
+    ledger.fail(failure('timeout'), ledger.before('p'))
     expect(costAccounting(ledger.cost)).toMatchObject({ unpricedOrUnknownCostAttempts: 1, conservativeCostUsd: COST_UNAVAILABLE, providerReportedCostUsd: COST_UNAVAILABLE })
   })
 })
@@ -173,8 +198,8 @@ describe('failed and incomplete attempts are never free', () => {
 describe('settlement', () => {
   it('complete provider usage settles at the exact-model price and releases the rest of the reservation', async () => {
     const budget = new CallBudget(10, 1)
-    const t = transport(() => completion('{"a":1}', { prompt_tokens: 100, completion_tokens: 20 }))
-    await countedLLM(openai(t.fetch), new CallLedger(budget, PRICE)).generate(REQ)
+    const t = transport(() => ok(100, 20))
+    await gatedLLM(new CallLedger(budget, PRICE), t).generate(REQ)
     const reported = (100 * 1 + 20 * 2) / 1e6
     expect(costAccounting(budget.cost)).toMatchObject({ providerReportedCostUsd: reported, providerReportedAttempts: 1, retainedReservationAttempts: 0, conservativeCostUsd: reported, reservedCostUsd: EST.totalUsd })
     expect(budget.costSpentUsd).toBe(reported)
@@ -183,8 +208,8 @@ describe('settlement', () => {
 
   it('reported cost above the reservation stops every later request immediately', async () => {
     const budget = new CallBudget(10, 1)
-    const t = transport(() => completion('{"a":1}', { prompt_tokens: 100_000, completion_tokens: 20 }))
-    const p = countedLLM(openai(t.fetch), new CallLedger(budget, PRICE))
+    const t = transport(() => ok(100_000, 20))
+    const p = gatedLLM(new CallLedger(budget, PRICE), t)
     await p.generate(REQ) // the call happened: its result stands, but nothing more is sent
     await expect(p.generate(REQ)).rejects.toMatchObject({ reason: 'budget_stop' })
     expect([t.calls, budget.exhausted, budget.cost.estimateExceededAttempts]).toEqual([1, 'estimate_exceeded', 1])
@@ -193,8 +218,8 @@ describe('settlement', () => {
 
   it('reported output tokens above the documented output limit also stop the run', async () => {
     const budget = new CallBudget(10, 1)
-    const t = transport(() => completion('{"a":1}', { prompt_tokens: 1, completion_tokens: 101 }))
-    const p = countedLLM(openai(t.fetch), new CallLedger(budget, PRICE))
+    const t = transport(() => ok(1, 101))
+    const p = gatedLLM(new CallLedger(budget, PRICE), t)
     await p.generate(REQ)
     await expect(p.generate(REQ)).rejects.toMatchObject({ reason: 'budget_stop' })
     expect([t.calls, budget.exhausted]).toEqual([1, 'estimate_exceeded'])
@@ -214,13 +239,13 @@ describe('retries and corrections', () => {
       model: 'm',
       async generate(req) {
         const step = steps[Math.min(n++, steps.length - 1)]
-        if (step === 'unavailable') throw new AiProviderError('unavailable', 'scripted', { status: 503 })
+        if (step === 'unavailable') throw failure('unavailable')
         const out = JSON.parse((await good.generate(req)).text)
         if (step === 'bad_ref') out.referencedItems = ['W999']
         return { text: JSON.stringify(out), metadata: { provider: 'scripted', model: 'm', usage: { inputTokens: 10, outputTokens: 5 } } }
       },
     }
-    const r = await runStylistCase(countedLLM(inner, ledger), stylistCases().find((c) => c.id === 'casual')!)
+    const r = await stylistThroughGo(inner, ledger, stylistCases().find((c) => c.id === 'casual')!)
     expect(r.requests).toBe(2) // first request + correction
     expect([n, ledger.attempts, ledger.retries, budget.attemptsUsed, budget.cost.estimatedAttempts]).toEqual([3, 3, 1, 3, 3])
     expect(budget.cost).toMatchObject({ retainedReservationAttempts: 1, providerReportedAttempts: 2 }) // the 503 keeps its reservation
@@ -228,8 +253,8 @@ describe('retries and corrections', () => {
 
   it('--max-calls stays an independent hard limit, whatever the dollar budget', async () => {
     const budget = new CallBudget(2, 1_000)
-    const t = transport(() => completion('{"a":1}', { prompt_tokens: 1, completion_tokens: 1 }))
-    const p = countedLLM(openai(t.fetch), new CallLedger(budget, PRICE))
+    const t = transport(() => ok(1, 1))
+    const p = gatedLLM(new CallLedger(budget, PRICE), t)
     await p.generate(REQ)
     await p.generate(REQ)
     await expect(p.generate(REQ)).rejects.toMatchObject({ reason: 'budget_stop' })
@@ -240,15 +265,15 @@ describe('retries and corrections', () => {
 describe('fail closed with a dollar budget', () => {
   it('no price for the provider and exact model: refused before dispatch', async () => {
     const budget = new CallBudget(10, 1)
-    const t = transport(() => completion('{"a":1}'))
-    await expect(countedLLM(openai(t.fetch), new CallLedger(budget, null)).generate(REQ)).rejects.toMatchObject({ reason: 'budget_stop' })
+    const t = transport(() => ok())
+    await expect(gatedLLM(new CallLedger(budget, null), t).generate(REQ)).rejects.toMatchObject({ reason: 'budget_stop' })
     expect([t.calls, budget.exhausted]).toEqual([0, 'unpriced'])
   })
 
   it('no output-token limit on the request: refused before dispatch', async () => {
     const budget = new CallBudget(10, 1)
-    const t = transport(() => completion('{"a":1}'))
-    await expect(countedLLM(openai(t.fetch), new CallLedger(budget, PRICE)).generate({ ...REQ, maxOutputTokens: undefined })).rejects.toMatchObject({ reason: 'budget_stop' })
+    const t = transport(() => ok())
+    await expect(gatedLLM(new CallLedger(budget, PRICE), t).generate({ ...REQ, maxOutputTokens: undefined })).rejects.toMatchObject({ reason: 'budget_stop' })
     expect([t.calls, budget.exhausted, budget.stopDetail]).toEqual([0, 'unbounded', 'no output-token limit on the request'])
   })
 
@@ -299,8 +324,8 @@ describe('audit regressions', () => {
 
   it('with a dollar budget a zero price is not a price: refused before dispatch, and by the bake-off pre-check', async () => {
     const budget = new CallBudget(100, 0.01)
-    const t = transport(() => completion('{"a":1}', { prompt_tokens: 1, completion_tokens: 1 }))
-    await expect(countedLLM(openai(t.fetch), new CallLedger(budget, { inputUsdPerMTok: 0, outputUsdPerMTok: 4.5 })).generate(REQ)).rejects.toMatchObject({ reason: 'budget_stop' })
+    const t = transport(() => ok(1, 1))
+    await expect(gatedLLM(new CallLedger(budget, { inputUsdPerMTok: 0, outputUsdPerMTok: 4.5 }), t).generate(REQ)).rejects.toMatchObject({ reason: 'budget_stop' })
     expect([t.calls, budget.exhausted]).toEqual([0, 'unpriced'])
     const env = { OPENAI_API_KEY: FAKE, AI_EVAL_OPENAI_MODEL: MODEL, AI_LLM_PROVIDER: 'openai', AI_LLM_MODEL: MODEL, AI_LLM_PRICE_INPUT_USD_PER_MTOK: '0', AI_LLM_PRICE_OUTPUT_USD_PER_MTOK: '0' }
     await expect(buildBakeoff(env, { maxCalls: 500, maxCostUsd: 1, providers: { llm: () => new ScriptedStylist() } })).rejects.toThrow(/no price above zero/)
@@ -360,12 +385,12 @@ describe('estimates', () => {
     const image = new Uint8Array(await sharp({ create: { width: 64, height: 64, channels: 3, background: '#888' } }).jpeg().toBuffer())
     const req: VisionRequest = { image, mimeType: 'image/jpeg', instruction: 'Describe.', maxSide: 1024, maxOutputTokens: 1024, options: { openaiDetail: 'low' }, timeoutMs: 1_000 }
     const budget = new CallBudget(10, 1)
-    const t = transport(() => completion('{"a":1}', { prompt_tokens: 10, completion_tokens: 5 }))
-    await expect(retryingVision(openai(t.fetch), new CallLedger(budget, PRICE), noSleep).analyzeImage(req)).rejects.toMatchObject({ reason: 'budget_stop' })
+    const t = transport(() => ok(10, 5))
+    await expect(gatedVision(new CallLedger(budget, PRICE), t).analyzeImage(req)).rejects.toMatchObject({ reason: 'budget_stop' })
     expect([t.calls, budget.exhausted]).toEqual([0, 'unbounded'])
 
     const budget2 = new CallBudget(10, 1)
-    await retryingVision(openai(t.fetch), new CallLedger(budget2, PRICE), noSleep).analyzeImage({ ...req, options: { openaiDetail: 'high' } })
+    await gatedVision(new CallLedger(budget2, PRICE), t).analyzeImage({ ...req, options: { openaiDetail: 'high' } })
     expect(t.calls).toBe(1)
     expect(costAccounting(budget2.cost)).toMatchObject({ estimatedImageCostUsd: (Math.ceil(4 * 1.2) + 1) / 1e6, boundedOutputCostUsd: (1024 * 2) / 1e6 })
   })
@@ -374,21 +399,20 @@ describe('estimates', () => {
 describe('without --max-cost-usd (legacy behaviour)', () => {
   it('nothing is refused for a missing price or output limit; the estimate is only made when there is a price', async () => {
     const budget = new CallBudget(10, null)
-    const t = transport(() => completion('{"a":1}', { prompt_tokens: 10, completion_tokens: 5 }))
-    await countedLLM(openai(t.fetch), new CallLedger(budget, null)).generate({ ...REQ, maxOutputTokens: undefined })
-    await countedLLM(openai(t.fetch), new CallLedger(budget, PRICE)).generate({ ...REQ, maxOutputTokens: undefined })
+    const t = transport(() => ok(10, 5))
+    await gatedLLM(new CallLedger(budget, null), t).generate({ ...REQ, maxOutputTokens: undefined })
+    await gatedLLM(new CallLedger(budget, PRICE), t).generate({ ...REQ, maxOutputTokens: undefined })
     expect([t.calls, budget.exhausted, budget.cost.estimatedAttempts]).toEqual([2, null, 0])
-    // A vision request without a price is never inspected (no estimate), exactly as before.
-    let inspected = false
-    const v = { name: 'v', model: 'm', analyzeImage: async () => ((inspected = true), { output: {}, metadata: { provider: 'v', model: 'm', usage: {} } }) }
-    await retryingVision(v, new CallLedger(new CallBudget(10, null), null), noSleep).analyzeImage({} as VisionRequest)
-    expect(inspected).toBe(true)
+    // A vision attempt without a price needs no estimate: even a picture whose size Go could not read is sent.
+    const v = transport(() => ok())
+    await gatedVision(new CallLedger(new CallBudget(10, null), null), v).analyzeImage({ image: new Uint8Array([1, 2, 3]), mimeType: 'image/jpeg', instruction: 'Describe.', maxSide: 1024, timeoutMs: 1_000 })
+    expect(v.calls).toBe(1)
   })
 
   it('a price without a budget still reports reservations and provider-reported cost, and never stops the run', async () => {
     const budget = new CallBudget(10, null)
-    const t = transport(() => completion('{"a":1}', { prompt_tokens: 100_000, completion_tokens: 5 }))
-    const p = countedLLM(openai(t.fetch), new CallLedger(budget, PRICE))
+    const t = transport(() => ok(100_000, 5))
+    const p = gatedLLM(new CallLedger(budget, PRICE), t)
     await p.generate(REQ)
     await p.generate(REQ)
     expect([t.calls, budget.exhausted, budget.cost.estimateExceededAttempts]).toEqual([2, null, 2])

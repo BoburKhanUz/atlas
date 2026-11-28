@@ -1,39 +1,22 @@
 /**
  * Phase 4.5 evaluation harness (scripts/ai-eval): the pure scoring, the
- * synthetic datasets and an offline run of the stylist and outfit runners
- * with scripted providers. No network, no keys.
+ * synthetic datasets and the cases (the offline runs on the Go pipeline are in
+ * tests/eval-go/harness-offline.evalgo.ts). No network, no keys.
  */
 import { describe, expect, it } from 'vitest'
 import path from 'path'
-import { inventedGarments, kendallTau, leaksPrivate, llmProviderFromEnv, assertOutsideRepo, percentile, uzbekCheck } from '../../../scripts/ai-eval/eval-common'
+import { inventedGarments, kendallTau, leaksPrivate, assertOutsideRepo, percentile, uzbekCheck } from '../../../scripts/ai-eval/eval-common'
 import { stylistCases } from '../../../scripts/ai-eval/stylist-cases'
-import { requestIsClean, scoreStylist, summarizeStylist, type StylistOutcome } from '../../../scripts/ai-eval/stylist-scoring'
+import { requestIsClean, scoreStylist, type StylistOutcome } from '../../../scripts/ai-eval/stylist-scoring'
 import { configuredModel } from '../../../scripts/ai-eval/bakeoff'
-import { runStylistCase, ScriptedStylist } from '../../../scripts/ai-eval/stylist-eval'
 import { outfitCases } from '../../../scripts/ai-eval/outfit-cases'
 import { scoreOutfit } from '../../../scripts/ai-eval/outfit-scoring'
-import { fallbackExplanations, outfitCaseContext, runOutfitCase, ScriptedOutfit } from '../../../scripts/ai-eval/outfit-eval'
+import { fallbackExplanations, outfitCaseContext } from '../../../scripts/ai-eval/outfit-eval'
 import { renderSynthetic, SYNTHETIC_VISION_VERSION, syntheticVisionItems } from '../../../scripts/ai-eval/synthetic-vision'
 import { Dataset } from '../../../scripts/ai-eval/vision-scoring'
 import { COLORS, SUBCATEGORIES } from '@/lib/ai/catalog'
 import { CONFIDENCE_KEYS, presentConfidences, UNCALIBRATED_MAX_CONFIDENCE } from '@/lib/ai/garment-analysis'
 import { analyzeClothing } from '@/lib/ai/mock-vision'
-import { generateOutfitResult } from '@/lib/ai/outfit-engine'
-import type { LLMProvider, LLMRequest } from '@/lib/ai/providers/types'
-
-const scripted = (texts: Array<(req: LLMRequest) => string>): LLMProvider & { calls: number } => {
-  const p = {
-    name: 'scripted-test',
-    model: 'm',
-    calls: 0,
-    async generate(req: LLMRequest) {
-      const text = texts[Math.min(p.calls, texts.length - 1)](req)
-      p.calls++
-      return { text, metadata: { provider: 'scripted-test', model: 'm', usage: { inputTokens: 100, outputTokens: 20 } } }
-    },
-  }
-  return p
-}
 
 describe('common scoring helpers', () => {
   it('percentile (nearest rank) and Kendall tau', () => {
@@ -96,13 +79,6 @@ describe('common scoring helpers', () => {
     expect(leaksPrivate('Oq futbolka kiying.')).toBe(false)
   })
 
-  it('providers come only from the environment: no default model, no key → error before any call', () => {
-    expect(() => llmProviderFromEnv('gemini', undefined, { GEMINI_API_KEY: 'k' })).toThrow(/model must be set/)
-    expect(() => llmProviderFromEnv('openai', 'some-model', {})).toThrow(/OPENAI_API_KEY is not set/)
-    expect(() => llmProviderFromEnv(undefined, undefined, {})).toThrow(/provider must be gemini or openai/)
-    const p = llmProviderFromEnv(undefined, undefined, { AI_LLM_PROVIDER: 'gemini', AI_LLM_MODEL: 'configured-model', GEMINI_API_KEY: 'k' })
-    expect([p.name, p.model]).toEqual(['gemini', 'configured-model'])
-  })
 
   it('results must be written outside the repository', () => {
     const repo = path.resolve(__dirname, '../../../../..')
@@ -139,51 +115,16 @@ describe('stylist evaluation', () => {
     expect(scoreStylist({}, { kind: 'invalid', firstError: 'schema' }, owned).pass).toBe(false)
   })
 
-  it('offline run (scripted provider): every case goes through the production path and validates', async () => {
-    const p = new ScriptedStylist()
-    const records: Awaited<ReturnType<typeof runStylistCase>>[] = []
-    for (const c of stylistCases()) records.push(await runStylistCase(p, c))
-    const s = summarizeStylist(records)
-    expect(s.cases).toBe(stylistCases().length)
-    expect(s.finalValidity).toBe(1)
-    expect(s.groundingRate).toBe(1)
-    expect(s.injectionResistance).toBe(1)
-    expect(records.find((r) => r.case === 'empty_wardrobe')!.pass).toBe(true)
-    expect(s.relevanceRate!).toBeLessThan(1) // the naive scripted answer is NOT on topic everywhere: the rubric discriminates
-  })
 
-  it('an ungrounded first answer triggers exactly the production correction, then is accepted', async () => {
-    const good = (req: LLMRequest) => {
-      const refs = (req.jsonSchema!.schema as { properties: { referencedItems: { items: { enum: string[] } } } }).properties.referencedItems.items.enum
-      return JSON.stringify({ answer: `Bugun [${refs[0]}] kiying, bu sizga mos.`, referencedItems: [refs[0]], needsMoreInfo: false })
-    }
-    const p = scripted([() => JSON.stringify({ answer: '[W99] kiying.', referencedItems: ['W99'], needsMoreInfo: false }), good])
-    const r = await runStylistCase(p, stylistCases()[0])
-    expect(p.calls).toBe(2)
-    expect(r.outcome).toMatchObject({ kind: 'answer', firstError: 'invalid_reference' })
-    expect([r.inputTokens, r.outputTokens]).toEqual([200, 40])
-  })
 
-  it('malformed output is an "invalid" outcome (the user would get AI_UNAVAILABLE), not a crash', async () => {
-    const r = await runStylistCase(scripted([() => 'not json']), stylistCases()[0])
-    expect(r.outcome).toEqual({ kind: 'invalid', firstError: 'schema' })
-    expect(r.pass).toBe(false)
-  })
 })
 
 describe('outfit evaluation', () => {
   it('cases are deterministic and every case yields engine candidates', () => {
     expect(JSON.stringify(outfitCases())).toBe(JSON.stringify(outfitCases()))
-    for (const c of outfitCases()) expect(generateOutfitResult({ wardrobe: c.wardrobe, occasion: c.occasion, weather: c.weather, colorProfile: c.colorProfile, topN: c.topN }).outfits.length).toBeGreaterThan(1)
+    for (const c of outfitCases()) expect(outfitCaseContext(c).candidates.length).toBeGreaterThan(1)
   })
 
-  it('offline run: all valid; an invalid answer twice ends as "invalid" (the app falls back)', async () => {
-    for (const c of outfitCases()) expect((await runOutfitCase(new ScriptedOutfit(), c)).pass).toBe(true)
-    const bad = scripted([() => JSON.stringify({ selectedCandidate: 'O9', ranking: ['O9'], explanation: 'x', needsMoreInfo: false })])
-    const r = await runOutfitCase(bad, outfitCases()[0])
-    expect(bad.calls).toBe(2)
-    expect(r.outcome).toMatchObject({ kind: 'invalid', firstError: 'unknown_selected' })
-  })
 
   it('scoring: weather and profile claims without data, references and invented garments fail', () => {
     const c = outfitCases().find((x) => x.id === 'profile_none')!
@@ -254,12 +195,6 @@ describe('injection through stored data, weather and occasion (request-level che
     expect(scoreStylist({}, answer, new Set(['tshirt']), false).pass).toBe(false)
   })
 
-  it('tampered wardrobe values and weather/occasion text never reach the system or context messages', async () => {
-    for (const id of ['injection_wardrobe_values', 'injection_weather_occasion']) {
-      const r = await runStylistCase(new ScriptedStylist(), stylistCases().find((c) => c.id === id)!)
-      expect(r.checks.requestClean, id).toBe(true)
-    }
-  })
 })
 
 describe('the configured model', () => {

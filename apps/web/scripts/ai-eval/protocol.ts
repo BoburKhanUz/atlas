@@ -155,6 +155,16 @@ export interface StylePreferences {
   preferredFit: string | null
 }
 
+/** The user's style preferences as the outfit engine reads them (each optional). */
+export interface UserProfileSummary {
+  gender?: string | null
+  preferredStyles?: string[]
+  dislikedStyles?: string[]
+  favoriteColors?: string[]
+  dislikedColors?: string[]
+  preferredFit?: string | null
+}
+
 /** The colour profile as the outfit engine reads it (null confidence: a profile from before confidences). */
 export interface ColorProfileInput {
   season: string | null
@@ -248,7 +258,8 @@ export interface OutfitSetup {
 }
 
 export interface VisionSetup {
-  picture: { mimeType: VisionImageMimeType; width: number; height: number } | null
+  /** The prepared picture; `metadata`: it still carries an EXIF, XMP or IPTC block (it must not). */
+  picture: { mimeType: VisionImageMimeType; width: number; height: number; metadata: boolean } | null
   schema: StructuredOutputSchema
 }
 

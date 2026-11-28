@@ -8,8 +8,6 @@
  * The automatic checks are PROXIES (script, Uzbek markers, English leakage).
  * They do not replace the native-speaker rubric in docs/ai/provider-evaluation.md.
  */
-import { GeminiProvider } from '../../src/lib/ai/providers/gemini'
-import { OpenAIProvider } from '../../src/lib/ai/providers/openai'
 import { MOBILE_LABELS } from './client-labels'
 import type { LLMProvider } from './protocol'
 import { CATEGORIES, COLORS, FITS, FORMALITIES, GENDERS, MATERIALS, OCCASIONS, PATTERNS, SEASONS, SLEEVE_LENGTHS, STYLES, SUBCATEGORIES } from './catalog'
@@ -156,7 +154,7 @@ export interface CatalogTerm {
   words: readonly string[]
   /** Every user-facing label of the id: web catalog plus the Flutter client (never invented here). */
   labels: readonly string[]
-  /** Labels from src/lib/ai/catalog.ts (also what the stylist inserts for a [W…] reference). */
+  /** Labels from the catalog (catalog.ts, the Go server's copy; also what the stylist inserts for a [W…] reference). */
   webLabels: readonly string[]
   /** Labels the Flutter client shows (client-labels.ts, verified against the Dart sources). */
   mobileLabels: readonly string[]
@@ -355,22 +353,6 @@ export const leaksPrivate = (text: string) => PRIVATE_PATTERNS.some((re) => re.t
 // ─── Providers (keys and models from the environment only) ─────────────────
 
 export type EvalProviderName = 'gemini' | 'openai'
-const KEY_VAR: Record<EvalProviderName, string> = { gemini: 'GEMINI_API_KEY', openai: 'OPENAI_API_KEY' }
-
-/**
- * The LLM provider to evaluate: `--provider` (else AI_LLM_PROVIDER) and
- * `--model` (else AI_LLM_MODEL). No built-in model: an evaluation always runs
- * the configured one. Throws before any call when something is missing.
- */
-export function llmProviderFromEnv(argProvider: string | undefined, argModel: string | undefined, env: Record<string, string | undefined> = process.env): LLMProvider {
-  const name = (argProvider ?? env.AI_LLM_PROVIDER ?? '').trim().toLowerCase()
-  if (name !== 'gemini' && name !== 'openai') throw new Error('provider must be gemini or openai (--provider or AI_LLM_PROVIDER)')
-  const model = (argModel ?? env.AI_LLM_MODEL ?? '').trim()
-  if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,99}$/.test(model)) throw new Error('model must be set (--model or AI_LLM_MODEL)')
-  const apiKey = env[KEY_VAR[name]]?.trim()
-  if (!apiKey) throw new Error(`${KEY_VAR[name]} is not set`)
-  return name === 'gemini' ? new GeminiProvider({ apiKey, model }) : new OpenAIProvider({ apiKey, model })
-}
 
 export function arg(name: string, argv: readonly string[] = process.argv): string | undefined {
   const prefix = `--${name}=`

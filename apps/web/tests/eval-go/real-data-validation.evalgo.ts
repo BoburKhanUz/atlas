@@ -12,26 +12,27 @@ import os from 'os'
 import path from 'path'
 import sharp from 'sharp'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { CallBudget, sha256Hex } from '../../../scripts/ai-eval/live-accounting'
-import { agreement, annotationLimitations, fieldTruth, parseAnnotations, type Annotations } from '../../../scripts/ai-eval/real-data/annotations'
-import { runColorValidation, scoreColor, undertone3 } from '../../../scripts/ai-eval/real-data/color-validation'
-import { casesFor, contentHash, loadDataset, registerVersion, splitOf } from '../../../scripts/ai-eval/real-data/dataset'
-import { BLOCKED_GOVERNANCE, governanceGate, parseManifest, providerTransmissionGate, type Manifest } from '../../../scripts/ai-eval/real-data/governance'
-import { checkOutfits, outfitRealisticCases, runOutfitRealistic } from '../../../scripts/ai-eval/real-data/outfit-realistic'
-import { parseRatings, summarizeRatings } from '../../../scripts/ai-eval/real-data/ratings'
-import { imageQuality, runRealVision, scoreVision } from '../../../scripts/ai-eval/real-data/real-vision'
-import { stylistRealisticCases } from '../../../scripts/ai-eval/real-data/stylist-realistic-cases'
-import { runValidation } from '../../../scripts/ai-eval/real-data/validate'
-import { ScriptedStylist } from '../../../scripts/ai-eval/stylist-eval'
-import { renderSynthetic, syntheticVisionItems } from '../../../scripts/ai-eval/synthetic-vision'
-import { COLORS, SUBCATEGORIES } from '@/lib/ai/catalog'
-import { CONFIDENCE_KEYS } from '@/lib/ai/garment-analysis'
-import type { VisionProvider } from '@/lib/ai/providers/types'
+import { CallBudget, sha256Hex } from '../../scripts/ai-eval/live-accounting'
+import { agreement, annotationLimitations, fieldTruth, parseAnnotations, type Annotations } from '../../scripts/ai-eval/real-data/annotations'
+import { runColorValidation, scoreColor, undertone3 } from '../../scripts/ai-eval/real-data/color-validation'
+import { casesFor, contentHash, loadDataset, registerVersion, splitOf } from '../../scripts/ai-eval/real-data/dataset'
+import { BLOCKED_GOVERNANCE, governanceGate, parseManifest, providerTransmissionGate, type Manifest } from '../../scripts/ai-eval/real-data/governance'
+import { checkOutfits, outfitRealisticCases, runOutfitRealistic } from '../../scripts/ai-eval/real-data/outfit-realistic'
+import { parseRatings, summarizeRatings } from '../../scripts/ai-eval/real-data/ratings'
+import { imageQuality, runRealVision, scoreVision } from '../../scripts/ai-eval/real-data/real-vision'
+import { stylistRealisticCases } from '../../scripts/ai-eval/real-data/stylist-realistic-cases'
+import { runValidation } from '../../scripts/ai-eval/real-data/validate'
+import { ScriptedStylist } from '../../scripts/ai-eval/stylist-eval'
+import { renderSynthetic, syntheticVisionItems } from '../../scripts/ai-eval/synthetic-vision'
+import { COLORS, CONFIDENCE_KEYS, SUBCATEGORIES } from '../../scripts/ai-eval/catalog'
+import { GoPipeline } from '../../scripts/ai-eval/go-pipeline'
+import type { VisionProvider } from '../../scripts/ai-eval/protocol'
 
-const REPO = path.resolve(__dirname, '../../../../..')
+if (!process.env.LOOKLY_BINARY) throw new Error('LOOKLY_BINARY is not set: build apps/api (go build -tags nodynamic -o <path> ./cmd/lookly) and point it there')
+
+const REPO = path.resolve(__dirname, '../../../..')
 const FAKE = 'fake-key-not-real-52'
 const TODAY = '2026-10-07'
-const noSleep = async () => {}
 
 const manifest = (over: Partial<Manifest> = {}): Manifest =>
   parseManifest({
@@ -237,10 +238,10 @@ describe('real vision run: gates, isolation, no leakage', () => {
   it('runs only where governance and transmission allow it; the other provider is BLOCKED and never called', async () => {
     const ds = await loadDataset(path.join(root, 'vision', 'rv_test', 'v1'), REPO)
     const built: string[] = []
-    const r = await runRealVision(ds, env, { purpose: 'final_evaluation', today: TODAY, budget: new CallBudget(100, null), sleep: noSleep, providers: { vision: (p) => (built.push(p), scripted()) } })
+    const r = await runRealVision(ds, env, { purpose: 'final_evaluation', today: TODAY, budget: new CallBudget(100, null), providers: { vision: (p) => (built.push(p), scripted()) } })
     expect(built).toEqual([]) // final_evaluation = holdout only; this manifest has no holdout → nothing to send
     expect(r.providers[0]).toMatchObject({ status: 'NOT_TESTED', reason: 'no cases in the final_evaluation split' })
-    const r2 = await runRealVision({ ...ds, manifest: { ...ds.manifest, holdout: [] } }, env, { purpose: 'evaluation', today: TODAY, budget: new CallBudget(100, null), sleep: noSleep, providers: { vision: (p) => (built.push(p), scripted()) } })
+    const r2 = await runRealVision({ ...ds, manifest: { ...ds.manifest, holdout: [] } }, env, { purpose: 'evaluation', today: TODAY, budget: new CallBudget(100, null), providers: { vision: (p) => (built.push(p), scripted()) } })
     expect(built).toEqual(['gemini'])
     expect(r2.providers.map((p) => [p.provider, p.status])).toEqual([['gemini', 'TEST_ONLY'], ['openai', 'BLOCKED']])
     expect(r2.providers[1].reason).toMatch(/transmission to openai is not allowed/)
@@ -286,16 +287,18 @@ describe('real vision run: gates, isolation, no leakage', () => {
     expect(r.providers[0]).toMatchObject({ status: 'NOT_TESTED', reason: 'no GEMINI_API_KEY in the environment', scores: null })
   })
 
-  it('image quality metadata: dimensions and format only; EXIF is detected, never read, and stripped by the app preparation', async () => {
-    const withExif = await sharp({ create: { width: 64, height: 48, channels: 3, background: '#336699' } }).jpeg().withMetadata({ exif: { IFD0: { Copyright: 'someone' } } }).toBuffer()
-    const q = await imageQuality('c1', new Uint8Array(withExif))
-    expect(q).toMatchObject({ case: 'c1', width: 64, height: 48, format: 'jpeg', hadExif: true, preparedOk: true, preparedHasMetadata: false })
+  it("image quality metadata: dimensions and format only; EXIF is detected, never read, and stripped by the server's preparation", async () => {
+    // At least 256 px a side: the smallest picture the server prepares.
+    const withExif = await sharp({ create: { width: 640, height: 480, channels: 3, background: '#336699' } }).jpeg().withMetadata({ exif: { IFD0: { Copyright: 'someone' } } }).toBuffer()
+    const go = new GoPipeline({ args: ['--provider=mock'] })
+    const q = await imageQuality('c1', new Uint8Array(withExif), go).finally(() => go.close())
+    expect(q).toMatchObject({ case: 'c1', width: 640, height: 480, format: 'jpeg', hadExif: true, preparedOk: true, preparedHasMetadata: false })
     expect(JSON.stringify(q)).not.toContain('someone')
   })
 })
 
 describe('colour profile validation (local, deterministic analyser)', () => {
-  const stubResult = (season: string | null, undertone: string, contrast: string | null, confidence = 0.6) => ({ version: 'color-analysis-v2', season, undertone, contrastLevel: contrast, confidence }) as never
+  const stubResult = (season: string | null, undertone: string, contrast: string | null, confidence = 0.6) => ({ season, undertone, contrastLevel: contrast, confidence }) as never
 
   it('maps the analyser undertone to the experts\' scale; unknown abstains', () => {
     expect([undertone3('warm'), undertone3('neutral_warm'), undertone3('neutral'), undertone3('neutral_cool'), undertone3('cool'), undertone3('unknown')]).toEqual(['warm', 'warm', 'neutral', 'cool', 'cool', null])
@@ -332,7 +335,7 @@ describe('colour profile validation (local, deterministic analyser)', () => {
     await writeDataset(dir, { datasetId: 'cp_test', datasetType: 'color-profile', sensitivity: 'high' })
     const ds = await loadDataset(dir, REPO)
     let analysed = 0
-    const analyze = async () => (analysed++, stubResult('winter', 'cool', 'high'))
+    const analyze = async () => (analysed++, { outcome: { kind: 'profile' as const, result: stubResult('winter', 'cool', 'high') }, version: 'color-analysis-v2' })
     const blocked = await runColorValidation(ds, { purpose: 'evaluation', today: TODAY, analyze })
     expect(blocked).toMatchObject({ status: 'BLOCKED', scores: null })
     expect(blocked.reason).toMatch(/appearance_analysis/)
@@ -386,7 +389,7 @@ describe('realistic corpora (constructed)', () => {
     for (const t of ['casual', 'work', 'formal', 'date', 'travel', 'sport', 'weather', 'seasonal', 'limited', 'missing_info', 'followup', 'color_profile']) expect(tags.has(t), t).toBe(true)
   })
 
-  it('outfit: the checks are independent of the engine and catch violations', () => {
+  it('outfit: the checks are independent of the engine and catch violations', async () => {
     const c = outfitRealisticCases().find((x) => x.id === 'wedding_cold')!
     const pick = (sub: string) => c.wardrobe.find((w) => w.subcategory === sub)!
     const outfit = (subs: string[]) => ({ items: subs.map((s) => ({ item: pick(s), role: 'top', slot: 'top' })) }) as never
@@ -397,10 +400,10 @@ describe('realistic corpora (constructed)', () => {
     const missing = outfitRealisticCases().find((x) => x.id === 'missing_shoes')!
     expect(checkOutfits(missing, [], 'nothing_suitable')).toEqual(['expected_problem:no_footwear'])
     expect(checkOutfits(c, [], 'nothing_suitable')).toEqual(['no_outfit:nothing_suitable'])
-    const r = runOutfitRealistic()
+    const r = await runOutfitRealistic()
     expect(r).toMatchObject({ cases: 20, colorHarmony: 'NOT_EVALUATED' })
     expect(r.deterministic.scored).toBe(20)
-    expect(JSON.stringify(runOutfitRealistic())).toBe(JSON.stringify(r))
+    expect(JSON.stringify(await runOutfitRealistic())).toBe(JSON.stringify(r))
   })
 })
 
@@ -454,7 +457,7 @@ describe('validation run: reproducibility, blockers, no selection, no leakage', 
 
 describe('no raw data in Git', () => {
   it('the repository tracks no image or dataset files from the validation tooling', () => {
-    const tracked = execFileSync('git', ['ls-files', 'apps/web/scripts', 'docs', 'apps/web/tests/unit/ai'], { cwd: REPO, encoding: 'utf8' }).split('\n')
+    const tracked = execFileSync('git', ['ls-files', 'apps/web/scripts', 'docs', 'apps/web/tests/unit/ai', 'apps/web/tests/eval-go'], { cwd: REPO, encoding: 'utf8' }).split('\n')
     expect(tracked.filter((f) => /\.(jpe?g|png|webp|heic|heif)$/i.test(f) || /(^|\/)(manifest|annotations|cases|ratings|blinding-key)\.json$/.test(f))).toEqual([])
   })
 
