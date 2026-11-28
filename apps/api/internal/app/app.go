@@ -55,7 +55,7 @@ import (
 var version = "dev"
 
 const (
-	usage = "usage: lookly serve | worker | health | migrate | migrate river | eval (see lookly eval --help)"
+	usage = "usage: lookly serve | worker | health | migrate | migrate river | eval (see lookly eval --help) | ai-digest <user id>..."
 
 	// Exit codes: 1 a runtime failure, 2 a usage or configuration error.
 	exitFailure = 1
@@ -83,6 +83,9 @@ const (
 func Run(ctx context.Context, args []string, getenv func(string) (string, bool), stdout, stderr io.Writer) int {
 	if len(args) > 0 && args[0] == "eval" {
 		return RunEval(ctx, args[1:], getenv, osStdin, stdout, stderr)
+	}
+	if len(args) > 0 && args[0] == "ai-digest" {
+		return aiDigest(args[1:], stdout, stderr)
 	}
 	switch strings.Join(args, " ") {
 	case "serve":
