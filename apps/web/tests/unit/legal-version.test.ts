@@ -1,43 +1,20 @@
 /**
- * Which accepted versions of the legal texts still count (re-consent rule,
- * src/lib/legal/version.ts).
+ * The version the legal pages show (src/lib/legal/version.ts). Which accepted
+ * versions still count is the Go server's rule (apps/api/internal/legal), whose
+ * test holds its version to this one.
  */
 import { describe, expect, it } from 'vitest'
-import { compareLegalVersions, consentStillValid, LEGAL_CONSENT_MIN_VERSION, LEGAL_DRAFT, LEGAL_VERSION } from '@/lib/legal/version'
+import { LEGAL_DRAFT, LEGAL_EFFECTIVE_DATE, LEGAL_VERSION } from '@/lib/legal/version'
 
-describe('compareLegalVersions', () => {
-  it.each([
-    ['2026-10-17.2', '2026-10-18.1', -1], // later date
-    ['2026-10-17.2', '2026-10-17.10', -1], // number, not text order
-    ['2026-10-17.2-draft', '2026-10-17.2', -1], // the draft comes before the approved text
-    ['2026-10-17.3-draft', '2026-10-17.2', 1],
-    ['2026-10-17.2-draft', '2026-10-17.2-draft', 0],
-    ['2026-11-01.1', '2026-10-17.9', 1],
-  ])('%s vs %s → %i', (a, b, expected) => {
-    expect(compareLegalVersions(a, b)).toBe(expected)
-    expect(compareLegalVersions(b, a)).toBe(-expected || 0)
+describe('the legal version', () => {
+  it('is YYYY-MM-DD.N, marked -draft exactly while the texts are drafts', () => {
+    const m = /^(\d{4}-\d{2}-\d{2})\.([1-9]\d*)(-draft)?$/.exec(LEGAL_VERSION)
+    expect(m).not.toBeNull()
+    expect(Boolean(m?.[3])).toBe(LEGAL_DRAFT)
   })
 
-  it.each(['2026-10-17', '2026-10-17.x', '2026-10-17.2-final', ' 2026-10-17.2', ''])('malformed %j → NaN', (bad) => {
-    expect(compareLegalVersions(bad, LEGAL_VERSION)).toBeNaN()
-  })
-})
-
-describe('consentStillValid', () => {
-  it('the minimum and anything newer count; older or malformed versions do not', () => {
-    expect(consentStillValid(LEGAL_CONSENT_MIN_VERSION)).toBe(true)
-    expect(consentStillValid(LEGAL_VERSION)).toBe(true)
-    expect(consentStillValid('2020-01-01.1')).toBe(false)
-    expect(consentStillValid('not a version')).toBe(false)
-  })
-})
-
-describe('the configured versions', () => {
-  it('are well formed, and the minimum is not newer than the current texts (nobody could accept it)', () => {
-    expect(compareLegalVersions(LEGAL_CONSENT_MIN_VERSION, LEGAL_VERSION)).toBeLessThanOrEqual(0)
-  })
-
-  it('once counsel approves the texts, consent to a draft no longer counts', () => {
-    if (!LEGAL_DRAFT) expect(LEGAL_CONSENT_MIN_VERSION.endsWith('-draft')).toBe(false)
+  it('takes effect on a real date', () => {
+    expect(LEGAL_EFFECTIVE_DATE).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    expect(new Date(`${LEGAL_EFFECTIVE_DATE}T00:00:00Z`).toISOString().slice(0, 10)).toBe(LEGAL_EFFECTIVE_DATE)
   })
 })

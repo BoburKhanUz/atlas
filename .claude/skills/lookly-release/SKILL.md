@@ -61,7 +61,7 @@ changing storage each need the owner's go-ahead for that release (CLAUDE.md rule
 - [ ] Account deletion available inside the app and working (tested with real keyboard input).
 - [ ] Privacy policy and terms published at a live URL and linked in the app and listing.
 - [ ] AI-generated content labelled in the app.
-- [ ] Reviewer notes and a demo account with a filled wardrobe (`apps/web/scripts/demo-seed.ts`).
+- [ ] Reviewer notes and a demo account with a filled wardrobe (`lookly demo-seed`, docs/plan/B7.md, B7.8).
 - [ ] Screenshots and descriptions in Uzbek match the current app.
 - [ ] Age rating questionnaire answered consistently with the 18+ confirmation.
 

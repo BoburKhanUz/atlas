@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
 import { ClientErrorReporter } from "@/components/client-error-reporter";
 
 const geistSans = Geist({
@@ -57,7 +56,6 @@ export default async function RootLayout({
         {/* Messages/locale/timeZone are inherited from src/i18n/request.ts */}
         <NextIntlClientProvider>
           {children}
-          <Toaster />
           <ClientErrorReporter />
         </NextIntlClientProvider>
       </body>

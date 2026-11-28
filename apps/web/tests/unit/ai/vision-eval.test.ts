@@ -1,7 +1,8 @@
 import { readFileSync } from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
-import { CONFIDENCE_KEYS, type GarmentAttributes } from '@/lib/ai/garment-analysis'
+import { CONFIDENCE_KEYS } from '../../../scripts/ai-eval/catalog'
+import type { GarmentAttributes } from '../../../scripts/ai-eval/protocol'
 import { Dataset, Matrix, percentile, scoreItem, summarize, type ItemOutcome, type ItemRecord } from '../../../scripts/ai-eval/vision-scoring'
 
 const attrs = (over: Partial<GarmentAttributes> = {}): GarmentAttributes => ({

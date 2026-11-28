@@ -1,23 +1,14 @@
 /**
  * The evaluation harness's own catalog and types (scripts/ai-eval/catalog.ts,
  * protocol.ts; docs/plan/B7.md, B7.4c) are the server's: the error kinds are
- * Go's, and while the web app's AI code exists, the catalog and the types are
- * exactly its own (the type checks run in `bun run typecheck`).
+ * Go's, the catalog is the one Go embeds, and nothing of the harness imports
+ * the web app's code.
  */
 import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-import { describe, expect, expectTypeOf, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import * as local from '../../scripts/ai-eval/catalog'
-import { AI_ERROR_KINDS, errorKindOf, type AiErrorKind, type AiPrice, type ColorProfileInput, type ColorProfileRow, type ColorVerdict, type GarmentAttributes, type GenerateProblem, type LLMProvider, type LLMRequest, type Occasion, type StylePreferences, type UserProfileSummary, type VisionImageMimeType, type VisionProvider, type VisionRequest, type WardrobeItemSummary, type WardrobeRow, type WeatherSnapshot } from '../../scripts/ai-eval/protocol'
-import * as app from '@/lib/ai/catalog'
-import type { ColorVerdict as AppColorVerdict } from '@/lib/ai/color-check'
-import type { Occasion as AppOccasion } from '@/lib/ai/color-theory'
-import type { AiPrice as AppAiPrice } from '@/lib/ai/config'
-import { CONFIDENCE_KEYS, SUBJECTS, type GarmentAttributes as AppGarmentAttributes } from '@/lib/ai/garment-analysis'
-import type { ColorProfileInput as AppColorProfileInput, GenerateProblem as AppGenerateProblem, UserProfileSummary as AppUserProfileSummary, WardrobeItemSummary as AppWardrobeItemSummary, WeatherSnapshot as AppWeatherSnapshot } from '@/lib/ai/outfit-engine'
-import { AiProviderError, type AiErrorKind as AppAiErrorKind } from '@/lib/ai/providers/errors'
-import type { LLMProvider as AppLLMProvider, LLMRequest as AppLLMRequest, VisionImageMimeType as AppVisionImageMimeType, VisionProvider as AppVisionProvider, VisionRequest as AppVisionRequest } from '@/lib/ai/providers/types'
-import type { ColorProfileRow as AppColorProfileRow, StylePreferences as AppStylePreferences, WardrobeRow as AppWardrobeRow } from '@/lib/ai/stylist-context'
+import { AI_ERROR_KINDS, errorKindOf } from '../../scripts/ai-eval/protocol'
 
 describe("the harness's protocol", () => {
   it("names Go's error kinds", () => {
@@ -27,38 +18,21 @@ describe("the harness's protocol", () => {
     expect([...AI_ERROR_KINDS].sort()).toEqual(kinds.sort())
   })
 
-  it("has the catalog the server embeds, which is the app's", () => {
-    const names = ['CATEGORIES', 'SUBCATEGORIES', 'COLORS', 'PATTERNS', 'MATERIALS', 'STYLES', 'SLEEVE_LENGTHS', 'FITS', 'SEASONS', 'FORMALITIES', 'GENDERS', 'OCCASIONS'] as const
-    for (const n of names) expect(local[n], n).toEqual(app[n])
-    expect(local.SUBJECTS).toEqual(SUBJECTS)
-    expect(local.CONFIDENCE_KEYS).toEqual(CONFIDENCE_KEYS)
-  })
-
-  it("has the app's types (while they exist)", () => {
-    expectTypeOf<AiErrorKind>().toEqualTypeOf<AppAiErrorKind>()
-    expectTypeOf<LLMRequest>().toEqualTypeOf<AppLLMRequest>()
-    expectTypeOf<LLMProvider>().toEqualTypeOf<AppLLMProvider>()
-    expectTypeOf<VisionRequest>().toEqualTypeOf<AppVisionRequest>()
-    expectTypeOf<VisionProvider>().toEqualTypeOf<AppVisionProvider>()
-    expectTypeOf<VisionImageMimeType>().toEqualTypeOf<AppVisionImageMimeType>()
-    expectTypeOf<AiPrice>().toEqualTypeOf<AppAiPrice>()
-    expectTypeOf<Occasion>().toEqualTypeOf<AppOccasion>()
-    expectTypeOf<WardrobeItemSummary>().toEqualTypeOf<AppWardrobeItemSummary>()
-    expectTypeOf<WardrobeRow>().toEqualTypeOf<AppWardrobeRow>()
-    expectTypeOf<WeatherSnapshot>().toEqualTypeOf<AppWeatherSnapshot>()
-    expectTypeOf<StylePreferences>().toEqualTypeOf<AppStylePreferences>()
-    expectTypeOf<ColorProfileInput>().toEqualTypeOf<AppColorProfileInput>()
-    expectTypeOf<ColorProfileRow>().toEqualTypeOf<AppColorProfileRow>()
-    expectTypeOf<GenerateProblem>().toEqualTypeOf<AppGenerateProblem>()
-    expectTypeOf<UserProfileSummary>().toEqualTypeOf<AppUserProfileSummary>()
-    expectTypeOf<GarmentAttributes>().toEqualTypeOf<AppGarmentAttributes>()
-    expectTypeOf<ColorVerdict>().toEqualTypeOf<AppColorVerdict>()
+  it("reads the catalog Go embeds: every subcategory under a known category, ids unique, colours with a hex", () => {
+    const go = JSON.parse(readFileSync(path.resolve(__dirname, '../../../api/internal/catalog/catalog.json'), 'utf8')) as { categories: Array<{ id: string }>; colors: Array<{ id: string }> }
+    expect(local.CATEGORIES.map((c) => c.id)).toEqual(go.categories.map((c) => c.id))
+    expect(local.COLORS.map((c) => c.id)).toEqual(go.colors.map((c) => c.id))
+    expect(Object.keys(local.SUBCATEGORIES).sort()).toEqual(local.CATEGORIES.map((c) => c.id).sort())
+    for (const list of [local.CATEGORIES, local.COLORS, local.PATTERNS, local.MATERIALS, local.STYLES, local.SEASONS, local.OCCASIONS, ...Object.values(local.SUBCATEGORIES)]) {
+      expect(new Set(list.map((e) => e.id)).size).toBe(list.length)
+    }
+    for (const c of local.COLORS) expect(c.hex).toMatch(/^#[0-9A-Fa-f]{6}$/)
   })
 })
 
 describe('a scripted failure', () => {
   it('is read by its kind, whoever made it', () => {
-    expect(errorKindOf(new AiProviderError('rate_limited', 'x'))).toBe('rate_limited')
+    expect(errorKindOf(Object.assign(new Error('x'), { kind: 'rate_limited' }))).toBe('rate_limited')
     expect(errorKindOf({ kind: 'timeout' })).toBe('timeout')
     expect(errorKindOf({ kind: 'bogus' })).toBeNull()
     expect(errorKindOf(new Error('plain'))).toBeNull()

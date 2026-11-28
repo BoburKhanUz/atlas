@@ -5,8 +5,8 @@ description: Architecture, conventions and pitfalls for the Lookly Go backend in
 
 # Lookly Go backend
 
-`apps/api` replaces the Next.js API with the same contract (`docs/api/openapi.json`)
-on the same PostgreSQL database. Read `docs/adr/` first; the decisions there are binding.
+`apps/api` is the only backend (`docs/api/openapi.json`); it replaced the Next.js API
+with the same contract on the same PostgreSQL database in B7. Read `docs/adr/` first; the decisions there are binding.
 
 ## Shape
 
@@ -75,12 +75,12 @@ apps/api/
 - SQL lives in `store/queries/*.sql`; sqlc generates typed code. No string-built SQL.
 - Every multi-statement write runs in one transaction with an explicit isolation level;
   lock order matches `docs/architecture/sessions.md` where sessions are involved.
-- Migrations follow ADR 0007: until B7 Prisma alone changes the shared schema and the
-  Go service runs no migrations against it. The Go baseline equals the Prisma schema, is
-  recorded as applied rather than run, and has no down file. Improvement migrations
-  (jsonb, CHECK, indexes, database-side ids and timestamps) start at B7. Never edit an
-  applied migration; never run a down migration in production without a backup and the
-  owner's approval.
+- Migrations follow ADR 0007: the Go service owns the schema (`lookly migrate`). The
+  baseline equals the schema Prisma made (on such a database it is recorded as applied,
+  not run) and has no down file; Prisma's migrations stay in `testdata/prisma` for the
+  tests and never change. Improvement migrations (jsonb, CHECK, indexes, database-side
+  ids and timestamps) are allowed. Never edit an applied migration; never run a down
+  migration in production without a backup and the owner's approval.
 - Every list endpoint is paginated with a bounded page size; no unbounded `SELECT`.
 - Times are stored and compared in UTC; "day" for quotas means the Asia/Tashkent day.
 
@@ -134,12 +134,13 @@ apps/api/
 - Tests and CI use mock providers only. The `eval` subcommand and anything else that
   calls a real provider runs only with the owner's approval and an explicit call cap.
 
-## Porting from the Next.js API
+## The Next.js API it replaced
 
 The inventory of behaviours (endpoints, cookies vs mobile tokens via `X-Atlas-Client`,
 quota charge/refund order, idempotency, consent gate) and the known defects not to copy
-are in `references/porting.md`. Parity testing is described in
-`.claude/skills/lookly-testing/references/parity.md`.
+are in `references/porting.md`; parity in
+`.claude/skills/lookly-testing/references/parity.md`. The TypeScript sources they cite
+were removed in B7.6 and are in git history at e57764f (`git show e57764f:apps/web/<path>`).
 
 ## Done when
 

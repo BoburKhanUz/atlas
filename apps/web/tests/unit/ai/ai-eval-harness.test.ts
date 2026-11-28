@@ -14,9 +14,7 @@ import { scoreOutfit } from '../../../scripts/ai-eval/outfit-scoring'
 import { fallbackExplanations, outfitCaseContext } from '../../../scripts/ai-eval/outfit-eval'
 import { renderSynthetic, SYNTHETIC_VISION_VERSION, syntheticVisionItems } from '../../../scripts/ai-eval/synthetic-vision'
 import { Dataset } from '../../../scripts/ai-eval/vision-scoring'
-import { COLORS, SUBCATEGORIES } from '@/lib/ai/catalog'
-import { CONFIDENCE_KEYS, presentConfidences, UNCALIBRATED_MAX_CONFIDENCE } from '@/lib/ai/garment-analysis'
-import { analyzeClothing } from '@/lib/ai/mock-vision'
+import { COLORS, SUBCATEGORIES } from '../../../scripts/ai-eval/catalog'
 
 describe('common scoring helpers', () => {
   it('percentile (nearest rank) and Kendall tau', () => {
@@ -203,21 +201,5 @@ describe('the configured model', () => {
     expect(configuredModel('openai', { AI_LLM_PROVIDER: 'gemini', AI_LLM_MODEL: 'g' })).toBeNull()
     expect(configuredModel('gemini', { AI_LLM_PROVIDER: 'Gemini', AI_LLM_MODEL: 'g' })).toBe('g')
     expect(configuredModel('openai', { AI_EVAL_OPENAI_MODEL: 'o' })).toBe('o')
-  })
-})
-
-describe('confidence behaviour on synthetic fixtures (no calibration claimed)', () => {
-  it('real-provider confidences shown to users never exceed the uncalibrated cap; a colour conflict lowers colour further', () => {
-    for (const raw of [0, 0.3, 0.69, 0.7, 0.95, 1]) {
-      const shown = presentConfidences(Object.fromEntries(CONFIDENCE_KEYS.map((k) => [k, raw])) as never, null)
-      for (const k of CONFIDENCE_KEYS) expect(shown[k]).toBe(Math.min(raw, UNCALIBRATED_MAX_CONFIDENCE))
-      expect(presentConfidences(Object.fromEntries(CONFIDENCE_KEYS.map((k) => [k, raw])) as never, 0.4).color).toBe(Math.min(raw, 0.4))
-    }
-  })
-
-  it('observation: the deterministic MOCK vision (development/demo only) reports colour confidence above that cap', async () => {
-    const values: number[] = []
-    for (const item of syntheticVisionItems().slice(0, 4)) values.push((await analyzeClothing({ buffer: await renderSynthetic(item), filename: item.file })).confidence.color)
-    expect(Math.max(...values)).toBeGreaterThan(UNCALIBRATED_MAX_CONFIDENCE) // documented in provider-evaluation.md; production refuses the mock
   })
 })

@@ -1,6 +1,7 @@
 # Lookly API (Go)
 
-The Go backend that replaces the Next.js API with the same contract. Design and rules:
+The Lookly backend: the API the phone and the website call (`docs/api/openapi.json`),
+which replaced the Next.js API in B7. Design and rules:
 `docs/architecture/backend.md`, `.claude/skills/lookly-go-backend/SKILL.md`. Stage plan:
 `docs/plan/README.md` (B0–B8).
 
@@ -12,10 +13,10 @@ The Go toolchain switches itself to the version pinned in `go.mod` (Go 1.26).
 cd apps/api
 export LOOKLY_ENV=development
 export DATABASE_URL=postgresql://user@localhost:5432/lookly
-export JWT_SECRET="$(openssl rand -base64 48)"            # the same values as the Next.js server,
-export MEDIA_SIGNING_SECRET="$(openssl rand -base64 48)"  # when both run on one database
+export JWT_SECRET="$(openssl rand -base64 48)"
+export MEDIA_SIGNING_SECRET="$(openssl rand -base64 48)"
 export SESSION_ENC_KEY="$(openssl rand -base64 32)"
-export STORAGE_LOCAL_DIR=/absolute/path/to/apps/web/storage/uploads   # where the images are
+export STORAGE_LOCAL_DIR=/absolute/path/to/storage/uploads   # where the images are
 go run ./cmd/lookly serve
 curl -s localhost:8080/api/health
 ```
@@ -56,22 +57,20 @@ go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
 ## Change a query or the schema
 
 - A query: edit `internal/store/queries/*.sql`, run `scripts/generate.sh`.
-- The schema, until B7: change Prisma (`apps/web/prisma`), then rebuild the Go baseline
-  with `PATH=/usr/lib/postgresql/16/bin:$PATH scripts/make-baseline.sh <admin URL>`. The
-  schema-equality test fails until the two match.
+- The schema: add a goose migration in `migrations/` (the next number; never edit an
+  applied one, ADR 0007) and run `scripts/generate.sh` (sqlc reads the migrations).
+  Prisma's migrations, kept in `testdata/prisma` for the tests, never change.
 
 ## Golden vectors
 
 `testdata/golden/*.json` are inputs and outputs recorded from the TypeScript backend;
 the Go code must reproduce them (`.claude/skills/lookly-testing/references/parity.md`).
-To add cases, extend the script and run it again, in `apps/web`:
-
-```bash
-bun scripts/golden-auth.ts ../api/testdata/golden/auth.json
-```
+They are fixed records now: the scripts that wrote them (`apps/web/scripts/golden-*.ts`)
+went with the TypeScript backend in B7.6 and are in git history at e57764f. A new case
+is written here by hand, from an independent source.
 
 The legal texts the server embeds (`internal/legal/documents.json`) are a copy of the
-web app's, written the same way; a test in each app fails when it is stale:
+web app's, written by its script; a test in each app fails when it is stale:
 
 ```bash
 bun scripts/legal-bundle.ts ../api/internal/legal/documents.json

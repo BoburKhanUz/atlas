@@ -68,9 +68,9 @@ func TestCompareMatchesTheTypeScriptComparison(t *testing.T) {
 	}
 }
 
-// The Go constants are the TypeScript ones (apps/web/src/lib/legal/version.ts)
-// for as long as both servers run on one database: a consent recorded by one
-// must count for the other.
+// The Go constants are the website's (apps/web/src/lib/legal/version.ts): the
+// legal pages show the texts under that version and the server records
+// consent to it, so the two must agree.
 func TestTheVersionsAreTheTypeScriptOnes(t *testing.T) {
 	t.Parallel()
 	source, err := os.ReadFile(contracttest.RepoPath("apps/web/src/lib/legal/version.ts"))
@@ -87,9 +87,6 @@ func TestTheVersionsAreTheTypeScriptOnes(t *testing.T) {
 	if got := constant("LEGAL_VERSION"); got != legal.Version {
 		t.Errorf("LEGAL_VERSION is %q in TypeScript, %q in Go", got, legal.Version)
 	}
-	if got := constant("LEGAL_CONSENT_MIN_VERSION"); got != legal.MinConsentVersion {
-		t.Errorf("LEGAL_CONSENT_MIN_VERSION is %q in TypeScript, %q in Go", got, legal.MinConsentVersion)
-	}
 	// Both are well formed, and the current version itself counts as consent.
 	if _, ok := legal.Compare(legal.Version, legal.MinConsentVersion); !ok || !legal.StillValid(legal.Version) || !legal.StillValid(legal.MinConsentVersion) {
 		t.Error("the current versions are malformed or do not count as consent")
@@ -101,7 +98,7 @@ func TestStillValidMatchesTheTypeScriptRule(t *testing.T) {
 	v := load(t)
 	// The recorded answers depend on the minimum version at recording time.
 	if v.MinVersion != legal.MinConsentVersion {
-		t.Fatalf("legal.json was recorded with the minimum version %q; it is %q now: run apps/web/scripts/golden-legal.ts again", v.MinVersion, legal.MinConsentVersion)
+		t.Fatalf("legal.json was recorded with the minimum version %q; it is %q now: set its minimum and work out each case's answer again by hand (its generator, apps/web/scripts/golden-legal.ts, is in git history at e57764f)", v.MinVersion, legal.MinConsentVersion)
 	}
 	valid, invalid := 0, 0
 	for _, c := range v.StillValid {

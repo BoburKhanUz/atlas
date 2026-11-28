@@ -6,8 +6,9 @@ Lookly is an AI personal fashion stylist, built Uzbekistan-first. Users photogra
 
 ```
 apps/mobile/           Flutter app (Android + iOS)
-apps/web/              Next.js app: web UI and, until the Go backend replaces it, the API under /api/v1
-                       (Prisma schema + migrations, tests, Dockerfile)
+apps/api/              Go backend: the API (/api/v1), the job worker, migrations, `lookly eval`
+apps/web/              Next.js website: the landing page, the legal pages, the page a reset link
+                       opens; the AI evaluation harness (scripts/ai-eval); Dockerfile
 docs/api/              The API contract (openapi.json) - the single source of truth
 docs/adr/              Architecture decision records
 docs/architecture/     Architecture notes and change logs
@@ -21,7 +22,7 @@ docker-compose.yml     Postgres + one-shot migration + web
 .github/workflows/     CI
 ```
 
-The backend is being rewritten in Go as `apps/api` with the same contract (see `docs/adr/0001-go-backend.md`, `docs/architecture/backend.md` and `apps/api/README.md`).
+The backend is the Go server in `apps/api` (`docs/adr/0001-go-backend.md`, `docs/architecture/backend.md`, `apps/api/README.md`). It replaced the Next.js API in stage B7; the old API, Prisma and the user web pages (ADR 0012: the product is the mobile app) are in git history at e57764f.
 
 Origin: the source was imported from a Z.ai-generated export in a single clean import. The export's git history, `.env`, SQLite database, user uploads, screenshots and Z.ai runtime/gateway files were deliberately excluded. Only the worklog was kept (`docs/history/zai-worklog.md`).
 
@@ -48,13 +49,12 @@ Open http://localhost:3000 (use `localhost`: session cookies are `Secure` in pro
 
 ## Local development (without Docker)
 
-1. Run a PostgreSQL 16 instance and set `DATABASE_URL` plus the two secrets in `apps/web/.env` (see `.env.example`).
-2. Then:
+The API: `apps/api/README.md` (PostgreSQL 16, `lookly migrate`, `lookly serve`, `lookly worker`).
+The website, which needs no database or secret:
 
 ```bash
 cd apps/web
 bun install
-bun run db:migrate:deploy
 bun run dev          # http://localhost:3000
 ```
 
@@ -63,22 +63,27 @@ bun run dev          # http://localhost:3000
 | Script | Purpose |
 |---|---|
 | `dev` | Next.js dev server on port 3000 |
-| `build` | `prisma generate` + production build (type-checked) |
+| `build` | Production build (type-checked), standalone output |
 | `start` | Run the standalone production server |
 | `lint` | ESLint |
 | `typecheck` | `tsc --noEmit` |
-| `test` | Vitest unit/regression tests (`vitest run`) |
-| `test:e2e` | Playwright end-to-end tests (see Testing) |
-| `db:generate` | Generate Prisma client |
-| `db:migrate` | `prisma migrate dev` (create/apply migrations in development) |
-| `db:migrate:deploy` | Apply existing migrations (production/CI) |
-| `db:reset` | Reset the development database |
+| `test` | Vitest unit tests (`vitest run`) |
+| `test:e2e` | The browser suite against Go (see Testing) |
+| `test:api-e2e` | The API journeys against Go (see Testing) |
+| `test:eval-go` | The AI evaluation through `lookly eval`, offline (see Testing) |
+| `openapi:validate` | Validate `docs/api/openapi.json` |
+| `brand:check` | The brand assets match their sources |
 
 ## Testing
 
-- **Unit/regression (Vitest):** `cd apps/web && bun run test`. Covers sessions (cookies, refresh rotation, reuse detection, logout, CSRF, proxy), API contract (validation, size limits, error shape), outfit saving, secrets, rate limits, private media and the open-redirect guard. The database is mocked.
-- **End-to-end (Playwright):** `cd apps/web && ./e2e/run-local.sh` — recreates a local Postgres database (`atlas_e2e`; see the script for host/port variables), applies migrations, builds if needed (`FORCE_BUILD=1` to rebuild) and runs Chromium tests against the production server: auth, session expiry/refresh, wardrobe, outfits, navigation (Back/Forward/refresh/deep links) and layouts at 375/768/1280 px.
-- **CI** runs lint, typecheck, unit tests, build, end-to-end tests, a migration drift check, a Docker build and a gitleaks secret scan.
+Build the Go binary first: `cd apps/api && CGO_ENABLED=0 go build -trimpath -tags nodynamic -o <path>/lookly ./cmd/lookly`.
+
+- **Go:** `apps/api/README.md` (unit tests, and the integration tests against PostgreSQL 16).
+- **Unit (Vitest):** `cd apps/web && bun run test`: the website's pages and helpers, the contract checker, the AI evaluation harness.
+- **Browser suite (Playwright):** `cd apps/web && E2E_GO_BINARY=<path>/lookly ./e2e/run-local.sh` recreates a local database (`atlas_e2e`; see the script for host and port variables), runs `lookly migrate`, builds if needed (`FORCE_BUILD=1` to rebuild) and runs Chromium against the website's production build, with the Go server and worker behind a proxy that sends `/api/` to Go: the landing page, the legal pages, the password reset link, the security headers.
+- **API journeys:** `E2E_GO_BINARY=<path>/lookly E2E_DATABASE_URL=<migrated database> bun run test:api-e2e`: accounts, wardrobe, outfits, stylist, colour profile, every answer checked against the contract.
+- **AI evaluation (offline):** `LOOKLY_BINARY=<path>/lookly bun run test:eval-go`.
+- **CI** runs all of the above, the Flutter checks, the Docker builds, workflow lint and a gitleaks secret scan.
 
 ## Configuration
 

@@ -79,11 +79,13 @@ dart format --set-exit-if-changed lib test && flutter analyze && flutter test
 
 ```bash
 bun run lint && bun run typecheck && bun run test
-bun run test:e2e     # local: apps/web/e2e/run-local.sh with a PostgreSQL 16
+E2E_GO_BINARY=<built lookly> e2e/run-local.sh   # the website's pages against Go, PostgreSQL 16
+E2E_GO_BINARY=<built lookly> E2E_DATABASE_URL=... bun run test:api-e2e   # API journeys
+LOOKLY_BINARY=<built lookly> bun run test:eval-go                         # AI evaluation, offline
 ```
 
-- e2e tests drive the real server (today Next.js, after cutover the Go API) with mock AI
-  providers. Wait for the page's own first requests before changing server state
+- e2e tests drive the real servers (the web app's production build and the Go API with
+  its worker) with mock AI providers. Wait for the page's own first requests before changing server state
   underneath it, or the test races the page.
 - In a cloud session the installed Chromium revision may differ from the one Playwright
   expects; point `PLAYWRIGHT_BROWSERS_PATH` at a directory that links the expected

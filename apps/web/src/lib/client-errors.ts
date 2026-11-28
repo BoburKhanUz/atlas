@@ -1,6 +1,6 @@
 /**
  * Browser error reports to our own server (POST /api/v1/client-errors, see
- * src/server/client-errors.ts): uncaught errors, unhandled rejections and
+ * apps/api/internal/clienterrors): uncaught errors, unhandled rejections and
  * error boundaries. Scrubbed before they leave the page (src/lib/error-scrub.ts);
  * each distinct error once, at most MAX_PER_PAGE per page load, in small
  * batches. Uses plain fetch (never the API client) and swallows its own

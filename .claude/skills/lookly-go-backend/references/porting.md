@@ -2,6 +2,8 @@
 
 Inventory from the audit of `apps/web` (2026-11-25). Paths are relative to `apps/web`.
 Re-read the source before porting a part; this file is a map, not the specification.
+The port is done (B0–B7); the TypeScript sources were removed in B7.6 and are read
+from git history: `git show e57764f:apps/web/<path>`.
 
 ## Must reproduce (clients depend on it)
 

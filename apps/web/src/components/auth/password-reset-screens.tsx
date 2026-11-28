@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { api, ApiError, logoutRequest } from '@/lib/api-client'
+import { api, ApiError } from '@/lib/api-client'
 import { routes } from '@/lib/routes'
 
 const MIN_PASSWORD = 8
@@ -38,70 +38,10 @@ function Notice({ tone, children }: { tone: 'error' | 'success'; children: React
   )
 }
 
-/** /forgot-password: e-mails a one-time link. The answer never says whether the account exists. */
-export function ForgotPasswordScreen() {
-  const t = useTranslations('passwordReset')
-  const tAuth = useTranslations('auth')
-  const tErrors = useTranslations('errors')
-  const [email, setEmail] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [sent, setSent] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault()
-    if (busy) return
-    setError(null)
-    setBusy(true)
-    try {
-      await api('/api/v1/auth/password/forgot', { method: 'POST', body: { email } })
-      setSent(true)
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : tErrors('network'))
-    }
-    setBusy(false)
-  }
-
-  return (
-    <Card title={t('forgotTitle')} description={sent ? undefined : t('forgotDescription')}>
-      {sent ? (
-        <div className="space-y-4">
-          <Notice tone="success">{t('sent')}</Notice>
-          <p className="text-sm text-muted-foreground">{t('sentHint')}</p>
-        </div>
-      ) : (
-        <form onSubmit={submit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium">
-              {tAuth('emailLabel')}
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder={tAuth('emailPlaceholder')}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="h-11"
-              autoComplete="email"
-              required
-            />
-          </div>
-          {error && <Notice tone="error">{error}</Notice>}
-          <Button type="submit" disabled={busy} className="w-full h-11 text-base font-medium">
-            {busy ? tAuth('busy') : t('sendLink')}
-          </Button>
-        </form>
-      )}
-      <Link href={routes.login()} className="block text-center text-sm text-muted-foreground hover:text-foreground mt-6">
-        {t('backToLogin')}
-      </Link>
-    </Card>
-  )
-}
-
 /**
- * /reset-password?token=…: sets a new password. Every session of the account
- * is signed out by the server; this browser's cookies are cleared too.
+ * /reset-password?token=…: the page an e-mailed link opens; sets a new
+ * password. The Go server signs every session of the account out; the user
+ * signs in again in the phone app.
  */
 export function ResetPasswordScreen() {
   const t = useTranslations('passwordReset')
@@ -127,7 +67,6 @@ export function ResetPasswordScreen() {
     setBusy(true)
     try {
       await api('/api/v1/auth/password/reset', { method: 'POST', body: { token, password } })
-      await logoutRequest()
       // The link is spent: keep it out of the history.
       window.history.replaceState(null, '', '/reset-password')
       setDone(true)
@@ -144,10 +83,10 @@ export function ResetPasswordScreen() {
         <div className="space-y-4">
           <Notice tone="success">{t('saved')}</Notice>
           <Link
-            href={routes.login()}
+            href={routes.home()}
             className="inline-flex items-center justify-center w-full h-11 rounded-md bg-primary text-primary-foreground text-base font-medium hover:bg-primary/90"
           >
-            {tAuth('submitLogin')}
+            {t('toHome')}
           </Link>
         </div>
       </Card>
@@ -159,8 +98,8 @@ export function ResetPasswordScreen() {
       <Card title={t('resetTitle')}>
         <div className="space-y-4">
           <Notice tone="error">{t('invalidLink')}</Notice>
-          <Link href={routes.forgotPassword()} className="block text-center text-sm font-medium text-foreground underline underline-offset-2">
-            {t('requestNew')}
+          <Link href={routes.home()} className="block text-center text-sm font-medium text-foreground underline underline-offset-2">
+            {t('toHome')}
           </Link>
         </div>
       </Card>

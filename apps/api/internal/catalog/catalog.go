@@ -3,9 +3,9 @@
 // colours, patterns, materials, styles, sleeve lengths, fits, seasons,
 // formalities, genders, occasions), each with its Uzbek label.
 //
-// Until the cutover (B7) the Next.js app owns them
-// (apps/web/src/lib/ai/catalog.ts); catalog.json is a copy written by
-// apps/web/scripts/catalog-copy.ts, and a test there fails when it is stale.
+// catalog.json is their source since the cutover (B7.6; it was a copy of
+// the Next.js app's until then). The mobile app's copy and the evaluation
+// harness are checked against it (apps/web/tests/unit/catalog-drift.test.ts).
 package catalog
 
 import (

@@ -5,8 +5,9 @@ import { PASSWORD, registerViaApi, uniqueUser } from './helpers'
 
 const OUTBOX = process.env.E2E_MAIL_OUTBOX_DIR!
 const NEW_PASSWORD = 'e2e-New-Passw0rd!'
+const MOBILE = { 'X-Atlas-Client': 'mobile' }
 
-/** Reset links e-mailed to `to`, oldest first (the server writes them in the background). */
+/** Reset links e-mailed to `to`, oldest first (the Go worker writes them in the background). */
 function linksFor(to: string): string[] {
   return readdirSync(OUTBOX)
     .sort()
@@ -18,19 +19,12 @@ function linksFor(to: string): string[] {
     })
 }
 
-test.describe('password reset', () => {
-  test('forgot → e-mailed link → new password: every session signed out, the new password works, the link only once', async ({ page, request }) => {
-    const user = uniqueUser('reset')
-    await registerViaApi(request, user) // "another device", signed in
+test.describe('the page an e-mailed reset link opens', () => {
+  test('the phone asks for a link; the page sets the new password once: every session signed out, the new password works', async ({ page, request }) => {
+    const user = await registerViaApi(request, uniqueUser('reset')) // signed in on the phone
+    expect((await request.post('/api/v1/auth/password/forgot', { data: { email: user.email } })).status()).toBe(200)
 
-    await page.goto('/login')
-    await page.getByRole('link', { name: 'Parolni unutdingizmi?' }).click()
-    await expect(page).toHaveURL(/\/forgot-password$/)
-    await page.getByLabel('Email').fill(user.email)
-    await page.getByRole('button', { name: 'Havola yuborish' }).click()
-    await expect(page.getByRole('main').getByRole('status')).toContainText('havolasi yuborildi')
-
-    await expect.poll(() => linksFor(user.email).length).toBe(1)
+    await expect.poll(() => linksFor(user.email).length, { timeout: 15_000 }).toBe(1)
     const link = linksFor(user.email)[0]
     expect(link).toMatch(/^\/reset-password\?token=[A-Za-z0-9_-]{43}$/)
 
@@ -39,19 +33,14 @@ test.describe('password reset', () => {
     await page.getByLabel('Parolni takrorlang').fill(NEW_PASSWORD)
     await page.getByRole('button', { name: 'Parolni saqlash' }).click()
     await expect(page.getByRole('heading', { name: 'Parol o‘zgartirildi' })).toBeVisible()
+    await expect(page.getByRole('main').getByRole('status')).toContainText('Lookly ilovasida')
     expect(new URL(page.url()).search).toBe('') // the spent token left the address bar
 
-    // the other device is signed out; the old password no longer works
-    const refreshed = await request.post('/api/v1/auth/refresh')
+    // the phone is signed out; the old password no longer works, the new one does
+    const refreshed = await request.post('/api/v1/auth/refresh', { headers: MOBILE, data: { refreshToken: user.refreshToken } })
     expect(refreshed.status()).toBe(401)
-    expect((await refreshed.json()).code).toBe('SESSION_REVOKED')
-    expect((await request.post('/api/v1/auth/login', { data: { email: user.email, password: PASSWORD } })).status()).toBe(401)
-
-    await page.getByRole('link', { name: 'Kirish' }).click()
-    await page.getByLabel('Email').fill(user.email)
-    await page.getByLabel('Parol').fill(NEW_PASSWORD)
-    await page.locator('form').getByRole('button', { name: 'Kirish' }).click()
-    await expect(page).toHaveURL(/\/$/)
+    expect((await request.post('/api/v1/auth/login', { headers: MOBILE, data: { email: user.email, password: PASSWORD } })).status()).toBe(401)
+    expect((await request.post('/api/v1/auth/login', { headers: MOBILE, data: { email: user.email, password: NEW_PASSWORD } })).status()).toBe(200)
 
     // the link works once
     await page.goto(link)
@@ -59,18 +48,10 @@ test.describe('password reset', () => {
     await page.getByLabel('Parolni takrorlang').fill('e2e-Third-Passw0rd!')
     await page.getByRole('button', { name: 'Parolni saqlash' }).click()
     await expect(page.getByRole('main').getByRole('alert')).toContainText('Havola yaroqsiz')
-    await expect(page.getByRole('link', { name: 'Yangi havola so‘rash' })).toHaveAttribute('href', '/forgot-password')
+    await expect(page.getByRole('link', { name: 'Bosh sahifaga' })).toHaveAttribute('href', '/')
   })
 
-  test('an unknown address gets the same answer and no e-mail; a link without a token is refused', async ({ page }) => {
-    const nobody = uniqueUser('nobody').email
-    await page.goto('/forgot-password')
-    await page.getByLabel('Email').fill(nobody)
-    await page.getByRole('button', { name: 'Havola yuborish' }).click()
-    await expect(page.getByRole('main').getByRole('status')).toContainText('havolasi yuborildi')
-    await page.waitForTimeout(500)
-    expect(linksFor(nobody)).toEqual([])
-
+  test('a link without a token is refused', async ({ page }) => {
     await page.goto('/reset-password')
     await expect(page.getByRole('main').getByRole('alert')).toContainText('Havola yaroqsiz')
   })

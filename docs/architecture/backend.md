@@ -672,19 +672,21 @@ by slice (`docs/plan/B6.md`).
 
 ## Database
 
-Until B7, Prisma owns the `public` schema and its migrations (ADR 0007). The Go service
-reads and writes data but changes no schema there.
+Since B7 the Go service owns the schema (ADR 0007): `lookly migrate` applies its
+migrations. Prisma changed the schema until then; its migrations are kept as test data
+(`apps/api/testdata/prisma/migrations`, from e57764f, the last commit with
+`apps/web/prisma`) so the tests can build a database Prisma made.
 
 - **Migrations** (`apps/api/migrations`, goose v3, embedded in the binary):
   - `00001_baseline.sql` equals the Prisma schema up to
     `20261126000000_wardrobe_child_indexes`, including the two `SystemMarker` rows.
-  - `scripts/make-baseline.sh` produces it from the Prisma migrations; it is never
-    hand-edited and has Up only.
-  - Until B7 the migrations run in test databases only. A Prisma migration added before
-    then means rebuilding the baseline. At B7 the baseline is recorded as applied in
-    production (not run) and Go takes over the schema.
+  - It was produced from the Prisma migrations by `scripts/make-baseline.sh` (removed
+    in B7.6 with Prisma; in git history at e57764f); it is never edited and has Up only.
+  - On a database Prisma made, `lookly migrate` records the baseline as applied (not
+    run) and runs the later migrations (B7.3).
 - **Schema equality**: `migrations/schema_integration_test.go` applies Prisma's
-  migrations and the Go migrations to two fresh databases and compares their catalogs:
+  migrations (the test data above; `prisma_history_test.go` holds them to
+  `PrismaHistory`) and the Go migrations to two fresh databases and compares their catalogs:
   - tables and columns (type, nullability, default);
   - constraints, indexes, functions, triggers and types;
   - the marker rows.

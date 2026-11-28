@@ -22,7 +22,7 @@ import (
 func prismaDatabase(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 	pool := dbtest.Empty(t)
-	dirs, err := filepath.Glob(contracttest.RepoPath("apps/web/prisma/migrations/*/migration.sql"))
+	dirs, err := filepath.Glob(contracttest.RepoPath("apps/api/testdata/prisma/migrations/*/migration.sql"))
 	if err != nil || len(dirs) == 0 {
 		t.Fatalf("no Prisma migrations found: %v", err)
 	}

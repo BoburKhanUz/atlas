@@ -269,8 +269,8 @@ func keys(m map[string]any) []string {
 	return out
 }
 
-// The members of the rows as the Next.js API returns them (the columns of
-// apps/web/prisma/schema.prisma, models UserProfile and UserPreferences).
+// The members of the rows as the Next.js API returned them (the columns of
+// the Prisma models UserProfile and UserPreferences, made by the baseline).
 var (
 	profileRowKeys = []string{"ageRange", "bodyShape", "clothingSize", "colorProfileId", "createdAt", "eyeColor", "gender", "hairColor",
 		"height", "id", "preferredFit", "skinTone", "skinUndertone", "typicalBudget", "updatedAt", "userId", "weight"}

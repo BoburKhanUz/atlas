@@ -1,61 +1,16 @@
 {
   "common": {
-    "appName": "Lookly",
-    "loading": "Yuklanmoqda…",
-    "retry": "Qayta urinish",
-    "back": "Orqaga",
-    "goHome": "Bosh sahifaga qaytish",
-    "skipToContent": "Asosiy kontentga o'tish",
-    "cancel": "Bekor qilish"
-  },
-  "nav": {
-    "label": "Asosiy navigatsiya",
-    "home": "Bosh sahifa",
-    "wardrobe": "Garderob",
-    "stylist": "AI Stilist",
-    "outfits": "Obrazlar",
-    "profile": "Profil"
+    "goHome": "Bosh sahifaga qaytish"
   },
   "auth": {
-    "tagline": "Shaxsiy garderobingizdagi kiyimlardan avtomatik obraz tavsiya qiluvchi aqlli stilist. Faqat sizniki — xarid yo‘q.",
-    "modeLabel": "Kirish yoki ro'yxatdan o'tish",
-    "login": "Kirish",
-    "register": "Ro'yxatdan o'tish",
-    "nameLabel": "Ismingiz",
-    "namePlaceholder": "Ali",
-    "emailLabel": "Email",
-    "emailPlaceholder": "ali@example.com",
-    "passwordLabel": "Parol",
     "passwordHint": "Kamida 8 belgi",
-    "submitLogin": "Kirish",
-    "submitRegister": "Boshlash",
-    "busy": "Biroz kuting…",
-    "welcomeTitle": "Xush kelibsiz",
-    "registeredTitle": "Ro‘yxatdan o‘tdingiz",
-    "welcomeDescription": "Garderobingizni to‘ldirishni boshlaymizmi?",
-    "sessionExpired": "Sessiya muddati tugadi. Iltimos, qaytadan kiring.",
-    "ageLabel": "18 yoshdan kattaman",
-    "consentLabel": "<terms>Foydalanish shartlari</terms> va <privacy>Maxfiylik siyosati</privacy>ga roziman",
-    "ageRequired": "18 yoshdan kattaligingizni tasdiqlang.",
-    "consentRequired": "Ro‘yxatdan o‘tish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
-    "legalLinks": "Huquqiy hujjatlar",
-    "privacyLink": "Maxfiylik siyosati",
-    "termsLink": "Foydalanish shartlari",
-    "forgotLink": "Parolni unutdingizmi?"
+    "busy": "Biroz kuting…"
   },
   "errors": {
     "network": "Tarmoq xatosi yuz berdi",
-    "sessionBusy": "Server hozir band. Birozdan so‘ng qayta urinib ko‘ring — sessiyangiz saqlanib qoldi.",
     "request": "So'rov xatosi ({status})",
-    "unexpected": "Kutilmagan xatolik yuz berdi",
-    "pageTitle": "Nimadir noto'g'ri ketdi",
-    "pageDescription": "Sahifani yuklashda xatolik yuz berdi. Qayta urinib ko'ring.",
     "notFoundTitle": "Sahifa topilmadi",
     "notFoundDescription": "Siz qidirgan sahifa mavjud emas yoki ko'chirilgan."
-  },
-  "states": {
-    "loadFailed": "Yuklab bo'lmadi",
-    "empty": "Hozircha bo‘sh"
   },
   "legal": {
     "meta": "Kuchga kirish sanasi: {date} · Versiya: {version}",
@@ -63,12 +18,6 @@
     "seeAlso": "Shuningdek o‘qing:"
   },
   "passwordReset": {
-    "forgotTitle": "Parolni tiklash",
-    "forgotDescription": "Ro‘yxatdan o‘tgan email manzilingizni kiriting. Unga yangi parol o‘rnatish havolasini yuboramiz.",
-    "sendLink": "Havola yuborish",
-    "sent": "Agar bu email ro‘yxatdan o‘tgan bo‘lsa, unga parolni tiklash havolasi yuborildi.",
-    "sentHint": "Xatni oching va havola orqali 60 daqiqa ichida yangi parol o‘rnating. Xat kelmasa, «Spam» papkasini tekshiring.",
-    "backToLogin": "Kirish sahifasiga qaytish",
     "resetTitle": "Yangi parol",
     "resetDescription": "Yangi parolni kiriting. Saqlangach, barcha qurilmalarda qaytadan kirasiz.",
     "newPasswordLabel": "Yangi parol",
@@ -77,21 +26,9 @@
     "mismatch": "Parollar bir xil emas.",
     "save": "Parolni saqlash",
     "savedTitle": "Parol o‘zgartirildi",
-    "saved": "Yangi parol saqlandi. Barcha qurilmalardagi kirishlar yakunlandi: yangi parol bilan qaytadan kiring.",
-    "invalidLink": "Havola yaroqsiz yoki muddati tugagan. Parolni tiklashni qaytadan so‘rang.",
-    "requestNew": "Yangi havola so‘rash"
-  },
-  "consent": {
-    "title": "Hujjatlar yangilandi",
-    "description": "Maxfiylik siyosati va Foydalanish shartlari o‘zgardi. Ilovadan foydalanishni davom ettirish uchun ularni o‘qib chiqing va qabul qiling.",
-    "required": "Davom etish uchun Foydalanish shartlari va Maxfiylik siyosatiga rozilik bering.",
-    "accept": "Qabul qilaman",
-    "signOut": "Chiqish",
-    "decline": "Rozi emasman — hisobni o‘chirish",
-    "deleteTitle": "Hisobni o‘chirish",
-    "deleteDescription": "Hisobingiz va barcha ma’lumotlaringiz (garderob, obrazlar, suhbatlar, rang tahlili) butunlay o‘chiriladi. Bu amalni qaytarib bo‘lmaydi.",
-    "deleted": "Hisob o‘chirildi",
-    "deleteFailed": "Hisobni o‘chirib bo‘lmadi"
+    "saved": "Yangi parol saqlandi. Barcha qurilmalardagi kirishlar yakunlandi: Lookly ilovasida yangi parol bilan qaytadan kiring.",
+    "invalidLink": "Havola yaroqsiz yoki muddati tugagan. Lookly ilovasida «Parolni unutdingizmi?» orqali yangi havola so‘rang.",
+    "toHome": "Bosh sahifaga"
   },
   "landing": {
     "meta": {

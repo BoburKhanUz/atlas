@@ -114,7 +114,7 @@ func NewMonitor(log *slog.Logger, environment string) *Monitor {
 // Emit writes an event, sanitized. A failed call or a request that did not
 // end well is a warning; the rest is information. "ts" repeats the time in
 // the form the Next.js server's log lines had, which the aggregation of
-// these events reads (apps/web/scripts/ai-monitor.ts).
+// these events read (docs/ai/monitoring.md).
 func (m *Monitor) Emit(ctx context.Context, event string, fields map[string]any) {
 	fields = maps.Clone(fields)
 	if fields == nil {

@@ -7,8 +7,8 @@
  * no network.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { CONFIDENCE_KEYS, type GarmentAttributes } from '@/lib/ai/garment-analysis'
-import { CATEGORIES, COLORS, FITS, FORMALITIES, MATERIALS, PATTERNS, SLEEVE_LENGTHS, STYLES, SUBCATEGORIES } from '../../../src/lib/ai/catalog'
+import type { GarmentAttributes } from '../../../scripts/ai-eval/protocol'
+import { CATEGORIES, COLORS, CONFIDENCE_KEYS, FITS, FORMALITIES, MATERIALS, PATTERNS, SLEEVE_LENGTHS, STYLES, SUBCATEGORIES } from '../../../scripts/ai-eval/catalog'
 import { readFileSync } from 'fs'
 import path from 'path'
 import { MOBILE_LABELS } from '../../../scripts/ai-eval/client-labels'

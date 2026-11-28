@@ -9,6 +9,5 @@ public/uploads
 *.log
 coverage
 vitest.config.ts
-vitest.integration.config.ts
 Dockerfile
 .dockerignore

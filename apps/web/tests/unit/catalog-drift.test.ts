@@ -1,6 +1,7 @@
 /**
- * Catalog drift between the web catalog (src/lib/ai/catalog.ts, the source of
- * the API ids) and the mobile app's own Dart copies. Entries are keyed by
+ * Catalog drift between the server's catalog (apps/api/internal/catalog/
+ * catalog.json, the source of the API ids, read through scripts/ai-eval/catalog.ts)
+ * and the mobile app's own Dart copies. Entries are keyed by
  * domain + id: the same id may exist in several domains (knit is a
  * subcategory and a material, casual a style, formality and occasion).
  *
@@ -27,7 +28,7 @@ import {
   STYLES,
   SUBCATEGORIES,
   type CatalogEntry,
-} from '@/lib/ai/catalog'
+} from '../../scripts/ai-eval/catalog'
 
 const mobile = path.resolve(__dirname, '../../../mobile/lib/features')
 const read = (f: string) => readFileSync(path.join(mobile, f), 'utf8')

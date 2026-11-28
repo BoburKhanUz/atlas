@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
-# Local e2e runner: fresh DB -> migrate -> build (if needed) -> playwright.
-# Usage: e2e/run-local.sh [playwright args...]     (FORCE_BUILD=1 to rebuild)
+# Local runner of the browser suite: fresh database -> `lookly migrate` ->
+# build (if needed) -> playwright (the web app, the Go server and worker, the
+# front proxy: playwright.config.ts).
+# Usage: E2E_GO_BINARY=<built lookly> e2e/run-local.sh [playwright args...]   (FORCE_BUILD=1 to rebuild)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+: "${E2E_GO_BINARY:?set E2E_GO_BINARY to the built lookly binary (cd apps/api && go build -tags nodynamic -o <path> ./cmd/lookly)}"
 PGHOST_DIR="${PGHOST_DIR:-/var/tmp/atlas-pg}"
 PGPORT_NUM="${PGPORT_NUM:-55432}"
 PGUSER_NAME="${PGUSER_NAME:-atlas}"
@@ -15,16 +18,10 @@ psql -h "$PGHOST_DIR" -p "$PGPORT_NUM" -U "$PGUSER_NAME" -d postgres -v ON_ERROR
 
 # Unix-socket style URL for the local trust-auth cluster.
 export E2E_DATABASE_URL="${E2E_DATABASE_URL:-postgresql://$PGUSER_NAME@localhost:$PGPORT_NUM/$E2E_DB?host=$PGHOST_DIR}"
-DATABASE_URL="$E2E_DATABASE_URL" npx prisma migrate deploy >/dev/null
+LOOKLY_ENV=test DATABASE_URL="$E2E_DATABASE_URL" "$E2E_GO_BINARY" migrate >/dev/null
 
 if [ "${FORCE_BUILD:-0}" = "1" ] || [ ! -f .next/standalone/server.js ] || [ ! -d .next/standalone/.next/static ]; then
-  DATABASE_URL="$E2E_DATABASE_URL" NEXT_TELEMETRY_DISABLED=1 bun run build
+  NEXT_TELEMETRY_DISABLED=1 bun run build
 fi
-
-# Random per-run secrets (never printed).
-export JWT_SECRET="${JWT_SECRET:-$(openssl rand -hex 32)}"
-export MEDIA_SIGNING_SECRET="${MEDIA_SIGNING_SECRET:-$(openssl rand -hex 32)}"
-export SESSION_ENC_KEY="${SESSION_ENC_KEY:-$(openssl rand -base64 32)}"
-export STORAGE_LOCAL_DIR="${STORAGE_LOCAL_DIR:-$(mktemp -d -t atlas-e2e-storage.XXXXXX)}"
 
 exec npx playwright test "$@"

@@ -33,6 +33,8 @@ page that sends visitors to the stores.
   (sessions, uploads, outfits, stylist, colour profile, account deletion), and the
   phone journeys to the Flutter integration tests (M6). No journey loses its test.
 - Web session cookies (`atlas_at`, `atlas_rt`) remain for the admin panel only.
+- Done in B7.6 (docs/plan/B7.md). The retired pages, the old API and Prisma are in git
+  history at **e57764f**, the last commit that has them.
 
 ## Alternatives considered
 

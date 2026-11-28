@@ -4,7 +4,7 @@ import { expect, test } from './fixtures'
  * The landing page (docs/plan/W0.md): public, built to the approved mockup, with the
  * store badges in their "Tez kunda" state until the admin panel sets the links.
  */
-const LANDING = '/landing'
+const LANDING = '/'
 
 test.describe('landing page', () => {
   test('a visitor sees every section without signing in', async ({ page }) => {

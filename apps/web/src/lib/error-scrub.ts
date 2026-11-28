@@ -1,7 +1,7 @@
 /**
  * Scrubbing rules for error reports (crash monitoring), shared by the
- * browser reporter (src/lib/client-errors.ts) and the server
- * (src/server/client-errors.ts). An error text may quote a request: these
+ * browser reporter (src/lib/client-errors.ts) and, as a port, the server
+ * (apps/api/internal/clienterrors). An error text may quote a request: these
  * drop e-mail addresses, Bearer values, JWTs, URL query strings (signatures,
  * one-time tokens) and long opaque values (refresh/reset tokens, keys).
  */

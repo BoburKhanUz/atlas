@@ -37,8 +37,8 @@ module and binary). The product name users see is **Lookly**.
 |---|---|
 | `docs/plan/README.md` | Stages (S0, B0–B8, M1–M7, W1–W2, F1), exit criteria, start commits — read before starting a stage |
 | `apps/mobile` | Flutter app (Android + iOS), Riverpod 3, go_router, generated API client in `apps/mobile/packages/atlas_api` |
-| `apps/web` | Next.js app: web UI, and until stage B7 the API under `src/app/api/v1` and the Prisma schema |
-| `apps/api` | Go backend (stage B0 onward; replaces the Next.js API with the same contract) |
+| `apps/web` | Next.js website (landing, legal pages, the reset-link page; ADR 0012) and the AI evaluation harness (`scripts/ai-eval`). The old API, Prisma and the user web pages are in git history at e57764f |
+| `apps/api` | Go backend: the only API, its worker and the schema (`lookly migrate`) |
 | `docs/api/openapi.json` | The API contract, hand-owned (ADR 0003): edit it, then regenerate the Go server and the Dart client |
 | `docs/adr/` | Architecture decision records — binding; read before changing architecture |
 | `docs/architecture/`, `docs/ai/`, `docs/database/`, `docs/deploy/`, `docs/release/` | Design notes, AI design, database cutover, deployment, release checklists |
@@ -73,15 +73,16 @@ flutter analyze
 env -u GEMINI_API_KEY -u OPENAI_API_KEY flutter test
 tool/openapi/generate_api.sh --check            # generated client matches the contract
 
-# Web and current API (apps/web)
+# Website and the suites against Go (apps/web); <lookly> = a binary built from apps/api
 bun install
 bun run lint && bun run typecheck
 env -u GEMINI_API_KEY -u OPENAI_API_KEY bun run test
 bun run openapi:validate
 bun run brand:check
-bun run test:integration    # needs a PostgreSQL 16 (see .github/workflows/ci.yml, job "integration")
-bun run test:e2e            # e2e/run-local.sh: expects a trust-auth PostgreSQL 16 on a Unix socket
+E2E_GO_BINARY=<lookly> e2e/run-local.sh   # browser suite: a trust-auth PostgreSQL 16 on a Unix socket
                             # (defaults /var/tmp/atlas-pg, port 55432; override PGHOST_DIR/PGPORT_NUM)
+E2E_GO_BINARY=<lookly> E2E_DATABASE_URL=... bun run test:api-e2e   # API journeys, a migrated database
+LOOKLY_BINARY=<lookly> bun run test:eval-go                         # AI evaluation through Go, offline
 
 # Go backend (apps/api); full list in apps/api/README.md
 # -tags nodynamic: always (the WebP encoder must be the built-in one, ADR 0009)
@@ -96,7 +97,7 @@ Tools that may be missing in a fresh cloud session: `semgrep`, a running Docker 
 (start `dockerd`; Docker Hub may rate-limit pulls). staticcheck and govulncheck run
 pinned through `go run`. Say when a gate ran in CI only.
 
-CI (`.github/workflows/ci.yml`) runs the web, e2e, integration, migrations, api (Go),
-mobile, docker, secret-scan and repo-rules jobs on every push; `brand:check` is local
+CI (`.github/workflows/ci.yml`) runs the web, e2e, api (Go), mobile, docker,
+secret-scan and repo-rules jobs on every push; `brand:check` is local
 until it is added to CI. A red CI on our branch is the next task, before
 anything else.

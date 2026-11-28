@@ -1,6 +1,8 @@
 # Parity with the TypeScript backend
 
-The Go backend must behave like the current Next.js API where clients depend on it.
+The Go backend must behave like the Next.js API it replaced where clients depend on it
+(removed in B7.6; its sources are in git history at e57764f, and the recorded vectors
+under `apps/api/testdata/golden/` are now fixed).
 "Behave like" has three strengths; pick the right one per area.
 
 | Strength | Areas | How it is checked |

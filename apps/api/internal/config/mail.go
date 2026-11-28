@@ -26,8 +26,8 @@ const (
 )
 
 // Mail is the outgoing e-mail configuration, read as the Next.js server
-// reads it (apps/web/src/server/mail-config.ts) so one environment file
-// serves both, with these differences: the outbox is refused in production
+// read it (until B7.6) so one environment file served both, with these
+// differences: the outbox is refused in production
 // and staging without exception, the sender must also parse as an RFC 5322
 // address, and SMTP needs PUBLIC_BASE_URL in staging too.
 type Mail struct {
