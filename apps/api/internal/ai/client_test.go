@@ -186,15 +186,19 @@ func TestAnAttemptHasItsRoutesTimeLimit(t *testing.T) {
 	if took := time.Since(started); took < 250*time.Millisecond || took > 5*time.Second {
 		t.Errorf("two attempts of 150 ms took %v", took)
 	}
-	// The request's own limit wins.
+	// The request's own limit wins. The route's limit here is 2 s, so a single
+	// attempt of it would outlast the bound by far: the bound tells the two
+	// limits apart without depending on how busy the machine is (a 250 ms
+	// bound against a 150 ms route once failed under a loaded race run).
+	long, _ := client(t, settings(2*time.Second), silent.URL, silent.URL)
 	short := question
 	short.Timeout = 30 * time.Millisecond
 	started = time.Now()
-	if _, err := c.GenerateText(context.Background(), ai.StylistChat, short); !errors.As(err, &failure) || failure.Kind != ai.Timeout {
+	if _, err := long.GenerateText(context.Background(), ai.StylistChat, short); !errors.As(err, &failure) || failure.Kind != ai.Timeout {
 		t.Fatalf("got %v", err)
 	}
-	if took := time.Since(started); took > 250*time.Millisecond {
-		t.Errorf("two attempts of 30 ms took %v", took)
+	if took := time.Since(started); took > 1500*time.Millisecond {
+		t.Errorf("two attempts of 30 ms (the route allows 2 s) took %v", took)
 	}
 	// The vision settings' limit for a picture.
 	visionCfg := settings(time.Second)
