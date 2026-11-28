@@ -110,6 +110,11 @@ jobs:
       - name: Build the Go server
         working-directory: apps/api
         run: CGO_ENABLED=0 go build -trimpath -tags nodynamic -o "$RUNNER_TEMP/lookly" ./cmd/lookly
+      # The AI evaluation's scripted cases through `lookly eval` (docs/plan/B6.md,
+      # B6.9): the same records as the TypeScript pipeline. Offline: a stand-in
+      # on 127.0.0.1 answers, no key is read.
+      - name: AI evaluation on the Go pipeline (offline)
+        run: LOOKLY_BINARY="$RUNNER_TEMP/lookly" bun run test:eval-go
       - name: Run the e2e suite in Go mode
         run: |
           JWT_SECRET="$(openssl rand -hex 32)"

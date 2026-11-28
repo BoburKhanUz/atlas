@@ -18,6 +18,7 @@ import { generateOutfitResult, profileContext } from '../../src/lib/ai/outfit-en
 import { isAiProviderError } from '../../src/lib/ai/providers/errors'
 import { RetriedError, withRetry } from '../../src/lib/ai/providers/retry'
 import type { LLMMessage, LLMProvider, LLMRequest } from '../../src/lib/ai/providers/types'
+import { openGoPipeline, outfitRequest, type GoPipeline } from './go-pipeline'
 import { arg, assertOutsideRepo, llmProviderFromEnv } from './eval-common'
 import { LocalRefusalError } from './live-accounting'
 import { outfitCases, type OutfitCase } from './outfit-cases'
@@ -92,6 +93,17 @@ export async function runOutfitCase(p: LLMProvider, c: OutfitCase): Promise<Outf
   return { case: c.id, tags: c.tags, provider: p.name, model: p.model, candidates: candidates.length, latencyMs: Math.round(performance.now() - started), calls, requests, inputTokens, outputTokens, outcome, checks, pass }
 }
 
+/** The same case through the Go pipeline (`lookly eval`): Go's outcome, this file's scoring. */
+export async function runOutfitCaseGo(go: GoPipeline, p: { name: string; model: string }, c: OutfitCase): Promise<OutfitRecord> {
+  const r = await go.run('outfit', outfitRequest(c))
+  const outcome = r.outcome as unknown as OutfitOutcome
+  const { checks, pass } = scoreOutfit(outfitCaseContext(c), outcome)
+  return {
+    case: c.id, tags: c.tags, provider: p.name, model: p.model, candidates: r.candidates ?? 0, latencyMs: r.latencyMs, calls: r.calls,
+    requests: r.requests, inputTokens: r.inputTokens, outputTokens: r.outputTokens, outcome, checks, pass,
+  }
+}
+
 /** The deterministic explanation of each case's best outfit (what the fallback shows), for review. */
 export function fallbackExplanations(): Array<{ case: string; explanation: string }> {
   return outfitCases().map((c) => {
@@ -125,13 +137,18 @@ export function outfitMarkdown(s: OutfitSummary, records: OutfitRecord[]): strin
 
 async function main() {
   const outDir = arg('out')
-  if (!outDir) throw new Error('usage: --provider=gemini|openai|scripted [--model=…] --out=<dir outside the repo>')
+  if (!outDir) throw new Error('usage: --provider=gemini|openai|scripted [--model=…] [--pipeline=go [--max-calls=N]] --out=<dir outside the repo>')
   assertOutsideRepo(outDir, path.resolve(__dirname, '../../../..'), path)
-  const p = arg('provider') === 'scripted' ? new ScriptedOutfit() : llmProviderFromEnv(arg('provider'), arg('model'))
+  // --pipeline=go: the cases run through the Go server's pipeline (lookly eval, LOOKLY_BINARY).
+  const onGo = arg('pipeline') === 'go'
+  const pipeline = onGo
+    ? await openGoPipeline(arg('provider') === 'scripted' ? { scripted: new ScriptedOutfit() } : { provider: arg('provider'), model: arg('model'), maxCalls: arg('max-calls') })
+    : null
+  const p = pipeline ? { name: pipeline.name, model: pipeline.model } : arg('provider') === 'scripted' ? new ScriptedOutfit() : llmProviderFromEnv(arg('provider'), arg('model'))
   await fs.mkdir(outDir, { recursive: true })
   const records: OutfitRecord[] = []
   for (const c of outfitCases()) {
-    const r = await runOutfitCase(p, c)
+    const r = pipeline ? await runOutfitCaseGo(pipeline.go, p, c) : await runOutfitCase(p as LLMProvider, c)
     records.push(r)
     process.stdout.write(`${c.id} ${r.pass ? 'pass' : 'FAIL'} ${r.outcome.kind}\n`)
   }
@@ -140,6 +157,7 @@ async function main() {
   await fs.writeFile(path.join(outDir, 'outfit-summary.json'), JSON.stringify(summary, null, 2) + '\n')
   await fs.writeFile(path.join(outDir, 'outfit-summary.md'), outfitMarkdown(summary, records))
   await fs.writeFile(path.join(outDir, 'outfit-fallback-explanations.json'), JSON.stringify(fallbackExplanations(), null, 2) + '\n')
+  await pipeline?.close()
   console.log(JSON.stringify(summary))
 }
 

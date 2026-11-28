@@ -6,10 +6,18 @@
  */
 import { AiProviderError } from '../../src/lib/ai/providers/errors'
 import type { LLMProvider, LLMRequest } from '../../src/lib/ai/providers/types'
-import { outfitCases } from './outfit-cases'
+import { outfitCases, type OutfitCase } from './outfit-cases'
 import { runOutfitCase } from './outfit-eval'
-import { stylistCases } from './stylist-cases'
+import type { OutfitRecord } from './outfit-scoring'
+import { stylistCases, type StylistCase } from './stylist-cases'
 import { runStylistCase } from './stylist-eval'
+import type { StylistRecord } from './stylist-scoring'
+
+/** How a scenario's case is run: the TypeScript runners, or the Go pipeline's (go-pipeline.ts). */
+export interface Runners {
+  stylist: (p: LLMProvider, c: StylistCase) => Promise<StylistRecord>
+  outfit: (p: LLMProvider, c: OutfitCase) => Promise<OutfitRecord>
+}
 
 type Step = (req: LLMRequest) => string
 
@@ -48,19 +56,19 @@ export interface RobustnessResult {
   pass: boolean
 }
 
-export async function runRobustness(): Promise<RobustnessResult[]> {
+export async function runRobustness(run: Runners = { stylist: runStylistCase, outfit: runOutfitCase }): Promise<RobustnessResult[]> {
   const sCase = stylistCases()[0]
   const oCase = outfitCases()[0]
   const out: RobustnessResult[] = []
   const stylist = async (scenario: string, expected: string, steps: Step[]) => {
     const p = new Adversarial(steps)
-    const r = await runStylistCase(p, sCase)
+    const r = await run.stylist(p, sCase)
     const actual = r.outcome.kind === 'answer' ? `answer${r.outcome.firstError ? `_after_${r.outcome.firstError}` : ''}` : r.outcome.kind === 'invalid' ? `refused_${r.outcome.firstError}` : `error_${r.outcome.error}`
     out.push({ feature: 'stylist', scenario, expected, actual, calls: p.calls, pass: actual === expected })
   }
   const outfit = async (scenario: string, expected: string, steps: Step[]) => {
     const p = new Adversarial(steps)
-    const r = await runOutfitCase(p, oCase)
+    const r = await run.outfit(p, oCase)
     const actual = r.outcome.kind === 'ranked' ? `ranked${r.outcome.firstError ? `_after_${r.outcome.firstError}` : ''}` : r.outcome.kind === 'invalid' ? `fallback_${r.outcome.finalError}` : `fallback_error_${r.outcome.error}`
     out.push({ feature: 'outfit', scenario, expected, actual, calls: p.calls, pass: actual === expected })
   }

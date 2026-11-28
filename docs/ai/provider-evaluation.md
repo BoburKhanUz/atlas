@@ -42,6 +42,7 @@ Principles:
 | `synthetic-vision.ts` | 15 labelled synthetic images for `vision-eval.ts` (Phase 4.1) |
 | `timings.ts` | local latency of everything around a provider call |
 | `eval-common.ts` | statistics, Uzbek proxy check, garment-mention grounding, provider from the environment |
+| `go-pipeline.ts` | the Go pipeline (stage B6.9): `lookly eval` from `LOOKLY_BINARY`, and a stand-in on 127.0.0.1 that serves a scripted provider in OpenAI's shape |
 
 ```bash
 cd apps/web
@@ -51,6 +52,26 @@ bun scripts/ai-eval/bakeoff.ts --out=/tmp/atlas-eval --vision-dataset=/tmp/atlas
 GEMINI_API_KEY=… OPENAI_API_KEY=… bun scripts/ai-eval/vision-eval.ts --dataset=/tmp/atlas-eval/vision-ds --matrix=<matrix with the configured models> --out=/tmp/atlas-eval/vision
 bun scripts/ai-eval/timings.ts --n=30
 ```
+
+**On the Go server's pipeline** (stage B6.9). The scoring and reports stay in this
+harness; `--pipeline=go` sends each case through `lookly eval`, the Go backend's own
+pipeline (`apps/api/internal/evaluation`). Build the binary first:
+
+```bash
+(cd apps/api && CGO_ENABLED=0 go build -trimpath -tags nodynamic -o /tmp/lookly ./cmd/lookly)
+cd apps/web
+LOOKLY_BINARY=/tmp/lookly bun run test:eval-go       # offline, in CI: scripted cases give the same records on both pipelines
+LOOKLY_BINARY=/tmp/lookly bun scripts/ai-eval/stylist-eval.ts --provider=scripted --pipeline=go --out=/tmp/atlas-eval/stylist-go
+# Live (paid: owner approval, rule 4): --max-calls caps the whole run; only that provider's key is passed to lookly eval.
+OPENAI_API_KEY=… LOOKLY_BINARY=/tmp/lookly bun scripts/ai-eval/outfit-eval.ts --provider=openai --model=<model> --pipeline=go --max-calls=12 --out=/tmp/atlas-eval/outfit-go
+OPENAI_API_KEY=… LOOKLY_BINARY=/tmp/lookly bun scripts/ai-eval/vision-eval.ts --dataset=/tmp/atlas-eval/vision-ds --matrix=<matrix> --pipeline=go --max-calls=8 --out=/tmp/atlas-eval/vision-go
+```
+
+`lookly eval` reads one case per line and writes one result per line; with
+`--base-url` (a stand-in on this machine only) it reads no key. Each request may take
+two attempts, so a case runs only while two more calls fit under the cap; one that
+does not is recorded as `call_cap`. The deliberate differences from the TypeScript
+pipeline are listed in `docs/plan/B6.md` (B6.9).
 
 With credentials, run each live text evaluation three times (product temperatures 0.7 and 0.3) and report the spread.
 
