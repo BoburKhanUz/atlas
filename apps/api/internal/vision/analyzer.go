@@ -256,6 +256,12 @@ func (a *Analyzer) withProvider(ctx context.Context, r Request, provider string)
 // checkColor checks the primary colour against the prepared picture's
 // centre; a centre that cannot be read is weak support.
 func (a *Analyzer) checkColor(picture imaging.VisionInput, colors []string) ColorCheck {
+	return CheckColor(picture, colors)
+}
+
+// CheckColor is the colour check of a prepared picture: the primary colour
+// against the picture's centre (the Next.js crossCheckPrimaryColor).
+func CheckColor(picture imaging.VisionInput, colors []string) ColorCheck {
 	if len(colors) == 0 {
 		return JudgeColor("", nil)
 	}

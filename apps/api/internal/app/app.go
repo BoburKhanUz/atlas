@@ -54,7 +54,7 @@ import (
 var version = "dev"
 
 const (
-	usage = "usage: lookly serve | worker | health | migrate river"
+	usage = "usage: lookly serve | worker | health | migrate river | eval (see lookly eval --help)"
 
 	// Exit codes: 1 a runtime failure, 2 a usage or configuration error.
 	exitFailure = 1
@@ -80,6 +80,9 @@ const (
 // Run executes one command and returns the process exit code. ctx ends the
 // command (main cancels it on SIGINT/SIGTERM).
 func Run(ctx context.Context, args []string, getenv func(string) (string, bool), stdout, stderr io.Writer) int {
+	if len(args) > 0 && args[0] == "eval" {
+		return RunEval(ctx, args[1:], getenv, osStdin, stdout, stderr)
+	}
 	switch strings.Join(args, " ") {
 	case "serve":
 		return serve(ctx, getenv, stdout, stderr)
