@@ -1,5 +1,17 @@
+import type { Page } from '@playwright/test'
 import { expect, test } from './fixtures'
 import { cookieByName, registerViaApi, registerViaUi, uniqueUser } from './helpers'
+
+/**
+ * Waits until the page's own requests are done. A test that changes the
+ * cookies while the page still loads races it: the page's first requests
+ * (sent once it has hydrated, late on a slow machine) and the refresh one of
+ * them may start can still set or use cookies after the test changed them.
+ * These specs failed now and then, only under the whole suite's load.
+ */
+async function settled(page: Page) {
+  await page.waitForLoadState('networkidle')
+}
 
 /**
  * Runs against the "session" server (ACCESS_TOKEN_TTL_SECONDS=10, the app's minimum).
@@ -102,6 +114,7 @@ test.describe('session lifecycle', () => {
 
   test('both cookies cleared -> protected page redirects to /login', async ({ page }) => {
     await registerViaUi(page)
+    await settled(page)
     await page.context().clearCookies()
     await page.goto('/wardrobe')
     await expect(page).toHaveURL(/\/login\?next=%2Fwardrobe/)
@@ -111,6 +124,7 @@ test.describe('session lifecycle', () => {
     await registerViaUi(page)
     await page.goto('/outfits')
     await expect(page.getByRole('button', { name: /Boshlash/ })).toBeVisible()
+    await settled(page)
     await page.context().clearCookies()
     await page.getByRole('button', { name: /Boshlash/ }).click() // API 401 -> refresh 401 -> redirect
     await expect(page).toHaveURL(/\/login\?.*expired=1/, { timeout: 15_000 })
@@ -120,6 +134,7 @@ test.describe('session lifecycle', () => {
 
   test('tampered refresh cookie -> login', async ({ page }) => {
     await registerViaUi(page)
+    await settled(page)
     const cookies = await page.context().cookies()
     const rt = cookieByName(cookies, 'atlas_rt')!
     await page.context().clearCookies({ name: 'atlas_at' })
