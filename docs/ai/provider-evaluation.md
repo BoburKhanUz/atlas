@@ -51,22 +51,24 @@ cd apps/web
 bun scripts/ai-eval/bakeoff.ts --out=/tmp/atlas-eval            # offline now; live sections run when keys + models are set
 bun scripts/ai-eval/synthetic-vision.ts --out=/tmp/atlas-eval/vision-ds
 bun scripts/ai-eval/bakeoff.ts --out=/tmp/atlas-eval --vision-dataset=/tmp/atlas-eval/vision-ds --runs=3   # PHASE 5.0
-GEMINI_API_KEY=… OPENAI_API_KEY=… bun scripts/ai-eval/vision-eval.ts --dataset=/tmp/atlas-eval/vision-ds --matrix=<matrix with the configured models> --out=/tmp/atlas-eval/vision
+GEMINI_API_KEY=… OPENAI_API_KEY=… LOOKLY_BINARY=/tmp/lookly bun scripts/ai-eval/vision-eval.ts --dataset=/tmp/atlas-eval/vision-ds --matrix=<matrix with the configured models> --max-calls=<cap> --out=/tmp/atlas-eval/vision
 bun scripts/ai-eval/timings.ts --n=30
 ```
 
-**On the Go server's pipeline** (stage B6.9). The scoring and reports stay in this
-harness; `--pipeline=go` sends each case through `lookly eval`, the Go backend's own
-pipeline (`apps/api/internal/evaluation`). Build the binary first:
+**On the Go server's pipeline** (stage B6.9; the only one since B7.4e). The scoring and
+reports stay in this harness; every case of `stylist-eval.ts`, `outfit-eval.ts` and
+`vision-eval.ts` goes through `lookly eval`, the Go backend's own pipeline
+(`apps/api/internal/evaluation`): a scripted provider through the stand-in, a real one
+only with `--max-calls`. The old `--pipeline` flag is refused. Build the binary first:
 
 ```bash
 (cd apps/api && CGO_ENABLED=0 go build -trimpath -tags nodynamic -o /tmp/lookly ./cmd/lookly)
 cd apps/web
-LOOKLY_BINARY=/tmp/lookly bun run test:eval-go       # offline, in CI: scripted cases give the same records on both pipelines
-LOOKLY_BINARY=/tmp/lookly bun scripts/ai-eval/stylist-eval.ts --provider=scripted --pipeline=go --out=/tmp/atlas-eval/stylist-go
+LOOKLY_BINARY=/tmp/lookly bun run test:eval-go       # offline, in CI: the scripted cases give the frozen records
+LOOKLY_BINARY=/tmp/lookly bun scripts/ai-eval/stylist-eval.ts --provider=scripted --out=/tmp/atlas-eval/stylist-go
 # Live (paid: owner approval, rule 4): --max-calls caps the whole run; only that provider's key is passed to lookly eval.
-OPENAI_API_KEY=… LOOKLY_BINARY=/tmp/lookly bun scripts/ai-eval/outfit-eval.ts --provider=openai --model=<model> --pipeline=go --max-calls=12 --out=/tmp/atlas-eval/outfit-go
-OPENAI_API_KEY=… LOOKLY_BINARY=/tmp/lookly bun scripts/ai-eval/vision-eval.ts --dataset=/tmp/atlas-eval/vision-ds --matrix=<matrix> --pipeline=go --max-calls=8 --out=/tmp/atlas-eval/vision-go
+OPENAI_API_KEY=… LOOKLY_BINARY=/tmp/lookly bun scripts/ai-eval/outfit-eval.ts --provider=openai --model=<model> --max-calls=12 --out=/tmp/atlas-eval/outfit-go
+OPENAI_API_KEY=… LOOKLY_BINARY=/tmp/lookly bun scripts/ai-eval/vision-eval.ts --dataset=/tmp/atlas-eval/vision-ds --matrix=<matrix> --max-calls=8 --out=/tmp/atlas-eval/vision-go
 ```
 
 `lookly eval` reads one case per line and writes one result per line; with

@@ -29,17 +29,14 @@ import {
   interpretGarmentOutput,
 } from '../../src/lib/ai/garment-analysis'
 import { isAiProviderError } from '../../src/lib/ai/providers/errors'
-import { GeminiProvider } from '../../src/lib/ai/providers/gemini'
-import { OpenAIProvider } from '../../src/lib/ai/providers/openai'
 import type { VisionProvider } from './protocol'
 import { prepareVisionImage } from '../../src/lib/ai/providers/vision-input'
 import { estimateCostUsd } from '../../src/lib/ai/telemetry'
 import { applyVisionRubric } from './eval-rubric'
 import { visionDatasetIdentity } from './live-accounting'
-import { GoPipeline, openGoPipeline } from './go-pipeline'
+import { GoPipeline, openGoPipeline, refuseRemovedPipelineFlag, requireProviderKey } from './go-pipeline'
 import { Dataset, Matrix, scoreItem, summarize, validateExpected, type ConfigSummary, type EvalConfig, type ItemOutcome, type ItemRecord } from './vision-scoring'
 
-const KEY_VAR = { gemini: 'GEMINI_API_KEY', openai: 'OPENAI_API_KEY' } as const
 const DEFAULT_TIMEOUT_MS = 30_000
 
 function arg(name: string): string | undefined {
@@ -49,12 +46,6 @@ function arg(name: string): string | undefined {
 
 async function readJson(file: string): Promise<unknown> {
   return JSON.parse(await fs.readFile(file, 'utf8'))
-}
-
-function provider(config: EvalConfig): VisionProvider {
-  const apiKey = process.env[KEY_VAR[config.provider]]?.trim()
-  if (!apiKey) throw new Error(`${KEY_VAR[config.provider]} is not set (needed by config ${config.label})`)
-  return config.provider === 'gemini' ? new GeminiProvider({ apiKey, model: config.model }) : new OpenAIProvider({ apiKey, model: config.model })
 }
 
 export async function runOne(p: VisionProvider, config: EvalConfig, bytes: Uint8Array) {
@@ -110,7 +101,7 @@ export async function runOneGo(go: GoPipeline, config: EvalConfig, bytes: Uint8A
  * bakeoff.ts use). `onRecord` sees each record as it is produced.
  */
 export async function evaluateVisionConfig(
-  /** A provider, or the Go pipeline (`--pipeline=go`) already set to this configuration's provider and model. */
+  /** The Go pipeline set to this configuration's provider and model, or (bake-off and real-data, until they move to Go) a provider. */
   p: VisionProvider | GoPipeline,
   config: EvalConfig,
   datasetDir: string,
@@ -172,10 +163,11 @@ async function main() {
   const datasetDir = arg('dataset')
   const matrixFile = arg('matrix')
   const outDir = arg('out')
-  if (!datasetDir || !matrixFile || !outDir) throw new Error('usage: --dataset=<dir> --matrix=<file> --out=<dir> [--only=a,b] [--limit=N] [--pipeline=go --max-calls=N] [--dry-run]')
-  const onGo = arg('pipeline') === 'go'
+  if (!datasetDir || !matrixFile || !outDir) throw new Error('usage: --dataset=<dir> --matrix=<file> --out=<dir> --max-calls=N [--only=a,b] [--limit=N] [--dry-run]')
+  refuseRemovedPipelineFlag()
+  // Each configuration runs through the Go server's pipeline (lookly eval); --max-calls caps the whole run.
   const maxCalls = Number(arg('max-calls'))
-  if (onGo && !(Number.isInteger(maxCalls) && maxCalls > 0)) throw new Error('--pipeline=go needs --max-calls=N (paid calls: owner rule 4), the cap of the whole run')
+  if (!process.argv.includes('--dry-run') && !(Number.isInteger(maxCalls) && maxCalls > 0)) throw new Error('a vision run needs --max-calls=N (paid calls: owner rule 4), the cap of the whole run')
   const repoRoot = path.resolve(__dirname, '../../../..')
   if (!path.relative(repoRoot, path.resolve(outDir)).startsWith('..')) throw new Error('--out must be outside the repository (results are not committed)')
 
@@ -194,25 +186,25 @@ async function main() {
   }
 
   // Fail before any paid call when a key is missing.
-  const providers = new Map(configs.map((c) => [c.label, provider(c)]))
+  for (const c of configs) requireProviderKey(c.provider)
   let used = 0
   await fs.mkdir(outDir, { recursive: true })
   const resultsFile = path.join(outDir, 'results.jsonl')
   await fs.writeFile(resultsFile, '')
   const summaries: ConfigSummary[] = []
   for (const config of configs) {
-    // On Go, one `lookly eval` per configuration, capped at what is left of the run's calls.
-    const go = onGo ? (await openGoPipeline({ provider: config.provider, model: config.model, maxCalls: String(Math.max(maxCalls - used, 0)) })).go : null
+    // One `lookly eval` per configuration, capped at what is left of the run's calls.
+    const go = (await openGoPipeline({ provider: config.provider, model: config.model, maxCalls: String(maxCalls - used) })).go
     try {
-      const { summary } = await evaluateVisionConfig(go ?? providers.get(config.label)!, config, datasetDir, items, async (record) => {
-        await fs.appendFile(resultsFile, JSON.stringify({ ...record, pipeline: onGo ? 'go' : 'typescript', settings: { ...config, price: undefined } }) + '\n')
+      const { summary } = await evaluateVisionConfig(go, config, datasetDir, items, async (record) => {
+        await fs.appendFile(resultsFile, JSON.stringify({ ...record, pipeline: 'go', settings: { ...config, price: undefined } }) + '\n')
         process.stdout.write(`${config.label} ${record.item} ${record.outcome.kind}\n`)
       }, undefined, (calls) => (used += calls))
       summaries.push(summary)
     } finally {
-      await go?.close()
+      await go.close()
     }
-    if (onGo && used >= maxCalls) break
+    if (used >= maxCalls) break
   }
   await fs.writeFile(path.join(outDir, 'summary.json'), JSON.stringify(summaries, null, 2) + '\n')
   await fs.writeFile(path.join(outDir, 'summary.md'), markdown(summaries))

@@ -19,8 +19,8 @@ import { isAiProviderError } from '../../src/lib/ai/providers/errors'
 import { RetriedError, withRetry } from '../../src/lib/ai/providers/retry'
 import { outfitSetupOf } from './case-setups'
 import type { LLMMessage, LLMProvider, LLMRequest, OutfitSetup } from './protocol'
-import { openGoPipeline, outfitRequest, type GoPipeline } from './go-pipeline'
-import { arg, assertOutsideRepo, llmProviderFromEnv } from './eval-common'
+import { openGoPipeline, refuseRemovedPipelineFlag, outfitRequest, type GoPipeline } from './go-pipeline'
+import { arg, assertOutsideRepo } from './eval-common'
 import { LocalRefusalError } from './live-accounting'
 import { outfitCases, type OutfitCase } from './outfit-cases'
 import { scoreOutfit, summarizeOutfit, type OutfitCaseContext, type OutfitOutcome, type OutfitRecord, type OutfitSummary } from './outfit-scoring'
@@ -136,18 +136,16 @@ export function outfitMarkdown(s: OutfitSummary, records: OutfitRecord[]): strin
 
 async function main() {
   const outDir = arg('out')
-  if (!outDir) throw new Error('usage: --provider=gemini|openai|scripted [--model=…] [--pipeline=go [--max-calls=N]] --out=<dir outside the repo>')
+  if (!outDir) throw new Error('usage: --provider=gemini|openai|scripted [--model=…] [--max-calls=N] --out=<dir outside the repo>')
   assertOutsideRepo(outDir, path.resolve(__dirname, '../../../..'), path)
-  // --pipeline=go: the cases run through the Go server's pipeline (lookly eval, LOOKLY_BINARY).
-  const onGo = arg('pipeline') === 'go'
-  const pipeline = onGo
-    ? await openGoPipeline(arg('provider') === 'scripted' ? { scripted: new ScriptedOutfit() } : { provider: arg('provider'), model: arg('model'), maxCalls: arg('max-calls') })
-    : null
-  const p = pipeline ? { name: pipeline.name, model: pipeline.model } : arg('provider') === 'scripted' ? new ScriptedOutfit() : llmProviderFromEnv(arg('provider'), arg('model'))
+  refuseRemovedPipelineFlag()
+  // The cases run through the Go server's pipeline (lookly eval, LOOKLY_BINARY); a live run needs --max-calls.
+  const pipeline = await openGoPipeline(arg('provider') === 'scripted' ? { scripted: new ScriptedOutfit() } : { provider: arg('provider'), model: arg('model'), maxCalls: arg('max-calls') })
+  const p = { name: pipeline.name, model: pipeline.model }
   await fs.mkdir(outDir, { recursive: true })
   const records: OutfitRecord[] = []
   for (const c of outfitCases()) {
-    const r = pipeline ? await runOutfitCaseGo(pipeline.go, p, c) : await runOutfitCase(p as LLMProvider, c)
+    const r = await runOutfitCaseGo(pipeline.go, p, c)
     records.push(r)
     process.stdout.write(`${c.id} ${r.pass ? 'pass' : 'FAIL'} ${r.outcome.kind}\n`)
   }
@@ -156,7 +154,7 @@ async function main() {
   await fs.writeFile(path.join(outDir, 'outfit-summary.json'), JSON.stringify(summary, null, 2) + '\n')
   await fs.writeFile(path.join(outDir, 'outfit-summary.md'), outfitMarkdown(summary, records))
   await fs.writeFile(path.join(outDir, 'outfit-fallback-explanations.json'), JSON.stringify(fallbackExplanations(), null, 2) + '\n')
-  await pipeline?.close()
+  await pipeline.close()
   console.log(JSON.stringify(summary))
 }
 

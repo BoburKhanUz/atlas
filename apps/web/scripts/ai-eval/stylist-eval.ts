@@ -21,12 +21,12 @@ import { InvalidStylistOutputError, interpretStylistOutput, parseStylistText, re
 import { buildStylistContext, stylistMessages } from '../../src/lib/ai/stylist-context'
 import { stylistCorrectionMessages } from '../../src/lib/ai/stylist-service'
 import { caseSetIdentity, LocalRefusalError } from './live-accounting'
-import { arg, assertOutsideRepo, llmProviderFromEnv } from './eval-common'
+import { arg, assertOutsideRepo } from './eval-common'
 import { STYLIST_CASES_VERSION, stylistCases, type StylistCase } from './stylist-cases'
 import { resolveCaseRubric, syntheticStylistRubricSet, type RubricResolution, type RubricSet } from './case-rubric'
 import type { DatasetIdentityRef } from './eval-rubric'
 import { stylistSetupOf } from './case-setups'
-import { openGoPipeline, stylistRequest, type GoPipeline } from './go-pipeline'
+import { openGoPipeline, refuseRemovedPipelineFlag, stylistRequest, type GoPipeline } from './go-pipeline'
 import { requestIsClean, scoreStylist, summarizeStylist, type StylistOutcome, type StylistRecord, type StylistSummary } from './stylist-scoring'
 
 const TIMEOUT_MS = Number(process.env.AI_LLM_TIMEOUT_MS ?? 25_000)
@@ -190,18 +190,16 @@ export function stylistMarkdown(s: StylistSummary, records: StylistRecord[]): st
 
 async function main() {
   const outDir = arg('out')
-  if (!outDir) throw new Error('usage: --provider=gemini|openai|scripted [--model=…] [--pipeline=go [--max-calls=N]] --out=<dir outside the repo>')
+  if (!outDir) throw new Error('usage: --provider=gemini|openai|scripted [--model=…] [--max-calls=N] --out=<dir outside the repo>')
   assertOutsideRepo(outDir, path.resolve(__dirname, '../../../..'), path)
-  // --pipeline=go: the cases run through the Go server's pipeline (lookly eval, LOOKLY_BINARY).
-  const onGo = arg('pipeline') === 'go'
-  const pipeline = onGo
-    ? await openGoPipeline(arg('provider') === 'scripted' ? { scripted: new ScriptedStylist() } : { provider: arg('provider'), model: arg('model'), maxCalls: arg('max-calls') })
-    : null
-  const p = pipeline ? { name: pipeline.name, model: pipeline.model } : arg('provider') === 'scripted' ? new ScriptedStylist() : llmProviderFromEnv(arg('provider'), arg('model'))
+  refuseRemovedPipelineFlag()
+  // The cases run through the Go server's pipeline (lookly eval, LOOKLY_BINARY); a live run needs --max-calls.
+  const pipeline = await openGoPipeline(arg('provider') === 'scripted' ? { scripted: new ScriptedStylist() } : { provider: arg('provider'), model: arg('model'), maxCalls: arg('max-calls') })
+  const p = { name: pipeline.name, model: pipeline.model }
   await fs.mkdir(outDir, { recursive: true })
   const records: StylistRecord[] = []
   for (const c of stylistCases()) {
-    const r = pipeline ? await runStylistCaseGo(pipeline.go, p, c) : await runStylistCase(p as LLMProvider, c)
+    const r = await runStylistCaseGo(pipeline.go, p, c)
     records.push(r)
     process.stdout.write(`${c.id} ${r.pass ? 'pass' : 'FAIL'} ${r.outcome.kind}\n`)
   }
@@ -209,7 +207,7 @@ async function main() {
   await fs.writeFile(path.join(outDir, 'stylist-results.jsonl'), records.map((r) => JSON.stringify(r)).join('\n') + '\n')
   await fs.writeFile(path.join(outDir, 'stylist-summary.json'), JSON.stringify(summary, null, 2) + '\n')
   await fs.writeFile(path.join(outDir, 'stylist-summary.md'), stylistMarkdown(summary, records))
-  await pipeline?.close()
+  await pipeline.close()
   console.log(JSON.stringify(summary))
 }
 

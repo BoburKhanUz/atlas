@@ -221,8 +221,22 @@ export function outfitRequest(c: OutfitCase) {
   return { wardrobe: c.wardrobe, occasion: c.occasion ?? '', weather: c.weather ?? null, colorProfile: c.colorProfile ?? null, topN: c.topN ?? null }
 }
 
+/** A real provider's key from the environment; refused (before any call) when it is not set. */
+export function requireProviderKey(provider: string): { variable: string; key: string } {
+  const variable = provider === 'openai' ? 'OPENAI_API_KEY' : provider === 'gemini' ? 'GEMINI_API_KEY' : null
+  if (!variable) throw new Error(`no such provider: ${provider} (gemini or openai)`)
+  const key = process.env[variable]?.trim()
+  if (!key) throw new Error(`${variable} is not set`)
+  return { variable, key }
+}
+
+/** The TypeScript pipeline is gone (docs/plan/B7.md, B7.4e): every command-line run goes through `lookly eval`. */
+export function refuseRemovedPipelineFlag(argv: readonly string[] = process.argv): void {
+  if (argv.some((a) => a === '--pipeline' || a.startsWith('--pipeline='))) throw new Error('--pipeline is gone: every run goes through the Go server (lookly eval, LOOKLY_BINARY)')
+}
+
 /**
- * The Go pipeline of a command-line run (`--pipeline=go`): with the
+ * The Go pipeline of a command-line run: with the
  * scripted provider, through a stand-in; with a real one, `lookly eval`
  * asks it itself, given only that provider's key and a call cap.
  */
@@ -237,9 +251,7 @@ export async function openGoPipeline(options: { scripted?: LLMProvider; provider
   const model = (options.model ?? '').trim()
   if (!model) throw new Error('--model is needed')
   if (!/^[1-9][0-9]*$/.test(options.maxCalls ?? '')) throw new Error('a live run on the Go pipeline needs --max-calls=N (paid calls: owner rule 4)')
-  const variable = provider === 'openai' ? 'OPENAI_API_KEY' : 'GEMINI_API_KEY'
-  const key = process.env[variable]?.trim()
-  if (!key) throw new Error(`${variable} is not set`)
+  const { variable, key } = requireProviderKey(provider)
   const go = new GoPipeline({
     args: [`--provider=${provider}`, `--model=${model}`, `--max-calls=${options.maxCalls}`],
     env: { PATH: process.env.PATH ?? '', NODE_ENV: 'production', [variable]: key },
