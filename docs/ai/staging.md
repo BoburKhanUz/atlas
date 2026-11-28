@@ -29,9 +29,9 @@ Data rules:
 
 - Files:
   - `apps/web/e2e/smoke/staging-smoke.spec.ts`;
-  - `apps/web/e2e/smoke/smoke-mode.ts` (mode gate and log check);
+  - `apps/web/e2e/smoke/smoke-mode.ts` (mode gate and log check; the log is read by the Go server's `lookly ai-monitor --json`, so the run needs `LOOKLY_BINARY`, a binary built from `apps/api`, when it is given a log);
   - `apps/web/playwright.staging.config.ts`.
-- It runs at API level as one test with a step per area.
+- It runs at API level as one test with a step per area, signed in as the phone app is (`X-Atlas-Client: mobile`, bearer tokens).
 
 | Step | Checks |
 |---|---|
@@ -42,7 +42,7 @@ Data rules:
 | stylist | `200` with a non-empty answer. `503 AI_UNAVAILABLE` fails with the hint "feature off or user outside the rollout". |
 | outfit generation and AI explanation | `200`; every outfit has an explanation. Mock: `fallback: true` (deterministic). Real: `fallback: false` expected (soft assertion, reported). |
 | failure behaviour | empty message → `400 VALIDATION_ERROR`; a non-image → controlled 4xx. No public error contains a provider name, key, stack or database detail. |
-| monitoring, quota and privacy | with `STAGING_SMOKE_LOG_FILE`: `ai.request` events for all three features in the run window; providers match the mode; quota charged 0 for mock and > 0 for real; the user's email, password, ids, conversation id and message text appear nowhere in the log. Without a log file, the step is skipped and annotated. |
+| monitoring, quota and privacy | with `STAGING_SMOKE_LOG_FILE`: `ai.request` events for all three features in the run window; providers match the mode; an AI provider's quota charged 0 for mock and > 0 for real, and the colour analysis counted once (its daily limit applies in either mode, B6); the user's email, password, ids, conversation id and message text appear nowhere in the log. Without a log file, the step is skipped and annotated. |
 | cleanup | deletes the fresh account, or the dedicated account's items and colour profile |
 
 ### Mock vs real
@@ -50,11 +50,11 @@ Data rules:
 | | Mock (default) | Real |
 |---|---|---|
 | Select | `STAGING_SMOKE_PROVIDER=mock` or unset | `STAGING_SMOKE_PROVIDER=real` **and** `STAGING_SMOKE_REAL_PROVIDER_OPT_IN=1` |
-| CI | yes: the normal e2e suite runs it against the local production build | **never:** `smokeMode` refuses when `CI` is set, and no workflow references the staging config (asserted in `staging-smoke.test.ts`) |
+| CI | yes: the browser suite (`playwright.config.ts`, CI's e2e job) runs it against the Go server with mock providers | **never:** `smokeMode` refuses when `CI` is set, and no workflow references the staging config (asserted in `staging-smoke.test.ts`) |
 | Cost | none | the target's provider budget; about 5 billable requests per run |
-| Distinguished by | `detection.mock === true`; `ai.request` provider `mock`; no quota charge | `detection.mock === false`; real provider names; quota charged |
+| Distinguished by | `detection.mock === true`; `ai.request` provider `mock`; no AI provider quota charged | `detection.mock === false`; real provider names; quota charged |
 
-The runner never holds a provider key; it only talks to the target over HTTP. A run in one mode against a target in the other mode fails at the vision step. This was verified locally against the mock build.
+The runner never holds a provider key; it only talks to the target over HTTP. A run in one mode against a target in the other mode fails at the vision step. Verified on 2026-11-28 against a local Go server with mock providers, with its log: every step passed, the log step included.
 
 ### Running it
 
@@ -63,7 +63,8 @@ cd apps/web
 # mock target
 STAGING_BASE_URL=https://<staging host> bunx playwright test -c playwright.staging.config.ts
 # with the target's exported log lines for the monitoring and privacy step
-STAGING_BASE_URL=… STAGING_SMOKE_LOG_FILE=/path/outside/repo/staging.log bunx playwright test -c playwright.staging.config.ts
+STAGING_BASE_URL=… STAGING_SMOKE_LOG_FILE=/path/outside/repo/staging.log LOOKLY_BINARY=<built lookly> \
+  bunx playwright test -c playwright.staging.config.ts
 # real provider (manual, never CI); a lower rollout needs the allowlisted smoke account
 STAGING_BASE_URL=… STAGING_SMOKE_PROVIDER=real STAGING_SMOKE_REAL_PROVIDER_OPT_IN=1 \
   STAGING_SMOKE_EMAIL=… STAGING_SMOKE_PASSWORD=… bunx playwright test -c playwright.staging.config.ts

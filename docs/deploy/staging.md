@@ -81,7 +81,18 @@ Order: PostgreSQL starts; `migrate` makes or continues the schema and exits; the
 python3 -I -B deploy/check-stack.py https://<ATLAS_DOMAIN> --remote
 ```
 
-It holds no key. With the stack's AI on (the template's staging settings), its one upload is one paid clothing analysis: run it with the owner's approval (CLAUDE.md rule 4). Never against production: it creates (and deletes) a test account. On a server the reset mail is sent or disabled, not written to a volume, so the worker is not checked here: `deploy/compose.sh logs worker` shows its jobs. The smoke with real providers (the stylist, the outfit explanation, the colour profile) comes back with B7.8 ([`docs/ai/staging.md`](../ai/staging.md)).
+It holds no key. With the stack's AI on (the template's staging settings), its one upload is one paid clothing analysis: run it with the owner's approval (CLAUDE.md rule 4). Never against production: it creates (and deletes) a test account. On a server the reset mail is sent or disabled, not written to a volume, so the worker is not checked here: `deploy/compose.sh logs worker` shows its jobs. Then the AI smoke (the upload's analysis, the stylist, the outfit explanation, the colour profile, and the log's monitoring and privacy), in real mode about 5 billable requests, also with the owner's approval:
+
+```bash
+# The API's log streams into a file on this machine during the run (the log step reads it at the end):
+ssh <server> 'cd atlas && deploy/compose.sh logs -f --no-color --no-log-prefix --since 1m api' > /path/outside/repo/staging.log &
+cd apps/web
+STAGING_BASE_URL=https://<ATLAS_DOMAIN> STAGING_SMOKE_PROVIDER=real STAGING_SMOKE_REAL_PROVIDER_OPT_IN=1 \
+  STAGING_SMOKE_LOG_FILE=/path/outside/repo/staging.log LOOKLY_BINARY=<built lookly> \
+  bunx playwright test -c playwright.staging.config.ts
+```
+
+Stop the `ssh` afterwards (`kill %1`) and delete the log file: it is the server's log. Details and the mock mode: [`docs/ai/staging.md`](../ai/staging.md).
 
 ## 5. Phone build against staging
 
