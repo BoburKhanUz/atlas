@@ -593,7 +593,7 @@ by slice (`docs/plan/B6.md`).
   one JSON log line each, the event's name as the message. Every event passes a
   whitelist per event: only known fields of the right kind, and a text only when it is
   a short lowercase code, so that no prompt, answer, address or id can be written even
-  when a caller passes one by mistake. `apps/web/scripts/ai-monitor.ts` aggregates
+  when a caller passes one by mistake. `lookly ai-monitor` (`internal/aimonitor`) aggregates
   the lines.
 
 ## Process

@@ -42,6 +42,21 @@ files (`MAIL_OUTBOX_DIR`, default `./storage/mail-outbox`); nothing is sent.
 Configuration variables and their rules: `docs/architecture/backend.md#configuration`.
 Database, migrations, queries and jobs: `docs/architecture/backend.md#database`.
 
+## Operator commands
+
+Two tools for the operator; they read no configuration, no database and no network.
+
+```bash
+go run ./cmd/lookly ai-digest <user id> [<user id> ...]    # each id's AI_ROLLOUT_ALLOWLIST digest, one per line
+go run ./cmd/lookly ai-monitor --input=api.log [--from=ISO] [--to=ISO] [--baseline=last-week.log] [--json]
+```
+
+- `ai-digest`: the environment holds digests, never user ids (`docs/ai/rollout.md`).
+- `ai-monitor`: the AI dashboard and the alerts that fire, from the server's JSON log
+  lines (`ai.call`, `ai.request`, `ai.quota`); exit 2 when an alert fires, 0 when none
+  does, 1 when a file cannot be read. The thresholds are still the INITIAL ones
+  (`docs/ai/monitoring.md`).
+
 ## Check
 
 ```bash

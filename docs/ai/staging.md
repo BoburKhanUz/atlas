@@ -15,9 +15,9 @@ Staging runs the production build (`NODE_ENV=production`), so the production rul
 | Keys | `GEMINI_API_KEY` / `OPENAI_API_KEY` | Only in the deployment's secret store, staging-only, with a spending cap at the provider. Never in the repository, in CI or on the smoke runner. |
 | Switches | `AI_STYLIST_ENABLED`, `AI_VISION_ENABLED`, `AI_OUTFIT_AI_ENABLED` | All `true` for the full smoke. Leaving one off makes its step answer through the non-AI path, and the smoke reports it. |
 | Rollout | `AI_ROLLOUT_PERCENT` | `100` for a smoke with fresh users. With a lower value, the smoke must use an allowlisted account (below). |
-| Allowlist | `AI_ROLLOUT_ALLOWLIST` | Digests only (`scripts/ai-rollout-digest.ts`), for example the dedicated smoke account. Never raw ids. |
+| Allowlist | `AI_ROLLOUT_ALLOWLIST` | Digests only (`lookly ai-digest`), for example the dedicated smoke account. Never raw ids. |
 | Quota | code constants `AI_DAILY_LIMITS` in `src/lib/ai/quota.ts` (stylist 50, vision 50, colour 10, outfit AI 30 per user per day) | Unchanged. A full smoke charges at most 1 stylist turn, 3 analyses and 1 outfit explanation per run. |
-| Monitoring destination | `LOG_LEVEL` (default `info`), stdout JSON lines | The deployment's log collector keeps the `ai.*` lines. `scripts/ai-monitor.ts` reads the exported lines. A metrics backend is still to be chosen ([`monitoring.md`](monitoring.md)). |
+| Monitoring destination | `LOOKLY_LOG_LEVEL` (default `info`), stdout JSON lines | The deployment's log collector keeps the `ai.*` lines. `lookly ai-monitor` reads the exported lines (docs/ai/monitoring.md). A metrics backend is still to be chosen ([`monitoring.md`](monitoring.md)). |
 | Other | `DATABASE_URL`, `JWT_SECRET`, `MEDIA_SIGNING_SECRET`, `SESSION_ENC_KEY`, storage, `WEATHER_PROVIDER` | As for production, with staging-only secrets and a staging-only database. |
 
 Data rules:

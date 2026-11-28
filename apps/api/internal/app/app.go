@@ -3,7 +3,10 @@
 //   - worker: the background jobs (River);
 //   - health: probes a running server (the container's health check: the
 //     image has no shell or curl);
-//   - migrate river: creates River's tables in their own schema.
+//   - migrate river: creates River's tables in their own schema;
+//   - ai-digest, ai-monitor: operator tools (a user id's rollout digest;
+//     the AI dashboard and alerts from log files). They read no
+//     configuration (ai-monitor reads TZ, for local times).
 //
 // Later stages add `eval`; the Go schema migrations get a command at the
 // cutover (B7, ADR 0007).
@@ -55,7 +58,7 @@ import (
 var version = "dev"
 
 const (
-	usage = "usage: lookly serve | worker | health | migrate | migrate river | eval (see lookly eval --help) | ai-digest <user id>..."
+	usage = "usage: lookly serve | worker | health | migrate | migrate river | eval (see lookly eval --help) | ai-digest <user id>... | ai-monitor --input=<log file>... (see docs/ai/monitoring.md)"
 
 	// Exit codes: 1 a runtime failure, 2 a usage or configuration error.
 	exitFailure = 1
@@ -86,6 +89,9 @@ func Run(ctx context.Context, args []string, getenv func(string) (string, bool),
 	}
 	if len(args) > 0 && args[0] == "ai-digest" {
 		return aiDigest(args[1:], stdout, stderr)
+	}
+	if len(args) > 0 && args[0] == "ai-monitor" {
+		return aiMonitor(args[1:], getenv, stdout, stderr)
 	}
 	switch strings.Join(args, " ") {
 	case "serve":

@@ -15,28 +15,41 @@ Status: **implemented offline; no live provider data.** The events, the metrics 
 ## Architecture
 
 ```
-AI services ──► monitoring.ts ──► sanitizeAiEvent (whitelist) ──► sinks
- (client.ts, vision-service, stylist-service,                       ├─ logSink (default): one JSON log line per event
-  outfit-intelligence, quota-monitoring, routes)                     └─ future: Prometheus / OpenTelemetry / cloud agent
-                                                                         (setAiMonitoringSinks — the services do not change)
+AI services ──► ai.Monitor ──► ai.SanitizeEvent (whitelist) ──► one JSON log line per event (slog, with "ts")
+ (internal/ai client, vision, stylist,     (internal/ai/monitoring.go)
+  outfits, quota, color)
 
-log lines ──► scripts/ai-monitor.ts ──► monitoring-metrics.ts (aggregate + alert rules) ──► dashboard (Markdown/JSON), exit 2 on alerts
+log lines ──► lookly ai-monitor ──► internal/aimonitor (aggregate + alert rules) ──► dashboard (Markdown/JSON), exit 2 on alerts
 ```
 
-- **No metrics backend, no new dependency.** ATLAS already writes structured JSON logs (`src/server/log.ts`), so metrics are log-based. Any log collector can count and percentile these fields.
-- **`scripts/ai-monitor.ts`** produces the same dashboard and alert evaluation from a log file, for example from cron or after a bake-off.
+- **No metrics backend, no new dependency.** The server already writes structured JSON logs (`log/slog`), so metrics are log-based. Any log collector can count and percentile these fields.
+- **`lookly ai-monitor`** (`apps/api/internal/app/monitor.go`, rules in `apps/api/internal/aimonitor`) produces the dashboard and alert evaluation from log files, for example from cron or after a bake-off. It is a port of the Next.js server's `scripts/ai-monitor.ts` and `src/lib/ai/monitoring-metrics.ts` (git history at e57764f) and prints the same numbers, order and Markdown (`apps/api/testdata/golden/ai-monitor.json`, recorded from that code).
 - **No second logging system:** the existing `ai.call` line keeps its name and fields. Phase 4.x events (`ai.vision.result`, `ai.vision.invalid_output`, `ai.stylist.failed`, `ai.outfit.fallback`) stay as they were.
 
 ```bash
-cd apps/web
-bun scripts/ai-monitor.ts --input=server.log [--from=2026-10-06T00:00:00Z --to=…] [--baseline=last-week.log] [--json]
+lookly ai-monitor --input=server.log [--input=…] [--from=2026-10-06T00:00:00Z] [--to=…] \
+  [--baseline=last-week.log] [--baseline-from=…] [--baseline-to=…] [--json]
 ```
+
+The server's lines from the deployment, without Compose's `api-1 |` prefix (a prefixed line is not JSON and is skipped):
+
+```bash
+deploy/compose.sh logs --no-log-prefix --since 24h api > api.log
+lookly ai-monitor --input=api.log      # a lookly binary: cd apps/api && go build -tags nodynamic -o lookly ./cmd/lookly
+```
+
+- It reads only the files given: no network, no configuration, no database.
+- `--input` and `--baseline` may be repeated; the files are read in order.
+- `--from` / `--to` bound the window (ISO date-times, inclusive). A date alone is UTC; a date-time without an offset is local time (`TZ`). Lines whose `ts` cannot be read count only when neither bound is given.
+- Output: Markdown, or with `--json` an object `{"dashboard": …, "alerts": […]}`.
+- Exit code: `0` no alert, `2` at least one alert (for cron), `1` a file cannot be read (the message names it), `2` a usage error (with the usage line).
+- Unlike the old script, it refuses what that script ignored: an unknown argument, a bound given twice, an empty or unreadable `--from`/`--to` (the script read those as an empty window), and `--baseline-from`/`--baseline-to` without `--baseline`.
 
 ## Events (schema version 2)
 
 All events carry `environment` (`production`, `development`, `test` or `unknown`) and `schemaVersion` (2).
 
-### `ai.call` — one per provider call through `client.ts`
+### `ai.call` — one per provider call through the AI client (`internal/ai/client.go`)
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -72,7 +85,7 @@ All events carry `environment` (`production`, `development`, `test` or `unknown`
 
 ## Privacy guarantees
 
-Every event passes `sanitizeAiEvent`, a whitelist per event:
+Every event passes `ai.SanitizeEvent` (`internal/ai/monitoring.go`), a whitelist per event:
 - Unknown keys are dropped.
 - Strings must be short lowercase codes (`^[a-z0-9][a-z0-9_.:-]{0,63}$`: no spaces, so no sentences, prompts, answers or URLs). Model ids must match the configuration's model-id rule.
 - Numbers must be finite and ≥ 0, and booleans stay booleans.
@@ -91,9 +104,9 @@ Even if a caller passed content by mistake, it could not be emitted.
 - request or response bodies.
 
 **Tests:**
-- `tests/unit/ai/monitoring.test.ts` (whitelist);
-- `tests/regression/ai-monitoring.test.ts`: an adversarial user message, a tampered wardrobe row and malicious provider output, through both real adapters and all three features. The test checks the **emitted events and the real log lines** for forbidden content and non-whitelisted keys.
-- `client-telemetry.test.ts` (exact `ai.call` field set) and `ai-prompt-injection.test.ts`.
+- `apps/api/internal/ai/monitoring_test.go`: the whitelist (unknown keys, free text, ids and wrong types are dropped; an event that is not ours is not written) and the exact `ai.call` / `ai.request` / `ai.quota` lines.
+- `apps/api/internal/aimonitor` and `apps/api/internal/app/monitor_test.go`: the aggregation, the alert rules and the command against the recorded TypeScript output, and the lines `ai.Monitor` writes read back by the monitor.
+- The Next.js suites these were ported from (`tests/unit/ai/monitoring.test.ts`, `tests/regression/ai-monitoring.test.ts`, `client-telemetry.test.ts`, `ai-prompt-injection.test.ts`) are in git history at e57764f.
 
 ## What is measurable now
 
@@ -143,7 +156,7 @@ Selection stays environment-driven. There is **no automatic provider selection a
 
 ## Alerts (all INITIAL / TO BE CALIBRATED AFTER LIVE BAKE-OFF)
 
-Defined in `INITIAL_ALERT_THRESHOLDS` (`src/lib/ai/monitoring-metrics.ts`). Rate rules need at least 20 events in the window, and mock/deterministic providers are never alerted. The basis is the configured timeouts and common starting points, not live data.
+Defined in `aimonitor.InitialThresholds` (`apps/api/internal/aimonitor/alerts.go`): still the INITIAL values the Next.js server had, none calibrated yet. Rate rules need at least 20 events in the window, and mock/deterministic providers are never alerted on their calls, failure streaks, outfit fallbacks or usage (the quota rejection rule, as before, does not look at the provider). The basis is the configured timeouts and common starting points, not live data.
 
 | Alert | Fires when | Severity |
 |---|---|---|
@@ -195,9 +208,9 @@ Reading them: R8 renames Java/Kotlin classes of a release build, so keep `build/
 
 ## Future backend integration
 
-Add a sink: `setAiMonitoringSinks([logSink, prometheusSink])`. A Prometheus/OpenTelemetry sink maps:
+Add a destination where `ai.Monitor` writes the log line (`internal/ai/monitoring.go`); the services do not change. A Prometheus/OpenTelemetry exporter maps:
 - `ai.call` → a counter by feature/provider/model/outcome/retry, plus a latency histogram;
 - `ai.request` → a counter by outcome/reason;
 - `ai.quota` → a counter by action.
 
-The alert rules above translate one-to-one into backend alert rules. Keep the whitelist sanitizer in front of every sink, and never add free-text labels: high cardinality and privacy both forbid it.
+The alert rules above translate one-to-one into backend alert rules. Keep the whitelist sanitizer in front of every destination, and never add free-text labels: high cardinality and privacy both forbid it.

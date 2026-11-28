@@ -50,7 +50,7 @@ eligible  ⇔  bucket < AI_ROLLOUT_PERCENT
 
 ```
 digest = hex(sha256("atlas-ai-allowlist:v1:" + userId))   # 64 hex characters
-cd apps/web && bun scripts/ai-rollout-digest.ts <userId> [<userId> …]
+lookly ai-digest <userId> [<userId> …]      # or: deploy/compose.sh run --rm --no-deps api ai-digest <userId>
 ```
 
 - Entries are trimmed and lower-cased; empty entries are ignored. The list holds at most 1000 entries.
