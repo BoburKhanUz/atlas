@@ -176,6 +176,41 @@ for (const [rgb, name] of [[[0xe0, 0xb4, 0x94], 'a little darker'], [[0xd4, 0xa6
   add(`one cell ${name}`, WARM_LIGHT, [{ op: 'rect', x: 78, y: 96, w: 42, h: 64, rgb }])
   add(`the upper cells ${name}`, WARM_LIGHT, [{ op: 'rect', x: 78, y: 96, w: 84, h: 64, rgb }])
 }
+// Exact layouts for the rarest rules. The deep face's skin box is x 78-161,
+// y 96-223: its eyes sit at x ≈ 96 and 144, y ≈ 150.
+const HIDE_RIGHT_EYE: Edit = { op: 'rect', x: 130, y: 142, w: 30, h: 18, rgb: DEEP_SKIN }
+const IRIS: RGB = [0x2e, 0x1d, 0x10]
+add('deep: the right eye higher', WARM_DEEP, [HIDE_RIGHT_EYE, { op: 'rect', x: 139, y: 129, w: 10, h: 10, rgb: IRIS }])
+add('deep: the right eye a little higher', WARM_DEEP, [HIDE_RIGHT_EYE, { op: 'rect', x: 139, y: 141, w: 10, h: 10, rgb: IRIS }])
+add('deep: the right eye nearer the middle', WARM_DEEP, [HIDE_RIGHT_EYE, { op: 'rect', x: 129, y: 145, w: 10, h: 10, rgb: IRIS }])
+add('deep: the right eye a little nearer the middle', WARM_DEEP, [HIDE_RIGHT_EYE, { op: 'rect', x: 136, y: 145, w: 10, h: 10, rgb: IRIS }])
+add('skin in two cells, under the central share', { width: 320, height: 320, skin: '#3a6ea5', hair: null, eyes: null }, [{ op: 'rect', x: 104, y: 100, w: 112, h: 26, rgb: [0xf1, 0xc9, 0xa5] }])
+add('skin in two cells, well under the central share', { width: 320, height: 320, skin: '#3a6ea5', hair: null, eyes: null }, [{ op: 'rect', x: 104, y: 100, w: 112, h: 23, rgb: [0xf1, 0xc9, 0xa5] }])
+// A 64×80 canvas: the grid's cells start at x 9, 20, 32, 43 (to 55) and
+// y 8, 24, 40, 56 (to 72).
+{
+  const xs = [9, 20, 32, 43, 55], ys = [8, 24, 40, 56, 72]
+  const SKIN_A: RGB = [0xf1, 0xc9, 0xa5]
+  const cellRows = (gx: number, gy: number, from: number, rows: number, rgb: RGB): Edit => ({ op: 'rect', x: xs[gx], y: ys[gy] + from, w: xs[gx + 1] - xs[gx], h: rows, rgb })
+  const blank = { width: 64, height: 80, skin: '#3a6ea5', hair: null, eyes: null, background: '#3a6ea5' }
+  // Two cells mostly skin, the rest a little: enough skin, too little of
+  // it in skin cells.
+  const sparse: Edit[] = []
+  for (let gy = 0; gy < 4; gy++) for (let gx = 0; gx < 4; gx++) sparse.push(cellRows(gx, gy, 0, gy === 1 && (gx === 1 || gx === 2) ? 7 : 3, SKIN_A))
+  add('tiny: skin spread thin', blank, sparse)
+  // Six cells mostly skin, and one whose skin is mostly darker or lighter
+  // than the rest, with a few pixels of another hue: that cell has too
+  // few lit pixels to judge the agreement by.
+  for (const [i, [dark, light, other]] of ([
+    [[0xd8, 0xae, 0x8c], [0xfc, 0xdc, 0xbc], [0xf4, 0xc4, 0xb4]],
+    [[0xdc, 0xb2, 0x90], [0xff, 0xe0, 0xc0], [0xf8, 0xc8, 0xa0]],
+  ] as Array<[RGB, RGB, RGB]>).entries()) {
+    const edits: Edit[] = []
+    for (const [gx, gy] of [[1, 1], [2, 1], [1, 2], [2, 2], [0, 1], [3, 1]]) edits.push(cellRows(gx, gy, 0, 8, SKIN_A))
+    edits.push(cellRows(0, 2, 0, 3, dark), cellRows(0, 2, 3, 3, light), cellRows(0, 2, 6, 1, other))
+    add(`tiny: a cell with few lit pixels ${i + 1}`, blank, edits)
+  }
+}
 add('a shadow over half the face', WARM_LIGHT, [{ op: 'scale', num: 100, den: 100 }, { op: 'rect', x: 120, y: 110, w: 90, h: 120, rgb: [0xb8, 0x8a, 0x68] }])
 add('a highlight over a quarter of the face', WARM_DEEP, [{ op: 'rect', x: 70, y: 120, w: 50, h: 60, rgb: [0xc8, 0x90, 0x68] }])
 
