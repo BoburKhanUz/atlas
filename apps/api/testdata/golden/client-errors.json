@@ -1,6 +1,6 @@
 {
  "generatedBy": "apps/web/scripts/golden-client-errors.ts",
- "sourceCommit": "f365769eea9883282066c5eb5aa7f66c0d9f752f",
+ "sourceCommit": "ece5d8c7812cb65f5e2b03a5c4b94bd6a07aa44c",
  "note": "POST /api/v1/client-errors as the Next.js route judges a body, and the fields it logs for each report (scrubbed, then redacted).",
  "logMessage": "client error",
  "redactedSample": "Bearer [REDACTED]",

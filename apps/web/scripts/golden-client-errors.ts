@@ -21,6 +21,10 @@ type Case = { name: string; body: string }
 const json = (name: string, value: unknown): Case => ({ name, body: JSON.stringify(value) })
 const raw = (name: string, body: string): Case => ({ name, body })
 
+// A made-up token (header {"alg":"HS256"}, payload {"sub":"u1"}, the
+// signature "signature-value-here"), written in parts so that no
+// token-shaped literal is in the source.
+const FAKE_JWT = ['eyJhbGciOiJIUzI1NiJ9', 'eyJzdWIiOiJ1MSJ9abcdef', 'c2lnbmF0dXJlLXZhbHVlLWhlcmU'].join('.')
 const report = { platform: 'android', appVersion: '0.1.0+1', kind: 'flutter', errorType: 'StateError', message: 'Bad state: no element' }
 const full = {
   ...report, osVersion: 'Android 14 (API 34)', fatal: true, stack: '#0 main (package:atlas/main.dart:10:5)',
@@ -74,7 +78,7 @@ const cases: Case[] = [
   json('texts to scrub', {
     reports: [
       { ...report, errorType: 'HttpException: Bearer abc.DEF-123_xyz~+/=', message: 'GET https://api.lookly.uz/v1/items?sig=abc&exp=9 failed for aziza.k+1@mail.example.uz' },
-      { ...report, errorType: 'JWT eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1MSJ9abcdef.c2lnbmF0dXJlLXZhbHVlLWhlcmU', message: 'token Rk9PQkFSQkFaUVVYMTIzNDU2Nzg5MDEyMzQ1Njc4OTA= and short abc123' },
+      { ...report, errorType: `JWT ${FAKE_JWT}`, message: 'token Rk9PQkFSQkFaUVVYMTIzNDU2Nzg5MDEyMzQ1Njc4OTA= and short abc123' },
       { ...report, errorType: 'E', message: 'bearer lower x, BEARER UPPER y', stack: '#0 at http://h.uz/a?b=c#frag (file:///lib/x.dart:1)\n#1 /data/app/~~longpathsegmentlongpathsegmentAAAA==/base.apk' },
       { ...report, errorType: 'E', message: '', route: '/stylist/conversations/cm0abcdefghijklmnop12?tab=1#top', osVersion: 'iOS 17.1 user@example.com', appVersion: '1.0 Bearer tokenvalue' },
       { ...report, errorType: 'E', message: 'x', route: '/outfits/short/a-b_c-d-e-f-g-h-i-j/0123456789abcdef' },

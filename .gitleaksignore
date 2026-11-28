@@ -1,0 +1,7 @@
+# Known false positives in history, one per line (gitleaks fingerprints).
+# Each names a commit, a file, a rule and a line; anything new is still found.
+#
+# A made-up JWT in the client error golden script (payload {"sub":"u1"},
+# signature "signature-value-here"): a test of the scrubbing, never a token.
+# The next commit builds it from parts at run time.
+ece5d8c7812cb65f5e2b03a5c4b94bd6a07aa44c:apps/web/scripts/golden-client-errors.ts:jwt:77
