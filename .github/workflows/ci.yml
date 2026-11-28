@@ -91,7 +91,9 @@ jobs:
       # The schema is the Go server's (docs/plan/B7.md, B7.3): `lookly migrate`
       # makes it, and the queue's tables, on the empty database.
       - name: Apply migrations
-        run: LOOKLY_ENV=test "$RUNNER_TEMP/lookly" migrate
+        env:
+          LOOKLY_ENV: test
+        run: '"$RUNNER_TEMP/lookly" migrate'
       - name: Install Chromium for Playwright
         run: npx playwright install --with-deps chromium
       - name: Run e2e
