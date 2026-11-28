@@ -88,6 +88,28 @@ type Recorder interface {
 	RecordCall(ctx context.Context, record CallRecord)
 }
 
+// AttemptGate is asked before each provider attempt and told how each one
+// it let through ended: the evaluation's own accounting (`lookly eval
+// --gate`: its call budget, cost reservation and circuit breaker). The
+// server has none.
+type AttemptGate interface {
+	// Admit lets the attempt go to the provider, or refuses it (an error):
+	// a refused attempt is not made, not counted and not retried, and the
+	// call ends as Cancelled.
+	Admit(ctx context.Context, attempt Attempt) error
+	// Attempted is told an admitted attempt's outcome ("ok" or an error
+	// Kind) and the usage it reported.
+	Attempted(ctx context.Context, outcome string, usage Usage)
+}
+
+// Attempt is what an attempt sends: a text request or a picture's.
+type Attempt struct {
+	Feature         Feature
+	Provider, Model string
+	Text            *TextRequest
+	Vision          *VisionRequest
+}
+
 // Client asks the configured providers: the route of each text feature,
 // the vision provider. Every call has its attempt's time limit, at most one
 // retry, and is told to the recorder.
@@ -99,6 +121,14 @@ type Client struct {
 	recorder Recorder
 	retrier  retrier
 	now      func() time.Time
+	gate     AttemptGate
+}
+
+// WithGate is the client with every attempt passed through a gate.
+func (c *Client) WithGate(gate AttemptGate) *Client {
+	gated := *c
+	gated.gate = gate
+	return &gated
 }
 
 // Addresses are where the providers are reached.
@@ -171,7 +201,7 @@ func (c *Client) GenerateText(ctx context.Context, feature Feature, request Text
 		request.Timeout = route.Timeout
 	}
 	var result TextResult
-	err := c.run(ctx, feature, provider.Name(), provider.Model(), route.Price, func() (Usage, error) {
+	err := c.run(ctx, Attempt{Feature: feature, Provider: provider.Name(), Model: provider.Model(), Text: &request}, route.Price, func() (Usage, error) {
 		var err error
 		result, err = provider.Generate(ctx, request)
 		return result.Metadata.Usage, err
@@ -185,7 +215,7 @@ func (c *Client) AnalyzeImage(ctx context.Context, feature Feature, request Visi
 		request.Timeout = c.settings.Timeout
 	}
 	var result VisionResult
-	err := c.run(ctx, feature, c.vision.Name(), c.vision.Model(), c.settings.Price, func() (Usage, error) {
+	err := c.run(ctx, Attempt{Feature: feature, Provider: c.vision.Name(), Model: c.vision.Model(), Vision: &request}, c.settings.Price, func() (Usage, error) {
 		var err error
 		result, err = c.vision.AnalyzeImage(ctx, request)
 		return result.Metadata.Usage, err
@@ -193,16 +223,30 @@ func (c *Client) AnalyzeImage(ctx context.Context, feature Feature, request Visi
 	return result, err
 }
 
-// run makes the attempts and records the call.
-func (c *Client) run(ctx context.Context, feature Feature, provider, model string, price *config.AIPrice, attempt func() (Usage, error)) error {
+// run makes the attempts (each one through the gate, when there is one)
+// and records the call.
+func (c *Client) run(ctx context.Context, call Attempt, price *config.AIPrice, attempt func() (Usage, error)) error {
+	feature, provider, model := call.Feature, call.Provider, call.Model
 	started := c.now()
 	var usage Usage
 	var outcomes []string
+	refused := 0
 	attempts, err := c.retrier.do(ctx, func() (err error) {
+		if c.gate != nil {
+			if refusal := c.gate.Admit(ctx, call); refusal != nil {
+				refused++
+				return &Error{Kind: Cancelled, Provider: provider, Detail: "refused before the request: " + refusal.Error()}
+			}
+		}
 		usage, err = attempt()
 		outcomes = append(outcomes, outcomeOf(err))
+		if c.gate != nil {
+			c.gate.Attempted(ctx, outcomeOf(err), usage)
+		}
 		return err
 	})
+	// A refused attempt never reached the provider.
+	attempts -= refused
 	record := CallRecord{Feature: feature, Provider: provider, Model: model, Outcome: "ok", Latency: c.now().Sub(started), Attempts: attempts, AttemptOutcomes: outcomes}
 	if err != nil {
 		record.Outcome = "error"

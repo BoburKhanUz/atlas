@@ -27,11 +27,13 @@ const (
 	standInKey = "stand-in-no-key"
 )
 
-const evalUsage = `usage: lookly eval --provider=openai|gemini|mock [--model=NAME] [--max-calls=N] [--base-url=URL] [--timeout=DURATION]
+const evalUsage = `usage: lookly eval --provider=openai|gemini|mock [--model=NAME] [--max-calls=N] [--base-url=URL] [--timeout=DURATION] [--gate]
   Reads one JSON case per line on stdin ({"feature":"stylist"|"outfit"|"vision","case":{...}}) and writes one
   JSON result per line: the AI evaluation harness's runners on this server's pipeline (apps/web/scripts/ai-eval).
   A real provider needs --max-calls (its key comes from OPENAI_API_KEY or GEMINI_API_KEY);
-  --base-url sends every request to a stand-in on this machine instead, and no key is read.`
+  --base-url sends every request to a stand-in on this machine instead, and no key is read.
+  --gate asks the harness before every provider attempt ({"ask": ...} out, {"admit": true|false} in) and tells it
+  how each one ended ({"attempted": ...}); the harness then sends a case only after the previous result.`
 
 // RunEval is `lookly eval`: no database, no quota.
 func RunEval(ctx context.Context, args []string, getenv func(string) (string, bool), stdin io.Reader, stdout, stderr io.Writer) int {
@@ -42,6 +44,7 @@ func RunEval(ctx context.Context, args []string, getenv func(string) (string, bo
 	baseURL := fs.String("base-url", "", "")
 	maxCalls := fs.Int("max-calls", 0, "")
 	timeout := fs.Duration("timeout", evalTextTimeout, "")
+	gated := fs.Bool("gate", false, "")
 	if err := fs.Parse(args); err != nil || fs.NArg() > 0 {
 		fmt.Fprintln(stderr, evalUsage)
 		return exitUsage
@@ -102,6 +105,11 @@ func RunEval(ctx context.Context, args []string, getenv func(string) (string, bo
 	runner := &evaluation.Runner{
 		Text: client, Images: client, Pictures: imaging.NewProcessor(1), Counter: counter, MaxCalls: *maxCalls, TextTimeout: *timeout,
 		VisionDefaults: evaluation.VisionSettings{MaxSide: evalVisionMaxSide, Timeout: evalVisionTimeout},
+	}
+	if *gated {
+		runner.Gate = &evaluation.LineGate{}
+		gatedClient := client.WithGate(runner.Gate)
+		runner.Text, runner.Images = gatedClient, gatedClient
 	}
 	if err := runner.Run(ctx, stdin, stdout); err != nil {
 		fmt.Fprintln(stderr, err)

@@ -305,3 +305,99 @@ func TestAClientIsNotBuiltOfWhatItDoesNotKnow(t *testing.T) {
 		}
 	}
 }
+
+// gate admits attempts while admit says so, and remembers what it was asked and told.
+type gate struct {
+	mu     sync.Mutex
+	admit  func(n int) bool
+	asked  []ai.Attempt
+	told   []string
+	inputs []float64
+}
+
+func (g *gate) Admit(_ context.Context, a ai.Attempt) error {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.asked = append(g.asked, a)
+	if !g.admit(len(g.asked)) {
+		return errors.New("over budget")
+	}
+	return nil
+}
+
+func (g *gate) Attempted(_ context.Context, outcome string, usage ai.Usage) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.told = append(g.told, outcome)
+	if usage.InputTokens != nil {
+		g.inputs = append(g.inputs, *usage.InputTokens)
+	}
+}
+
+func TestAGateIsAskedBeforeEveryAttemptAndToldHowItEnded(t *testing.T) {
+	t.Parallel()
+	gemini, asked := scripted(t, status(503, `{}`), status(200, geminiSays))
+	c, rec := client(t, settings(2*time.Second), gemini.URL, "http://127.0.0.1:1")
+	g := &gate{admit: func(int) bool { return true }}
+	got, err := c.WithGate(g).GenerateText(context.Background(), ai.StylistChat, question)
+	if err != nil || got.Text != "Salom" || asked.Load() != 2 {
+		t.Fatalf("%+v %v after %d", got, err, asked.Load())
+	}
+	if len(g.asked) != 2 || g.asked[0].Feature != ai.StylistChat || g.asked[0].Provider != "gemini" || g.asked[0].Model != "gemini-test" ||
+		g.asked[0].Text == nil || g.asked[0].Text.Messages[0].Content != question.Messages[0].Content || g.asked[0].Vision != nil {
+		t.Errorf("asked %+v", g.asked)
+	}
+	if !slices.Equal(g.told, []string{"unavailable", "ok"}) || !slices.Equal(g.inputs, []float64{1000}) {
+		t.Errorf("told %v, inputs %v", g.told, g.inputs)
+	}
+	if calls := rec.all(); len(calls) != 1 || calls[0].Attempts != 2 {
+		t.Errorf("records %+v", calls)
+	}
+	// The client without the gate is untouched.
+	if _, err := c.GenerateText(context.Background(), ai.StylistChat, question); err != nil || len(g.asked) != 2 {
+		t.Errorf("ungated: %v, %d asked", err, len(g.asked))
+	}
+}
+
+func TestARefusedAttemptIsNeverMadeCountedOrRetried(t *testing.T) {
+	t.Parallel()
+	for _, c := range []struct {
+		name     string
+		admit    func(n int) bool
+		asked    int32
+		attempts int
+		told     []string
+	}{
+		{"the first attempt refused", func(int) bool { return false }, 0, 0, nil},
+		{"the retry refused", func(n int) bool { return n == 1 }, 1, 1, []string{"unavailable"}},
+	} {
+		gemini, asked := scripted(t, status(503, `{}`), status(200, geminiSays))
+		cl, rec := client(t, settings(2*time.Second), gemini.URL, "http://127.0.0.1:1")
+		g := &gate{admit: c.admit}
+		_, err := cl.WithGate(g).GenerateText(context.Background(), ai.StylistChat, question)
+		var failure *ai.Error
+		if !errors.As(err, &failure) || failure.Kind != ai.Cancelled || failure.Retryable() || asked.Load() != c.asked {
+			t.Errorf("%s: %v after %d requests", c.name, err, asked.Load())
+		}
+		calls := rec.all()
+		if len(calls) != 1 || calls[0].Attempts != c.attempts || calls[0].Outcome != "cancelled" || !slices.Equal(g.told, c.told) || len(g.asked) != int(c.asked)+1 {
+			t.Errorf("%s: records %+v, told %v, asked %d", c.name, calls, g.told, len(g.asked))
+		}
+	}
+}
+
+func TestAPictureAttemptShowsItsRequestToTheGate(t *testing.T) {
+	t.Parallel()
+	openai, _ := scripted(t, status(200, openAISays))
+	c, _ := client(t, settings(time.Second), "http://127.0.0.1:1", openai.URL)
+	g := &gate{admit: func(int) bool { return true }}
+	tokens := 300
+	request := ai.VisionRequest{Image: []byte("jpeg"), MimeType: "image/jpeg", MaxSide: 512, Instruction: "what", MaxOutputTokens: &tokens}
+	if _, err := c.WithGate(g).AnalyzeImage(context.Background(), ai.ClothingAnalysis, request); err != nil {
+		t.Fatal(err)
+	}
+	if len(g.asked) != 1 || g.asked[0].Vision == nil || g.asked[0].Vision.MaxSide != 512 || *g.asked[0].Vision.MaxOutputTokens != 300 || g.asked[0].Text != nil ||
+		g.asked[0].Provider != "openai" || g.asked[0].Model != "gpt-vision-test" || !slices.Equal(g.told, []string{"ok"}) {
+		t.Errorf("asked %+v told %v", g.asked, g.told)
+	}
+}

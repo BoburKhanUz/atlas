@@ -482,3 +482,76 @@ func TestEvalOutfitSetupSaysHowTheProfileIsUsed(t *testing.T) {
 		}
 	}
 }
+
+// With --gate every attempt is asked about first and told after; a refused
+// one is never sent, nor counted.
+func TestEvalGateAsksBeforeEveryAttempt(t *testing.T) {
+	t.Parallel()
+	s := &standIn{failFirst: 1, answer: func(int, map[string]any) string {
+		return `{"answer":"Bugun [W1] kiying.","referencedItems":["W1"],"needsMoreInfo":false}`
+	}}
+	url := s.serve(t)
+	input := stylistCase + "\n" + `{"admit":true}` + "\n" + `{"admit":true}` + "\n"
+	code, lines, stderr := runEval(t, nil, input, "--provider=openai", "--model=m", "--base-url="+url, "--gate")
+	if code != 0 || len(lines) != 5 || len(s.bodies) != 2 {
+		t.Fatalf("exit %d, %d lines %v, %d sent, %s", code, len(lines), lines, len(s.bodies), stderr)
+	}
+	for i, key := range []string{"ask", "attempted", "ask", "attempted"} {
+		if lines[i][key] == nil {
+			t.Fatalf("line %d is not %q: %v", i, key, lines[i])
+		}
+	}
+	a := lines[0]["ask"].(map[string]any)
+	text := a["text"].(map[string]any)
+	if a["feature"] != "stylist_chat" || a["provider"] != "openai" || a["model"] != "m" || a["vision"] != nil ||
+		text["maxOutputTokens"] == nil || text["schema"].(map[string]any)["name"] != "stylist_answer" {
+		t.Errorf("ask %v", a)
+	}
+	sameJSON(t, "asked messages", text["messages"], s.bodies[0]["messages"])
+	sameJSON(t, "first end", lines[1]["attempted"], map[string]any{"outcome": "unavailable"})
+	sameJSON(t, "second end", lines[3]["attempted"], map[string]any{"outcome": "ok", "inputTokens": 100, "outputTokens": 20})
+	if r := lines[4]; r["calls"] != float64(2) || r["outcome"].(map[string]any)["kind"] != "answer" {
+		t.Errorf("result %v", r)
+	}
+}
+
+func TestEvalGateRefusalsAndBadAnswers(t *testing.T) {
+	t.Parallel()
+	for _, c := range []struct {
+		name, answers string
+		sent          int
+	}{
+		{"refused", `{"admit":false}` + "\n", 0},
+		{"the retry refused", `{"admit":true}` + "\n" + `{"admit":false}` + "\n", 1},
+		{"no answer", "", 0},
+		{"not an answer", `{"admit":"yes"}` + "\n", 0},
+		{"an unknown member", `{"admit":true,"also":1}` + "\n", 0},
+	} {
+		s := &standIn{refuses: true}
+		code, lines, stderr := runEval(t, nil, stylistCase+"\n"+c.answers, "--provider=openai", "--model=m", "--base-url="+s.serve(t), "--gate")
+		if code != 0 || len(lines) == 0 || len(s.bodies) != c.sent {
+			t.Errorf("%s: exit %d, %v, %d sent, %s", c.name, code, lines, len(s.bodies), stderr)
+			continue
+		}
+		r := lines[len(lines)-1]
+		if o := r["outcome"].(map[string]any); o["kind"] != "error" || o["error"] != "cancelled" || r["calls"] != float64(c.sent) {
+			t.Errorf("%s: result %v", c.name, r)
+		}
+	}
+}
+
+func TestEvalGateShowsThePictureSize(t *testing.T) {
+	t.Parallel()
+	s := &standIn{answer: func(int, map[string]any) string { return `{}` }}
+	picture := base64.StdEncoding.EncodeToString(golden.TestdataFile(t, "vision/e2e-white-shirt.png"))
+	vision := `{"feature":"vision","case":{"image":"` + picture + `","maxSide":256,"openaiDetail":"low"}}`
+	code, lines, stderr := runEval(t, nil, vision+"\n"+`{"admit":false}`+"\n", "--provider=openai", "--model=m", "--base-url="+s.serve(t), "--gate")
+	if code != 0 || len(lines) != 2 || len(s.bodies) != 0 {
+		t.Fatalf("exit %d, %v, %s", code, lines, stderr)
+	}
+	v := lines[0]["ask"].(map[string]any)["vision"].(map[string]any)
+	if v["mimeType"] != "image/jpeg" || max(v["width"].(float64), v["height"].(float64)) != 256 || v["maxSide"] != float64(256) ||
+		v["maxOutputTokens"] == nil || v["options"].(map[string]any)["openaiDetail"] != "low" {
+		t.Errorf("ask %v", v)
+	}
+}

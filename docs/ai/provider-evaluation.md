@@ -91,6 +91,17 @@ as the colour profile does (no model; `profile`, `rejected_quality` with the rea
 `rejected_skin`, or an error). A case with a member the server does not know is
 refused, so a case the harness changed is never half read.
 
+With `--gate`, `lookly eval` asks the harness before every provider attempt and tells it
+how each one ended, so the bake-off's own accounting (the call and dollar budgets, the
+per-attempt cost reservation, the circuit breaker) decides every attempt Go makes, a
+retry and a correction included: Go writes `{"ask": {...}}` (the feature, provider and
+model, and what the attempt sends: the text request's messages, output limit and
+schema, or the picture's type, size and settings, never its bytes) and reads
+`{"admit": true|false}`; after an admitted attempt it writes `{"attempted": {"outcome",
+"inputTokens", "outputTokens"}}`. A refused attempt is never sent, never counted and
+never retried; the case ends as `cancelled`. No answer, or an answer that is not
+`{"admit": ...}`, refuses the attempt.
+
 With credentials, run each live text evaluation three times (product temperatures 0.7 and 0.3) and report the spread.
 
 ### Bake-off vision and repeated runs (PHASE 5.0)

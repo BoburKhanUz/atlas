@@ -127,6 +127,9 @@ type Runner struct {
 	TextTimeout time.Duration
 	// VisionDefaults apply where a vision case says nothing.
 	VisionDefaults VisionSettings
+	// Gate, when set, is the clients' AttemptGate: it speaks on this run's
+	// own streams (Run connects it).
+	Gate *LineGate
 }
 
 // VisionSettings are a vision case's defaults.
@@ -196,6 +199,9 @@ func (r *Runner) Run(ctx context.Context, in io.Reader, out io.Writer) error {
 	scanner.Buffer(make([]byte, 0, 1<<20), 64<<20) // a vision case holds its picture
 	encoder := json.NewEncoder(out)
 	encoder.SetEscapeHTML(false)
+	if r.Gate != nil {
+		r.Gate.in, r.Gate.out = scanner, encoder
+	}
 	for scanner.Scan() {
 		if len(scanner.Bytes()) == 0 {
 			continue
@@ -209,6 +215,9 @@ func (r *Runner) Run(ctx context.Context, in io.Reader, out io.Writer) error {
 		}
 		if err := encoder.Encode(answer); err != nil {
 			return fmt.Errorf("evaluation: write a result: %w", err)
+		}
+		if r.Gate != nil && r.Gate.err != nil {
+			return r.Gate.err
 		}
 		if ctx.Err() != nil {
 			return ctx.Err()
