@@ -104,7 +104,7 @@ func TestWhatTheEngineIsGivenOfTheDatabase(t *testing.T) {
 	exec(`INSERT INTO "OutfitItem" ("id","outfitId","wardrobeItemId","role","createdAt") VALUES ('x-2','o-liked','w-theirs','top',now())`)
 
 	var logs bytes.Buffer
-	s := New(pool, nil, nil, slog.New(slog.NewJSONHandler(&logs, nil)))
+	s := New(pool, nil, nil, nil, slog.New(slog.NewJSONHandler(&logs, nil)))
 	got, err := s.load(ctx, store.New(pool), "u-me")
 	if err != nil {
 		t.Fatal(err)
@@ -237,7 +237,7 @@ func TestWhatIsReadIsBounded(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	s := New(pool, nil, nil, slog.New(slog.NewJSONHandler(&bytes.Buffer{}, nil)))
+	s := New(pool, nil, nil, nil, slog.New(slog.NewJSONHandler(&bytes.Buffer{}, nil)))
 	got, err := s.load(ctx, store.New(pool), "u-big")
 	if err != nil {
 		t.Fatal(err)

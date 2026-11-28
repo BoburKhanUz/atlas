@@ -109,7 +109,7 @@ before listening. Values that hold credentials are never printed.
 | `SMTP_SECURE` | on for port 465, off otherwise | `1`/`true` (TLS from the first byte) or `0`/`false` (STARTTLS, required unless the host is `localhost`, `127.0.0.1` or `::1`) |
 | `SMTP_USER`, `SMTP_PASSWORD` | none | both or neither; the password is used as given and never printed |
 | `MAIL_OUTBOX_DIR` | `./storage/mail-outbox` | for `outbox`: where messages are written as files |
-| `AI_*`, `GEMINI_API_KEY`, `OPENAI_API_KEY` | as in the Next.js server | the AI providers, models, timeouts, prices, the rollout switches, percentage and allowlist: the Next.js server's variables, read by its rules (`internal/config/ai.go`; the variables are listed in `docs/ai/provider-architecture.md` and `docs/ai/rollout.md`; golden vectors `testdata/golden/ai-config.json`). `NODE_ENV=production` there is `production` or `staging` here: no provider may be left unset, and a mock needs `AI_ALLOW_MOCK_IN_PRODUCTION=1`. Keys are never printed or logged. While stage B6 is under way, a real provider for a text role the server cannot serve yet stops it (`aiNotServedYet` in `internal/app`); the garment analysis is served since B6.4 |
+| `AI_*`, `GEMINI_API_KEY`, `OPENAI_API_KEY` | as in the Next.js server | the AI providers, models, timeouts, prices, the rollout switches, percentage and allowlist: the Next.js server's variables, read by its rules (`internal/config/ai.go`; the variables are listed in `docs/ai/provider-architecture.md` and `docs/ai/rollout.md`; golden vectors `testdata/golden/ai-config.json`). `NODE_ENV=production` there is `production` or `staging` here: no provider may be left unset, and a mock needs `AI_ALLOW_MOCK_IN_PRODUCTION=1`. Keys are never printed or logged. While stage B6 is under way, a real provider for the stylist, which the server cannot serve yet, stops it (`aiNotServedYet` in `internal/app`); the garment analysis is served since B6.4 and the outfit ranking since B6.5 |
 | `WEATHER_PROVIDER` | `open-meteo` | who is asked for the weather: `open-meteo` (the Open-Meteo forecast service) or `mock` (the same demo weather everywhere, labelled as such). `mock` is refused in production and staging; any other value stops the server |
 | `STORAGE_DRIVER` | `local` | `local` or `r2`; never guessed: an `R2_*` setting without it stops the server |
 | `STORAGE_LOCAL_DIR` | none (required for `local`) | absolute path of the directory the images are in (the one the Next.js server writes to); `lookly serve` and `lookly worker` also require that it exists |
@@ -548,6 +548,13 @@ by slice (`docs/plan/B6.md`).
   model's own are stored beside them. The answers: `AI_UNAVAILABLE` (503, refunded),
   `AI_QUOTA_EXCEEDED` (429 to the next Tashkent midnight), `NOT_A_GARMENT` (422,
   charged when the model looked), `INVALID_IMAGE` (422).
+- **Outfit ranking** (`outfits.Ranker`, after the engine): the model may only reorder
+  the engine's candidates (O1…On in its context: catalog values only, never ids) and
+  explain the one it selects; one correction after an invalid answer; at most 25 s for
+  both attempts. Its explanation is shown only when it follows the Uzbek output policy
+  (no English catalog words, no Cyrillic). Any failure, the mock, the rollout or the
+  day's quota (30) gives the engine's own order and explanations: generation never
+  fails because of it. `fallback` in the answer says which.
 - **Monitoring** (`ai.Monitor`): the events `ai.call`, `ai.request` and `ai.quota`,
   one JSON log line each, the event's name as the message. Every event passes a
   whitelist per event: only known fields of the right kind, and a text only when it is

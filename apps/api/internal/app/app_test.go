@@ -407,7 +407,6 @@ func TestServeRefusesARealAIProviderItCannotServeYet(t *testing.T) {
 	for name, vars := range map[string]map[string]string{
 		"text":    {"AI_LLM_PROVIDER": "openai", "AI_LLM_MODEL": "gpt-test", "OPENAI_API_KEY": "fake-key-not-printed"},
 		"stylist": {"AI_STYLIST_PROVIDER": "gemini", "AI_STYLIST_MODEL": "gemini-test", "GEMINI_API_KEY": "fake-key-not-printed"},
-		"outfit":  {"AI_OUTFIT_PROVIDER": "openai", "AI_OUTFIT_MODEL": "gpt-test", "OPENAI_API_KEY": "fake-key-not-printed"},
 	} {
 		addr := freeAddr(t)
 		all := configtest.Env(map[string]string{"LOOKLY_ENV": "development", "LOOKLY_HTTP_ADDR": addr, "DATABASE_URL": "postgresql://u@127.0.0.1:1/x"})
@@ -428,19 +427,24 @@ func TestServeRefusesARealAIProviderItCannotServeYet(t *testing.T) {
 	}
 }
 
-// The garment analysis is served by a real provider since B6.4: the
-// setting no longer stops the server (the worker below stops for the
-// unreachable database, not for the provider).
-func TestARealVisionProviderIsServed(t *testing.T) {
+// The garment analysis (B6.4) and the outfit ranking (B6.5) are served by
+// a real provider: the setting no longer stops the server (the worker
+// below stops for the unreachable database, not for the provider).
+func TestARealProviderOfAServedRoleIsServed(t *testing.T) {
 	t.Parallel()
-	all := configtest.Env(map[string]string{
-		"LOOKLY_ENV": "development", "DATABASE_URL": "postgresql://u@127.0.0.1:1/x",
-		"AI_VISION_PROVIDER": "openai", "AI_VISION_MODEL": "gpt-vision-test", "OPENAI_API_KEY": "fake-key-not-printed",
-	})
-	var stderr bytes.Buffer
-	code := app.Run(context.Background(), []string{"worker"}, env(all), &bytes.Buffer{}, &stderr)
-	if code == 0 || strings.Contains(stderr.String(), "real AI provider") || strings.Contains(stderr.String(), "fake-key") ||
-		!strings.Contains(stderr.String(), "cannot reach the database") {
-		t.Errorf("exit %d, stderr %q", code, stderr.String())
+	for name, vars := range map[string]map[string]string{
+		"vision": {"AI_VISION_PROVIDER": "openai", "AI_VISION_MODEL": "gpt-vision-test", "OPENAI_API_KEY": "fake-key-not-printed"},
+		"outfit": {"AI_OUTFIT_PROVIDER": "openai", "AI_OUTFIT_MODEL": "gpt-test", "OPENAI_API_KEY": "fake-key-not-printed"},
+	} {
+		all := configtest.Env(map[string]string{"LOOKLY_ENV": "development", "DATABASE_URL": "postgresql://u@127.0.0.1:1/x"})
+		for k, v := range vars {
+			all[k] = v
+		}
+		var stderr bytes.Buffer
+		code := app.Run(context.Background(), []string{"worker"}, env(all), &bytes.Buffer{}, &stderr)
+		if code == 0 || strings.Contains(stderr.String(), "real AI provider") || strings.Contains(stderr.String(), "fake-key") ||
+			!strings.Contains(stderr.String(), "cannot reach the database") {
+			t.Errorf("%s: exit %d, stderr %q", name, code, stderr.String())
+		}
 	}
 }

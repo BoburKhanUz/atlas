@@ -58,14 +58,15 @@ type Service struct {
 	pool      *pgxpool.Pool
 	forecasts Forecasts
 	limiter   Limiter
+	ranker    *Ranker
 	log       *slog.Logger
 }
 
 // New returns the service over the pool; forecasts answers the weather of a
 // place for a generation that brings coordinates and no weather, limiter
-// counts the generations.
-func New(pool *pgxpool.Pool, forecasts Forecasts, limiter Limiter, log *slog.Logger) *Service {
-	return &Service{pool: pool, forecasts: forecasts, limiter: limiter, log: log}
+// counts the generations, ranker orders and explains them.
+func New(pool *pgxpool.Pool, forecasts Forecasts, limiter Limiter, ranker *Ranker, log *slog.Logger) *Service {
+	return &Service{pool: pool, forecasts: forecasts, limiter: limiter, ranker: ranker, log: log}
 }
 
 // GenerateRequest is a request for outfits. Everything is optional.
@@ -86,8 +87,8 @@ type Generated struct {
 	// WeatherUsed is the weather the outfits were made for; nil: none.
 	WeatherUsed       *engine.Weather
 	WardrobeItemCount int
-	// Fallback: the order and the explanations are the engine's own (always,
-	// until the AI ranking of stage B6).
+	// Fallback: the order and the explanations are the engine's own (the
+	// model was not used).
 	Fallback bool
 	// Message says why there are no outfits.
 	Message string
@@ -191,9 +192,11 @@ func (s *Service) Generate(ctx context.Context, userID string, request GenerateR
 	if err != nil {
 		return Generated{}, fmt.Errorf("outfits: generate: %w", err)
 	}
-	for _, candidate := range result.Outfits {
-		outfit := Outfit{Candidate: candidate, Explanation: engine.Explanation(candidate, in.Occasion, result.Weather)}
-		for _, piece := range candidate.Items {
+	ranked, fallback := s.ranker.Rank(ctx, userID, result.Outfits, in.Occasion, result.Weather, data.colors)
+	generated.Fallback = fallback
+	for _, r := range ranked {
+		outfit := Outfit{Candidate: r.Candidate, Explanation: r.Explanation}
+		for _, piece := range r.Candidate.Items {
 			outfit.Images = append(outfit.Images, images[piece.Item.ID])
 		}
 		generated.Outfits = append(generated.Outfits, outfit)

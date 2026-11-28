@@ -131,7 +131,9 @@ func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger, images storage
 		Profile:  profile.New(pool),
 		Wardrobe: wardrobe.New(pool, images, log),
 		Weather:  forecasts,
-		Outfits:  outfits.New(pool, forecasts, limiter, log),
+		Outfits: outfits.New(pool, forecasts, limiter, outfits.NewRanker(outfits.RankerConfig{
+			Client: models, Quotas: quotas, Monitor: monitor, Route: cfg.AI.Outfit, Rollout: cfg.AI.Rollout, Log: log,
+		}), log),
 		Uploads: wardrobe.NewUploads(wardrobe.UploadsConfig{
 			Pool: pool, Images: images, Processor: pictures, Limiter: limiter, Keys: idempotency.New(pool), Log: log,
 			Analyzer: vision.NewAnalyzer(vision.AnalyzerConfig{
@@ -412,7 +414,6 @@ func open(ctx context.Context, getenv func(string) (string, bool), stdout, stder
 func aiNotServedYet(ai config.AI) string {
 	for _, role := range []struct{ variable, provider string }{
 		{ai.Stylist.Source + "_PROVIDER", ai.Stylist.Provider},
-		{ai.Outfit.Source + "_PROVIDER", ai.Outfit.Provider},
 	} {
 		if role.provider != config.AIMock {
 			return role.variable

@@ -144,6 +144,9 @@ type apiOptions struct {
 	// open); aiAt is where its providers are asked.
 	ai   *config.AI
 	aiAt ai.Addresses
+	// rankingBudget and rankingAttempt replace the outfit ranking's time
+	// limits when not zero.
+	rankingBudget, rankingAttempt time.Duration
 }
 
 // api is the server on its own database.
@@ -238,7 +241,7 @@ func newAPI(t *testing.T, o apiOptions) *api {
 	a.analyzer = newAnalyzer(t, pool, a.processor, log, o.ai, o.aiAt)
 	server := httpapi.NewServer(httpapi.Services{
 		Health: health.New(pool, "test", time.Second), Accounts: users, Sessions: a.sessions, Legal: consent, Profile: profile.New(pool),
-		Weather: weatherService, Outfits: outfits.New(pool, weatherService, limiter, log),
+		Weather: weatherService, Outfits: outfits.New(pool, weatherService, limiter, newRanker(t, pool, log, o.ai, o.aiAt, o.rankingBudget, o.rankingAttempt), log),
 		Wardrobe: wardrobe.New(pool, a.images, log), Media: a.media, Images: a.images, Now: o.now,
 		Uploads: wardrobe.NewUploads(wardrobe.UploadsConfig{
 			Pool: pool, Images: a.images, Processor: a.processor, Analyzer: a.analyzer, Limiter: limiter, Keys: idempotency.New(pool), Log: log,

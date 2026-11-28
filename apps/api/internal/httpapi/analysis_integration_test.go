@@ -25,6 +25,7 @@ import (
 	"lookly/internal/config"
 	"lookly/internal/config/configtest"
 	"lookly/internal/imaging"
+	"lookly/internal/outfits"
 	"lookly/internal/quota"
 	"lookly/internal/vision"
 	"lookly/internal/wardrobe"
@@ -44,9 +45,9 @@ func testAI(t *testing.T) config.AI {
 	return cfg.AI
 }
 
-// newAnalyzer is the garment analysis of a test server: settings nil is
-// testAI; at is where a real provider is asked.
-func newAnalyzer(t *testing.T, pool *pgxpool.Pool, pictures *imaging.Processor, log *slog.Logger, settings *config.AI, at ai.Addresses) *vision.Analyzer {
+// aiParts are the AI of a test server: settings nil is testAI; at is where
+// a real provider is asked.
+func aiParts(t *testing.T, pool *pgxpool.Pool, log *slog.Logger, settings *config.AI, at ai.Addresses) (config.AI, *ai.Client, *quota.Service, *ai.Monitor) {
 	t.Helper()
 	cfg := testAI(t)
 	if settings != nil {
@@ -57,9 +58,25 @@ func newAnalyzer(t *testing.T, pool *pgxpool.Pool, pictures *imaging.Processor, 
 	if err != nil {
 		t.Fatal(err)
 	}
+	return cfg, client, quota.New(pool, monitor, log), monitor
+}
+
+// newAnalyzer is the garment analysis of a test server.
+func newAnalyzer(t *testing.T, pool *pgxpool.Pool, pictures *imaging.Processor, log *slog.Logger, settings *config.AI, at ai.Addresses) *vision.Analyzer {
+	t.Helper()
+	cfg, client, quotas, monitor := aiParts(t, pool, log, settings, at)
 	return vision.NewAnalyzer(vision.AnalyzerConfig{
-		Client: client, Quotas: quota.New(pool, monitor, log), Pictures: pictures, Monitor: monitor,
-		Settings: cfg.Vision, Rollout: cfg.Rollout, Log: log,
+		Client: client, Quotas: quotas, Pictures: pictures, Monitor: monitor, Settings: cfg.Vision, Rollout: cfg.Rollout, Log: log,
+	})
+}
+
+// newRanker is the outfit ranking of a test server; budget and attempt
+// replace the time limits when not zero.
+func newRanker(t *testing.T, pool *pgxpool.Pool, log *slog.Logger, settings *config.AI, at ai.Addresses, budget, attempt time.Duration) *outfits.Ranker {
+	t.Helper()
+	cfg, client, quotas, monitor := aiParts(t, pool, log, settings, at)
+	return outfits.NewRanker(outfits.RankerConfig{
+		Client: client, Quotas: quotas, Monitor: monitor, Route: cfg.Outfit, Rollout: cfg.Rollout, Log: log, Budget: budget, Attempt: attempt,
 	})
 }
 
