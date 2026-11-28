@@ -189,10 +189,47 @@ func isDeclaredImage(contentType string) bool {
 	return false
 }
 
+// aiUnavailableRetryAfter is the wait a client is told when the provider
+// failed (the Next.js server's).
+const aiUnavailableRetryAfter = 15 * time.Second
+
+// notAGarmentMessages say what a photo shows when it is not one garment.
+var notAGarmentMessages = map[string]string{
+	vision.MultipleGarments: "Rasmda bir nechta kiyim bor. Har bir kiyimni alohida suratga oling.",
+	vision.NoGarment:        "Rasmda kiyim topilmadi. Kiyim, poyabzal, sumka yoki aksessuarni suratga oling.",
+	vision.Unclear:          "Rasm aniq emas. Kiyimni yorug‘ joyda, aniq qilib suratga oling.",
+}
+
+// msgImageNotAnalysable: a picture that could not be prepared, or that the
+// provider refused.
+const msgImageNotAnalysable = "Bu rasmni tahlil qilib bo‘lmadi. Boshqa rasm tanlang."
+
+// analysisError is a failed analysis as the contract answers it.
+func analysisError(f *vision.Failure) *apierr.Error {
+	switch f.Kind {
+	case vision.AIUnavailable:
+		e := apierr.New(apierr.AiUnavailable)
+		e.RetryAfter = aiUnavailableRetryAfter
+		return e
+	case vision.QuotaExceeded:
+		e := apierr.New(apierr.AiQuotaExceeded)
+		e.RetryAfter = f.RetryAfter
+		return e
+	case vision.NotAGarment:
+		e := apierr.With(apierr.NotAGarment, notAGarmentMessages[f.Subject])
+		e.Details = []apierr.Detail{{Path: "subject", Message: f.Subject}}
+		return e
+	}
+	return apierr.With(apierr.InvalidImage, msgImageNotAnalysable)
+}
+
 func uploadError(err error) error {
 	var daily *wardrobe.DailyLimitError
 	var busy *idempotency.InProgressError
+	var failure *vision.Failure
 	switch {
+	case errors.As(err, &failure):
+		return analysisError(failure)
 	case errors.Is(err, imaging.ErrUnsupported):
 		return apierr.New(apierr.UnsupportedImageFormat)
 	case errors.Is(err, imaging.ErrDimensions):

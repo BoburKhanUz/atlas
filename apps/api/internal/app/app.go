@@ -23,6 +23,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"lookly/internal/accounts"
+	"lookly/internal/ai"
 	"lookly/internal/auth"
 	"lookly/internal/config"
 	"lookly/internal/database"
@@ -37,9 +38,11 @@ import (
 	"lookly/internal/media"
 	"lookly/internal/outfits"
 	"lookly/internal/profile"
+	"lookly/internal/quota"
 	"lookly/internal/ratelimit"
 	"lookly/internal/session"
 	"lookly/internal/storage"
+	"lookly/internal/vision"
 	"lookly/internal/wardrobe"
 	"lookly/internal/weather"
 )
@@ -111,6 +114,15 @@ func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger, images storage
 		Queue: queue, MailEnabled: cfg.Mail.Enabled(),
 	})
 	forecasts := weather.New(pool, weatherProvider(cfg), limiter, log)
+	// The AI: every call and request told to the monitoring, the day's
+	// quotas, the providers the configuration names.
+	monitor := ai.NewMonitor(log, string(cfg.Env))
+	quotas := quota.New(pool, monitor, log)
+	models, err := ai.NewClient(cfg.AI, ai.DefaultAddresses, monitor)
+	if err != nil {
+		return nil, fmt.Errorf("AI providers: %w", err)
+	}
+	pictures := imaging.NewProcessor(picturesAtOnce)
 	server := httpapi.NewServer(httpapi.Services{
 		Health:   health.New(pool, version, healthPingTimeout),
 		Accounts: users,
@@ -121,8 +133,10 @@ func api(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger, images storage
 		Weather:  forecasts,
 		Outfits:  outfits.New(pool, forecasts, limiter, log),
 		Uploads: wardrobe.NewUploads(wardrobe.UploadsConfig{
-			Pool: pool, Images: images, Processor: imaging.NewProcessor(picturesAtOnce), Limiter: limiter,
-			Keys: idempotency.New(pool), Log: log,
+			Pool: pool, Images: images, Processor: pictures, Limiter: limiter, Keys: idempotency.New(pool), Log: log,
+			Analyzer: vision.NewAnalyzer(vision.AnalyzerConfig{
+				Client: models, Quotas: quotas, Pictures: pictures, Monitor: monitor, Settings: cfg.AI.Vision, Rollout: cfg.AI.Rollout, Log: log,
+			}),
 		}),
 		Media:        media.NewSigner(cfg.MediaSigningSecret, cfg.MediaURLTTL, cfg.PublicBaseURL),
 		Images:       images,
@@ -397,7 +411,6 @@ func open(ctx context.Context, getenv func(string) (string, bool), stdout, stder
 // told to use a real provider must not quietly answer with the mock.
 func aiNotServedYet(ai config.AI) string {
 	for _, role := range []struct{ variable, provider string }{
-		{"AI_VISION_PROVIDER", ai.Vision.Provider},
 		{ai.Stylist.Source + "_PROVIDER", ai.Stylist.Provider},
 		{ai.Outfit.Source + "_PROVIDER", ai.Outfit.Provider},
 	} {

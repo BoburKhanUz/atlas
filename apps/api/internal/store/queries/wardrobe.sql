@@ -63,7 +63,8 @@ SELECT count(*) FROM "WardrobeItem" WHERE "userId" = $1;
 
 -- name: InsertWardrobeItem :one
 -- An item as an upload creates it: the detected attributes, nothing
--- corrected yet, and who analysed the photo.
+-- corrected yet, who analysed the photo and the model's own confidences
+-- (NULL for the mock).
 INSERT INTO "WardrobeItem" ("id", "userId", "category", "subcategory", "colors", "pattern", "material", "sleeveLength", "fit", "style",
                             "season", "gender", "formality", "confidences", "wasCorrected", "correctionLog",
                             "analysisProvider", "analysisModel", "analysisVersion", "analyzedAt", "analysisRawConfidences",
@@ -71,7 +72,8 @@ INSERT INTO "WardrobeItem" ("id", "userId", "category", "subcategory", "colors",
 VALUES (sqlc.arg(id), sqlc.arg(user_id), sqlc.arg(category), sqlc.narg(subcategory), sqlc.arg(colors), sqlc.narg(pattern),
         sqlc.narg(material), sqlc.narg(sleeve_length), sqlc.narg(fit), sqlc.narg(style), sqlc.arg(season), sqlc.narg(gender),
         sqlc.narg(formality), sqlc.arg(confidences), false, '[]',
-        sqlc.arg(analysis_provider), sqlc.arg(analysis_model), sqlc.arg(analysis_version), atlas_now(), NULL,
+        sqlc.arg(analysis_provider), sqlc.arg(analysis_model), sqlc.arg(analysis_version), atlas_now(),
+        sqlc.narg(analysis_raw_confidences),
         atlas_now(), atlas_now())
 RETURNING *;
 

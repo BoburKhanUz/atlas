@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -89,11 +90,19 @@ type Processor interface {
 	Process(ctx context.Context, data []byte) (imaging.Variants, error)
 }
 
+// Analyzer analyses an uploaded garment (*vision.Analyzer).
+type Analyzer interface {
+	Analyze(ctx context.Context, r vision.Request) (vision.Analysis, error)
+	// Replayed tells the monitoring a request was answered from an earlier one.
+	Replayed(ctx context.Context)
+}
+
 // Uploads creates items from uploaded pictures.
 type Uploads struct {
 	pool      *pgxpool.Pool
 	images    storage.Store
 	processor Processor
+	analyzer  Analyzer
 	limiter   *ratelimit.Limiter
 	keys      *idempotency.Service
 	log       *slog.Logger
@@ -106,6 +115,7 @@ type UploadsConfig struct {
 	Pool      *pgxpool.Pool
 	Images    storage.Store
 	Processor Processor
+	Analyzer  Analyzer
 	Limiter   *ratelimit.Limiter
 	Keys      *idempotency.Service
 	Log       *slog.Logger
@@ -114,7 +124,7 @@ type UploadsConfig struct {
 // NewUploads returns the upload use case.
 func NewUploads(c UploadsConfig) *Uploads {
 	return &Uploads{
-		pool: c.Pool, images: c.Images, processor: c.Processor, limiter: c.Limiter, keys: c.Keys, log: c.Log,
+		pool: c.Pool, images: c.Images, processor: c.Processor, analyzer: c.Analyzer, limiter: c.Limiter, keys: c.Keys, log: c.Log,
 		inTx: func(ctx context.Context, pool *pgxpool.Pool, options pgx.TxOptions, fn func(pgx.Tx) error) error {
 			return pgx.BeginTxFunc(ctx, pool, options, fn)
 		},
@@ -138,7 +148,7 @@ func DailyUploadHit(userID string, now time.Time) ratelimit.Hit {
 // Create checks, stores and analyses an uploaded picture and creates its
 // item, in this order: the claim on the idempotency key; the picture's
 // header (format, dimensions); the wardrobe's size; the day's count; the
-// processing; the files; the rows. Nothing is left behind by a failure: no
+// processing; the files; the garment analysis; the rows. Nothing is left behind by a failure: no
 // row, no file, no claim on the key. The attempt is given back to the day
 // too, with one exception: a picture whose header passed and whose pixels
 // did not decode stays counted, because it took a processing slot (else a
@@ -157,7 +167,7 @@ func DailyUploadHit(userID string, now time.Time) ratelimit.Hit {
 // for crashed, five minutes after it was claimed).
 //
 // The refusals: imaging.ErrUnsupported, imaging.ErrInvalid and
-// imaging.ErrDimensions for the picture; ErrWardrobeFull and
+// imaging.ErrDimensions for the picture; *vision.Failure for the analysis; ErrWardrobeFull and
 // *DailyLimitError for the limits; idempotency.ErrMismatch and
 // *idempotency.InProgressError for the key; ErrReplayGone; ErrNoUser.
 func (u *Uploads) Create(ctx context.Context, up Upload) (Created, error) {
@@ -227,6 +237,7 @@ func (u *Uploads) replay(ctx context.Context, userID string, r *idempotency.Repl
 	if err != nil {
 		return Created{}, err
 	}
+	u.analyzer.Replayed(ctx)
 	return Created{Item: item, Detection: detectionOf(item, row.AnalysisProvider), Replayed: true}, nil
 }
 
@@ -330,7 +341,21 @@ func (u *Uploads) create(ctx context.Context, up Upload, claim *idempotency.Clai
 		}
 	}
 
-	detection := vision.Mock(variants.Sample, up.HintName)
+	// The analysis runs outside the transaction, after the files are
+	// stored (as the Next.js server orders it): a failure leaves nothing.
+	analysis, err := u.analyzer.Analyze(ctx, vision.Request{UserID: up.UserID, File: up.File, Sample: variants.Sample, HintName: up.HintName})
+	if err != nil {
+		return Created{}, undo, err
+	}
+	detection := analysis.Detection
+	order := vision.ConfidenceKeys
+	if analysis.Provider == vision.MockProvider {
+		order = vision.ConfidenceOrder
+	}
+	var raw *string
+	if analysis.RawConfidences != nil {
+		raw = ptr(confidencesText(analysis.RawConfidences, vision.ConfidenceKeys))
+	}
 	digest := sha256.Sum256(up.File)
 	image := store.InsertWardrobeImageParams{
 		ID: platform.NewID(), StorageKey: master, DisplayKey: &display, ThumbnailKey: &thumbnail,
@@ -367,8 +392,9 @@ func (u *Uploads) create(ctx context.Context, up Upload, claim *idempotency.Clai
 			Category: detection.Category, Subcategory: detection.Subcategory, Colors: jsonText(detection.Colors),
 			Pattern: detection.Pattern, Material: detection.Material, SleeveLength: detection.SleeveLength, Fit: detection.Fit,
 			Style: detection.Style, Season: jsonText(detection.Season), Gender: detection.Gender, Formality: detection.Formality,
-			Confidences:      confidencesText(detection.Confidence),
-			AnalysisProvider: ptr(vision.MockProvider), AnalysisModel: ptr(vision.MockModel), AnalysisVersion: ptr(vision.MockVersion),
+			Confidences:      confidencesText(detection.Confidence, order),
+			AnalysisProvider: &analysis.Provider, AnalysisModel: &analysis.Model, AnalysisVersion: &analysis.Version,
+			AnalysisRawConfidences: raw,
 		})
 		if err != nil {
 			return err
@@ -434,12 +460,13 @@ func (u *Uploads) created(ctx context.Context, userID, itemID string) (*Item, er
 }
 
 // confidencesText is the confidences as the Next.js API stores them: a JSON
-// object with the attributes in the mock's order.
-func confidencesText(confidence map[string]float64) string {
+// object with the attributes in the given order (the mock's or the
+// model's), each number as JavaScript writes it.
+func confidencesText(confidence map[string]float64, order []string) string {
 	var b strings.Builder
 	b.WriteByte('{')
 	written := 0
-	for _, name := range vision.ConfidenceOrder {
+	for _, name := range order {
 		value, ok := confidence[name]
 		if !ok {
 			continue
@@ -447,7 +474,7 @@ func confidencesText(confidence map[string]float64) string {
 		if written > 0 {
 			b.WriteByte(',')
 		}
-		b.WriteString(jsonText(name) + ":" + strconv.FormatFloat(value, 'g', -1, 64))
+		b.WriteString(jsonText(name) + ":" + jsNumberText(value))
 		written++
 	}
 	if written != len(confidence) {
@@ -455,6 +482,21 @@ func confidencesText(confidence map[string]float64) string {
 	}
 	b.WriteByte('}')
 	return b.String()
+}
+
+// jsNumberText is a number as JavaScript's JSON.stringify writes it: plain
+// digits from 1e-6 to below 1e21, else the shortest exponent form (1e-7,
+// 1e+21). The values here are confidences, finite.
+func jsNumberText(v float64) string {
+	if v == 0 {
+		return "0"
+	}
+	if a := math.Abs(v); a >= 1e-6 && a < 1e21 {
+		return strconv.FormatFloat(v, 'f', -1, 64)
+	}
+	mantissa, exponent, _ := strings.Cut(strconv.FormatFloat(v, 'e', -1, 64), "e")
+	sign, digits := exponent[:1], strings.TrimLeft(exponent[1:], "0")
+	return mantissa + "e" + sign + digits
 }
 
 func ptr[T any](v T) *T { return &v }

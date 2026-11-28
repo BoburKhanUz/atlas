@@ -30,8 +30,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"lookly/internal/accounts"
+	"lookly/internal/ai"
 	"lookly/internal/apierr"
 	"lookly/internal/auth"
+	"lookly/internal/config"
 	"lookly/internal/contracttest"
 	"lookly/internal/dbtest"
 	"lookly/internal/golden"
@@ -47,6 +49,7 @@ import (
 	"lookly/internal/ratelimit"
 	"lookly/internal/session"
 	"lookly/internal/storage"
+	"lookly/internal/vision"
 	"lookly/internal/wardrobe"
 	"lookly/internal/weather"
 	"lookly/migrations"
@@ -137,6 +140,10 @@ type apiOptions struct {
 	queue accounts.Queue
 	// weather replaces the weather provider (the mock).
 	weather weather.Provider
+	// ai replaces the AI configuration (the mock everywhere, the rollout
+	// open); aiAt is where its providers are asked.
+	ai   *config.AI
+	aiAt ai.Addresses
 }
 
 // api is the server on its own database.
@@ -150,6 +157,7 @@ type api struct {
 	media     *media.Signer
 	processor *imaging.Processor
 	limiter   *ratelimit.Limiter
+	analyzer  *vision.Analyzer
 	sessions  *session.Service
 	gate      *httpapi.Gate
 	log       *bytes.Buffer
@@ -227,12 +235,13 @@ func newAPI(t *testing.T, o apiOptions) *api {
 		forecasts = o.weather
 	}
 	weatherService := weather.New(pool, forecasts, limiter, log)
+	a.analyzer = newAnalyzer(t, pool, a.processor, log, o.ai, o.aiAt)
 	server := httpapi.NewServer(httpapi.Services{
 		Health: health.New(pool, "test", time.Second), Accounts: users, Sessions: a.sessions, Legal: consent, Profile: profile.New(pool),
 		Weather: weatherService, Outfits: outfits.New(pool, weatherService, limiter, log),
 		Wardrobe: wardrobe.New(pool, a.images, log), Media: a.media, Images: a.images, Now: o.now,
 		Uploads: wardrobe.NewUploads(wardrobe.UploadsConfig{
-			Pool: pool, Images: a.images, Processor: a.processor, Limiter: limiter, Keys: idempotency.New(pool), Log: log,
+			Pool: pool, Images: a.images, Processor: a.processor, Analyzer: a.analyzer, Limiter: limiter, Keys: idempotency.New(pool), Log: log,
 		}),
 		CookieSecure: o.cookieSecure, TrustProxy: o.trustProxy,
 	})

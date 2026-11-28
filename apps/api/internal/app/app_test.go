@@ -405,7 +405,6 @@ func TestServeInProductionRefusesWritesFromAnHTTPOrigin(t *testing.T) {
 func TestServeRefusesARealAIProviderItCannotServeYet(t *testing.T) {
 	t.Parallel()
 	for name, vars := range map[string]map[string]string{
-		"vision":  {"AI_VISION_PROVIDER": "gemini", "AI_VISION_MODEL": "gemini-vision-test", "GEMINI_API_KEY": "fake-key-not-printed"},
 		"text":    {"AI_LLM_PROVIDER": "openai", "AI_LLM_MODEL": "gpt-test", "OPENAI_API_KEY": "fake-key-not-printed"},
 		"stylist": {"AI_STYLIST_PROVIDER": "gemini", "AI_STYLIST_MODEL": "gemini-test", "GEMINI_API_KEY": "fake-key-not-printed"},
 		"outfit":  {"AI_OUTFIT_PROVIDER": "openai", "AI_OUTFIT_MODEL": "gpt-test", "OPENAI_API_KEY": "fake-key-not-printed"},
@@ -426,5 +425,22 @@ func TestServeRefusesARealAIProviderItCannotServeYet(t *testing.T) {
 			c.Close()
 			t.Errorf("%s: something listens on the address", name)
 		}
+	}
+}
+
+// The garment analysis is served by a real provider since B6.4: the
+// setting no longer stops the server (the worker below stops for the
+// unreachable database, not for the provider).
+func TestARealVisionProviderIsServed(t *testing.T) {
+	t.Parallel()
+	all := configtest.Env(map[string]string{
+		"LOOKLY_ENV": "development", "DATABASE_URL": "postgresql://u@127.0.0.1:1/x",
+		"AI_VISION_PROVIDER": "openai", "AI_VISION_MODEL": "gpt-vision-test", "OPENAI_API_KEY": "fake-key-not-printed",
+	})
+	var stderr bytes.Buffer
+	code := app.Run(context.Background(), []string{"worker"}, env(all), &bytes.Buffer{}, &stderr)
+	if code == 0 || strings.Contains(stderr.String(), "real AI provider") || strings.Contains(stderr.String(), "fake-key") ||
+		!strings.Contains(stderr.String(), "cannot reach the database") {
+		t.Errorf("exit %d, stderr %q", code, stderr.String())
 	}
 }

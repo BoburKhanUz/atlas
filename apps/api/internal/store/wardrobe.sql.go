@@ -123,33 +123,36 @@ INSERT INTO "WardrobeItem" ("id", "userId", "category", "subcategory", "colors",
 VALUES ($1, $2, $3, $4, $5, $6,
         $7, $8, $9, $10, $11, $12,
         $13, $14, false, '[]',
-        $15, $16, $17, atlas_now(), NULL,
+        $15, $16, $17, atlas_now(),
+        $18,
         atlas_now(), atlas_now())
 RETURNING id, "userId", category, subcategory, colors, pattern, material, "sleeveLength", fit, style, season, gender, formality, confidences, "wasCorrected", "correctionLog", "createdAt", "updatedAt", "analysisModel", "analysisProvider", "analysisRawConfidences", "analysisVersion", "analyzedAt"
 `
 
 type InsertWardrobeItemParams struct {
-	ID               string
-	UserID           string
-	Category         string
-	Subcategory      *string
-	Colors           string
-	Pattern          *string
-	Material         *string
-	SleeveLength     *string
-	Fit              *string
-	Style            *string
-	Season           string
-	Gender           *string
-	Formality        *string
-	Confidences      string
-	AnalysisProvider *string
-	AnalysisModel    *string
-	AnalysisVersion  *string
+	ID                     string
+	UserID                 string
+	Category               string
+	Subcategory            *string
+	Colors                 string
+	Pattern                *string
+	Material               *string
+	SleeveLength           *string
+	Fit                    *string
+	Style                  *string
+	Season                 string
+	Gender                 *string
+	Formality              *string
+	Confidences            string
+	AnalysisProvider       *string
+	AnalysisModel          *string
+	AnalysisVersion        *string
+	AnalysisRawConfidences *string
 }
 
 // An item as an upload creates it: the detected attributes, nothing
-// corrected yet, and who analysed the photo.
+// corrected yet, who analysed the photo and the model's own confidences
+// (NULL for the mock).
 func (q *Queries) InsertWardrobeItem(ctx context.Context, arg InsertWardrobeItemParams) (WardrobeItem, error) {
 	row := q.db.QueryRow(ctx, insertWardrobeItem,
 		arg.ID,
@@ -169,6 +172,7 @@ func (q *Queries) InsertWardrobeItem(ctx context.Context, arg InsertWardrobeItem
 		arg.AnalysisProvider,
 		arg.AnalysisModel,
 		arg.AnalysisVersion,
+		arg.AnalysisRawConfidences,
 	)
 	var i WardrobeItem
 	err := row.Scan(

@@ -723,7 +723,7 @@ func TestConcurrentUploadsDoNotOverfillAWardrobe(t *testing.T) {
 		SELECT 'cfull' || n, $1, 'shirt', now() FROM generate_series(1, $2::int) n`, w.user, wardrobe.MaxItems-1)
 	// More at a time than the API lets one user send: the use case itself.
 	uploads := wardrobe.NewUploads(wardrobe.UploadsConfig{
-		Pool: w.pool, Images: w.images, Processor: w.processor, Limiter: w.limiter, Keys: idempotency.New(w.pool), Log: slog.New(slog.DiscardHandler),
+		Pool: w.pool, Images: w.images, Processor: w.processor, Analyzer: w.analyzer, Limiter: w.limiter, Keys: idempotency.New(w.pool), Log: slog.New(slog.DiscardHandler),
 	})
 	const n = 5
 	var wg sync.WaitGroup
@@ -803,7 +803,7 @@ func TestUploadThatCannotBeProcessedInTimeLeavesNothing(t *testing.T) {
 	release := processor.Hold()
 	defer release()
 	uploads := wardrobe.NewUploads(wardrobe.UploadsConfig{
-		Pool: w.pool, Images: w.images, Processor: processor, Limiter: w.limiter, Keys: idempotency.New(w.pool), Log: slog.New(slog.DiscardHandler),
+		Pool: w.pool, Images: w.images, Processor: processor, Analyzer: w.analyzer, Limiter: w.limiter, Keys: idempotency.New(w.pool), Log: slog.New(slog.DiscardHandler),
 	})
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
 	defer cancel()
@@ -1007,7 +1007,7 @@ func TestUploadOfAnAccountDeletedMeanwhile(t *testing.T) {
 	// The same when the account is gone before the key is claimed (the gate
 	// let the request in a moment earlier).
 	uploads := wardrobe.NewUploads(wardrobe.UploadsConfig{
-		Pool: w.pool, Images: w.images, Processor: w.processor, Limiter: w.limiter, Keys: idempotency.New(w.pool), Log: slog.New(slog.DiscardHandler),
+		Pool: w.pool, Images: w.images, Processor: w.processor, Analyzer: w.analyzer, Limiter: w.limiter, Keys: idempotency.New(w.pool), Log: slog.New(slog.DiscardHandler),
 	})
 	for _, key := range []string{"", "upload-key-0002"} {
 		_, err := uploads.Create(context.Background(), wardrobe.Upload{
@@ -1052,7 +1052,7 @@ func TestUploadThatEndsWhileItsItemIsCreated(t *testing.T) {
 	store := &cancelDuringPut{Store: local}
 	w := newUploadWorld(t, apiOptions{images: store})
 	uploads := wardrobe.NewUploads(wardrobe.UploadsConfig{
-		Pool: w.pool, Images: store, Processor: w.processor, Limiter: w.limiter, Keys: idempotency.New(w.pool), Log: slog.New(slog.DiscardHandler),
+		Pool: w.pool, Images: store, Processor: w.processor, Analyzer: w.analyzer, Limiter: w.limiter, Keys: idempotency.New(w.pool), Log: slog.New(slog.DiscardHandler),
 	})
 	ctx, cancel := context.WithCancel(context.Background())
 	store.cancel = cancel

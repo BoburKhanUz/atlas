@@ -13,13 +13,38 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"lookly/internal/ai"
+	"lookly/internal/config"
+	"lookly/internal/config/configtest"
 	"lookly/internal/dbtest"
 	"lookly/internal/golden"
 	"lookly/internal/idempotency"
 	"lookly/internal/imaging"
+	"lookly/internal/quota"
 	"lookly/internal/ratelimit"
+	"lookly/internal/vision"
 	"lookly/internal/wardrobe"
 )
+
+// mockAnalyzer is the garment analysis of a test environment: the
+// development mock.
+func mockAnalyzer(t *testing.T, pool *pgxpool.Pool) *vision.Analyzer {
+	t.Helper()
+	cfg, err := config.Load(configtest.Getenv(nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	log := slog.New(slog.DiscardHandler)
+	monitor := ai.NewMonitor(log, "test")
+	client, err := ai.NewClient(cfg.AI, ai.DefaultAddresses, monitor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return vision.NewAnalyzer(vision.AnalyzerConfig{
+		Client: client, Quotas: quota.New(pool, monitor, log), Pictures: imaging.NewProcessor(1), Monitor: monitor,
+		Settings: cfg.AI.Vision, Rollout: cfg.AI.Rollout, Log: log,
+	})
+}
 
 // uploads is the upload use case over the world's database and storage,
 // for one user; processor nil: the real one.
@@ -30,7 +55,7 @@ func (w *sweepWorld) uploads(processor wardrobe.Processor) (*wardrobe.Uploads, w
 		processor = imaging.NewProcessor(1)
 	}
 	u := wardrobe.NewUploads(wardrobe.UploadsConfig{
-		Pool: w.pool, Images: w.images, Processor: processor, Keys: idempotency.New(w.pool),
+		Pool: w.pool, Images: w.images, Processor: processor, Keys: idempotency.New(w.pool), Analyzer: mockAnalyzer(w.t, w.pool),
 		Limiter: ratelimit.New(w.pool, []byte("wardrobe-test-secret-wardrobe-test-secret")),
 		Log:     slog.New(slog.NewJSONHandler(w.log, nil)),
 	})
@@ -218,7 +243,7 @@ func TestAnUploadWhoseOutcomeCannotBeToldKeepsItsFiles(t *testing.T) {
 	t.Cleanup(own.Close)
 	w.user("u_one")
 	u := wardrobe.NewUploads(wardrobe.UploadsConfig{
-		Pool: own, Images: w.images, Processor: imaging.NewProcessor(1), Keys: idempotency.New(w.pool),
+		Pool: own, Images: w.images, Processor: imaging.NewProcessor(1), Keys: idempotency.New(w.pool), Analyzer: mockAnalyzer(t, w.pool),
 		Limiter: ratelimit.New(w.pool, []byte("wardrobe-test-secret-wardrobe-test-secret")),
 		Log:     slog.New(slog.NewJSONHandler(w.log, nil)),
 	})
